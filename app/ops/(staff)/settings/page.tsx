@@ -39,7 +39,7 @@ export default async function SettingsPage() {
           </ol>
           <pre className="mt-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-xs text-zinc-100">
 {`INSERT INTO staff_profiles (id, full_name, role)
-VALUES ('TU-USER-UUID', 'Tu Nombre', 'admin');`}
+VALUES ('91cfbf47-3da6-4dd7-b916-9b1460e5e1b7', 'Jean', 'admin');`}
           </pre>
         </section>
       </div>

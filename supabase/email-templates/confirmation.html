@@ -1,0 +1,56 @@
+<!-- Subject: Confirma tu cuenta — Codiva -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Confirma tu cuenta</title>
+</head>
+<body style="margin:0;padding:0;background:#F9FAFB;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Confirma tu correo para activar tu cuenta en Codiva</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="background:#104E4E;padding:24px 32px;">
+              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.85);">Codiva</p>
+              <h1 style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:22px;line-height:1.3;font-weight:700;color:#ffffff;">Confirma tu cuenta</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 12px;font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:#18181B;">Gracias por registrarte en Codiva.</p><p style="margin:0 0 12px;font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:#18181B;">Confirma tu correo electrónico para activar tu cuenta y continuar.</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+                <tr>
+                  <td style="border-radius:8px;background:#104E4E;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer"
+                       style="display:inline-block;padding:14px 28px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                      Confirmar email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:16px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:#6B7280;word-break:break-all;">
+                Si el botón no funciona, copia este enlace:<br/>
+                <a href="{{ .ConfirmationURL }}" style="color:#104E4E;text-decoration:none;">{{ .ConfirmationURL }}</a>
+              </p>
+              
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 28px;border-top:1px solid #E5E7EB;">
+              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:#6B7280;">Codiva — software a la medida y productos digitales</p>
+              <p style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;">
+                <a href="https://codiva.dev" style="color:#104E4E;text-decoration:none;">codiva.dev</a>
+                ·
+                <a href="https://ops.codiva.dev" style="color:#104E4E;text-decoration:none;">ops.codiva.dev</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

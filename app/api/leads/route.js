@@ -1,5 +1,6 @@
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { notifyStaff, sendConfirmationEmail } from '@/lib/ops/email';
+import { notifyStaff, sendLeadConfirmationEmail } from '@/lib/ops/email';
+import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { NextResponse } from 'next/server';
 
@@ -43,16 +44,20 @@ export async function POST(request) {
       metadata: { source: 'web_cotiza' },
     });
 
-    await sendConfirmationEmail({
+    await sendLeadConfirmationEmail({
       to: body.email,
       name: body.name || 'Cliente',
-      subject: 'Hemos recibido tu solicitud en Codiva.dev',
-      body: 'Gracias por contactarnos. Pronto nos pondremos en contacto contigo.',
     }).catch(() => {});
 
-    const staffMail = await notifyStaff({
+    await notifyStaff({
       subject: `[Lead] ${body.company || body.name}`,
-      text: `Nuevo lead desde /cotiza\n\nNombre: ${body.name}\nEmpresa: ${body.company}\nEmail: ${body.email}\nTel: ${body.phone}\n\nVer en Ops: leads`,
+      html: templateStaffAlert(`Nuevo lead — ${body.company || body.name}`, [
+        `Nombre: ${body.name}`,
+        body.company ? `Empresa: ${body.company}` : null,
+        `Email: ${body.email}`,
+        body.phone ? `Tel: ${body.phone}` : null,
+        body.need ? `Necesidad: ${body.need}` : null,
+      ].filter(Boolean)),
     });
 
     return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });

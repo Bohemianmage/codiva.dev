@@ -2,7 +2,8 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { notifyStaff, sendConfirmationEmail } from '@/lib/ops/email';
+import { notifyStaff, sendTicketConfirmationEmail } from '@/lib/ops/email';
+import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { uploadOpsFile } from '@/lib/ops/storage';
 
@@ -111,24 +112,21 @@ export async function POST(req) {
       metadata: { source: 'form' },
     });
 
-    await sendConfirmationEmail({
+    await sendTicketConfirmationEmail({
       to: body.email,
       name: body.name,
-      subject: `Ticket recibido: ${body.issueTitle}`,
-      body: 'Hemos registrado tu solicitud de soporte. Te contactaremos pronto.',
+      ticketTitle: body.issueTitle,
     });
 
     await notifyStaff({
       subject: `[Ticket] ${body.priority} · ${body.issueTitle}`,
-      text: [
+      html: templateStaffAlert(`Ticket ${body.priority} — ${body.issueTitle}`, [
         `Empresa: ${body.company}`,
         `Reportado por: ${body.name} <${body.email}>`,
-        body.incidentTime ? `Hora: ${body.incidentTime}` : null,
+        body.incidentTime ? `Hora del incidente: ${body.incidentTime}` : null,
         body.issueDescription,
         uploadedUrls.length ? `Adjuntos: ${uploadedUrls.length}` : null,
-      ]
-        .filter(Boolean)
-        .join('\n'),
+      ].filter(Boolean)),
     });
 
     return NextResponse.json({ ok: true, ticketId: ticket.id, files: uploadedUrls }, { status: 201 });

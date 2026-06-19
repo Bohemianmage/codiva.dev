@@ -7,8 +7,40 @@ import { requireStaff } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { generateProjectSlug } from '@/lib/ops/slug';
 import { sendClientEmail } from '@/lib/ops/email';
+import {
+  templateQuoteSent,
+  templateLeadQuoteSent,
+  templatePortalInviteNewUser,
+  templatePortalInviteExistingUser,
+} from '@/lib/ops/email-templates';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { uploadOpsFile } from '@/lib/ops/storage';
+import { parseLineItemsJson } from '@/lib/ops/quote-document';
+import { ensureQuoteAccessToken, publicQuoteUrl } from '@/lib/ops/quote-tokens';
+
+function parseQuoteFormData(formData: FormData) {
+  const lineItemsRaw = String(formData.get('lineItems') || '[]');
+  let parsedLineItems: unknown = [];
+  try {
+    parsedLineItems = JSON.parse(lineItemsRaw);
+  } catch {
+    parsedLineItems = [];
+  }
+
+  return {
+    title: String(formData.get('title') || 'Propuesta comercial'),
+    serviceType: String(formData.get('serviceType') || 'Web'),
+    projectState: String(formData.get('projectState') || 'Por iniciar — pendiente de aprobación formal'),
+    scope: String(formData.get('scope') || ''),
+    deliverables: String(formData.get('deliverables') || ''),
+    considerations: String(formData.get('considerations') || ''),
+    optionalExtras: String(formData.get('optionalExtras') || ''),
+    lineItems: parseLineItemsJson(parsedLineItems),
+    totalAmount: parseFloat(String(formData.get('totalAmount') || '0')) || null,
+    currency: String(formData.get('currency') || 'MXN'),
+    validUntil: String(formData.get('validUntil') || '') || null,
+  };
+}
 
 export async function updateLeadStatus(leadId: string, status: string) {
   const { supabase, user } = await requireStaff();
@@ -22,6 +54,111 @@ export async function updateLeadStatus(leadId: string, status: string) {
     actorId: user.id,
   });
   revalidatePath('/leads');
+  revalidatePath(`/leads/${leadId}`);
+}
+
+export async function updateLeadDetails(leadId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const payload = {
+    name: String(formData.get('name') || '').trim(),
+    company: String(formData.get('company') || '').trim(),
+    email: String(formData.get('email') || '').trim(),
+    phone: String(formData.get('phone') || '').trim(),
+    need: String(formData.get('need') || ''),
+    partner_name: String(formData.get('partnerName') || '').trim() || null,
+    partner_email: String(formData.get('partnerEmail') || '').trim() || null,
+    partner_company: String(formData.get('partnerCompany') || '').trim() || null,
+    end_client_name: String(formData.get('endClientName') || '').trim() || null,
+    end_client_company: String(formData.get('endClientCompany') || '').trim() || null,
+  };
+
+  const { error } = await supabase.from('leads').update(payload).eq('id', leadId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'lead',
+    entityId: leadId,
+    action: 'updated',
+    actorId: user.id,
+  });
+
+  revalidatePath('/leads');
+  revalidatePath(`/leads/${leadId}`);
+}
+
+export async function createLeadQuote(leadId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+  const parsed = parseQuoteFormData(formData);
+
+  const { data: last } = await supabase
+    .from('quotes')
+    .select('version')
+    .eq('lead_id', leadId)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from('quotes').insert({
+    lead_id: leadId,
+    version: (last?.version ?? 0) + 1,
+    status: 'draft',
+    title: parsed.title,
+    service_type: parsed.serviceType,
+    project_state: parsed.projectState,
+    scope: parsed.scope,
+    deliverables: parsed.deliverables,
+    considerations: parsed.considerations,
+    optional_extras: parsed.optionalExtras,
+    line_items: parsed.lineItems,
+    total_amount: parsed.totalAmount,
+    currency: parsed.currency,
+    valid_until: parsed.validUntil,
+    created_by: user.id,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/leads/${leadId}`);
+}
+
+export async function sendLeadQuote(quoteId: string, leadId: string) {
+  const { supabase, user } = await requireStaff();
+  const admin = createAdminClient();
+
+  const { error } = await supabase
+    .from('quotes')
+    .update({ status: 'sent', sent_at: new Date().toISOString() })
+    .eq('id', quoteId)
+    .eq('lead_id', leadId);
+  if (error) throw new Error(error.message);
+
+  const { data: lead } = await admin.from('leads').select('*').eq('id', leadId).single();
+  if (!lead) throw new Error('Lead no encontrado');
+
+  const token = await ensureQuoteAccessToken(quoteId);
+  const quoteUrl = publicQuoteUrl(token);
+  const recipient = lead.partner_email || lead.email;
+  const subjectLabel =
+    lead.end_client_company || lead.end_client_name || lead.company || lead.name || 'Oportunidad comercial';
+
+  if (recipient) {
+    await sendClientEmail({
+      to: recipient,
+      subject: `Propuesta comercial: ${subjectLabel}`,
+      html: templateLeadQuoteSent(subjectLabel, quoteUrl, {
+        partnerName: lead.partner_name || undefined,
+        endClientLabel: lead.end_client_company || lead.end_client_name || undefined,
+      }),
+    });
+  }
+
+  await logActivity({
+    entityType: 'quote',
+    entityId: quoteId,
+    action: 'sent',
+    metadata: { leadId, recipient },
+    actorId: user.id,
+  });
+
   revalidatePath(`/leads/${leadId}`);
 }
 
@@ -89,6 +226,8 @@ export async function convertLeadToProject(leadId: string) {
     .from('leads')
     .update({ status: 'converted', converted_project_id: project.id })
     .eq('id', leadId);
+
+  await admin.from('quotes').update({ project_id: project.id, lead_id: null }).eq('lead_id', leadId);
 
   await logActivity({
     entityType: 'project',
@@ -300,7 +439,10 @@ export async function sendQuote(quoteId: string, projectId: string) {
     await sendClientEmail({
       to: email,
       subject: `Nueva cotización: ${project?.name}`,
-      html: `<p>Tienes una nueva propuesta disponible en tu portal.</p><p><a href="${opsBaseUrl()}/p/${project?.slug}/cotizacion">Ver cotización</a></p>`,
+      html: templateQuoteSent(
+        project?.name ?? 'Tu proyecto',
+        `${opsBaseUrl()}/p/${project?.slug}/cotizacion`
+      ),
     });
   }
 
@@ -346,6 +488,14 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
 
   if (found) {
     userId = found.id;
+    await sendClientEmail({
+      to: email,
+      subject: `Acceso a tu portal — ${project.name}`,
+      html: templatePortalInviteExistingUser(
+        project.name,
+        `${opsBaseUrl()}/p/${project.slug}/login`
+      ),
+    });
   } else {
     const tempPassword = crypto.randomUUID();
     const { data: created, error } = await admin.auth.admin.createUser({
@@ -359,10 +509,12 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
     await sendClientEmail({
       to: email,
       subject: `Acceso a tu portal — ${project.name}`,
-      html: `<p>Se creó tu acceso al portal del proyecto <strong>${project.name}</strong>.</p>
-        <p>URL: <a href="${opsBaseUrl()}/p/${project.slug}/login">${opsBaseUrl()}/p/${project.slug}/login</a></p>
-        <p>Email: ${email}<br/>Contraseña temporal: ${tempPassword}</p>
-        <p>Te recomendamos cambiar tu contraseña al ingresar.</p>`,
+      html: templatePortalInviteNewUser(
+        project.name,
+        email,
+        tempPassword,
+        `${opsBaseUrl()}/p/${project.slug}/login`
+      ),
     });
   }
 

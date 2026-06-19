@@ -3,6 +3,10 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendClientEmail } from '@/lib/ops/email';
+import {
+  templatePasswordRecoveryHtml,
+  templatePortalPasswordRecoveryHtml,
+} from '@/lib/ops/email-templates';
 import { opsAuthCallbackUrl, portalAuthCallbackUrl } from '@/lib/ops/auth-urls';
 
 type ResetResult = { ok: true; message: string } | { ok: false; message: string };
@@ -46,7 +50,11 @@ async function sendSupabaseRecoveryEmail(email: string, redirectTo: string): Pro
   };
 }
 
-async function sendRecoveryEmail(email: string, redirectTo: string): Promise<ResetResult> {
+async function sendRecoveryEmail(
+  email: string,
+  redirectTo: string,
+  options?: { projectName?: string }
+): Promise<ResetResult> {
   const admin = createAdminClient();
 
   const { data, error } = await admin.auth.admin.generateLink({
@@ -73,15 +81,16 @@ async function sendRecoveryEmail(email: string, redirectTo: string): Promise<Res
     return { ok: false, message: 'No se pudo generar el enlace de recuperación.' };
   }
 
+  const html = options?.projectName
+    ? templatePortalPasswordRecoveryHtml(options.projectName, link)
+    : templatePasswordRecoveryHtml(link);
+
   const mail = await sendClientEmail({
     to: email,
-    subject: 'Restablecer contraseña — Codiva Ops',
-    html: `
-      <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-      <p><a href="${link}">Haz clic aquí para crear una nueva contraseña</a></p>
-      <p>Si no solicitaste esto, ignora este correo.</p>
-      <p>— Codiva</p>
-    `,
+    subject: options?.projectName
+      ? `Restablecer acceso — ${options.projectName}`
+      : 'Restablecer contraseña — Codiva Ops',
+    html,
   });
 
   if (mail.ok) {
@@ -147,7 +156,7 @@ export async function requestPortalPasswordReset(
 
   const { data: project } = await admin
     .from('projects')
-    .select('id')
+    .select('id, name')
     .eq('slug', slug)
     .eq('client_visible', true)
     .maybeSingle();
@@ -183,7 +192,8 @@ export async function requestPortalPasswordReset(
 
   return sendRecoveryEmail(
     normalized,
-    portalAuthCallbackUrl(slug, `/p/${slug}/reset-password`)
+    portalAuthCallbackUrl(slug, `/p/${slug}/reset-password`),
+    { projectName: project.name }
   );
 }
 
