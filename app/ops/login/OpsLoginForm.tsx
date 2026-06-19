@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -7,23 +8,60 @@ import { createClient } from '@/lib/supabase/client';
 export default function OpsLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const urlError = searchParams.get('error');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  const urlErrorMessage =
+    urlError === 'not_staff'
+      ? 'Tu cuenta no tiene permisos de staff.'
+      : urlError === 'auth'
+        ? 'Enlace de acceso inválido o expirado.'
+        : '';
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
     if (authError) {
-      setMessage('Credenciales inválidas o sin acceso de staff.');
+      const msg =
+        authError.message === 'Invalid login credentials'
+          ? 'Email o contraseña incorrectos.'
+          : authError.message;
+      setMessage(msg);
       setLoading(false);
       return;
     }
+
+    if (!data.user) {
+      setMessage('No se pudo iniciar sesión.');
+      setLoading(false);
+      return;
+    }
+
+    const { data: staff, error: staffError } = await supabase
+      .from('staff_profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .eq('active', true)
+      .maybeSingle();
+
+    if (staffError || !staff) {
+      await supabase.auth.signOut();
+      setMessage('Tu cuenta no tiene permisos de staff. Usa el email registrado en el equipo.');
+      setLoading(false);
+      return;
+    }
+
     router.push('/dashboard');
     router.refresh();
   }
@@ -35,9 +73,9 @@ export default function OpsLoginForm() {
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">Iniciar sesión</h1>
         <p className="mt-1 text-sm text-zinc-600">Acceso para el equipo Codiva</p>
 
-        {(error === 'not_staff' || message) && (
+        {(urlErrorMessage || message) && (
           <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {message || 'Tu cuenta no tiene permisos de staff.'}
+            {message || urlErrorMessage}
           </p>
         )}
 
@@ -47,16 +85,23 @@ export default function OpsLoginForm() {
             <input
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:ring-2 focus:ring-codiva-primary/30"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Contraseña</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-sm font-medium">Contraseña</label>
+              <Link href="/forgot-password" className="text-xs text-codiva-primary hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:ring-2 focus:ring-codiva-primary/30"
