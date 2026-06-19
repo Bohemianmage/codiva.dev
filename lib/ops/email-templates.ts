@@ -71,7 +71,7 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};">
               <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">
-                ${footerNote ? escapeHtml(footerNote) : 'Codiva — software a la medida y productos digitales'}
+                ${footerNote ? escapeHtml(footerNote) : 'Codiva - software a la medida y productos digitales'}
               </p>
               <p style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;">
                 <a href="${marketingBaseUrl()}" style="color:${BRAND.primary};text-decoration:none;">codiva.dev</a>
@@ -214,7 +214,7 @@ export function templateLeadQuoteSent(
       <p style="margin:0;">Puedes consultar el detalle completo en el enlace siguiente. Si tienes dudas, responde a este correo.</p>
     `,
     cta: { label: 'Ver propuesta', href: quoteUrl },
-    footerNote: 'Documento informativo — consulta únicamente.',
+    footerNote: 'Documento informativo - consulta únicamente.',
   });
 }
 
@@ -231,7 +231,7 @@ export function templateStaffAlert(title: string, lines: string[]): string {
     title,
     bodyHtml: rows,
     cta: { label: 'Abrir Codiva Ops', href: `${opsBaseUrl()}/dashboard` },
-    footerNote: 'Notificación interna — Codiva Ops',
+    footerNote: 'Notificación interna - Codiva Ops',
   });
 }
 

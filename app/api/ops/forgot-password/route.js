@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requestStaffPasswordReset } from '@/lib/ops/password-reset';
 
-/** POST /api/ops/forgot-password — staff password reset (JSON) */
+/** POST /api/ops/forgot-password - staff password reset (JSON) */
 export async function POST(request) {
   try {
     const { email } = await request.json();

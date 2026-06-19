@@ -1,6 +1,6 @@
 /**
  * Por cliente: `tech` son tecnologías destacadas asociadas al trabajo (portfolio),
- * no un inventario exhaustivo del stack en producción — validar con el cliente si se publicitan como “todo lo que usa”.
+ * no un inventario exhaustivo del stack en producción - validar con el cliente si se publicitan como "todo lo que usa".
  */
 const casesMeta = [
   {

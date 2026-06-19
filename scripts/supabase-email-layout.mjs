@@ -18,7 +18,7 @@ export function buildCodivaEmail({
   paragraphs = [],
   ctaLabel,
   disclaimer,
-  footerNote = 'Codiva — software a la medida y productos digitales',
+  footerNote = 'Codiva - software a la medida y productos digitales',
 }) {
   const previewBlock = preview
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preview}</div>`

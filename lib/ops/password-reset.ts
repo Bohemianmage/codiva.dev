@@ -88,8 +88,8 @@ async function sendRecoveryEmail(
   const mail = await sendClientEmail({
     to: email,
     subject: options?.projectName
-      ? `Restablecer acceso — ${options.projectName}`
-      : 'Restablecer contraseña — Codiva Ops',
+      ? `Restablecer acceso - ${options.projectName}`
+      : 'Restablecer contraseña - Codiva Ops',
     html,
   });
 

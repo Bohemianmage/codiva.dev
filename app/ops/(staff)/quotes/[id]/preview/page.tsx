@@ -70,7 +70,7 @@ export default async function QuotePreviewPage({
 
       {isDraft && (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Borrador — así se verá la propuesta antes de enviarla.
+          Borrador - así se verá la propuesta antes de enviarla.
         </p>
       )}
 

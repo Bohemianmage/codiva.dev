@@ -3,7 +3,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { createProject } from '@/lib/ops/actions';
-import { PROJECT_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export default async function ProjectsPage() {
@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
                   </Link>
                   <div className="text-xs text-zinc-500">{p.progress_percent}% avance</div>
                 </td>
-                <td className="px-4 py-3">{(p.organizations as { name?: string })?.name || '—'}</td>
+                <td className="px-4 py-3">{(p.organizations as { name?: string })?.name || EMPTY_LABEL}</td>
                 <td className="px-4 py-3">
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
                 </td>

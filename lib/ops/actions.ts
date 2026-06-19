@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireStaff } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
-import { generateProjectSlug } from '@/lib/ops/slug';
+import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { sendClientEmail, notifyStaff } from '@/lib/ops/email';
 import {
   templateQuoteSent,
@@ -31,7 +31,7 @@ function parseQuoteFormData(formData: FormData) {
   return {
     title: String(formData.get('title') || 'Propuesta comercial'),
     serviceType: String(formData.get('serviceType') || 'Web'),
-    projectState: String(formData.get('projectState') || 'Por iniciar — pendiente de aprobación formal'),
+    projectState: String(formData.get('projectState') || DEFAULT_PROJECT_STATE),
     scope: String(formData.get('scope') || ''),
     deliverables: String(formData.get('deliverables') || ''),
     considerations: String(formData.get('considerations') || ''),
@@ -90,7 +90,7 @@ export async function createLead(formData: FormData) {
 
   await notifyStaff({
     subject: `[Lead] ${company || name}`,
-    html: templateStaffAlert(`Lead creado en Ops — ${company || name}`, [
+    html: templateStaffAlert(`Lead creado en Ops - ${company || name}`, [
       `Origen: ${source}`,
       `Nombre: ${name}`,
       `Email: ${email}`,
@@ -321,7 +321,7 @@ export async function convertLeadToProject(leadId: string) {
     .insert({
       organization_id: org.id,
       lead_id: leadId,
-      name: `${lead.company || lead.name} — Proyecto`,
+      name: `${lead.company || lead.name} - Proyecto`,
       slug,
       status: 'quoting',
       description: lead.need || '',
@@ -598,7 +598,7 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
     userId = found.id;
     await sendClientEmail({
       to: email,
-      subject: `Acceso a tu portal — ${project.name}`,
+      subject: `Acceso a tu portal - ${project.name}`,
       html: templatePortalInviteExistingUser(
         project.name,
         `${opsBaseUrl()}/p/${project.slug}/login`
@@ -616,7 +616,7 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
 
     await sendClientEmail({
       to: email,
-      subject: `Acceso a tu portal — ${project.name}`,
+      subject: `Acceso a tu portal - ${project.name}`,
       html: templatePortalInviteNewUser(
         project.name,
         email,

@@ -3,7 +3,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { createLead } from '@/lib/ops/actions';
-import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, formatDate } from '@/lib/ops/labels';
+import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export default async function LeadsPage() {
@@ -95,7 +95,7 @@ export default async function LeadsPage() {
               <tr key={lead.id} className="border-t border-zinc-100 hover:bg-zinc-50">
                 <td className="px-4 py-3">
                   <Link href={`/leads/${lead.id}`} className="font-medium hover:text-codiva-primary">
-                    {lead.end_client_company || lead.company || lead.partner_company || '—'}
+                    {lead.end_client_company || lead.company || lead.partner_company || EMPTY_LABEL}
                   </Link>
                   {lead.partner_company && lead.company && lead.partner_company !== lead.company && (
                     <div className="text-xs text-zinc-500">vía {lead.partner_company}</div>

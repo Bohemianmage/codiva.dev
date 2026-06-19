@@ -174,7 +174,7 @@ export default async function ProjectDetailPage({
         <div className="space-y-6">
           <OpsQuoteForm
             title="Nueva cotización"
-            defaultTitle={`Propuesta — ${project.name}`}
+            defaultTitle={`Propuesta - ${project.name}`}
             action={async (formData) => {
               'use server';
               await createQuote(id, formData);

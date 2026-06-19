@@ -19,7 +19,7 @@ export default async function PublicQuotePage({
   return (
     <div className="min-h-screen bg-zinc-100">
       <div className="border-b border-zinc-200 bg-white px-4 py-3 text-center text-xs text-zinc-500">
-        Propuesta comercial Codiva — solo consulta
+        Propuesta comercial Codiva - solo consulta
       </div>
       <iframe
         title="Cotización Codiva"

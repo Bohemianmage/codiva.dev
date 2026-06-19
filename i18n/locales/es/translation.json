@@ -1,6 +1,6 @@
 {
   "title": "Codiva.dev | Software a la medida y productos digitales",
-  "description": "Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación — de la idea al producto en producción.",
+  "description": "Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación - de la idea al producto en producción.",
   "nav": {
     "about": "Nosotros",
     "services": "Servicios",
@@ -39,7 +39,7 @@
   },
   "about": {
     "title": "Software a la medida que opera negocios reales",
-    "paragraph1": "En Codiva.dev desarrollamos software a la medida — no plantillas ni paquetes genéricos — y lo llevamos a producción: plataformas LegalTech, ERP para construcción, operaciones hoteleras, e-commerce y sitios corporativos bilingües, con pagos, roles de usuario, paneles admin y soporte continuo.",
+    "paragraph1": "En Codiva.dev desarrollamos software a la medida - no plantillas ni paquetes genéricos - y lo llevamos a producción: plataformas LegalTech, ERP para construcción, operaciones hoteleras, e-commerce y sitios corporativos bilingües, con pagos, roles de usuario, paneles admin y soporte continuo.",
     "paragraph2": "Cada proyecto parte de cómo opera tu negocio: diseñamos arquitectura sostenible, integramos Stripe, Supabase y APIs externas, y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
   },
   "services": {
@@ -107,7 +107,7 @@
   },
   "cases": {
     "title": "Casos de Éxito",
-    "description": "Más de una docena de productos en producción — LegalTech, hospitalidad, construcción, retail y sitios corporativos. Estas son algunas de las marcas con las que trabajamos y las tecnologías que usamos para llevarlas a producción.",
+    "description": "Más de una docena de productos en producción - LegalTech, hospitalidad, construcción, retail y sitios corporativos. Estas son algunas de las marcas con las que trabajamos y las tecnologías que usamos para llevarlas a producción.",
     "list": [
       {
         "name": "Inquilia",

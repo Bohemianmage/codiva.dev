@@ -1,5 +1,5 @@
 import { escapeHtml } from '@/utils/escapeHtml';
-import { formatCurrency, formatDate } from '@/lib/ops/labels';
+import { formatCurrency, formatDate, EMPTY_LABEL, DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { serviceTypeHeading } from '@/lib/ops/quote-document/catalog';
 
 export type QuoteLineItem = {
@@ -87,12 +87,12 @@ function lineItemsBlock(items: QuoteLineItem[], currency: string, totalAmount?: 
       const detail = item.detail
         ? `<div style="margin-top:4px;font-size:13px;color:${BRAND.muted};">${escapeHtml(item.detail)}</div>`
         : '';
-      const hours = item.hours != null ? `${item.hours} h` : '—';
+      const hours = item.hours != null ? `${item.hours} h` : EMPTY_LABEL;
       const rate =
         item.rate != null
           ? `${formatCurrency(item.rate, currency)}${item.rateLabel ? ` ${escapeHtml(item.rateLabel)}` : ''}`
-          : '—';
-      const total = item.total != null ? formatCurrency(item.total, currency) : '—';
+          : EMPTY_LABEL;
+      const total = item.total != null ? formatCurrency(item.total, currency) : EMPTY_LABEL;
 
       return `
         <tr style="border-top:1px solid ${BRAND.border};">
@@ -156,7 +156,7 @@ export function renderQuoteDocumentHtml(data: QuoteDocumentData): string {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${escapeHtml(data.projectName)} — Cotización Codiva</title>
+  <title>${escapeHtml(data.projectName)} - Cotización Codiva</title>
   <style>@media print { body { background:#fff!important; } .page { box-shadow:none!important; margin:0!important; } }</style>
 </head>
 <body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:Inter,Segoe UI,Arial,sans-serif;">
@@ -179,7 +179,7 @@ export function renderQuoteDocumentHtml(data: QuoteDocumentData): string {
         ${metaRow('Estado del proyecto', data.projectState)}
         ${validUntilBlock}
       </div>
-      <p style="margin:0;font-size:13px;color:${BRAND.muted};">Codiva.dev — Soluciones digitales a la medida</p>
+      <p style="margin:0;font-size:13px;color:${BRAND.muted};">Codiva.dev - Soluciones digitales a la medida</p>
       <p style="margin:4px 0 0;font-size:13px;"><a href="mailto:hello@codiva.dev" style="color:${BRAND.primary};text-decoration:none;">hello@codiva.dev</a></p>
       ${section('Alcance del servicio', data.scope)}
       ${data.deliverables ? section('Entregables', data.deliverables) : ''}
@@ -249,7 +249,7 @@ export function quoteRowToDocumentData(
     clientName: context.clientName,
     issuedAt: quote.created_at || new Date().toISOString(),
     serviceDescription: context.serviceDescription || quote.title,
-    projectState: quote.project_state || 'Por iniciar — pendiente de aprobación formal',
+    projectState: quote.project_state || DEFAULT_PROJECT_STATE,
     scope: quote.scope || '',
     deliverables: quote.deliverables || '',
     lineItems: parseLineItemsJson(quote.line_items),

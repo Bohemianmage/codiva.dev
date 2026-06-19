@@ -69,5 +69,5 @@ export function serviceTypeHeading(serviceType: string, custom?: string): string
   const key = serviceType.trim();
   if (DEFAULT_SERVICE_TYPE_LABELS[key]) return DEFAULT_SERVICE_TYPE_LABELS[key];
   if (key.toUpperCase().startsWith('COTIZACIÓN')) return key;
-  return `COTIZACIÓN DE SERVICIOS — ${key || 'DESARROLLO A LA MEDIDA'}`;
+  return `COTIZACION DE SERVICIOS - ${key || 'DESARROLLO A LA MEDIDA'}`;
 }

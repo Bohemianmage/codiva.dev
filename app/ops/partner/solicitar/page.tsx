@@ -2,7 +2,7 @@ import PartnerRequestForm from '@/components/ops/PartnerRequestForm';
 import { marketingBaseUrl } from '@/lib/ops/host';
 
 export const metadata = {
-  title: 'Solicitar cotización — Partners Codiva',
+  title: 'Solicitar cotización - Partners Codiva',
   robots: { index: false, follow: false },
 };
 

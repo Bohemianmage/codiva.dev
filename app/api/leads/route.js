@@ -51,7 +51,7 @@ export async function POST(request) {
 
     await notifyStaff({
       subject: `[Lead] ${body.company || body.name}`,
-      html: templateStaffAlert(`Nuevo lead — ${body.company || body.name}`, [
+      html: templateStaffAlert(`Nuevo lead - ${body.company || body.name}`, [
         `Nombre: ${body.name}`,
         body.company ? `Empresa: ${body.company}` : null,
         `Email: ${body.email}`,

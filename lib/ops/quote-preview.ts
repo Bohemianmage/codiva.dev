@@ -46,7 +46,7 @@ export function buildQuoteDocumentData(
     project?.name ||
     quote.title;
 
-  const projectName = project?.name || quote.title || `Propuesta — ${clientLabel}`;
+  const projectName = project?.name || quote.title || `Propuesta - ${clientLabel}`;
 
   const clientName =
     lead?.end_client_name ||

@@ -1,3 +1,5 @@
+import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
+
 export const DEFAULT_QUOTE_LINE_ITEMS = JSON.stringify(
   [
     {
@@ -47,7 +49,7 @@ export default function OpsQuoteForm({
         </select>
         <input
           name="projectState"
-          defaultValue="Por iniciar — pendiente de aprobación formal"
+          defaultValue={DEFAULT_PROJECT_STATE}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
       </div>

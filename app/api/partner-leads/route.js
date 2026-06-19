@@ -57,7 +57,7 @@ export async function POST(request) {
 
     await notifyStaff({
       subject: `[Partner] ${partnerCompany}${body.endClientCompany ? ` → ${body.endClientCompany}` : ''}`,
-      html: templateStaffAlert(`Nueva solicitud de partner — ${partnerCompany}`, [
+      html: templateStaffAlert(`Nueva solicitud de partner - ${partnerCompany}`, [
         `Intermediario: ${partnerName}`,
         `Email: ${partnerEmail}`,
         body.endClientCompany ? `Cliente final: ${body.endClientCompany}` : null,

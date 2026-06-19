@@ -1,5 +1,6 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import { requireStaff } from '@/lib/ops/auth';
+import { EMPTY_LABEL } from '@/lib/ops/labels';
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Administrador',
@@ -23,7 +24,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <dt className="text-zinc-500">Nombre</dt>
-              <dd>{staff.full_name || '—'}</dd>
+              <dd>{staff.full_name || EMPTY_LABEL}</dd>
             </div>
             <div>
               <dt className="text-zinc-500">Rol</dt>

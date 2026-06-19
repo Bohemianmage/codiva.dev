@@ -120,7 +120,7 @@ export async function POST(req) {
 
     await notifyStaff({
       subject: `[Ticket] ${body.priority} · ${body.issueTitle}`,
-      html: templateStaffAlert(`Ticket ${body.priority} — ${body.issueTitle}`, [
+      html: templateStaffAlert(`Ticket ${body.priority} - ${body.issueTitle}`, [
         `Empresa: ${body.company}`,
         `Reportado por: ${body.name} <${body.email}>`,
         body.incidentTime ? `Hora del incidente: ${body.incidentTime}` : null,

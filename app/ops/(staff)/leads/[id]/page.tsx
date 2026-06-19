@@ -10,7 +10,7 @@ import {
   createLeadQuote,
   sendLeadQuote,
 } from '@/lib/ops/actions';
-import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency } from '@/lib/ops/labels';
+import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency, EMPTY_LABEL } from '@/lib/ops/labels';
 import { publicQuoteUrl } from '@/lib/ops/quote-tokens';
 import { createAdminClient } from '@/lib/supabase/admin';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
@@ -186,7 +186,7 @@ export default async function LeadDetailPage({
               <dl className="space-y-2 text-sm">
                 <div><dt className="text-zinc-500">Presupuesto referencia</dt><dd>{formatCurrency(lead.budget)}</dd></div>
                 <div><dt className="text-zinc-500">Entrega deseada</dt><dd>{formatDate(lead.delivery_date)}</dd></div>
-                <div><dt className="text-zinc-500">Sitio referencia</dt><dd>{lead.reference_site || '—'}</dd></div>
+                <div><dt className="text-zinc-500">Sitio referencia</dt><dd>{lead.reference_site || EMPTY_LABEL}</dd></div>
               </dl>
             </section>
             <section className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -209,7 +209,7 @@ export default async function LeadDetailPage({
         <div className="space-y-6">
           <OpsQuoteForm
             title="Nueva cotización (pre-proyecto)"
-            defaultTitle={`Propuesta — ${displayTitle}`}
+            defaultTitle={`Propuesta - ${displayTitle}`}
             action={async (formData) => {
               'use server';
               await createLeadQuote(id, formData);

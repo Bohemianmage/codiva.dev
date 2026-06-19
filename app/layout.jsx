@@ -11,7 +11,7 @@ const satoshi = Plus_Jakarta_Sans({
 
 const siteTitle = 'Codiva.dev | Software a la medida y productos digitales';
 const siteDescription =
-  'Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación — de la idea al producto en producción.';
+  'Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación - de la idea al producto en producción.';
 
 export const metadata = {
   metadataBase: new URL('https://www.codiva.dev'),

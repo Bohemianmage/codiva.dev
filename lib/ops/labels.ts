@@ -52,8 +52,12 @@ export const INBOX_STATUS_LABELS: Record<string, string> = {
   archived: 'Archivado',
 };
 
+export const EMPTY_LABEL = '-';
+
+export const DEFAULT_PROJECT_STATE = 'Por iniciar - pendiente de aprobación formal';
+
 export function formatDate(date: string | null | undefined): string {
-  if (!date) return '—';
+  if (!date) return EMPTY_LABEL;
   return new Date(date).toLocaleDateString('es-MX', {
     day: 'numeric',
     month: 'short',
@@ -62,6 +66,6 @@ export function formatDate(date: string | null | undefined): string {
 }
 
 export function formatCurrency(amount: number | null | undefined, currency = 'USD'): string {
-  if (amount == null) return '—';
+  if (amount == null) return EMPTY_LABEL;
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(amount);
 }
