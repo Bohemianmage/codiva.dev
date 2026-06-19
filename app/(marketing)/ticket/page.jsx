@@ -2,8 +2,7 @@
 
 /**
  * i18n: todos los textos provienen de translation.json vía react-i18next.
- * Nota: los valores de prioridad se mantienen como 'Alta' | 'Media' | 'Baja'
- * para que sigan cuadrando con Notion, pero las etiquetas se traducen.
+ * Prioridad: 'Alta' | 'Media' | 'Baja' (valores internos en Codiva Ops).
  */
 
 import { useState } from 'react';
@@ -13,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 
 const PRIMARY = '#104E4E';
 
-/* ---------- Field (fuera de TicketPage) ---------- */
 function Field({ formik, label, name, as = 'input', id, ...rest }) {
   const inputId = id || name;
 
@@ -62,16 +60,14 @@ function Field({ formik, label, name, as = 'input', id, ...rest }) {
     </div>
   );
 }
-/* -------------------------------------------------- */
 
 export default function TicketPage() {
   const { t } = useTranslation();
 
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [files, setFiles] = useState([]); // archivos seleccionados
+  const [files, setFiles] = useState([]);
 
-  // Validación con textos desde i18n
   const validationSchema = Yup.object({
     name: Yup.string().required(t('common.validation.required')),
     email: Yup.string()
@@ -93,7 +89,7 @@ export default function TicketPage() {
       issueTitle: '',
       issueDescription: '',
       priority: 'Media',
-      incidentTime: '', // HH:mm opcional
+      incidentTime: '',
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -119,7 +115,6 @@ export default function TicketPage() {
     },
   });
 
-  // Pantalla de éxito
   if (submitted) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
@@ -140,7 +135,6 @@ export default function TicketPage() {
     );
   }
 
-  // Formulario
   return (
     <main className="min-h-[80vh] flex items-center justify-center bg-[#F9FAFB] px-4 py-10 pt-24">
       <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-8">
@@ -157,21 +151,14 @@ export default function TicketPage() {
             <Field formik={formik} label={t('common.fields.email')} name="email" type="email" />
             <Field formik={formik} label={t('fields.company')} name="company" type="text" />
             <Field formik={formik} label={t('ticket.fields.priority')} name="priority" as="select">
-              {/* Valores internos fijos para Notion; etiquetas traducidas */}
               <option value="Alta">{t('ticket.priority.high')}</option>
               <option value="Media">{t('ticket.priority.medium')}</option>
               <option value="Baja">{t('ticket.priority.low')}</option>
             </Field>
           </div>
 
-          <Field
-            formik={formik}
-            label={t('ticket.fields.issueTitle')}
-            name="issueTitle"
-            type="text"
-          />
+          <Field formik={formik} label={t('ticket.fields.issueTitle')} name="issueTitle" type="text" />
 
-          {/* Hora del incidente (opcional) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field
               formik={formik}
@@ -190,7 +177,6 @@ export default function TicketPage() {
             placeholder={t('ticket.hints.textarea')}
           />
 
-          {/* Adjuntos */}
           <div>
             <label className="block mb-1 text-sm font-medium text-zinc-800">
               {t('ticket.fields.attachments')}
@@ -217,7 +203,6 @@ export default function TicketPage() {
               className="w-full rounded-lg border border-zinc-300 px-4 py-2"
             />
 
-            {/* Lista de archivos con botón Quitar */}
             {files.length > 0 && (
               <div className="mt-2">
                 <ul className="space-y-2">

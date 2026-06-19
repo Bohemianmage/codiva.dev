@@ -54,7 +54,7 @@ export default function Contact() {
           onSubmit={async (values, { resetForm, setSubmitting }) => {
             const toastId = toast.loading(t('common.status.loading'));
             try {
-              const response = await fetch('/api/send-contact', {
+              const response = await fetch('/api/inbox', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(values),

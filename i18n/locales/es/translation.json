@@ -1,6 +1,6 @@
 {
-  "title": "Codiva.dev | Desarrollo web personalizado y soluciones digitales",
-  "description": "Expertos en sitios web, plataformas SaaS y sistemas a medida. En Codiva.dev convertimos ideas complejas en tecnología clara, eficiente y lista para escalar.",
+  "title": "Codiva.dev | Software a la medida y productos digitales",
+  "description": "Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación — de la idea al producto en producción.",
   "nav": {
     "about": "Nosotros",
     "services": "Servicios",
@@ -32,22 +32,22 @@
     }
   },
   "hero": {
-    "cleanCode": "Código limpio.",
-    "customTech": "Tecnología personalizada.",
+    "cleanCode": "Software a la medida.",
+    "customTech": "Hecho para tu operación.",
     "withoutNoise": "Sin burocracia, sin complicaciones.",
     "viewServices": "Ver servicios"
   },
   "about": {
-    "title": "Transformamos ideas en soluciones digitales escalables",
-    "paragraph1": "En Codiva.dev, cerramos la brecha entre conceptos complejos y una ejecución técnica impecable. Ayudamos a startups, equipos y fundadores a convertir su visión en productos web funcionales, modernos y seguros. Desde el prototipo hasta el despliegue final, brindamos claridad técnica para cada etapa del desarrollo.",
-    "paragraph2": "No solo desarrollamos: trabajamos contigo para construir y evolucionar productos digitales con impacto real. Ya sea que partas de cero o necesites mejorar lo que ya tienes en producción, Codiva.dev aporta ejecución técnica clara, ritmo sostenible y una base sólida para seguir creciendo."
+    "title": "Software a la medida que opera negocios reales",
+    "paragraph1": "En Codiva.dev desarrollamos software a la medida — no plantillas ni paquetes genéricos — y lo llevamos a producción: plataformas LegalTech, ERP para construcción, operaciones hoteleras, e-commerce y sitios corporativos bilingües, con pagos, roles de usuario, paneles admin y soporte continuo.",
+    "paragraph2": "Cada proyecto parte de cómo opera tu negocio: diseñamos arquitectura sostenible, integramos Stripe, Supabase y APIs externas, y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
   },
   "services": {
     "title": "Servicios",
     "list": [
       {
         "title": "Esenciales Web",
-        "description": "Desarrollo de sitios informativos, landings y branding digital responsive.",
+        "description": "Sitios corporativos, landings y presencia digital responsive para marcas industriales, inmobiliarias y servicios profesionales.",
         "badge": "",
         "details": [
           "Diseño personalizado adaptable a móviles",
@@ -66,14 +66,14 @@
       },
       {
         "title": "Aplicaciones y Sistemas",
-        "description": "Apps, plataformas web y sistemas backend a medida para startups y empresas.",
-        "badge": "Ideal para MVPs",
+        "description": "Software a la medida para operaciones reales: plataformas SaaS, ERP verticales, marketplaces y sistemas backend para startups y empresas.",
+        "badge": "Ideal para MVPs y vertical SaaS",
         "details": [
           "Frontend y backend personalizados",
+          "Roles de usuario y paneles administrativos",
           "Automatización de lógica de negocio",
-          "Manejo seguro de archivos y datos sensibles",
           "Integración con Stripe, mapas y servicios externos",
-          "Dashboard administrativo opcional"
+          "Manejo seguro de archivos y datos sensibles"
         ],
         "extras": [
           "Escalabilidad / arquitectura avanzada",
@@ -85,7 +85,7 @@
       },
       {
         "title": "Evolución y soporte continuo",
-        "description": "Mejoras, correcciones y nuevas funciones sobre lo que ya está en producción: reservas, pagos, paneles y más.",
+        "description": "Mejoras, correcciones y nuevas funciones sobre plataformas en producción: reservas, pagos, CRM, inventario y más.",
         "badge": "",
         "details": [
           "Priorización de backlog y entregas por sprint o mes",
@@ -107,23 +107,35 @@
   },
   "cases": {
     "title": "Casos de Éxito",
-    "description": "Estas son algunas de las marcas que confían en nosotros y algunas de las tecnologías que utilizamos para desarrollarlas.",
+    "description": "Más de una docena de productos en producción — LegalTech, hospitalidad, construcción, retail y sitios corporativos. Estas son algunas de las marcas con las que trabajamos y las tecnologías que usamos para llevarlas a producción.",
     "list": [
       {
         "name": "Inquilia",
-        "description": "Aplicación web progresiva centrada en privacidad. Carga y encriptado de documentos con AES-256, almacenamiento en Supabase. Rápida, intuitiva y segura."
+        "description": "Plataforma LegalTech para arrendamiento en México: dictamen legal, contratos digitales, CRM completo y facturación con Stripe."
       },
       {
         "name": "CD648",
-        "description": "Sistema de reservas en línea para hotel boutique. Gestión de disponibilidad en tiempo real, pagos integrados y conexión con Google Maps."
+        "description": "Sistema de reservas para hotel boutique. Disponibilidad en tiempo real, pagos con Stripe, mapa de ubicación y PWA instalable."
       },
       {
         "name": "Quimialcla",
-        "description": "Sitio web corporativo para empresa de soluciones químicas. Comunicación visual clara, catálogo eficiente y enfoque en estándares de calidad."
+        "description": "Sitio corporativo bilingüe para empresa de tratamiento de agua. Catálogo de productos, sectores PTAR y contacto directo."
+      },
+      {
+        "name": "Morningstar",
+        "description": "E-commerce de bienestar con rutas espirituales, checkout con Stripe, panel admin y experiencia bilingüe ES/EN."
+      },
+      {
+        "name": "AMIDA",
+        "description": "Sitio corporativo para firma de arquitectura e ingeniería. Galería de proyectos, servicios y contacto bilingüe."
+      },
+      {
+        "name": "Suitable",
+        "description": "Plataforma SaaS de operaciones hoteleras: reservas, limpieza, mantenimiento, inventario y control de accesos."
       },
       {
         "name": "YOU. Soluciones Inmobiliarias",
-        "description": "Sitio web para marca inmobiliaria: propiedades, contacto y presencia digital clara, con experiencia fluida en escritorio y móvil."
+        "description": "Portal inmobiliario con catálogo EasyBroker, mapas, agenda de visitas, CMS inline y recordatorios automatizados."
       }
     ]
   },

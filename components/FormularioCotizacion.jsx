@@ -43,7 +43,7 @@ export default function FormularioCotizacion() {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        const res = await fetch('/api/sendLead', {
+        const res = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(values),

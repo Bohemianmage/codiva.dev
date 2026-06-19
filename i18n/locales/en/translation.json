@@ -1,6 +1,6 @@
 {
-  "title": "Codiva.dev | Custom web development and digital solutions",
-  "description": "We build tailored websites, SaaS platforms, and scalable systems. Codiva.dev transforms complex ideas into secure, efficient, and growth-ready tech.",
+  "title": "Codiva.dev | Custom software and digital products",
+  "description": "Custom software in Mexico: SaaS platforms, vertical operating systems, e-commerce, and corporate sites. Every project is shaped around how your business runs — from idea to production.",
   "nav": {
     "about": "About us",
     "services": "Services",
@@ -32,22 +32,22 @@
     }
   },
   "hero": {
-    "cleanCode": "Clean code.",
-    "customTech": "Custom tech.",
+    "cleanCode": "Custom software.",
+    "customTech": "Built around your business.",
     "withoutNoise": "No bureaucracy, no complications.",
     "viewServices": "View services"
   },
   "about": {
-    "title": "We turn ideas into scalable digital solutions",
-    "paragraph1": "At Codiva.dev, we bridge the gap between technical complexity and real-world execution. We help startups, founders, and teams bring ambitious ideas to life through secure, structured, and future-proof products.",
-    "paragraph2": "We’re more than just developers — we work with you to build and evolve digital products that ship. Whether you’re starting from scratch or improving what’s already live, Codiva.dev brings clear execution, a sustainable pace, and a solid foundation to keep growing."
+    "title": "Custom software that runs real businesses",
+    "paragraph1": "At Codiva.dev we build custom software — not templates or generic packages — and ship it to production: LegalTech platforms, construction ERPs, hospitality operations, e-commerce, and bilingual corporate sites, with payments, user roles, admin panels, and ongoing support.",
+    "paragraph2": "Every project starts from how your business operates: we design sustainable architecture, integrate Stripe, Supabase, and external APIs, and deliver at a clear pace. Whether it's your first launch or evolving what's already live, Codiva.dev works with you through direct communication with the people writing the code."
   },
   "services": {
     "title": "Our Services",
     "list": [
       {
         "title": "Web Essentials",
-        "description": "Informational websites, landing pages, and responsive branding.",
+        "description": "Corporate sites, landing pages, and responsive digital presence for industrial brands, real estate, and professional services.",
         "badge": "",
         "details": [
           "Custom responsive design",
@@ -66,14 +66,14 @@
       },
       {
         "title": "Apps & Systems",
-        "description": "Web apps, SaaS platforms, and tailored backend systems.",
-        "badge": "Ideal for MVPs",
+        "description": "Custom software for real operations: SaaS platforms, vertical ERPs, marketplaces, and tailored backend systems for startups and companies.",
+        "badge": "Ideal for MVPs & vertical SaaS",
         "details": [
           "Custom frontend and backend",
+          "User roles and admin panels",
           "Business logic automation",
-          "Secure file and data management",
           "Integration with Stripe, maps, and external services",
-          "Optional admin dashboard"
+          "Secure file and data management"
         ],
         "extras": [
           "Advanced scalability / architecture",
@@ -85,7 +85,7 @@
       },
       {
         "title": "Continuous improvement & support",
-        "description": "Fixes, enhancements, and new capabilities on what’s already in production: bookings, payments, dashboards, and more.",
+        "description": "Fixes, enhancements, and new capabilities on live platforms: bookings, payments, CRM, inventory, and more.",
         "badge": "",
         "details": [
           "Backlog prioritization and monthly or sprint-based delivery",
@@ -107,23 +107,35 @@
   },
   "cases": {
     "title": "Success stories",
-    "description": "These are some of the brands that trust us and some of the technologies that we used to develop their solutions.",
+    "description": "Over a dozen products in production — LegalTech, hospitality, construction, retail, and corporate sites. These are some of the brands we work with and the technologies we use to ship them.",
     "list": [
       {
         "name": "Inquilia",
-        "description": "Privacy-focused web application. AES-256 encrypted document upload with Supabase storage. Fast, intuitive, and secure."
+        "description": "LegalTech rental platform for Mexico: legal screening, digital contracts, full CRM, and Stripe billing."
       },
       {
         "name": "CD648",
-        "description": "Online reservation system for a boutique hotel. Real-time availability, integrated payments, and Google Maps connectivity."
+        "description": "Boutique hotel booking system. Real-time availability, Stripe payments, location map, and installable PWA."
       },
       {
         "name": "Quimialcla",
-        "description": "Corporate website for a chemical solutions company. Clear visual communication, efficient catalog, and quality standards focus."
+        "description": "Bilingual corporate site for a water treatment company. Product catalog, WWTP sectors, and direct contact."
+      },
+      {
+        "name": "Morningstar",
+        "description": "Wellness e-commerce with spiritual paths, Stripe checkout, admin panel, and bilingual ES/EN experience."
+      },
+      {
+        "name": "AMIDA",
+        "description": "Corporate site for an architecture and engineering firm. Project gallery, services, and bilingual contact."
+      },
+      {
+        "name": "Suitable",
+        "description": "Hospitality operations SaaS: reservations, cleaning, maintenance, inventory, and access control."
       },
       {
         "name": "YOU. Soluciones Inmobiliarias",
-        "description": "Real estate brand website: listings, contact, and a clear digital presence with a smooth desktop and mobile experience."
+        "description": "Real estate portal with EasyBroker catalog, maps, visit scheduling, inline CMS, and automated reminders."
       }
     ]
   },
@@ -205,34 +217,34 @@
     "success": "Thank you for your request!",
     "error": "There was an error sending. Please try again."
   },
-"ticket": {
-  "title": "Report a ticket",
-  "subtitle": "Include steps, URLs, and attach screenshots if relevant.",
-  "fields": {
-    "priority": "Priority",
-    "issueTitle": "Ticket title",
-    "incidentTime": "Incident time (optional)",
-    "issueDescription": "Problem description",
-    "attachments": "Attachments (optional)"
-  },
-  "priority": {
-    "high": "High",
-    "medium": "Medium",
-    "low": "Low"
-  },
-  "buttons": {
-    "submit": "Send ticket",
-    "remove": "Remove",
-    "removeAll": "Remove all",
-    "new": "Create another ticket"
-  },
-  "status": {
-    "submittedTitle": "Ticket received",
-    "submittedMsg": "We have received your report."
-  },
-  "hints": {
-    "attachments": "Images and documents accepted. Max ~10MB per file.",
-    "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…"
+  "ticket": {
+    "title": "Report a ticket",
+    "subtitle": "Include steps, URLs, and attach screenshots if relevant.",
+    "fields": {
+      "priority": "Priority",
+      "issueTitle": "Ticket title",
+      "incidentTime": "Incident time (optional)",
+      "issueDescription": "Problem description",
+      "attachments": "Attachments (optional)"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "buttons": {
+      "submit": "Send ticket",
+      "remove": "Remove",
+      "removeAll": "Remove all",
+      "new": "Create another ticket"
+    },
+    "status": {
+      "submittedTitle": "Ticket received",
+      "submittedMsg": "We have received your report."
+    },
+    "hints": {
+      "attachments": "Images and documents accepted. Max ~10MB per file.",
+      "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…"
+    }
   }
-}
 }

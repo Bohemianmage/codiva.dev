@@ -1,20 +1,17 @@
 import './globals.css';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
-import LayoutClient from './LayoutClient'; // Cliente
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
-/* Plus Jakarta Sans sustituye Satoshi local: los .woff2 no estaban en el repo y rompían el despliegue. */
 const satoshi = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-satoshi',
   weight: ['400', '700'],
 });
 
-const siteTitle =
-  'Codiva.dev | Desarrollo web personalizado y soluciones digitales';
+const siteTitle = 'Codiva.dev | Software a la medida y productos digitales';
 const siteDescription =
-  'Expertos en sitios web, plataformas SaaS y sistemas a medida. En Codiva.dev convertimos ideas complejas en tecnología clara, eficiente y lista para escalar.';
+  'Software a la medida en México: plataformas SaaS, sistemas operativos verticales, e-commerce y sitios corporativos. Cada proyecto se diseña según tu operación — de la idea al producto en producción.';
 
 export const metadata = {
   metadataBase: new URL('https://www.codiva.dev'),
@@ -26,16 +23,8 @@ export const metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      {
-        url: '/android-chrome-192x192.png',
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        url: '/android-chrome-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
-      },
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
   },
   verification: {
@@ -48,15 +37,7 @@ export const metadata = {
     siteName: 'Codiva.dev',
     title: siteTitle,
     description: siteDescription,
-    images: [
-      {
-        url: '/android-chrome-512x512.png',
-        width: 512,
-        height: 512,
-        type: 'image/png',
-        alt: 'Codiva',
-      },
-    ],
+    images: [{ url: '/android-chrome-512x512.png', width: 512, height: 512, alt: 'Codiva' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -69,9 +50,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" className={`${inter.variable} ${satoshi.variable}`}>
-      <body>
-        <LayoutClient>{children}</LayoutClient>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

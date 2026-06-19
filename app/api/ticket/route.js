@@ -1,9 +1,10 @@
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { Client as Notion } from '@notionhq/client';
-import { Resend } from 'resend';
-import { put } from '@vercel/blob';
+import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { notifyStaff, sendConfirmationEmail } from '@/lib/ops/email';
+import { logActivity } from '@/lib/ops/activity';
+import { uploadOpsFile } from '@/lib/ops/storage';
 
 const MAX_FILES = 5;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -12,52 +13,25 @@ const toStr = (v) => (typeof v === 'string' ? v : (v ?? '').toString());
 
 const validate = (p) => {
   const e = [];
-  const req = ['name', 'email', 'company', 'issueTitle', 'issueDescription', 'priority'];
-  req.forEach((k) => { if (!p[k] || p[k].trim() === '') e.push(`${k} requerido`); });
+  ['name', 'email', 'company', 'issueTitle', 'issueDescription', 'priority'].forEach((k) => {
+    if (!p[k] || p[k].trim() === '') e.push(`${k} requerido`);
+  });
   if (p.email && !/^\S+@\S+\.\S+$/.test(p.email)) e.push('email inválido');
   if (p.priority && !['Alta', 'Media', 'Baja'].includes(p.priority)) e.push('priority inválido');
   return e;
 };
 
-const notionProps = (body, fileUrls) => {
-  const props = {
-    Name: { title: [{ text: { content: body.issueTitle } }] },
-    Status: { select: { name: 'Nuevo' } },
-    Priority: { select: { name: body.priority } },
-    Company: { rich_text: [{ text: { content: body.company } }] },
-    'Reporter Name': { rich_text: [{ text: { content: body.name } }] },
-    'Reporter Email': { email: body.email },
-    Description: { rich_text: [{ text: { content: body.issueDescription } }] },
-    Origin: { select: { name: 'Formulario' } },
-    'Created At': { date: { start: new Date().toISOString() } },
-  };
-
-  if (body.incidentTime) {
-    props['Incident Time'] = { rich_text: [{ text: { content: body.incidentTime } }] };
-  }
-
-  if (fileUrls.length) {
-    props.Attachments = {
-      files: fileUrls.map((u) => ({
-        name: u.split('/').pop() || 'attachment',
-        external: { url: u },
-      })),
-    };
-  }
-  return props;
-};
-
-const notifyEmail = async ({ subject, text }) => {
-  const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const RESEND_FROM = process.env.RESEND_FROM || 'Codiva Tickets <hello@codiva.dev>';
-  const TO = 'hello@codiva.dev';
-  if (!RESEND_API_KEY) return { skipped: true };
-  const resend = new Resend(RESEND_API_KEY);
-  await resend.emails.send({ from: RESEND_FROM, to: [TO], subject, text });
-  return { skipped: false };
+const priorityMap = {
+  Alta: 'alta',
+  Media: 'media',
+  Baja: 'baja',
 };
 
 export async function POST(req) {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
+  }
+
   try {
     const contentType = req.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
@@ -65,7 +39,6 @@ export async function POST(req) {
     }
 
     const form = await req.formData();
-
     const body = {
       name: toStr(form.get('name')),
       email: toStr(form.get('email')),
@@ -73,17 +46,47 @@ export async function POST(req) {
       issueTitle: toStr(form.get('issueTitle')),
       issueDescription: toStr(form.get('issueDescription')),
       priority: toStr(form.get('priority')),
-      incidentTime: toStr(form.get('incidentTime')), // HH:mm opcional
+      incidentTime: toStr(form.get('incidentTime')),
+      projectId: toStr(form.get('projectId')) || null,
     };
 
     const errors = validate(body);
     if (errors.length) return NextResponse.json({ error: errors.join(' | ') }, { status: 400 });
 
-    // Adjuntos si los tienes activos en el form (mantén este bloque)
     const files = form.getAll('attachments').filter(Boolean);
     if (files.length > MAX_FILES) {
       return NextResponse.json({ error: `Máximo ${MAX_FILES} archivos` }, { status: 400 });
     }
+
+    const admin = createAdminClient();
+
+    let organizationId = null;
+    if (body.projectId) {
+      const { data: project } = await admin
+        .from('projects')
+        .select('organization_id')
+        .eq('id', body.projectId)
+        .single();
+      organizationId = project?.organization_id ?? null;
+    }
+
+    const { data: ticket, error: ticketError } = await admin
+      .from('tickets')
+      .insert({
+        project_id: body.projectId || null,
+        organization_id: organizationId,
+        title: body.issueTitle,
+        description: body.issueDescription,
+        status: 'new',
+        priority: priorityMap[body.priority] ?? 'media',
+        reporter_name: body.name,
+        reporter_email: body.email,
+        incident_time: body.incidentTime || null,
+      })
+      .select('id')
+      .single();
+
+    if (ticketError) throw ticketError;
 
     const uploadedUrls = [];
     for (const f of files) {
@@ -91,46 +94,47 @@ export async function POST(req) {
       if (f.size > MAX_BYTES) {
         return NextResponse.json({ error: `Archivo ${f.name} excede 10MB` }, { status: 400 });
       }
-      const safeName = `${Date.now()}-${(f.name || 'attachment').replace(/\s+/g, '-')}`;
-      const { url } = await put(`tickets/${safeName}`, f, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
+      const uploaded = await uploadOpsFile(f, `tickets/${ticket.id}`);
+      uploadedUrls.push(uploaded.url);
+      await admin.from('ticket_attachments').insert({
+        ticket_id: ticket.id,
+        file_path: uploaded.path,
+        file_url: uploaded.url,
+        file_name: f.name || 'attachment',
       });
-      uploadedUrls.push(url);
     }
 
-    const NOTION_TICKETS_TOKEN = process.env.NOTION_TICKETS_TOKEN;
-    const NOTION_TICKETS_DB_ID = process.env.NOTION_TICKETS_DB_ID;
-    if (!NOTION_TICKETS_TOKEN || !NOTION_TICKETS_DB_ID) {
-      return NextResponse.json({ error: 'Faltan NOTION_TICKETS_TOKEN/NOTION_TICKETS_DB_ID' }, { status: 500 });
-    }
-
-    const notion = new Notion({ auth: NOTION_TICKETS_TOKEN });
-    const page = await notion.pages.create({
-      parent: { database_id: NOTION_TICKETS_DB_ID },
-      properties: notionProps(body, uploadedUrls),
+    await logActivity({
+      entityType: 'ticket',
+      entityId: ticket.id,
+      action: 'created',
+      metadata: { source: 'form' },
     });
 
-    const notionUrl = page?.url ?? '(sin URL)';
+    await sendConfirmationEmail({
+      to: body.email,
+      name: body.name,
+      subject: `Ticket recibido: ${body.issueTitle}`,
+      body: 'Hemos registrado tu solicitud de soporte. Te contactaremos pronto.',
+    });
 
-    const lines = [
-      `[Ticket] ${body.priority} · ${body.issueTitle}`,
-      `Empresa: ${body.company}`,
-      `Reportado por: ${body.name} <${body.email}>`,
-      body.incidentTime ? `Hora del incidente: ${body.incidentTime}` : null,
-      `Descripción: ${body.issueDescription}`,
-      `Notion: ${notionUrl}`,
-    ].filter(Boolean);
+    await notifyStaff({
+      subject: `[Ticket] ${body.priority} · ${body.issueTitle}`,
+      text: [
+        `Empresa: ${body.company}`,
+        `Reportado por: ${body.name} <${body.email}>`,
+        body.incidentTime ? `Hora: ${body.incidentTime}` : null,
+        body.issueDescription,
+        uploadedUrls.length ? `Adjuntos: ${uploadedUrls.length}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    });
 
-    const mail = await notifyEmail({ subject: `[Ticket] ${body.priority} · ${body.issueTitle}`, text: lines.join('\n') });
-
-    return NextResponse.json(
-      { ok: true, notionUrl, files: uploadedUrls, mailSkipped: mail.skipped },
-      { status: 201 }
-    );
+    return NextResponse.json({ ok: true, ticketId: ticket.id, files: uploadedUrls }, { status: 201 });
   } catch (err) {
-    console.error('Error en POST /api/ticket:', err);
-    const message = err?.message ? `Error: ${err.message}` : 'Error inesperado';
+    console.error('POST /api/ticket:', err);
+    const message = err?.message ? err.message : 'Error inesperado';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
