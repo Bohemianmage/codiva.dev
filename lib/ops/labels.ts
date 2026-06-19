@@ -6,6 +6,13 @@ export const LEAD_STATUS_LABELS: Record<string, string> = {
   discarded: 'Descartado',
 };
 
+export const LEAD_SOURCE_LABELS: Record<string, string> = {
+  web_cotiza: 'Web /cotiza',
+  referral: 'Referido / intermediario',
+  manual: 'Manual (Ops)',
+  contact_form: 'Formulario contacto',
+};
+
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
   quoting: 'Cotización',

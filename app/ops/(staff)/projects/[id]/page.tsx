@@ -22,6 +22,7 @@ import {
   formatCurrency,
 } from '@/lib/ops/labels';
 import { opsBaseUrl } from '@/lib/ops/host';
+import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
 
 export default async function ProjectDetailPage({
   params,
@@ -171,7 +172,14 @@ export default async function ProjectDetailPage({
 
       {tab === 'cotizaciones' && (
         <div className="space-y-6">
-          <QuoteForm projectId={id} createQuote={createQuote} />
+          <OpsQuoteForm
+            title="Nueva cotización"
+            defaultTitle={`Propuesta — ${project.name}`}
+            action={async (formData) => {
+              'use server';
+              await createQuote(id, formData);
+            }}
+          />
           {(quotes ?? []).map((q) => (
             <article key={q.id} className="rounded-xl border border-zinc-200 bg-white p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -181,11 +189,29 @@ export default async function ProjectDetailPage({
               <p className="text-sm text-zinc-600 whitespace-pre-wrap">{q.scope}</p>
               <p className="mt-2 text-sm font-medium">{formatCurrency(q.total_amount, q.currency)}</p>
               {q.status === 'draft' && (
-                <form action={async () => { 'use server'; await sendQuote(q.id, id); }} className="mt-4">
-                  <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                    Enviar al cliente
-                  </button>
-                </form>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    href={`/quotes/${q.id}/preview`}
+                    target="_blank"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+                  >
+                    Vista previa
+                  </Link>
+                  <form action={async () => { 'use server'; await sendQuote(q.id, id); }}>
+                    <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
+                      Enviar al cliente
+                    </button>
+                  </form>
+                </div>
+              )}
+              {q.status !== 'draft' && (
+                <Link
+                  href={`/quotes/${q.id}/preview`}
+                  target="_blank"
+                  className="mt-4 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+                >
+                  Vista previa
+                </Link>
               )}
             </article>
           ))}
@@ -374,36 +400,5 @@ function MilestoneCard({
         <button type="submit" className="rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white">Publicar</button>
       </form>
     </article>
-  );
-}
-
-function QuoteForm({
-  projectId,
-  createQuote,
-}: {
-  projectId: string;
-  createQuote: typeof import('@/lib/ops/actions').createQuote;
-}) {
-  async function action(formData: FormData) {
-    'use server';
-    await createQuote(projectId, formData);
-  }
-
-  return (
-    <form action={action} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-      <h3 className="font-semibold">Nueva cotización</h3>
-      <input name="title" defaultValue="Propuesta comercial" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-      <textarea name="scope" placeholder="Alcance y condiciones" rows={5} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-      <div className="grid gap-3 md:grid-cols-3">
-        <input name="totalAmount" type="number" step="0.01" placeholder="Monto total" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-        <select name="currency" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-          <option value="USD">USD</option>
-          <option value="MXN">MXN</option>
-        </select>
-        <input name="validUntil" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-      </div>
-      <input type="hidden" name="phases" value="[]" />
-      <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Crear borrador</button>
-    </form>
   );
 }

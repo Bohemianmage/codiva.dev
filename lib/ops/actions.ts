@@ -6,10 +6,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireStaff } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { generateProjectSlug } from '@/lib/ops/slug';
-import { sendClientEmail } from '@/lib/ops/email';
+import { sendClientEmail, notifyStaff } from '@/lib/ops/email';
 import {
   templateQuoteSent,
   templateLeadQuoteSent,
+  templateStaffAlert,
   templatePortalInviteNewUser,
   templatePortalInviteExistingUser,
 } from '@/lib/ops/email-templates';
@@ -42,6 +43,111 @@ function parseQuoteFormData(formData: FormData) {
   };
 }
 
+export async function createLead(formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const name = String(formData.get('name') || '').trim();
+  const email = String(formData.get('email') || '').trim();
+  if (!name) throw new Error('Nombre requerido');
+  if (!email) throw new Error('Email requerido');
+
+  const source = String(formData.get('source') || 'manual');
+  const budgetRaw = String(formData.get('budget') || '').trim();
+  const company = String(formData.get('company') || '').trim();
+  const partnerCompany = String(formData.get('partnerCompany') || '').trim() || null;
+
+  const { data: lead, error } = await supabase
+    .from('leads')
+    .insert({
+      status: 'new',
+      source,
+      name,
+      company,
+      email,
+      phone: String(formData.get('phone') || '').trim(),
+      need: String(formData.get('need') || ''),
+      delivery_date: String(formData.get('deliveryDate') || '') || null,
+      budget: budgetRaw ? parseFloat(budgetRaw) : null,
+      reference_site: String(formData.get('referenceSite') || '').trim() || null,
+      partner_name: String(formData.get('partnerName') || '').trim() || null,
+      partner_email: String(formData.get('partnerEmail') || '').trim() || null,
+      partner_company: partnerCompany,
+      end_client_name: String(formData.get('endClientName') || '').trim() || null,
+      end_client_company: String(formData.get('endClientCompany') || '').trim() || null,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'lead',
+    entityId: lead.id,
+    action: 'created',
+    metadata: { source },
+    actorId: user.id,
+  });
+
+  await notifyStaff({
+    subject: `[Lead] ${company || name}`,
+    html: templateStaffAlert(`Lead creado en Ops — ${company || name}`, [
+      `Origen: ${source}`,
+      `Nombre: ${name}`,
+      `Email: ${email}`,
+      company ? `Empresa: ${company}` : null,
+      partnerCompany ? `Intermediario: ${partnerCompany}` : null,
+    ].filter((line): line is string => Boolean(line))),
+  }).catch(() => {});
+
+  revalidatePath('/leads');
+  return lead.id;
+}
+
+export async function convertInboxToLead(messageId: string) {
+  const { supabase, user } = await requireStaff();
+
+  const { data: message, error: msgError } = await supabase
+    .from('inbox_messages')
+    .select('*')
+    .eq('id', messageId)
+    .single();
+  if (msgError || !message) throw new Error('Mensaje no encontrado');
+
+  if (message.lead_id) {
+    return { leadId: message.lead_id };
+  }
+
+  const { data: lead, error } = await supabase
+    .from('leads')
+    .insert({
+      status: 'new',
+      source: 'contact_form',
+      name: message.name,
+      email: message.email,
+      need: message.message,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  await supabase
+    .from('inbox_messages')
+    .update({ lead_id: lead.id, status: 'read' })
+    .eq('id', messageId);
+
+  await logActivity({
+    entityType: 'lead',
+    entityId: lead.id,
+    action: 'created_from_inbox',
+    metadata: { inboxMessageId: messageId },
+    actorId: user.id,
+  });
+
+  revalidatePath('/inbox');
+  revalidatePath('/leads');
+  return { leadId: lead.id };
+}
+
 export async function updateLeadStatus(leadId: string, status: string) {
   const { supabase, user } = await requireStaff();
   const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
@@ -60,6 +166,8 @@ export async function updateLeadStatus(leadId: string, status: string) {
 export async function updateLeadDetails(leadId: string, formData: FormData) {
   const { supabase, user } = await requireStaff();
 
+  const assignedTo = String(formData.get('assignedTo') || '').trim();
+
   const payload = {
     name: String(formData.get('name') || '').trim(),
     company: String(formData.get('company') || '').trim(),
@@ -71,6 +179,7 @@ export async function updateLeadDetails(leadId: string, formData: FormData) {
     partner_company: String(formData.get('partnerCompany') || '').trim() || null,
     end_client_name: String(formData.get('endClientName') || '').trim() || null,
     end_client_company: String(formData.get('endClientCompany') || '').trim() || null,
+    assigned_to: assignedTo || null,
   };
 
   const { error } = await supabase.from('leads').update(payload).eq('id', leadId);
@@ -382,6 +491,7 @@ export async function addMilestoneUpdate(milestoneId: string, projectId: string,
 
 export async function createQuote(projectId: string, formData: FormData) {
   const { supabase, user } = await requireStaff();
+  const parsed = parseQuoteFormData(formData);
 
   const { data: last } = await supabase
     .from('quotes')
@@ -391,24 +501,22 @@ export async function createQuote(projectId: string, formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  const phasesRaw = String(formData.get('phases') || '[]');
-  let phases = [];
-  try {
-    phases = JSON.parse(phasesRaw);
-  } catch {
-    phases = [];
-  }
-
   const { error } = await supabase.from('quotes').insert({
     project_id: projectId,
     version: (last?.version ?? 0) + 1,
     status: 'draft',
-    title: String(formData.get('title') || 'Propuesta comercial'),
-    scope: String(formData.get('scope') || ''),
-    phases,
-    total_amount: parseFloat(String(formData.get('totalAmount') || '0')) || null,
-    currency: String(formData.get('currency') || 'USD'),
-    valid_until: String(formData.get('validUntil') || '') || null,
+    title: parsed.title,
+    service_type: parsed.serviceType,
+    project_state: parsed.projectState,
+    scope: parsed.scope,
+    deliverables: parsed.deliverables,
+    considerations: parsed.considerations,
+    optional_extras: parsed.optionalExtras,
+    line_items: parsed.lineItems,
+    phases: [],
+    total_amount: parsed.totalAmount,
+    currency: parsed.currency,
+    valid_until: parsed.validUntil,
     created_by: user.id,
   });
   if (error) throw new Error(error.message);

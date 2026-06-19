@@ -18,6 +18,15 @@ export default async function SettingsPage() {
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h2 className="mb-3 font-semibold">Enlaces útiles</h2>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-zinc-700">
+            <li>Site URL: <code className="rounded bg-zinc-100 px-1">https://ops.codiva.dev</code></li>
+            <li>Partners (solicitud cotización): <code className="rounded bg-zinc-100 px-1">https://ops.codiva.dev/partner/solicitar</code></li>
+            <li>Redirect URLs: <code className="rounded bg-zinc-100 px-1">https://ops.codiva.dev/**</code></li>
+          </ul>
+        </section>
+
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <h2 className="mb-3 font-semibold">Supabase Auth (URLs)</h2>
           <p className="mb-3 text-sm text-zinc-600">
             En Supabase → Authentication → URL Configuration:

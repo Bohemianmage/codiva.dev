@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getPublicQuoteByToken } from '@/lib/ops/quote-tokens';
-import { quoteRowToDocumentData, renderQuoteDocumentHtml } from '@/lib/ops/quote-document';
+import { buildQuoteDocumentHtml } from '@/lib/ops/quote-preview';
 
 export default async function PublicQuotePage({
   params,
@@ -11,22 +11,10 @@ export default async function PublicQuotePage({
   const payload = await getPublicQuoteByToken(token);
   if (!payload) notFound();
 
-  const { quote, lead, project } = payload;
-  const clientLabel =
-    lead?.end_client_company || lead?.company || project?.name || quote.title;
-  const projectName = project?.name || `Propuesta — ${clientLabel}`;
-  const clientName = lead?.end_client_name || lead?.name || clientLabel;
-
-  const html = renderQuoteDocumentHtml(
-    quoteRowToDocumentData(quote, {
-      clientLabel,
-      projectName,
-      clientName,
-      partnerCompany: lead?.partner_company,
-      endClientCompany: lead?.end_client_company,
-      serviceDescription: quote.title,
-    })
-  );
+  const html = buildQuoteDocumentHtml(payload.quote, {
+    lead: payload.lead,
+    project: payload.project,
+  });
 
   return (
     <div className="min-h-screen bg-zinc-100">
