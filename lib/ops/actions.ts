@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requireStaff } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
+import { generateProjectSlug } from '@/lib/ops/slug';
 import { sendClientEmail, notifyStaff } from '@/lib/ops/email';
 import {
   templateQuoteSent,

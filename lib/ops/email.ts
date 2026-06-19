@@ -113,7 +113,6 @@ export async function sendConfirmationEmail({
   to,
   name,
   subject,
-  body,
   ticketTitle,
 }: {
   to: string;
