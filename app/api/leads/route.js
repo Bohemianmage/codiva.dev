@@ -48,9 +48,9 @@ export async function POST(request) {
       name: body.name || 'Cliente',
       subject: 'Hemos recibido tu solicitud en Codiva.dev',
       body: 'Gracias por contactarnos. Pronto nos pondremos en contacto contigo.',
-    });
+    }).catch(() => {});
 
-    await notifyStaff({
+    const staffMail = await notifyStaff({
       subject: `[Lead] ${body.company || body.name}`,
       text: `Nuevo lead desde /cotiza\n\nNombre: ${body.name}\nEmpresa: ${body.company}\nEmail: ${body.email}\nTel: ${body.phone}\n\nVer en Ops: leads`,
     });

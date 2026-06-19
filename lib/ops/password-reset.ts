@@ -1,10 +1,50 @@
 'use server';
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendClientEmail } from '@/lib/ops/email';
 import { opsAuthCallbackUrl, portalAuthCallbackUrl } from '@/lib/ops/auth-urls';
 
 type ResetResult = { ok: true; message: string } | { ok: false; message: string };
+
+async function findUserIdByEmail(email: string): Promise<string | null> {
+  const admin = createAdminClient();
+  let page = 1;
+  const perPage = 200;
+
+  while (page <= 10) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error('listUsers:', error);
+      return null;
+    }
+    const match = data.users.find((u) => u.email?.toLowerCase() === email);
+    if (match) return match.id;
+    if (data.users.length < perPage) break;
+    page += 1;
+  }
+  return null;
+}
+
+async function sendSupabaseRecoveryEmail(email: string, redirectTo: string): Promise<ResetResult | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return null;
+
+  const client = createSupabaseClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    console.error('resetPasswordForEmail:', error);
+    return { ok: false, message: error.message };
+  }
+  return {
+    ok: true,
+    message: 'Te enviamos un enlace a tu correo (vía Supabase). Revisa también spam.',
+  };
+}
 
 async function sendRecoveryEmail(email: string, redirectTo: string): Promise<ResetResult> {
   const admin = createAdminClient();
@@ -15,12 +55,23 @@ async function sendRecoveryEmail(email: string, redirectTo: string): Promise<Res
     options: { redirectTo },
   });
 
-  if (error || !data?.properties?.action_link) {
+  if (error) {
     console.error('generateLink recovery:', error);
-    return { ok: false, message: 'No pudimos generar el enlace. Intenta de nuevo.' };
+    const fallback = await sendSupabaseRecoveryEmail(email, redirectTo);
+    if (fallback?.ok) return fallback;
+    return {
+      ok: false,
+      message:
+        error.message.includes('redirect')
+          ? 'URL de redirección no permitida en Supabase. Agrega https://ops.codiva.dev/** en Authentication → URL Configuration.'
+          : `No pudimos generar el enlace: ${error.message}`,
+    };
   }
 
-  const link = data.properties.action_link;
+  const link = data?.properties?.action_link;
+  if (!link) {
+    return { ok: false, message: 'No se pudo generar el enlace de recuperación.' };
+  }
 
   const mail = await sendClientEmail({
     to: email,
@@ -33,16 +84,21 @@ async function sendRecoveryEmail(email: string, redirectTo: string): Promise<Res
     `,
   });
 
-  if (mail.skipped) {
+  if (mail.ok) {
     return {
-      ok: false,
-      message: 'Correo no configurado (Resend). Contacta al administrador.',
+      ok: true,
+      message: 'Te enviamos un enlace a tu correo. Revisa también spam.',
     };
   }
 
+  console.error('Resend failed, trying Supabase email fallback:', mail.error);
+
+  const fallback = await sendSupabaseRecoveryEmail(email, redirectTo);
+  if (fallback?.ok) return fallback;
+
   return {
-    ok: true,
-    message: 'Te enviamos un enlace a tu correo. Revisa también spam.',
+    ok: false,
+    message: `No se pudo enviar el correo: ${mail.error ?? 'error desconocido'}. Verifica RESEND_API_KEY y RESEND_FROM en Vercel (dominio verificado).`,
   };
 }
 
@@ -52,23 +108,19 @@ export async function requestStaffPasswordReset(email: string): Promise<ResetRes
     return { ok: false, message: 'Ingresa tu email.' };
   }
 
-  const admin = createAdminClient();
-
-  const { data: users } = await admin.auth.admin.listUsers();
-  const user = users?.users?.find((u) => u.email?.toLowerCase() === normalized);
-
-  if (!user) {
-    // No revelar si existe — misma respuesta genérica
+  const userId = await findUserIdByEmail(normalized);
+  if (!userId) {
     return {
       ok: true,
       message: 'Si el email tiene acceso de staff, recibirás un enlace en breve.',
     };
   }
 
+  const admin = createAdminClient();
   const { data: staff } = await admin
     .from('staff_profiles')
     .select('id, active')
-    .eq('id', user.id)
+    .eq('id', userId)
     .eq('active', true)
     .maybeSingle();
 
@@ -107,10 +159,8 @@ export async function requestPortalPasswordReset(
     };
   }
 
-  const { data: users } = await admin.auth.admin.listUsers();
-  const user = users?.users?.find((u) => u.email?.toLowerCase() === normalized);
-
-  if (!user) {
+  const userId = await findUserIdByEmail(normalized);
+  if (!userId) {
     return {
       ok: true,
       message: 'Si tienes acceso a este portal, recibirás un enlace en breve.',
@@ -121,7 +171,7 @@ export async function requestPortalPasswordReset(
     .from('project_members')
     .select('id')
     .eq('project_id', project.id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (!member) {
