@@ -220,19 +220,19 @@ ON CONFLICT (id) DO NOTHING;
 -- Inbox
 INSERT INTO inbox_messages (id, name, email, message, status, lead_id) VALUES
   (
-    'g0000001-0001-4000-8000-000000000001',
+    '71000001-0001-4000-8000-000000000001',
     'Daniel Ortiz', 'daniel@example.com',
     'Hola, necesito una cotizacion para un portal de clientes con login y documentos firmados.',
     'unread', NULL
   ),
   (
-    'g0000001-0001-4000-8000-000000000002',
+    '71000001-0001-4000-8000-000000000002',
     'Sofia Linares', 'sofia@nata-m.com',
-    'Tenemos un admin i18n en mente. ¿Pueden compartir tiempos y rango de inverison?',
+    'Tenemos un admin i18n en mente. ¿Pueden compartir tiempos y rango de inversión?',
     'unread', NULL
   ),
   (
-    'g0000001-0001-4000-8000-000000000003',
+    '71000001-0001-4000-8000-000000000003',
     'Pepe Martinez', 'pepe@automata.dev',
     'Gracias por la propuesta SPA. Revisamos internamente y regresamos la semana que entra.',
     'read', NULL
@@ -245,7 +245,7 @@ INSERT INTO tickets (
   status, priority, reporter_name, reporter_email
 ) VALUES
   (
-    'h0000001-0001-4000-8000-000000000001',
+    '81000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-000000000001',
     'a0000001-0001-4000-8000-000000000001',
     'Error al exportar PDF en Safari',
@@ -253,7 +253,7 @@ INSERT INTO tickets (
     'in_progress', 'alta', 'Equipo Inquilia', 'hola@inquilia.com'
   ),
   (
-    'h0000001-0001-4000-8000-000000000002',
+    '81000001-0001-4000-8000-000000000002',
     'b0000001-0001-4000-8000-000000000002',
     'a0000001-0001-4000-8000-000000000002',
     'Webhook Stripe duplicado',
@@ -261,7 +261,7 @@ INSERT INTO tickets (
     'new', 'media', 'Ops CD648', 'contacto@cd648.com'
   ),
   (
-    'h0000001-0001-4000-8000-000000000003',
+    '81000001-0001-4000-8000-000000000003',
     NULL, 'a0000001-0001-4000-8000-000000000009',
     'Consulta SLA enterprise',
     'Pregunta sobre tiempos de respuesta para soporte 24/7.',
