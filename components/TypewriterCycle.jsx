@@ -16,6 +16,7 @@ export default function TypewriterCycle({
   active = true,
   loop = true,
   hideCursorWhenDone = true,
+  trailingComma = false,
 }) {
   const [display, setDisplay] = useState('');
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -79,14 +80,20 @@ export default function TypewriterCycle({
     done,
   ]);
 
+  const phrase = phrases[phraseIndex % phrases.length] ?? '';
+  const phraseComplete = phrase.length > 0 && display.length === phrase.length;
+  const showTrailingComma =
+    trailingComma && phraseComplete && phase !== 'deleting';
   const showCursor =
     active &&
     phrases.length > 0 &&
-    !(hideCursorWhenDone && done);
+    !(hideCursorWhenDone && done) &&
+    ((phase === 'typing' && !phraseComplete) || phase === 'deleting');
 
   return (
     <span className={className}>
       {display}
+      {showTrailingComma ? ',' : ''}
       {showCursor && (
         <span className="animate-pulse" aria-hidden="true">
           |

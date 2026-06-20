@@ -69,7 +69,7 @@
       "e-commerce",
       "sitios corporativos bilingües"
     ],
-    "paragraph1Outro": ", con pagos, roles de usuario, paneles admin y soporte continuo.",
+    "paragraph1Outro": " con pagos, roles de usuario, paneles admin y soporte continuo.",
     "paragraph2Intro": "Cada proyecto parte de cómo opera tu negocio: diseñamos arquitectura sostenible, integramos ",
     "integrationTypes": [
       "Stripe, Supabase y APIs externas",
@@ -85,7 +85,7 @@
       "Open Banking, SPEI y conciliación financiera",
       "portales MLS, mapas y agendamiento inmobiliario"
     ],
-    "paragraph2Outro": ", y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
+    "paragraph2Outro": " y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
   },
   "services": {
     "title": "Servicios",

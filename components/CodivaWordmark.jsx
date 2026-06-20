@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 const SIZE = {
-  sm: { codiva: 'text-base', dev: 'text-sm', gap: 'ml-0.5' },
-  md: { codiva: 'text-xl', dev: 'text-base', gap: 'ml-1' },
-  lg: { codiva: 'text-2xl', dev: 'text-lg', gap: 'ml-1' },
-  inline: { codiva: 'text-[1em]', dev: 'text-[1em]', gap: 'ml-0' },
+  sm: { codiva: 'text-base', dev: 'text-sm' },
+  md: { codiva: 'text-xl', dev: 'text-base' },
+  lg: { codiva: 'text-2xl', dev: 'text-lg' },
+  inline: { codiva: 'text-[1em]', dev: 'text-[1em]' },
 };
 
 const VARIANT = {
@@ -63,7 +63,7 @@ export default function CodivaWordmark({
         initial={animate ? { opacity: 0, y: 10 } : false}
         animate={shouldAnimate ? { opacity: 1, y: 0 } : animate ? { opacity: 0, y: 10 } : undefined}
         transition={{ duration: 0.6, delay: 0.5 }}
-        className={clsx('inline-block', sizes.dev, sizes.gap, colors.dev, variant === 'default' && 'font-medium')}
+        className={clsx('inline-block', sizes.dev, colors.dev, variant === 'default' && 'font-medium')}
       >
         .dev
       </motion.span>

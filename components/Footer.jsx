@@ -25,7 +25,8 @@ export default function Footer() {
         <span className="text-zinc-400 text-center md:text-left">
           © {new Date().getFullYear()}{' '}
           <CodivaWordmark size="sm" variant="footer" animate active={inView} />
-          . {t('footer.rights')}
+          {' '}
+          {t('footer.rights')}
         </span>
 
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">

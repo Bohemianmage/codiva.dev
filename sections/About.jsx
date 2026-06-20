@@ -76,12 +76,13 @@ export default function About() {
         >
           <Paragraph className="max-w-2xl mx-auto text-codiva-secondary text-base md:text-lg mb-4">
             {t('about.paragraph1Intro').split('Codiva.dev')[0]}
-            <CodivaWordmark size="inline" variant="inline" active={inView} className="mx-0.5 align-baseline" />
+            <CodivaWordmark size="inline" variant="inline" active={inView} className="align-baseline" />
             {t('about.paragraph1Intro').split('Codiva.dev')[1]}
             <TypewriterCycle
               phrases={typedPhrases}
               className="font-medium text-codiva-primary"
               active={inView}
+              trailingComma
             />
             {t('about.paragraph1Outro')}
           </Paragraph>
@@ -92,9 +93,10 @@ export default function About() {
               phrases={integrationPhrases}
               className="font-medium text-codiva-primary"
               active={inView}
+              trailingComma
             />
             {t('about.paragraph2Outro').split('Codiva.dev')[0]}
-            <CodivaWordmark size="inline" variant="inline" active={inView} className="mx-0.5 align-baseline" />
+            <CodivaWordmark size="inline" variant="inline" active={inView} className="align-baseline" />
             {t('about.paragraph2Outro').split('Codiva.dev')[1]}
           </Paragraph>
         </motion.div>
