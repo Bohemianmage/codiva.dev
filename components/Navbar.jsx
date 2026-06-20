@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Sling as Hamburger } from 'hamburger-react';
 import { useRouter, usePathname } from 'next/navigation';
+import { scrollToSectionCenter } from '../utils/scrollToSection';
+import CodivaWordmark from './CodivaWordmark';
 
 // Menú de navegación (ya sin 'Home')
 const navItems = [
@@ -48,8 +50,7 @@ export default function Navbar() {
     if (pathname !== '/') {
       router.push(`/#${id}`);
     } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      scrollToSectionCenter(id);
     }
     setMenuOpen(false);
   };
@@ -92,17 +93,7 @@ export default function Navbar() {
           className="flex items-center space-x-2 cursor-pointer"
         >
           <Image src="/logo.svg" alt="Codiva logo" width={28} height={28} />
-          <div className="text-xl font-bold tracking-tight text-zinc-900 font-display flex items-end">
-            Codiva
-            <motion.span
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.3, ease: 'easeOut' }}
-              className="text-base ml-1 text-codiva-primary font-medium"
-            >
-              .dev
-            </motion.span>
-          </div>
+          <CodivaWordmark size="md" variant="default" animate active />
         </motion.div>
 
         {/* Navegación desktop */}

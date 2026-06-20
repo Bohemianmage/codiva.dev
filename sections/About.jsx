@@ -5,7 +5,8 @@ import { motion, useInView } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import Heading from '../components/Heading';
 import Paragraph from '../components/Paragraph';
-import PhraseFade from '../components/PhraseFade';
+import TypewriterCycle from '../components/TypewriterCycle';
+import CodivaWordmark from '../components/CodivaWordmark';
 import BrandPattern from '../components/BrandPattern';
 
 export default function About() {
@@ -19,29 +20,6 @@ export default function About() {
 
   const productionTypes = t('about.productionTypes', { returnObjects: true });
   const typedPhrases = Array.isArray(productionTypes) ? productionTypes : [];
-
-  const CodivaDev = () => (
-    <>
-      <motion.span
-        key="codiva"
-        initial={{ opacity: 0, y: 10 }}
-        animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="inline-block font-semibold text-zinc-900"
-      >
-        Codiva
-      </motion.span>
-      <motion.span
-        key="dev"
-        initial={{ opacity: 0, y: 10 }}
-        animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="inline-block text-codiva-primary"
-      >
-        .dev
-      </motion.span>
-    </>
-  );
 
   return (
     <section
@@ -93,9 +71,9 @@ export default function About() {
         >
           <Paragraph className="max-w-2xl mx-auto text-codiva-secondary text-base md:text-lg mb-4">
             {t('about.paragraph1Intro').split('Codiva.dev')[0]}
-            <CodivaDev />
+            <CodivaWordmark size="inline" variant="inline" active={inView} className="mx-0.5 align-baseline" />
             {t('about.paragraph1Intro').split('Codiva.dev')[1]}
-            <PhraseFade
+            <TypewriterCycle
               phrases={typedPhrases}
               className="font-medium text-codiva-primary"
               active={inView}
@@ -105,7 +83,7 @@ export default function About() {
 
           <Paragraph className="max-w-2xl mx-auto text-zinc-600 text-base md:text-lg">
             {t('about.paragraph2').split('Codiva.dev')[0]}
-            <CodivaDev />
+            <CodivaWordmark size="inline" variant="inline" active={inView} className="mx-0.5 align-baseline" />
             {t('about.paragraph2').split('Codiva.dev')[1]}
           </Paragraph>
         </motion.div>

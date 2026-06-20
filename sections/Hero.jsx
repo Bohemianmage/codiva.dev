@@ -3,8 +3,9 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import Heading from '../components/Heading';
-import HeroVisual from '../components/HeroVisual';
 import Button from '../components/ui/Button';
+import TypewriterCycle from '../components/TypewriterCycle';
+import { scrollToSectionCenter } from '../utils/scrollToSection';
 import { useTranslation } from 'react-i18next';
 
 export default function Hero() {
@@ -14,8 +15,6 @@ export default function Hero() {
   const staticText1 = t('hero.cleanCode');
   const staticText2 = t('hero.customTech');
   const staticText3 = t('hero.withoutNoise');
-  const badges = t('hero.trustBadges', { returnObjects: true });
-  const badgeList = Array.isArray(badges) ? badges : [];
 
   return (
     <section
@@ -27,7 +26,6 @@ export default function Hero() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="w-full max-w-4xl"
       >
         <Heading
           as="h1"
@@ -35,7 +33,9 @@ export default function Hero() {
           className="text-zinc-900 leading-tight mb-6"
         >
           {staticText1}{' '}
-          <span className="text-codiva-primary">{staticText2}</span>
+          <span className="text-codiva-primary">
+            <TypewriterCycle phrases={[staticText2]} loop={false} active />
+          </span>
           <br />
           {staticText3}
         </Heading>
@@ -45,40 +45,17 @@ export default function Hero() {
             {staticText1} {staticText2} {staticText3}
           </h1>
         </noscript>
-
-        {badgeList.length > 0 && (
-          <motion.ul
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mb-2 flex flex-wrap items-center justify-center gap-2"
-          >
-            {badgeList.map((badge) => (
-              <li
-                key={badge}
-                className="rounded-full border border-codiva-primary/20 bg-white/80 px-3 py-1 text-xs font-medium text-codiva-primary backdrop-blur-sm"
-              >
-                {badge}
-              </li>
-            ))}
-          </motion.ul>
-        )}
       </motion.div>
-
-      <HeroVisual />
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.25 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
       >
         <Button
           type="button"
-          onClick={() => {
-            const el = document.getElementById('services');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="mt-8"
+          onClick={() => scrollToSectionCenter('services')}
+          className="mt-6"
         >
           {t('hero.viewServices')}
         </Button>

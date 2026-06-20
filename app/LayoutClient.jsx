@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation'; 
+import { scrollToSectionCenter } from '../utils/scrollToSection';
 import { Analytics } from '@vercel/analytics/react';
 
 import Navbar from '../components/Navbar';
@@ -29,6 +30,21 @@ export default function LayoutClient({ children }) {
       document.head.appendChild(meta);
     }
   }, [currentLang, t]);
+
+  // Centra sección al navegar con hash (#services, etc.)
+  useEffect(() => {
+    if (pathname !== '/') return;
+
+    const scrollFromHash = () => {
+      const id = window.location.hash.replace('#', '');
+      if (!id) return;
+      requestAnimationFrame(() => scrollToSectionCenter(id));
+    };
+
+    scrollFromHash();
+    window.addEventListener('hashchange', scrollFromHash);
+    return () => window.removeEventListener('hashchange', scrollFromHash);
+  }, [pathname]);
 
   // ✅ Microdatos para SEO (Organization)
   const schemaOrgJsonLd = {

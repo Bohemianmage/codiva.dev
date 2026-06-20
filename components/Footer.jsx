@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Github, Linkedin, Instagram } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { CODIVA_BRAND } from '@/lib/brand';
+import CodivaWordmark from './CodivaWordmark';
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
@@ -24,7 +24,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <span className="text-zinc-400 text-center md:text-left">
           © {new Date().getFullYear()}{' '}
-          <span className="text-white font-medium">Codiva.dev</span>. {t('footer.rights')}
+          <CodivaWordmark size="sm" variant="footer" animate active={inView} />
+          . {t('footer.rights')}
         </span>
 
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
