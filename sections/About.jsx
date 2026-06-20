@@ -20,6 +20,8 @@ export default function About() {
 
   const productionTypes = t('about.productionTypes', { returnObjects: true });
   const typedPhrases = Array.isArray(productionTypes) ? productionTypes : [];
+  const integrationTypes = t('about.integrationTypes', { returnObjects: true });
+  const integrationPhrases = Array.isArray(integrationTypes) ? integrationTypes : [];
 
   return (
     <section
@@ -58,7 +60,10 @@ export default function About() {
             <p style={{ display: 'none' }}>
               {t('about.paragraph1Intro')}
               {typedPhrases.join(', ')}
-              {t('about.paragraph1Outro')}
+              {t('about.paragraph1Outro')}{' '}
+              {t('about.paragraph2Intro')}
+              {integrationPhrases.join(', ')}
+              {t('about.paragraph2Outro')}
             </p>
           </noscript>
         </motion.div>
@@ -82,9 +87,15 @@ export default function About() {
           </Paragraph>
 
           <Paragraph className="max-w-2xl mx-auto text-zinc-600 text-base md:text-lg">
-            {t('about.paragraph2').split('Codiva.dev')[0]}
+            {t('about.paragraph2Intro')}
+            <TypewriterCycle
+              phrases={integrationPhrases}
+              className="font-medium text-codiva-primary"
+              active={inView}
+            />
+            {t('about.paragraph2Outro').split('Codiva.dev')[0]}
             <CodivaWordmark size="inline" variant="inline" active={inView} className="mx-0.5 align-baseline" />
-            {t('about.paragraph2').split('Codiva.dev')[1]}
+            {t('about.paragraph2Outro').split('Codiva.dev')[1]}
           </Paragraph>
         </motion.div>
       </div>

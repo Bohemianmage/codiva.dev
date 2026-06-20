@@ -70,7 +70,22 @@
       "sitios corporativos bilingües"
     ],
     "paragraph1Outro": ", con pagos, roles de usuario, paneles admin y soporte continuo.",
-    "paragraph2": "Cada proyecto parte de cómo opera tu negocio: diseñamos arquitectura sostenible, integramos Stripe, Supabase y APIs externas, y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
+    "paragraph2Intro": "Cada proyecto parte de cómo opera tu negocio: diseñamos arquitectura sostenible, integramos ",
+    "integrationTypes": [
+      "Stripe, Supabase y APIs externas",
+      "pagos, facturación y suscripciones SaaS",
+      "CRMs, ERPs y sistemas legacy",
+      "WhatsApp Business, email y alertas en tiempo real",
+      "mapas, rutas y operación en campo",
+      "IA generativa, agentes y automatización",
+      "firmas digitales, KYC y cumplimiento LegalTech",
+      "marketplaces, inventario y checkout omnicanal",
+      "Vercel, edge computing y despliegues globales",
+      "webhooks, colas, ETL y pipelines de datos",
+      "Open Banking, SPEI y conciliación financiera",
+      "portales MLS, mapas y agendamiento inmobiliario"
+    ],
+    "paragraph2Outro": ", y entregamos con ritmo claro. Ya sea tu primer lanzamiento o la evolución de lo que ya está en vivo, Codiva.dev trabaja contigo con comunicación directa con quien escribe el código."
   },
   "services": {
     "title": "Servicios",
