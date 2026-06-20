@@ -13,6 +13,7 @@ import { Toaster } from 'react-hot-toast';
 
 export default function LayoutClient({ children }) {
   const { i18n, t } = useTranslation();
+  const pathname = usePathname();
   const currentLang = i18n.language || 'es';
 
   // ✅ Ajustes dinámicos de idioma, título y descripción
@@ -57,8 +58,7 @@ export default function LayoutClient({ children }) {
     "description": t('description')
   };
 
-  // --- NUEVO: ocultar FloatingQuoteButton en /ticket (también /es/ticket, /en/ticket, etc.)
-  const pathname = usePathname();
+  // --- Ocultar FloatingQuoteButton en /ticket
   const segments = (pathname || '').split('/').filter(Boolean);
   const onTicket = segments[segments.length - 1] === 'ticket';
   const showQuote = !onTicket;
