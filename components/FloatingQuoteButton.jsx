@@ -59,7 +59,7 @@ export default function FloatingQuoteButton() {
           onClick={() => setOpen(true)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="bg-codiva-primary text-white px-5 py-3 rounded-full shadow-lg text-sm font-medium hover:bg-[#0c3e3e] transition"
+          className="bg-codiva-primary text-white px-5 py-3 rounded-full shadow-lg text-sm font-medium hover:bg-codiva-primary-dark transition"
         >
           {t('quote.button')}
         </motion.button>
@@ -116,7 +116,7 @@ export default function FloatingQuoteButton() {
 
       <button
         onClick={() => setShowForm(true)}
-        className="w-full bg-[#104E4E] text-white py-2.5 rounded-lg hover:bg-[#0c3e3e] transition font-medium flex items-center justify-center gap-2"
+        className="w-full bg-codiva-primary text-white py-2.5 rounded-xl hover:bg-codiva-primary-dark transition font-medium flex items-center justify-center gap-2"
       >
         <MessageCircle className="w-4 h-4" />
         {t('quote.needHelp')}
@@ -191,7 +191,7 @@ export default function FloatingQuoteButton() {
 
                       <button
                         type="submit"
-                        className="w-full bg-codiva-primary text-white py-2.5 rounded-lg hover:bg-[#0c3e3e] transition font-medium"
+                        className="w-full bg-codiva-primary text-white py-2.5 rounded-xl hover:bg-codiva-primary-dark transition font-medium"
                       >
                         {t('common.buttons.submit')}
                       </button>

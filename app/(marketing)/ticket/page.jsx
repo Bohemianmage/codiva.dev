@@ -9,11 +9,21 @@ import { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useTranslation } from 'react-i18next';
-
-const PRIMARY = '#104E4E';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import Input, { Textarea, Select } from '@/components/ui/Input';
 
 function Field({ formik, label, name, as = 'input', id, ...rest }) {
   const inputId = id || name;
+  const error = formik.touched[name] && formik.errors[name];
+  const shared = {
+    id: inputId,
+    name,
+    onChange: formik.handleChange,
+    onBlur: formik.handleBlur,
+    value: formik.values[name],
+    ...rest,
+  };
 
   return (
     <div>
@@ -22,41 +32,14 @@ function Field({ formik, label, name, as = 'input', id, ...rest }) {
       </label>
 
       {as === 'textarea' ? (
-        <textarea
-          id={inputId}
-          name={name}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          value={formik.values[name]}
-          className="w-full rounded-lg border border-zinc-300 px-4 py-2 outline-none focus:ring-2"
-          rows={rest.rows || 4}
-          {...rest}
-        />
+        <Textarea {...shared} rows={rest.rows || 4} />
       ) : as === 'select' ? (
-        <select
-          id={inputId}
-          name={name}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          value={formik.values[name]}
-          className="w-full rounded-lg border border-zinc-300 px-4 py-2 outline-none focus:ring-2"
-          {...rest}
-        />
+        <Select {...shared}>{rest.children}</Select>
       ) : (
-        <input
-          id={inputId}
-          name={name}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          value={formik.values[name]}
-          className="w-full rounded-lg border border-zinc-300 px-4 py-2 outline-none focus:ring-2"
-          {...rest}
-        />
+        <Input {...shared} />
       )}
 
-      {formik.touched[name] && formik.errors[name] && (
-        <p className="mt-1 text-xs text-red-600">{formik.errors[name]}</p>
-      )}
+      {error && <p className="mt-1 text-xs text-red-600">{formik.errors[name]}</p>}
     </div>
   );
 }
@@ -118,28 +101,24 @@ export default function TicketPage() {
   if (submitted) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
-        <div className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-8">
-          <h1 className="text-2xl font-semibold mb-2" style={{ color: PRIMARY }}>
+        <Card className="w-full max-w-xl p-8">
+          <h1 className="text-2xl font-semibold mb-2 text-codiva-primary">
             {t('ticket.status.submittedTitle')}
           </h1>
           <p className="text-zinc-700">{t('ticket.status.submittedMsg')}</p>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="mt-6 w-full rounded-lg py-3 text-white"
-            style={{ backgroundColor: PRIMARY }}
-          >
+          <Button type="button" onClick={() => setSubmitted(false)} className="mt-6 w-full">
             {t('ticket.buttons.new')}
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <main className="min-h-[80vh] flex items-center justify-center bg-[#F9FAFB] px-4 py-10 pt-24">
-      <div className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-8">
+    <main className="min-h-[80vh] flex items-center justify-center bg-codiva-background px-4 py-10 pt-24">
+      <Card className="w-full max-w-2xl p-8">
         <header className="mb-6">
-          <h1 className="text-3xl font-semibold mb-1" style={{ color: PRIMARY }}>
+          <h1 className="text-3xl font-semibold mb-1 text-codiva-primary">
             {t('ticket.title')}
           </h1>
           <p className="text-sm text-zinc-600">{t('ticket.subtitle')}</p>
@@ -181,7 +160,7 @@ export default function TicketPage() {
             <label className="block mb-1 text-sm font-medium text-zinc-800">
               {t('ticket.fields.attachments')}
             </label>
-            <input
+            <Input
               type="file"
               multiple
               accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx"
@@ -200,7 +179,6 @@ export default function TicketPage() {
                 setFiles(unique);
                 e.target.value = '';
               }}
-              className="w-full rounded-lg border border-zinc-300 px-4 py-2"
             />
 
             {files.length > 0 && (
@@ -209,7 +187,7 @@ export default function TicketPage() {
                   {files.map((f, idx) => (
                     <li
                       key={`${f.name}-${f.size}-${idx}`}
-                      className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-sm"
+                      className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                     >
                       <span className="truncate">
                         {f.name}{' '}
@@ -244,18 +222,13 @@ export default function TicketPage() {
             <p className="mt-1 text-xs text-zinc-500">{t('ticket.hints.attachments')}</p>
           </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-lg py-3 text-white"
-            style={{ backgroundColor: PRIMARY }}
-            disabled={formik.isSubmitting}
-          >
+          <Button type="submit" className="w-full" disabled={formik.isSubmitting}>
             {formik.isSubmitting ? t('common.status.loading') : t('ticket.buttons.submit')}
-          </button>
+          </Button>
 
           {serverError && <p className="text-center text-sm text-red-600">{serverError}</p>}
         </form>
-      </div>
+      </Card>
     </main>
   );
 }

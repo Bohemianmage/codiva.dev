@@ -3,7 +3,7 @@ import clsx from 'clsx';
 
 /**
  * Reusable Heading component
- * Applies font-satoshi and allows flexibility in tag, size and className
+ * Applies font-display and allows flexibility in tag, size and className
  *
  * @param {string} as - HTML tag to render (default h1)
  * @param {string} size - tailwind text size class (e.g. "text-4xl")
@@ -20,7 +20,7 @@ export default function Heading({
   return (
     <Tag
       className={clsx(
-        'font-satoshi font-bold tracking-tight leading-tight',
+        'font-display font-bold tracking-tight leading-tight',
         size,
         className
       )}

@@ -228,7 +228,7 @@ export default function FormularioCotizacion() {
       {/* Botón submit */}
       <button
         type="submit"
-        className="w-full bg-codiva-primary text-white py-3 rounded-lg hover:bg-[#0c3e3e] transition text-base font-medium"
+        className="w-full bg-codiva-primary text-white py-3 rounded-xl hover:bg-codiva-primary-dark transition text-base font-medium"
       >
         {t('buttons.submit')}
       </button>

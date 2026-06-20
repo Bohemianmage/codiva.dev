@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Github, Linkedin, Instagram } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { CODIVA_BRAND } from '@/lib/brand';
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
@@ -26,25 +28,34 @@ export default function Footer() {
         </span>
 
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-          {/* Link a Tickets */}
           <Link
             href="/ticket"
             locale={i18n?.language}
-            className="text-codiva-primary hover:text-white font-medium transition-colors"
+            className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
             {t('footer.ticketLink')}
           </Link>
 
           <a
-            href="mailto:hello@codiva.dev"
-            className="text-codiva-primary hover:text-white font-medium transition-colors"
+            href={`mailto:${CODIVA_BRAND.urls.email}`}
+            className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
-            hello@codiva.dev
+            {CODIVA_BRAND.urls.email}
           </a>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <a
-              href="https://github.com/Bohemianmage"
+              href={CODIVA_BRAND.urls.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              title="LinkedIn"
+              className="text-codiva-accent-light hover:text-white transition-all duration-200 transform hover:-translate-y-0.5 p-1.5"
+            >
+              <Linkedin size={22} strokeWidth={1.8} />
+            </a>
+            <a
+              href={CODIVA_BRAND.urls.github}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub"
@@ -54,24 +65,14 @@ export default function Footer() {
               <Github size={20} strokeWidth={1.8} />
             </a>
             <a
-              href="https://www.linkedin.com/company/codiva-dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-              title="LinkedIn"
-              className="text-zinc-400 hover:text-white transition-all duration-200 transform hover:-translate-y-0.5 p-1"
-            >
-              <Linkedin size={20} strokeWidth={1.8} />
-            </a>
-            <a
-              href="https://www.instagram.com/codiva_dev"
+              href={CODIVA_BRAND.urls.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
               title="Instagram"
-              className="text-zinc-400 hover:text-white transition-all duration-200 transform hover:-translate-y-0.5 p-1"
+              className="text-zinc-500 hover:text-white transition-all duration-200 transform hover:-translate-y-0.5 p-1"
             >
-              <Instagram size={20} strokeWidth={1.8} />
+              <Instagram size={18} strokeWidth={1.8} />
             </a>
           </div>
         </div>

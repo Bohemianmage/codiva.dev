@@ -1,3 +1,5 @@
+const brand = require('./lib/brand.json');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -10,16 +12,18 @@ module.exports = {
     extend: {
       colors: {
         codiva: {
-          primary: '#104E4E',      // Dark Teal - principal
-          background: '#F9FAFB',   // Gris cálido tenue
-          secondary: '#6A757A',    // Gris suave para texto complementario
-          muted: '#E5E7EB',        // Gris claro para borders y fondo neutral suave
+          primary: brand.colors.primary,
+          'primary-dark': brand.colors.primaryDark,
+          background: brand.colors.background,
+          secondary: brand.colors.secondary,
+          muted: brand.colors.muted,
+          'accent-light': brand.colors.accentLight,
         },
       },
       fontFamily: {
-        satoshi: ['var(--font-satoshi)', 'sans-serif'],
+        display: ['var(--font-display)', 'sans-serif'],
         inter: ['var(--font-inter)', 'sans-serif'],
-        sans: ['var(--font-inter)', 'sans-serif'], // redefine base
+        sans: ['var(--font-inter)', 'sans-serif'],
       },
     },
   },

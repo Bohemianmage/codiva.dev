@@ -75,13 +75,14 @@ export default function Navbar() {
   }, []);
 
   return (
-    <motion.nav
-      initial={{ y: 0 }}
-      animate={{ y: showNavbar ? 0 : -80 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed top-0 z-50 w-full border-b border-zinc-200/80 bg-white/85 font-inter shadow-[0_4px_24px_-8px_rgba(15,23,42,0.08)] backdrop-blur-md supports-[backdrop-filter]:bg-white/75 px-6 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:px-12 md:pb-4"
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
+    <div className="fixed top-0 z-50 w-full px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:px-6 pointer-events-none">
+      <motion.nav
+        initial={{ y: 0 }}
+        animate={{ y: showNavbar ? 0 : -96 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="glass-panel pointer-events-auto relative mx-auto max-w-7xl rounded-2xl font-inter px-5 py-3 md:px-8 md:py-3.5"
+      >
+      <div className="flex items-center justify-between">
         {/* Logo principal (click lleva al inicio) */}
         <motion.div
           onClick={() => scrollTo('hero')}
@@ -91,7 +92,7 @@ export default function Navbar() {
           className="flex items-center space-x-2 cursor-pointer"
         >
           <Image src="/logo.svg" alt="Codiva logo" width={28} height={28} />
-          <div className="text-xl font-bold tracking-tight text-zinc-900 font-satoshi flex items-end">
+          <div className="text-xl font-bold tracking-tight text-zinc-900 font-display flex items-end">
             Codiva
             <motion.span
               initial={{ opacity: 0, y: 4 }}
@@ -163,7 +164,7 @@ export default function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="absolute left-0 right-0 top-full z-50 border-b border-zinc-200/90 bg-white/95 px-6 pb-6 pt-2 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/90 md:hidden"
+              className="glass-panel absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 rounded-2xl px-6 pb-6 pt-2 md:hidden"
             >
               <motion.div
                 variants={navVariants}
@@ -187,6 +188,7 @@ export default function Navbar() {
           </>
         )}
       </AnimatePresence>
-    </motion.nav>
+      </motion.nav>
+    </div>
   );
 }

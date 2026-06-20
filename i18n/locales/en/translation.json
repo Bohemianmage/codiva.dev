@@ -1,6 +1,6 @@
 {
   "title": "Codiva.dev | Custom software and digital products",
-  "description": "Custom software in Mexico: SaaS platforms, vertical operating systems, e-commerce, and corporate sites. Every project is shaped around how your business runs - from idea to production.",
+  "description": "Custom software in Mexico: SaaS platforms, vertical operating systems, e-commerce, and corporate sites. Every project is shaped around how your business runs, from idea to production.",
   "nav": {
     "about": "About us",
     "services": "Services",
@@ -35,11 +35,42 @@
     "cleanCode": "Custom software.",
     "customTech": "Built around your business.",
     "withoutNoise": "No bureaucracy, no complications.",
-    "viewServices": "View services"
+    "viewServices": "View services",
+    "trustBadges": ["Mexico", "Products in production", "LegalTech · Hospitality · Industrial"]
+  },
+  "process": {
+    "title": "How we work",
+    "subtitle": "From idea to production with a clear rhythm and direct communication with the people writing the code.",
+    "steps": [
+      {
+        "title": "Discovery",
+        "description": "We learn your operations, users, and constraints. We define scope, priorities, and initial architecture."
+      },
+      {
+        "title": "Design & build",
+        "description": "We design flows and ship in short iterations: frontend, backend, integrations, and admin panels."
+      },
+      {
+        "title": "Production",
+        "description": "We deploy carefully: payments, roles, sensitive data, and baseline monitoring ready to operate."
+      },
+      {
+        "title": "Evolution",
+        "description": "Ongoing support, fixes, and new capabilities on top of what is already live."
+      }
+    ]
   },
   "about": {
     "title": "Custom software that runs real businesses",
-    "paragraph1": "At Codiva.dev we build custom software - not templates or generic packages - and ship it to production: LegalTech platforms, construction ERPs, hospitality operations, e-commerce, and bilingual corporate sites, with payments, user roles, admin panels, and ongoing support.",
+    "paragraph1Intro": "At Codiva.dev we build custom software, not templates or generic packages, and ship it to production: ",
+    "productionTypes": [
+      "LegalTech platforms",
+      "construction ERPs",
+      "hospitality operations",
+      "e-commerce",
+      "bilingual corporate sites"
+    ],
+    "paragraph1Outro": ", with payments, user roles, admin panels, and ongoing support.",
     "paragraph2": "Every project starts from how your business operates: we design sustainable architecture, integrate Stripe, Supabase, and external APIs, and deliver at a clear pace. Whether it's your first launch or evolving what's already live, Codiva.dev works with you through direct communication with the people writing the code."
   },
   "services": {
@@ -51,7 +82,7 @@
         "badge": "",
         "details": [
           "Custom responsive design",
-          "1–3 conversion-optimized sections",
+          "1 to 3 conversion-optimized sections",
           "Contact form or clear call-to-action",
           "SEO-ready structure",
           "Multilingual support"
@@ -107,7 +138,7 @@
   },
   "cases": {
     "title": "Success stories",
-    "description": "Over a dozen products in production - LegalTech, hospitality, construction, retail, and corporate sites. These are some of the brands we work with and the technologies we use to ship them.",
+    "description": "Over a dozen products in production: LegalTech, hospitality, construction, retail, and corporate sites. These are some of the brands we work with and the technologies we use to ship them.",
     "list": [
       {
         "name": "Inquilia",

@@ -5,18 +5,21 @@ import { motion, useInView } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import Heading from '../components/Heading';
 import Paragraph from '../components/Paragraph';
+import PhraseFade from '../components/PhraseFade';
+import BrandPattern from '../components/BrandPattern';
 
 export default function About() {
   const { t } = useTranslation();
   const sectionRef = useRef(null);
 
-  // Animación siempre activa al entrar al viewport
   const inView = useInView(sectionRef, {
     triggerOnce: false,
     threshold: 0.85,
   });
 
-  // Insertar "Codiva.dev" estilizado dentro de un texto
+  const productionTypes = t('about.productionTypes', { returnObjects: true });
+  const typedPhrases = Array.isArray(productionTypes) ? productionTypes : [];
+
   const CodivaDev = () => (
     <>
       <motion.span
@@ -43,13 +46,13 @@ export default function About() {
   return (
     <section
       id="about"
-      className="section-spacing scroll-mt-24 md:scroll-mt-28 w-full px-6 md:px-12 flex justify-center bg-zinc-50"
+      className="section-spacing scroll-mt-24 md:scroll-mt-28 relative w-full px-6 md:px-12 flex justify-center bg-zinc-50 overflow-hidden"
     >
+      <BrandPattern />
       <div
         ref={sectionRef}
-        className="w-full max-w-4xl bg-white rounded-xl shadow-lg px-8 py-12 text-center"
+        className="glass-panel relative w-full max-w-4xl rounded-2xl px-8 py-12 text-center"
       >
-        {/* Título animado */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
@@ -72,13 +75,16 @@ export default function About() {
             </motion.span>
           </Heading>
 
-          {/* Fallback SEO */}
           <noscript>
             <h2 style={{ display: 'none' }}>{t('about.title')}</h2>
+            <p style={{ display: 'none' }}>
+              {t('about.paragraph1Intro')}
+              {typedPhrases.join(', ')}
+              {t('about.paragraph1Outro')}
+            </p>
           </noscript>
         </motion.div>
 
-        {/* Párrafos animados */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -86,9 +92,15 @@ export default function About() {
           key={inView ? 'visible-text' : 'hidden-text'}
         >
           <Paragraph className="max-w-2xl mx-auto text-codiva-secondary text-base md:text-lg mb-4">
-            {t('about.paragraph1').split('Codiva.dev')[0]}
+            {t('about.paragraph1Intro').split('Codiva.dev')[0]}
             <CodivaDev />
-            {t('about.paragraph1').split('Codiva.dev')[1]}
+            {t('about.paragraph1Intro').split('Codiva.dev')[1]}
+            <PhraseFade
+              phrases={typedPhrases}
+              className="font-medium text-codiva-primary"
+              active={inView}
+            />
+            {t('about.paragraph1Outro')}
           </Paragraph>
 
           <Paragraph className="max-w-2xl mx-auto text-zinc-600 text-base md:text-lg">

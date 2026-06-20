@@ -1,6 +1,7 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { formatCurrency, formatDate, EMPTY_LABEL, DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { serviceTypeHeading } from '@/lib/ops/quote-document/catalog';
+import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
 
 export type QuoteLineItem = {
   title: string;
@@ -33,13 +34,7 @@ export type QuoteDocumentData = {
   endClientCompany?: string | null;
 };
 
-const BRAND = {
-  primary: '#104E4E',
-  text: '#18181B',
-  muted: '#52525B',
-  border: '#E4E4E7',
-  background: '#FAFAFA',
-};
+const BRAND = BRAND_EMAIL;
 
 function formatIssuedDate(value: string | Date): string {
   const d = typeof value === 'string' ? new Date(value) : value;
@@ -179,8 +174,8 @@ export function renderQuoteDocumentHtml(data: QuoteDocumentData): string {
         ${metaRow('Estado del proyecto', data.projectState)}
         ${validUntilBlock}
       </div>
-      <p style="margin:0;font-size:13px;color:${BRAND.muted};">Codiva.dev - Soluciones digitales a la medida</p>
-      <p style="margin:4px 0 0;font-size:13px;"><a href="mailto:hello@codiva.dev" style="color:${BRAND.primary};text-decoration:none;">hello@codiva.dev</a></p>
+      <p style="margin:0;font-size:13px;color:${BRAND.muted};">${escapeHtml(CODIVA_BRAND.tagline)}</p>
+      <p style="margin:4px 0 0;font-size:13px;"><a href="mailto:${CODIVA_BRAND.urls.email}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.email}</a></p>
       ${section('Alcance del servicio', data.scope)}
       ${data.deliverables ? section('Entregables', data.deliverables) : ''}
       ${lineItemsBlock(lineItems, currency, data.totalAmount)}

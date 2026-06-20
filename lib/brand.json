@@ -1,0 +1,37 @@
+{
+  "name": "Codiva.dev",
+  "tagline": "Software a la medida y productos digitales",
+  "taglineShort": "Software a la medida. Hecho para tu operación.",
+  "colors": {
+    "primary": "#104E4E",
+    "primaryDark": "#0c3e3e",
+    "primaryEmail": "#0B3D3D",
+    "background": "#F9FAFB",
+    "backgroundAlt": "#FAFAFA",
+    "secondary": "#6A757A",
+    "muted": "#E5E7EB",
+    "text": "#18181B",
+    "textMuted": "#52525B",
+    "textEmailMuted": "#6B7280",
+    "card": "#FFFFFF",
+    "border": "#E5E7EB",
+    "borderQuote": "#E4E4E7",
+    "accentLight": "#5EEAD4"
+  },
+  "fonts": {
+    "body": "Inter",
+    "display": "Plus Jakarta Sans"
+  },
+  "radius": {
+    "button": "0.75rem",
+    "card": "1rem",
+    "input": "0.5rem"
+  },
+  "urls": {
+    "site": "https://www.codiva.dev",
+    "github": "https://github.com/Codiva-dev",
+    "linkedin": "https://www.linkedin.com/company/codiva-dev",
+    "instagram": "https://www.instagram.com/codiva_dev",
+    "email": "hello@codiva.dev"
+  }
+}

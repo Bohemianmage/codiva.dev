@@ -92,7 +92,7 @@ export default function Contact() {
                     name="name"
                     aria-required="true"
                     aria-describedby="name-error"
-                    className="w-full border border-zinc-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
+                    className="w-full border border-zinc-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
                   />
                   <ErrorMessage
                     name="name"
@@ -117,7 +117,7 @@ export default function Contact() {
                     type="email"
                     aria-required="true"
                     aria-describedby="email-error"
-                    className="w-full border border-zinc-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
+                    className="w-full border border-zinc-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
                   />
                   <ErrorMessage
                     name="email"
@@ -143,7 +143,7 @@ export default function Contact() {
                     rows="5"
                     aria-required="true"
                     aria-describedby="message-error"
-                    className="w-full border border-zinc-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
+                    className="w-full border border-zinc-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-codiva-primary"
                   />
                   <ErrorMessage
                     name="message"
@@ -159,7 +159,7 @@ export default function Contact() {
                   disabled={isSubmitting}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full bg-codiva-primary text-white py-3 px-6 rounded-2xl hover:bg-[#0c3e3e] transition font-medium"
+                  className="w-full bg-codiva-primary text-white py-3 px-6 rounded-xl hover:bg-codiva-primary-dark transition font-medium"
                 >
                   {t('common.buttons.submit')}
                 </motion.button>

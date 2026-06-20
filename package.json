@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate-og-image": "node scripts/generate-og-image.mjs",
     "generate:supabase-emails": "node scripts/generate-supabase-email-templates.mjs"
   },
   "dependencies": {

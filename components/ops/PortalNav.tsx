@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 
 const links = (slug: string) => [
   { href: `/p/${slug}`, label: 'Resumen' },
@@ -29,9 +29,14 @@ export default function PortalNav({ slug, projectName }: { slug: string; project
   return (
     <header className="border-b border-zinc-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Portal del proyecto</p>
-          <h1 className="text-xl font-bold text-zinc-900">{projectName}</h1>
+        <div className="flex items-start gap-3 sm:items-center">
+          <Link href={`/p/${slug}`} className="mt-0.5 shrink-0 sm:mt-0">
+            <Image src="/logo.svg" alt="Codiva" width={32} height={32} />
+          </Link>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Portal del proyecto</p>
+            <h1 className="text-xl font-bold text-zinc-900">{projectName}</h1>
+          </div>
         </div>
         <button type="button" onClick={signOut} className="text-sm text-zinc-500 hover:text-zinc-800">
           Cerrar sesión

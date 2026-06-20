@@ -53,7 +53,7 @@ a {
 
 /* Botón primario reutilizable */
 .button-primary {
-  @apply bg-codiva-primary text-white px-5 py-2 rounded-md hover:bg-[#0c3e3e] transition;
+  @apply bg-codiva-primary text-white px-5 py-2 rounded-xl hover:bg-codiva-primary-dark transition;
 }
 
 /* Ping animado rápido */
@@ -137,4 +137,21 @@ a {
 
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;             /* Chrome, Safari y Opera */
+}
+
+/* Panel cristalizado (glass) reutilizable */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 32px -12px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.94);
+  }
 }

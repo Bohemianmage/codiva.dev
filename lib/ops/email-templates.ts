@@ -1,15 +1,8 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { opsBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
+import { BRAND_EMAIL } from '@/lib/brand';
 
-const BRAND = {
-  primary: '#104E4E',
-  primaryDark: '#0B3D3D',
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  text: '#18181B',
-  muted: '#6B7280',
-  border: '#E5E7EB',
-};
+const BRAND = BRAND_EMAIL;
 
 type LayoutOptions = {
   preview?: string;

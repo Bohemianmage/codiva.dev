@@ -1,12 +1,14 @@
 /** Layout HTML de marca Codiva para plantillas de Supabase Auth (Go templates). */
 
+import brand from '../lib/brand.json' with { type: 'json' };
+
 const BRAND = {
-  primary: '#104E4E',
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  text: '#18181B',
-  muted: '#6B7280',
-  border: '#E5E7EB',
+  primary: brand.colors.primary,
+  background: brand.colors.background,
+  card: brand.colors.card,
+  text: brand.colors.text,
+  muted: brand.colors.textEmailMuted,
+  border: brand.colors.border,
 };
 
 const CONFIRMATION_URL = '{{ .ConfirmationURL }}';
