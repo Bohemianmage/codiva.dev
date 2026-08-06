@@ -125,7 +125,7 @@ export default async function PortalHomePage({
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Documentos / NDA</p>
           <p className="mt-2 font-semibold text-zinc-900">{hasNda ? 'NDA disponible' : 'Bandeja lista'}</p>
-          <p className="mt-1 text-sm text-zinc-600">Materiales y solicitudes pendientes de firma</p>
+          <p className="mt-1 text-sm text-zinc-600">Solicitudes y materiales del proyecto</p>
         </Link>
       </section>
 
