@@ -71,7 +71,7 @@ async function sendRecoveryEmail(
       ok: false,
       message:
         error.message.includes('redirect')
-          ? 'URL de redirección no permitida en Supabase. Agrega https://ops.codiva.dev/** en Authentication → URL Configuration.'
+          ? 'URL de redirección no permitida en Supabase. Agrega https://ops.codiva.dev/** y https://portal.codiva.dev/** en Authentication → URL Configuration.'
           : `No pudimos generar el enlace: ${error.message}`,
     };
   }

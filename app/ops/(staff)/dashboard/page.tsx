@@ -8,6 +8,7 @@ import {
   TICKET_STATUS_LABELS,
   formatDate,
 } from '@/lib/ops/labels';
+import { projectPortalUrl } from '@/lib/ops/host';
 
 export default async function DashboardPage() {
   const { supabase } = await requireStaff();
@@ -106,12 +107,21 @@ export default async function DashboardPage() {
                 <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
                   <span>{p.progress_percent}% avance</span>
                   <span>Entrega: {formatDate(p.target_delivery_date)}</span>
-                  <Link
+                  <a
                     href={`/p/${p.slug}`}
                     className="font-medium text-codiva-primary hover:underline"
+                    title="Misma sesión staff en ops"
                   >
-                    Ver como cliente
-                  </Link>
+                    Vista previa
+                  </a>
+                  <span className="text-zinc-300">·</span>
+                  <a
+                    href={projectPortalUrl(p.slug)}
+                    className="font-medium text-zinc-600 hover:underline"
+                    title="URL del cliente en portal.codiva.dev"
+                  >
+                    URL cliente
+                  </a>
                 </div>
               </li>
             ))}
@@ -125,7 +135,8 @@ export default async function DashboardPage() {
           <div>
             <h2 className="font-semibold">Vista portal cliente</h2>
             <p className="text-sm text-zinc-500">
-              Entra al portal con tu sesión staff (banner de vista previa). No registra aceptaciones legales.
+              <strong>Vista previa</strong> usa tu sesión en ops (mismo host). La{' '}
+              <strong>URL cliente</strong> es portal.codiva.dev (invitar / compartir).
             </p>
           </div>
           <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
@@ -134,14 +145,16 @@ export default async function DashboardPage() {
         </div>
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {(projects ?? []).map((p) => (
-            <li key={`preview-${p.id}`}>
-              <Link
-                href={`/p/${p.slug}`}
-                className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2.5 text-sm hover:border-codiva-primary/40"
-              >
-                <span className="font-medium text-zinc-900">{p.name}</span>
-                <span className="text-xs text-codiva-primary">Abrir</span>
-              </Link>
+            <li key={`preview-${p.id}`} className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm">
+              <p className="font-medium text-zinc-900">{p.name}</p>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                <a href={`/p/${p.slug}`} className="text-codiva-primary hover:underline">
+                  Vista previa (ops)
+                </a>
+                <a href={projectPortalUrl(p.slug)} className="text-zinc-600 hover:underline">
+                  URL cliente
+                </a>
+              </div>
             </li>
           ))}
           {!projects?.length && <p className="text-sm text-zinc-500">Sin proyectos para previsualizar</p>}

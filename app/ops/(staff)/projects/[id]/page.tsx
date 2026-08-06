@@ -26,7 +26,7 @@ import {
   formatDate,
   formatCurrency,
 } from '@/lib/ops/labels';
-import { opsBaseUrl } from '@/lib/ops/host';
+import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
@@ -134,10 +134,18 @@ export default async function ProjectDetailPage({
               Export compliance
             </a>
             <a
-              href={`/p/${project.slug}`}
+              href={staffPortalPreviewPath(project.slug)}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+              title="Vista previa con sesión staff (ops)"
             >
-              Ver como cliente
+              Vista previa
+            </a>
+            <a
+              href={projectPortalUrl(project.slug)}
+              className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-medium text-white hover:bg-codiva-primary-dark"
+              title="Abrir URL del cliente"
+            >
+              URL cliente
             </a>
           </div>
         }
@@ -452,9 +460,14 @@ export default async function ProjectDetailPage({
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
           </form>
           <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
-            <span>Login: {opsBaseUrl()}/p/{project.slug}/login</span>
-            <Link href={`/p/${project.slug}`} className="text-codiva-primary hover:underline">
-              Ver como cliente
+            <span>
+              Login cliente:{' '}
+              <a href={projectPortalUrl(project.slug, '/login')} className="text-codiva-primary hover:underline">
+                {projectPortalUrl(project.slug, '/login')}
+              </a>
+            </span>
+            <Link href={staffPortalPreviewPath(project.slug)} className="text-codiva-primary hover:underline">
+              Vista previa (ops)
             </Link>
           </div>
           <ul className="space-y-2 text-sm">

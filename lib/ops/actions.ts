@@ -17,7 +17,7 @@ import {
   templatePortalInviteExistingUser,
 } from '@/lib/ops/email-templates';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
-import { opsBaseUrl } from '@/lib/ops/host';
+import { opsBaseUrl, projectPortalUrl } from '@/lib/ops/host';
 import { uploadOpsFile } from '@/lib/ops/storage';
 import { ingestProjectDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
@@ -557,7 +557,7 @@ export async function sendQuote(quoteId: string, projectId: string) {
       subject: `Nueva cotización: ${project?.name}`,
       html: templateQuoteSent(
         project?.name ?? 'Tu proyecto',
-        `${opsBaseUrl()}/p/${project?.slug}/cotizacion`
+        projectPortalUrl(project?.slug ?? '', '/cotizacion')
       ),
     });
   }
@@ -609,7 +609,7 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
       subject: `Acceso a tu portal - ${project.name}`,
       html: templatePortalInviteExistingUser(
         project.name,
-        `${opsBaseUrl()}/p/${project.slug}/login`
+        projectPortalUrl(project.slug, '/login')
       ),
     });
   } else {
@@ -629,7 +629,7 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
         project.name,
         email,
         tempPassword,
-        `${opsBaseUrl()}/p/${project.slug}/login`
+        projectPortalUrl(project.slug, '/login')
       ),
     });
   }
@@ -1004,7 +1004,7 @@ export async function publishLegalVersionAndNotify(formData: FormData) {
       subject: `Actualización legal — ${project.name}`,
       html: templateLegalReacceptance(
         project.name,
-        `${opsBaseUrl()}/p/${project.slug}/aceptar`,
+        projectPortalUrl(project.slug, '/aceptar'),
         versionCode
       ),
     });

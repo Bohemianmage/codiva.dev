@@ -67,7 +67,8 @@ Do not label Plus Jakarta Sans as “Satoshi” in code or docs.
 | Surface | Location |
 |---------|----------|
 | Marketing site | `codiva.dev` |
-| Ops / portal | `ops.codiva.dev` |
+| Ops (staff) | `ops.codiva.dev` |
+| Portal cliente | `portal.codiva.dev` |
 | Transactional email | `lib/ops/email-templates.ts` |
 | Quote PDF | `lib/ops/quote-document/` |
 | Supabase auth email | `scripts/supabase-email-layout.mjs` |

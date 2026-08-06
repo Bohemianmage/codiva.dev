@@ -40,7 +40,7 @@ export const TERMS_OF_USE: LegalDocument = {
       title: '1. Definiciones',
       lead: 'Para efectos de estos Términos, se entenderá por:',
       items: [
-        'Plataforma / Portal: el sitio web, aplicaciones y herramientas digitales de Codiva Ops y portales de proyecto en ops.codiva.dev (u otros dominios que indiquemos).',
+        'Plataforma / Portal: el sitio web, aplicaciones y herramientas digitales de Codiva (ops.codiva.dev para el equipo Codiva; portal.codiva.dev para clientes, u otros dominios que indiquemos).',
         'Usuario: toda persona física que acceda, se registre o utilice la Plataforma, incluyendo colaboradores del cliente invitados a un proyecto.',
         'Cliente: la persona moral o física contratante o prospecto con la que Codiva negocia o ejecuta un proyecto.',
         'Proyecto: el espacio del Portal asociado a una organización cliente, donde pueden participar múltiples Usuarios con distintos roles.',

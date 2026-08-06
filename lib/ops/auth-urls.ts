@@ -1,11 +1,10 @@
-import { opsBaseUrl } from '@/lib/ops/host';
+import { opsBaseUrl, portalBaseUrl } from '@/lib/ops/host';
 
 export function opsAuthCallbackUrl(next = '/dashboard'): string {
-  const base = opsBaseUrl().replace(/\/$/, '');
-  return `${base}/auth/callback?next=${encodeURIComponent(next)}`;
+  return `${opsBaseUrl()}/auth/callback?next=${encodeURIComponent(next)}`;
 }
 
 export function portalAuthCallbackUrl(slug: string, next = `/p/${slug}`): string {
-  const base = opsBaseUrl().replace(/\/$/, '');
-  return `${base}/auth/callback?next=${encodeURIComponent(next)}`;
+  const safeNext = next.startsWith('/') ? next : `/p/${slug}`;
+  return `${portalBaseUrl()}/auth/callback?next=${encodeURIComponent(safeNext)}`;
 }

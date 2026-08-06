@@ -4,6 +4,8 @@ import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { createProject } from '@/lib/ops/actions';
 import { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
+import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
+
 export default async function ProjectsPage() {
   const { supabase } = await requireStaff();
   const { data: projects } = await supabase
@@ -62,12 +64,12 @@ export default async function ProjectsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1">
-                    <Link href={`/p/${p.slug}`} className="text-codiva-primary hover:underline">
-                      Ver como cliente
+                    <Link href={staffPortalPreviewPath(p.slug)} className="text-codiva-primary hover:underline">
+                      Vista previa
                     </Link>
-                    <span className="text-xs text-zinc-400">
-                      {p.client_visible ? `/p/${p.slug}` : 'Portal aún oculto al cliente'}
-                    </span>
+                    <a href={projectPortalUrl(p.slug)} className="text-xs text-zinc-600 hover:underline">
+                      {p.client_visible ? 'URL cliente' : 'URL cliente (aún oculto)'}
+                    </a>
                   </div>
                 </td>
                 <td className="px-4 py-3 text-zinc-500">{formatDate(p.target_delivery_date)}</td>

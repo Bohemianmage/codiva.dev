@@ -1,39 +1,132 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
-import { isOpsHost } from '@/lib/ops/host';
+import {
+  isOpsHost,
+  isPortalHost,
+  opsBaseUrl,
+  portalBaseUrl,
+  marketingBaseUrl,
+} from '@/lib/ops/host';
+
+function withSessionCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach((c) => {
+    to.cookies.set(c.name, c.value);
+  });
+  return to;
+}
+
+function absoluteRedirect(request: NextRequest, base: string, path: string) {
+  const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
+  // Preserve query string
+  request.nextUrl.searchParams.forEach((value, key) => {
+    if (!url.searchParams.has(key)) url.searchParams.set(key, value);
+  });
+  return NextResponse.redirect(url);
+}
 
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host');
-  const ops = isOpsHost(host);
   const { pathname } = request.nextUrl;
-
   const sessionResponse = await updateSession(request);
 
   if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
     return sessionResponse;
   }
 
-  if (!ops && pathname.startsWith('/ops')) {
-    return NextResponse.redirect(new URL('/', request.url));
+  const onOps = isOpsHost(host);
+  const onPortal = isPortalHost(host);
+
+  // ——— PORTAL (clientes) ———
+  if (onPortal) {
+    // Estáticos / legales / auth callback
+    if (
+      pathname.startsWith('/client-packs') ||
+      pathname.startsWith('/legal') ||
+      pathname.startsWith('/auth/')
+    ) {
+      if (pathname.startsWith('/auth/')) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/ops${pathname}`;
+        return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      }
+      return sessionResponse;
+    }
+
+    // Raíz: mensaje → marketing
+    if (pathname === '/' || pathname === '') {
+      return withSessionCookies(
+        sessionResponse,
+        absoluteRedirect(request, marketingBaseUrl(), '/')
+      );
+    }
+
+    // Solo rutas de portal de proyecto
+    if (pathname.startsWith('/p/')) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/ops${pathname}`;
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    // Staff / partners no viven aquí
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/projects') ||
+      pathname.startsWith('/leads') ||
+      pathname.startsWith('/login') ||
+      pathname.startsWith('/partner') ||
+      pathname.startsWith('/q/')
+    ) {
+      return withSessionCookies(
+        sessionResponse,
+        absoluteRedirect(request, opsBaseUrl(), pathname)
+      );
+    }
+
+    // Todo lo demás del portal → marketing
+    return withSessionCookies(
+      sessionResponse,
+      absoluteRedirect(request, marketingBaseUrl(), '/')
+    );
   }
 
-  // Packs estáticos y legales públicos viven en /app (no bajo /ops)
-  if (ops && (pathname.startsWith('/client-packs') || pathname.startsWith('/legal'))) {
+  // ——— OPS (staff) ———
+  if (onOps) {
+    // Cliente debe usar portal.*; redirigir /p/* hacia portal
+    // Excepción: ?preview=1 o header interno — usamos cookie/session en ops
+    // Mantenemos /p/* en ops SOLO como vista previa staff (misma sesión).
+    // Los emails de cliente apuntan a portal.*.
+
+    if (pathname.startsWith('/client-packs') || pathname.startsWith('/legal')) {
+      return sessionResponse;
+    }
+
+    if (!pathname.startsWith('/ops')) {
+      const url = request.nextUrl.clone();
+      if (pathname === '/') {
+        url.pathname = '/ops/dashboard';
+      } else {
+        url.pathname = `/ops${pathname}`;
+      }
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
     return sessionResponse;
   }
 
-  if (ops && !pathname.startsWith('/ops')) {
-    const url = request.nextUrl.clone();
-    if (pathname === '/') {
-      url.pathname = '/ops/dashboard';
-    } else {
-      url.pathname = `/ops${pathname}`;
-    }
-    const rewrite = NextResponse.rewrite(url);
-    sessionResponse.cookies.getAll().forEach((c) => {
-      rewrite.cookies.set(c.name, c.value);
-    });
-    return rewrite;
+  // ——— MARKETING ———
+  if (pathname.startsWith('/ops')) {
+    return withSessionCookies(
+      sessionResponse,
+      absoluteRedirect(request, marketingBaseUrl(), '/')
+    );
+  }
+
+  // Atajos legacy: /p/* en apex → portal
+  if (pathname.startsWith('/p/')) {
+    return withSessionCookies(
+      sessionResponse,
+      absoluteRedirect(request, portalBaseUrl(), pathname)
+    );
   }
 
   return sessionResponse;
