@@ -279,8 +279,7 @@ INSERT INTO quote_access_tokens (id, quote_id, token, expires_at) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 DELETE FROM quote_access_tokens
-WHERE id = 'e0000001-0001-4000-8000-00000000000b'
-   OR token = 'nirc-mvp-fase1-2026';
+WHERE id = 'e0000001-0001-4000-8000-00000000000b';
 
 -- Hitos
 INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date) VALUES
