@@ -328,7 +328,7 @@ INSERT INTO documents (
     '93000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
     'nda',
-    'NDA mutuo - borrador Codiva × NIRC',
+    'NDA mutuo - borrador (generado en portal)',
     'client-packs/nirc/nda-borrador.html',
     '/client-packs/nirc/nda-borrador.html',
     false, true, 'staff',
@@ -347,7 +347,7 @@ INSERT INTO document_requests (
     'nda_signed',
     'NDA firmado',
     'Devolver el NDA mutuo firmado por el representante legal de la organización.',
-    'Descarga el borrador en Materiales de Codiva, hazlo firmar por el representante legal y súbelo en PDF.',
+    'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF.',
     'nda', 'file', 'open', true, 10, true
   ),
   (

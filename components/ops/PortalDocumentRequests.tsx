@@ -24,8 +24,15 @@ export type PortalDocRequest = {
   fulfilled_document_id: string | null;
 };
 
+export type PortalDocTemplate = {
+  type: string;
+  title: string;
+  href: string;
+};
+
 type Props = {
   requests: PortalDocRequest[];
+  templates?: PortalDocTemplate[];
   fulfillAction: (formData: FormData) => Promise<void>;
 };
 
@@ -36,11 +43,22 @@ const STATUS_TONE: Record<string, string> = {
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200',
 };
 
-export default function PortalDocumentRequests({ requests, fulfillAction }: Props) {
+export default function PortalDocumentRequests({
+  requests,
+  templates = [],
+  fulfillAction,
+}: Props) {
   const sorted = useMemo(
     () => [...requests].sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title)),
     [requests]
   );
+  const templatesByType = useMemo(() => {
+    const map = new Map<string, PortalDocTemplate>();
+    for (const t of templates) {
+      if (!map.has(t.type)) map.set(t.type, t);
+    }
+    return map;
+  }, [templates]);
   const openCount = sorted.filter((r) => r.status === 'open').length;
   const doneCount = sorted.filter((r) => r.status === 'fulfilled').length;
   const [activeId, setActiveId] = useState(
@@ -83,6 +101,7 @@ export default function PortalDocumentRequests({ requests, fulfillAction }: Prop
         {sorted.map((req) => {
           const open = req.status === 'open';
           const selected = req.id === active?.id;
+          const template = templatesByType.get(req.expected_type);
           return (
             <li
               key={req.id}
@@ -142,36 +161,39 @@ export default function PortalDocumentRequests({ requests, fulfillAction }: Prop
                     <p className="mb-3 text-xs text-zinc-500">Fecha objetivo: {formatDate(req.due_date)}</p>
                   )}
 
+                  {template && (
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-codiva-primary/20 bg-codiva-primary/5 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-codiva-primary">
+                          Borrador
+                        </p>
+                        <p className="truncate text-sm font-medium text-zinc-900">{template.title}</p>
+                      </div>
+                      <a
+                        href={template.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-codiva-primary-dark"
+                      >
+                        Descargar
+                      </a>
+                    </div>
+                  )}
+
                   {open ? (
                     <form action={fulfillAction} className="space-y-3 rounded-xl bg-zinc-50 p-4">
                       <input type="hidden" name="requestId" value={req.id} />
 
                       {req.input_mode === 'file' && (
-                        <>
-                          <BrandedFileInput
-                            required
-                            accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
-                            hint={
-                              req.expected_type === 'nda'
-                                ? 'PDF firmado por el representante legal'
-                                : 'PDF, imagen, Office o ZIP'
-                            }
-                          />
-                          {req.expected_type === 'nda' && (
-                            <label className="flex items-start gap-2 text-sm text-zinc-700">
-                              <input
-                                type="checkbox"
-                                name="signed"
-                                defaultChecked
-                                className="mt-0.5 rounded border-zinc-300 text-codiva-primary focus:ring-codiva-primary/30"
-                              />
-                              <span>
-                                Confirmo que el documento está firmado por el representante legal
-                                de la organización.
-                              </span>
-                            </label>
-                          )}
-                        </>
+                        <BrandedFileInput
+                          required
+                          accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
+                          hint={
+                            req.expected_type === 'nda'
+                              ? 'PDF firmado por el representante legal'
+                              : 'PDF, imagen, Office o ZIP'
+                          }
+                        />
                       )}
 
                       {req.input_mode === 'text' && (
