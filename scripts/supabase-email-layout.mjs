@@ -20,6 +20,12 @@ const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, Arial, Helvetica, sans-serif`;
 const CTA_RADIUS = '12px';
 const CONFIRMATION_URL = '{{ .ConfirmationURL }}';
 
+function brandWordmarkHtml() {
+  return `<p style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">
+    Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span>
+  </p>`;
+}
+
 export function buildCodivaEmail({
   subject,
   title,
@@ -63,9 +69,17 @@ export function buildCodivaEmail({
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;">
           <tr>
             <td bgcolor="${BRAND.card}" style="background:${BRAND.card};padding:24px 32px 20px;border-bottom:1px solid ${BRAND.border};">
-              <img src="${LOGO_URL}" alt="${BRAND_NAME}" width="40" height="40" style="display:block;border:0;outline:none;margin:0 0 12px;"/>
-              <p style="margin:0;font-family:${FONT_BODY};font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND.primary};">${BRAND_NAME}</p>
-              <h1 style="margin:8px 0 0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${title}</h1>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:12px;">
+                    <img src="${LOGO_URL}" alt="" width="36" height="36" style="display:block;border:0;outline:none;"/>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    ${brandWordmarkHtml()}
+                  </td>
+                </tr>
+              </table>
+              <h1 style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${title}</h1>
             </td>
           </tr>
           <tr>
