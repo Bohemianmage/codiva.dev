@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BYD — Arquitectura del sitio</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #555;
+      --line: #ccc;
+      --accent: #0b3d2e;
+      --bg-soft: #f4f7f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto;
+      padding: 16px 20px 28px;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      font-size: 9.5pt;
+      line-height: 1.4;
+      max-width: 920px;
+    }
+    h1 {
+      font-size: 16pt;
+      color: var(--accent);
+      margin: 0 0 4px;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 4px;
+    }
+    h2 {
+      font-size: 11.5pt;
+      color: var(--accent);
+      margin: 16px 0 6px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 2px;
+    }
+    p, li { margin: 3px 0; }
+    ul { margin: 4px 0 8px; padding-left: 1.25em; }
+    .meta { color: var(--muted); font-size: 8.5pt; margin: 0 0 10px; }
+    .cover-box {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      margin: 6px 0 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      font-size: 8.5pt;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--bg-soft); font-weight: 600; }
+    .mermaid { margin: 8px 0 14px; background: #fff; }
+    .note {
+      background: #fff8e6;
+      border-left: 3px solid #c9a227;
+      padding: 6px 8px;
+      margin: 8px 0;
+      font-size: 8.5pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>BYD — Arquitectura del sitio web</h1>
+  <p class="meta">Sitio corporativo · catálogo de modelos · leads de electromovilidad · CMS liviano</p>
+
+  <div class="cover-box">
+    <strong>Objetivo</strong>
+    <ul>
+      <li>Presentar la marca y la oferta de camiones eléctricos (V9, T45, T4c y más).</li>
+      <li>Permitir exploración visual (interior/exterior), fichas técnicas y casos de uso.</li>
+      <li>Captar prospectos B2B calificados para asesoría de electromovilidad.</li>
+      <li>Dar soporte postventa (contactos + FAQs) y canal comercial.</li>
+    </ul>
+  </div>
+
+  <h2>1. Mapa del sitio</h2>
+  <pre class="mermaid">
+flowchart TB
+  Home[Home]
+  Modelos[Modelos]
+  Detalle[Detalle modelo]
+  Noticias[Noticias]
+  Postventa[Soporte postventa]
+  Asesoria[Asesoría electromovilidad]
+  Contacto[Contacto comercial]
+  CMS[CMS / Backoffice]
+
+  Home --> Modelos
+  Home --> Noticias
+  Home --> Postventa
+  Home --> Asesoria
+  Home --> Contacto
+  Modelos --> Detalle
+  Detalle --> Ficha[Descarga ficha PDF]
+  Detalle --> Galeria[Galería int / ext]
+  Detalle --> Usos[Ejemplos de uso]
+  Asesoria --> LeadForm[Formulario B2B]
+  Contacto --> ContactForm[Formulario contacto]
+  CMS --> Modelos
+  CMS --> Noticias
+  CMS --> Postventa
+  CMS --> LeadForm
+  </pre>
+
+  <h2>2. Módulos funcionales</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Módulo</th>
+        <th>Qué incluye</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Home</td>
+        <td>Marca, unidades destacadas, noticias relevantes, clientes, redes sociales, relevancia postventa.</td>
+      </tr>
+      <tr>
+        <td>Modelos</td>
+        <td>Listado y detalle (V9, T45, T4c + N). Descripción, galería interior/exterior, ficha PDF, ejemplos de uso.</td>
+      </tr>
+      <tr>
+        <td>Noticias</td>
+        <td>CMS por link de medio; la noticia recién publicada queda como principal.</td>
+      </tr>
+      <tr>
+        <td>Soporte postventa</td>
+        <td>Contactos de soporte técnico y FAQs editables.</td>
+      </tr>
+      <tr>
+        <td>Asesoría electromovilidad</td>
+        <td>Formulario B2B: uso, empresa, correo corporativo. Notificación al equipo comercial.</td>
+      </tr>
+      <tr>
+        <td>Contacto comercial</td>
+        <td>Página de contacto estándar con notificación por email.</td>
+      </tr>
+      <tr>
+        <td>CMS</td>
+        <td>Gestión de modelos, noticias, FAQs, contenidos de home y leads capturados.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Flujo de lead B2B</h2>
+  <pre class="mermaid">
+sequenceDiagram
+  participant P as Prospecto empresa
+  participant W as Sitio BYD
+  participant C as CMS / notificaciones
+  participant A as Asesor comercial
+
+  P->>W: Abre Asesoría electromovilidad
+  P->>W: Envía uso + empresa + mail corporativo
+  W->>C: Guarda lead y valida campos
+  C->>A: Notificación por email
+  A->>P: Seguimiento comercial
+  </pre>
+
+  <h2>4. Stack propuesto</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Capa</th>
+        <th>Tecnología</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Frontend</td>
+        <td>Next.js (App Router) + Tailwind</td>
+      </tr>
+      <tr>
+        <td>CMS / datos</td>
+        <td>Supabase (Postgres + Auth staff + Storage para fotos y PDFs)</td>
+      </tr>
+      <tr>
+        <td>Deploy</td>
+        <td>Vercel</td>
+      </tr>
+      <tr>
+        <td>Correo</td>
+        <td>Notificaciones de formularios al equipo comercial / postventa</td>
+      </tr>
+      <tr>
+        <td>Analytics / SEO</td>
+        <td>SEO base + analytics (configurado en go-live)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Contenido que aporta el cliente</h2>
+  <ul>
+    <li>Brandbook / guías de marca BYD.</li>
+    <li>Fotografías interior y exterior de cada modelo.</li>
+    <li>Fichas técnicas en PDF.</li>
+    <li>Textos de uso, clientes y noticias (o links a medios).</li>
+    <li>Contactos y FAQs de postventa.</li>
+  </ul>
+
+  <div class="note">
+    Esta vista es la arquitectura de producto del sitio. El detalle comercial (horas, montos y vigencia) está en la pestaña <strong>Cotización</strong> del portal.
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+  </script>
+</body>
+</html>

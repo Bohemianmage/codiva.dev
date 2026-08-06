@@ -1,4 +1,4 @@
-/** Layout HTML de marca Codiva para plantillas de Supabase Auth (Go templates). */
+/** Layout HTML de marca Codiva.dev para plantillas de Supabase Auth (Go templates). */
 
 import brand from '../lib/brand.json' with { type: 'json' };
 
@@ -11,6 +11,13 @@ const BRAND = {
   border: brand.colors.border,
 };
 
+const BRAND_NAME = brand.name;
+const CONTACT_EMAIL = brand.urls.email;
+/** Mark oficial: primary teal sobre fondo transparente. */
+const LOGO_URL = `${brand.urls.site.replace(/\/$/, '')}/logo.svg`;
+const FONT_BODY = `'Inter', Arial, Helvetica, sans-serif`;
+const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, Arial, Helvetica, sans-serif`;
+const CTA_RADIUS = '12px';
 const CONFIRMATION_URL = '{{ .ConfirmationURL }}';
 
 export function buildCodivaEmail({
@@ -20,7 +27,7 @@ export function buildCodivaEmail({
   paragraphs = [],
   ctaLabel,
   disclaimer,
-  footerNote = 'Codiva - software a la medida y productos digitales',
+  footerNote = brand.tagline,
 }) {
   const previewBlock = preview
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${preview}</div>`
@@ -29,12 +36,12 @@ export function buildCodivaEmail({
   const body = paragraphs
     .map(
       (p) =>
-        `<p style="margin:0 0 12px;font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:${BRAND.text};">${p}</p>`
+        `<p style="margin:0 0 12px;font-family:${FONT_BODY};font-size:15px;line-height:1.65;color:${BRAND.text};">${p}</p>`
     )
     .join('');
 
   const disclaimerBlock = disclaimer
-    ? `<p style="margin:16px 0 0;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.5;color:${BRAND.muted};">${disclaimer}</p>`
+    ? `<p style="margin:16px 0 0;font-family:${FONT_BODY};font-size:14px;line-height:1.5;color:${BRAND.muted};">${disclaimer}</p>`
     : '';
 
   return `<!-- Subject: ${subject} -->
@@ -44,6 +51,9 @@ export function buildCodivaEmail({
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${title}</title>
+  <!--[if !mso]><!-->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+  <!--<![endif]-->
 </head>
 <body style="margin:0;padding:0;background:${BRAND.background};">
   ${previewBlock}
@@ -52,9 +62,10 @@ export function buildCodivaEmail({
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;">
           <tr>
-            <td style="background:${BRAND.primary};padding:24px 32px;">
-              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.85);">Codiva</p>
-              <h1 style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:22px;line-height:1.3;font-weight:700;color:#ffffff;">${title}</h1>
+            <td bgcolor="${BRAND.card}" style="background:${BRAND.card};padding:24px 32px 20px;border-bottom:1px solid ${BRAND.border};">
+              <img src="${LOGO_URL}" alt="${BRAND_NAME}" width="40" height="40" style="display:block;border:0;outline:none;margin:0 0 12px;"/>
+              <p style="margin:0;font-family:${FONT_BODY};font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND.primary};">${BRAND_NAME}</p>
+              <h1 style="margin:8px 0 0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${title}</h1>
             </td>
           </tr>
           <tr>
@@ -62,15 +73,15 @@ export function buildCodivaEmail({
               ${body}
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
                 <tr>
-                  <td style="border-radius:8px;background:${BRAND.primary};">
+                  <td style="border-radius:${CTA_RADIUS};background:${BRAND.primary};">
                     <a href="${CONFIRMATION_URL}" target="_blank" rel="noopener noreferrer"
-                       style="display:inline-block;padding:14px 28px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                       style="display:inline-block;padding:14px 28px;font-family:${FONT_BODY};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:${CTA_RADIUS};">
                       ${ctaLabel}
                     </a>
                   </td>
                 </tr>
               </table>
-              <p style="margin:16px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
+              <p style="margin:16px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
                 Si el botón no funciona, copia este enlace:<br/>
                 <a href="${CONFIRMATION_URL}" style="color:${BRAND.primary};text-decoration:none;">${CONFIRMATION_URL}</a>
               </p>
@@ -79,11 +90,11 @@ export function buildCodivaEmail({
           </tr>
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};">
-              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">${footerNote}</p>
-              <p style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;">
+              <p style="margin:0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};">${footerNote}</p>
+              <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;">
+                <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};text-decoration:none;">${CONTACT_EMAIL}</a>
+                <span style="color:${BRAND.muted};"> · </span>
                 <a href="https://codiva.dev" style="color:${BRAND.primary};text-decoration:none;">codiva.dev</a>
-                ·
-                <a href="https://ops.codiva.dev" style="color:${BRAND.primary};text-decoration:none;">ops.codiva.dev</a>
               </p>
             </td>
           </tr>

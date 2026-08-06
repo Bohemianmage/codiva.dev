@@ -72,3 +72,11 @@ Do not label Plus Jakarta Sans as “Satoshi” in code or docs.
 | Transactional email | `lib/ops/email-templates.ts` |
 | Quote PDF | `lib/ops/quote-document/` |
 | Supabase auth email | `scripts/supabase-email-layout.mjs` |
+
+## Transactional email
+
+- **From (cliente):** `Codiva.dev <noreply@codiva.dev>` (`RESEND_FROM_NOREPLY`, fallback `RESEND_FROM`)
+- **Reply-To:** `hello@codiva.dev` (`RESEND_REPLY_TO`) — las respuestas humanas no van a noreply
+- **From (Ops interno):** `Codiva Ops <hello@codiva.dev>` (`RESEND_FROM_OPS`)
+- Layout: `logo.svg` (primary + transparente) sobre header blanco, nombre **Codiva.dev**, tagline de `brand.json`, CTA `rounded-xl` (12px), contacto en footer
+- En Resend debe estar verificado el dominio y el buzón/alias `noreply@codiva.dev`
