@@ -37,6 +37,18 @@ export default function Footer() {
           >
             {t('footer.ticketLink')}
           </Link>
+          <Link
+            href="/legal/terminos"
+            className="text-zinc-300 hover:text-white font-medium transition-colors"
+          >
+            {t('footer.terms')}
+          </Link>
+          <Link
+            href="/legal/aviso-privacidad"
+            className="text-zinc-300 hover:text-white font-medium transition-colors"
+          >
+            {t('footer.privacy')}
+          </Link>
 
           <a
             href={`mailto:${CODIVA_BRAND.urls.email}`}

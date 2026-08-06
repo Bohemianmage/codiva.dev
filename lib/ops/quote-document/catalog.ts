@@ -52,12 +52,14 @@ export const QUOTE_CATALOG: QuoteCatalogEntry[] = [
   { client: 'RODPIM', file: 'Cotizacion_RODPIM_WEB.docx', serviceType: 'Web', pattern: 'standard' },
   { client: 'Universidad Tollancingo', file: 'Cotizacion_Universidad_Tollancingo_LMS.docx', serviceType: 'LMS', pattern: 'standard' },
   { client: 'YOU', file: 'Cotizacion_YOU_PWA.docx', serviceType: 'PWA', pattern: 'standard' },
+  { client: 'NIRC', file: 'mvp-propuesta-fase1.md', serviceType: 'Platform', pattern: 'enterprise' },
 ];
 
 export const DEFAULT_SERVICE_TYPE_LABELS: Record<string, string> = {
   PWA: 'COTIZACIÓN DE SERVICIOS DE DESARROLLO PWA',
   Web: 'COTIZACIÓN DE SERVICIOS DE DESARROLLO WEB',
   App: 'COTIZACIÓN DE SERVICIOS DE DESARROLLO DE APLICACIÓN',
+  Platform: 'COTIZACIÓN DE DESARROLLO DE PLATAFORMA OPERATIVA',
   'E-Shop': 'COTIZACIÓN DE SERVICIOS DE DESARROLLO E-COMMERCE',
   LMS: 'COTIZACIÓN DE SERVICIOS DE DESARROLLO LMS',
   Pentesting: 'COTIZACIÓN DE SERVICIOS DE PENTESTING',

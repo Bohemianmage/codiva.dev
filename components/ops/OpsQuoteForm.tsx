@@ -43,6 +43,7 @@ export default function OpsQuoteForm({
           <option value="PWA">PWA</option>
           <option value="Web">Web</option>
           <option value="App">App</option>
+          <option value="Platform">Platform / Ops</option>
           <option value="E-Shop">E-Shop</option>
           <option value="LMS">LMS</option>
           <option value="Pentesting">Pentesting</option>

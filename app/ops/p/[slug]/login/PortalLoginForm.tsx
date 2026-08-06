@@ -41,6 +41,19 @@ export default function PortalLoginForm({ slug }: { slug: string }) {
       return;
     }
 
+    const { data: staff } = await supabase
+      .from('staff_profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .eq('active', true)
+      .maybeSingle();
+
+    if (staff) {
+      router.push(`/p/${slug}`);
+      router.refresh();
+      return;
+    }
+
     const { data: project } = await supabase
       .from('projects')
       .select('id')

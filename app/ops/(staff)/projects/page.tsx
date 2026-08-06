@@ -4,8 +4,6 @@ import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { createProject } from '@/lib/ops/actions';
 import { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
-import { opsBaseUrl } from '@/lib/ops/host';
-
 export default async function ProjectsPage() {
   const { supabase } = await requireStaff();
   const { data: projects } = await supabase
@@ -63,13 +61,14 @@ export default async function ProjectsPage() {
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
                 </td>
                 <td className="px-4 py-3">
-                  {p.client_visible ? (
-                    <a href={`${opsBaseUrl()}/p/${p.slug}`} className="text-codiva-primary hover:underline" target="_blank" rel="noreferrer">
-                      /p/{p.slug}
-                    </a>
-                  ) : (
-                    <span className="text-zinc-400">Oculto</span>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    <Link href={`/p/${p.slug}`} className="text-codiva-primary hover:underline">
+                      Ver como cliente
+                    </Link>
+                    <span className="text-xs text-zinc-400">
+                      {p.client_visible ? `/p/${p.slug}` : 'Portal aún oculto al cliente'}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-zinc-500">{formatDate(p.target_delivery_date)}</td>
               </tr>

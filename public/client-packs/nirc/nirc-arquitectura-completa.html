@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NIRC — Arquitectura, Flujos e Integración IDSE PRO</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #555;
+      --line: #ccc;
+      --accent: #1e4d7b;
+      --bg-soft: #f5f7fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0 auto;
+      padding: 16px 20px 28px;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      font-size: 9.5pt;
+      line-height: 1.35;
+      max-width: 920px;
+    }
+    h1 {
+      font-size: 16pt;
+      color: var(--accent);
+      margin: 0 0 4px;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 4px;
+    }
+    h2 {
+      font-size: 11.5pt;
+      color: var(--accent);
+      margin: 14px 0 6px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 2px;
+      break-after: avoid-page;
+    }
+    h3 {
+      font-size: 10pt;
+      margin: 10px 0 4px;
+      break-after: avoid-page;
+    }
+    p, li { margin: 3px 0; }
+    ol, ul { margin: 4px 0 8px; padding-left: 1.25em; }
+    .meta {
+      color: var(--muted);
+      font-size: 8.5pt;
+      margin: 0 0 8px;
+    }
+    .cover-box {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      margin: 6px 0 10px;
+    }
+    .cover-box ul { margin: 4px 0 0 16px; padding: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      font-size: 8.5pt;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 3px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--bg-soft); font-weight: 600; }
+    .note, .info {
+      padding: 6px 8px;
+      margin: 6px 0;
+      font-size: 8.5pt;
+    }
+    .note {
+      background: #fff8e6;
+      border-left: 3px solid #c9a227;
+    }
+    .info {
+      background: #eef5fb;
+      border-left: 3px solid var(--accent);
+    }
+    /* Diagramas: fluir y escalar; NO avoid (causa páginas en blanco) */
+    .mermaid {
+      background: #fff;
+      border: 1px solid var(--line);
+      padding: 4px 6px;
+      margin: 6px 0 8px;
+      text-align: center;
+      overflow: hidden;
+      line-height: 1.1;
+    }
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    code, .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8pt;
+    }
+    pre {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      margin: 6px 0;
+      overflow-x: auto;
+      font-size: 8pt;
+      white-space: pre-wrap;
+    }
+    .toc { margin: 6px 0 10px; columns: 2; column-gap: 24px; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc li { margin: 2px 0; font-size: 8.5pt; }
+    .kpi {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0 8px;
+    }
+    .kpi div {
+      flex: 1 1 120px;
+      border: 1px solid var(--line);
+      padding: 6px;
+      background: var(--bg-soft);
+      text-align: center;
+    }
+    .kpi strong { display: block; font-size: 11pt; color: var(--accent); }
+    .kpi span { font-size: 7.5pt; color: var(--muted); }
+    footer {
+      margin-top: 14px;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+      font-size: 7.5pt;
+      color: var(--muted);
+    }
+    @media print {
+      body {
+        padding: 0;
+        max-width: none;
+        font-size: 9pt;
+      }
+      a { color: inherit; text-decoration: none; }
+      .no-print { display: none !important; }
+      h1 { font-size: 14pt; }
+      h2 { margin-top: 10px; font-size: 11pt; }
+      /* Permitir partir diagramas altos en lugar de empujar página completa */
+      .mermaid { break-inside: auto; }
+      table { break-inside: auto; }
+      tr { break-inside: avoid; break-after: auto; }
+    }
+    @page {
+      size: A4;
+      margin: 10mm 9mm 12mm;
+    }
+  </style>
+</head>
+<body>
+  <h1>NIRC — Documento de Arquitectura</h1>
+  <p class="meta">
+    Plataforma PWA de gestión laboral temporal · Arquitectura, flujos operativos e integración IDSE PRO<br />
+    Documento integrado para revisión e impresión · Agosto 2026
+  </p>
+
+  <div class="cover-box">
+    <strong>Alcance del documento</strong>
+    <ul>
+      <li>Arquitectura lógica, backoffice y stack técnico</li>
+      <li>Pool scoring por labor, auto-convocatoria FCFS y QR de entrada</li>
+      <li>Flujos: ciclo de vida, día del evento, adhesión en entrada, IDSE, contabilidad</li>
+      <li>Integración IMSS vía IDSE PRO (ApiMarket / Codiva) y estimación comercial</li>
+      <li>LFPDPPP (uso/disposal), gates de negocio y modelo de datos</li>
+      <li>MVP Fase 1: unit economics, políticas, tiempos y cotización ($980k desarrollo vs proveedores)</li>
+    </ul>
+  </div>
+
+  <div class="kpi">
+    <div><strong>1.5k–2.5k</strong><span>Movimientos IDSE / mes</span></div>
+    <div><strong>18k–30k</strong><span>Movimientos / año</span></div>
+    <div><strong>~2 mov</strong><span>Por ciclo (alta + baja)</span></div>
+    <div><strong>≥99.5%</strong><span>SLA disponibilidad IDSE PRO</span></div>
+  </div>
+
+  <h2>Índice</h2>
+  <ol class="toc">
+    <li><a href="#resumen">Resumen ejecutivo</a></li>
+    <li><a href="#arquitectura">Arquitectura de plataforma</a></li>
+    <li><a href="#stack">Stack y roles</a></li>
+    <li><a href="#ciclo">Flujo: ciclo de vida</a></li>
+    <li><a href="#evento">Flujo: día del evento</a></li>
+    <li><a href="#post">Flujo: entrada / salida</a></li>
+    <li><a href="#idse">Adapter IDSE PRO</a></li>
+    <li><a href="#ats">Pool scoring y convocatoria FCFS</a></li>
+    <li><a href="#backoffice">Backoffice</a></li>
+    <li><a href="#contabilidad">Contabilidad, LFPDPPP y seguridad</a></li>
+    <li><a href="#comercial">Cotización IDSE PRO</a></li>
+    <li><a href="#mvp">MVP Fase 1 — economics y cotización</a></li>
+  </ol>
+
+  <!-- 1 -->
+  <h2 id="resumen">1. Resumen ejecutivo</h2>
+  <p>
+    NIRC es un ecosistema de <strong>workforce management temporal</strong>: ATS y pool con
+    scoring por afinidad, auto-convocatoria FCFS, operación con QR, cumplimiento (IMSS / adhesión
+    en entrada / Cincel), dispersión Stripe, contabilidad y backoffice unificado.
+  </p>
+  <p>Flujo núcleo (actualizado):</p>
+  <pre class="mono">Vacante → Aplicaciones → Pool (score por labor / afinidad)
+  → Convocatoria auto (criterios) → Ofertas FCFS → Confirmado + QR
+  → Check-in QR → INE → Contrato adhesión (ENTRADA) → Alta IDSE PRO
+  → Check-out → Baja IDSE + Stripe → Contabilidad → Disposal
+Backoffice: vacantes · aplicaciones · pools · validaciones · convocatorias · finanzas</pre>
+
+  <div class="info">
+    <strong>IMSS:</strong> adapter <strong>IDSE PRO</strong> (<a href="https://documenter.getpostman.com/view/8823093/2sAYHwJ4iz#f3f4e16d-4be7-41f0-ac08-d72cee089f90">docs Apimarket</a>).
+    <strong>Contrato de adhesión:</strong> se firma a la <em>entrada</em>, no a la salida.
+    <strong>Check-in:</strong> QR en zona de trabajo + geocerca.
+  </div>
+
+  <!-- 2 -->
+  <h2 id="arquitectura">2. Arquitectura de plataforma</h2>
+  <h3>Principios</h3>
+  <ol>
+    <li><strong>Dominios desacoplados</strong> — CRM/ATS, Operación, Cumplimiento, Finanzas.</li>
+    <li><strong>Orquestación por eventos y colas</strong> — no acoplar IMSS/Cincel/Stripe al request HTTP del check-in.</li>
+    <li><strong>Adapter IMSS = IDSE PRO</strong> — proveedor ApiMarket/Codiva.</li>
+    <li><strong>Inmutabilidad contable y de auditoría</strong> — solo reversas.</li>
+    <li><strong>PWA operativa</strong> — admin de sitio y flujos de personal.</li>
+  </ol>
+
+  <h3>Vista lógica</h3>
+  <div class="mermaid">
+flowchart LR
+  subgraph C["Clientes"]
+    PWA[PWA Next.js]
+    ATSWEB[Portal ATS]
+  end
+  subgraph E["API"]
+    BFF[BFF NestJS]
+    AUTH[RBAC]
+  end
+  subgraph D["Dominios"]
+    CRM[CRM]
+    ATS[ATS]
+    OPS[Operación]
+    COMP[Cumplimiento]
+    FIN[Finanzas]
+  end
+  subgraph P["Plataforma"]
+    PG[(PostgreSQL)]
+    Q[BullMQ]
+    S3[S3/R2]
+  end
+  subgraph X["Externos"]
+    IDSE[IDSE PRO]
+    CINCEL[Cincel]
+    STRIPE[Stripe]
+    OCR[OCR]
+    MSG[Email/SMS]
+  end
+  PWA --> BFF
+  ATSWEB --> BFF
+  BFF --> AUTH
+  BFF --> CRM & ATS & OPS & COMP & FIN
+  CRM & ATS & OPS & COMP & FIN --> PG
+  OPS & COMP & FIN --> Q
+  COMP --> S3
+  Q --> IDSE & CINCEL & STRIPE & OCR & MSG
+  </div>
+
+  <h3>Dominios</h3>
+  <table>
+    <thead>
+      <tr><th>Dominio</th><th>Responsabilidad</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CRM + ATS</td><td>Clientes, requisiciones, vacantes, pipeline, banco de talento</td></tr>
+      <tr><td>Operación</td><td>Eventos, asignaciones, check-in/out, GPS, incidencias</td></tr>
+      <tr><td>Cumplimiento</td><td>Expediente, IDSE PRO, OCR/INE, contrato adhesión, Cincel</td></tr>
+      <tr><td>Finanzas</td><td>Stripe Connect, asientos doble partida, auditoría</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 3 -->
+  <h2 id="stack">3. Stack técnico y roles</h2>
+  <table>
+    <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Next.js 15, React 19, TypeScript, Tailwind, PWA, TanStack Query, RHF + Zod</td></tr>
+      <tr><td>Backend</td><td>NestJS, Fastify, TypeScript</td></tr>
+      <tr><td>Datos</td><td>PostgreSQL</td></tr>
+      <tr><td>Colas</td><td>Redis + BullMQ</td></tr>
+      <tr><td>Storage</td><td>S3-compatible (R2 / S3 / Backblaze)</td></tr>
+      <tr><td>Orquestación</td><td>Temporal o máquina de estados propia</td></tr>
+      <tr><td>IMSS</td><td>IDSE PRO API (ApiMarket / Codiva)</td></tr>
+      <tr><td>Firma</td><td>Cincel</td></tr>
+      <tr><td>Pagos</td><td>Stripe Connect Express</td></tr>
+      <tr><td>Notificaciones</td><td>SES/Resend/SendGrid + Twilio/Infobip</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Roles (RBAC)</h3>
+  <table>
+    <thead><tr><th>Rol</th><th>Responsabilidad</th></tr></thead>
+    <tbody>
+      <tr><td>Super Admin</td><td>Configuración global</td></tr>
+      <tr><td>Admin Nacional / Regional</td><td>Multi-sitio, métricas</td></tr>
+      <tr><td>Admin de Sitio</td><td>Check-in / check-out, incidencias</td></tr>
+      <tr><td>Reclutador</td><td>ATS y pipeline</td></tr>
+      <tr><td>RH</td><td>Expediente, validaciones</td></tr>
+      <tr><td>Contabilidad</td><td>Asientos, conciliación</td></tr>
+      <tr><td>Auditor</td><td>Solo lectura + export auditoría</td></tr>
+      <tr><td>Personal</td><td>Firma contrato, carga INE, consulta pagos</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Eventos de dominio</h3>
+  <table>
+    <thead><tr><th>Evento</th><th>Consumidores</th></tr></thead>
+    <tbody>
+      <tr><td><code>EmployeeCheckedIn</code></td><td>Alta IDSE, notificaciones, contabilidad provisional</td></tr>
+      <tr><td><code>ImssAltaAccepted</code></td><td>FSM → Trabajando</td></tr>
+      <tr><td><code>EmployeeCheckedOut</code></td><td>Contrato, OCR, notificaciones</td></tr>
+      <tr><td><code>IdentityVerified</code></td><td>Habilita firma</td></tr>
+      <tr><td><code>ContractSigned</code></td><td>Baja IDSE, pago Stripe</td></tr>
+      <tr><td><code>PaymentCompleted</code></td><td>Contabilidad, comprobante</td></tr>
+      <tr><td><code>PaymentFailed</code></td><td>Alertas, reintento controlado</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tablas núcleo</h3>
+  <p class="mono" style="font-size:9pt">
+    users · roles · permissions · clients · requisitions · vacancies · candidates · applications ·
+    employees · employee_documents · events · assignments · attendance · imss_transactions ·
+    contracts · identity_verifications · payments · accounting_entries · notifications · audit_logs
+  </p>
+  <p>Documentos binarios siempre en object storage; en BD solo metadatos y hashes.</p>
+
+  <!-- 4 -->
+  <h2 id="ciclo">4. Flujo: ciclo de vida completo</h2>
+  <div class="mermaid">
+flowchart LR
+  A[Aplicado+LFPDPPP] --> B[Entrevistado]
+  B --> C[Contratable]
+  B --> T[Banco talento]
+  T --> C
+  C --> D[Asignado]
+  D --> Q[QR]
+  Q --> F[Check-in QR]
+  F --> K[INE]
+  K --> L[Adhesión ENTRADA]
+  L --> G[Alta IDSE]
+  G --> H[Trabajando]
+  H --> I[Check-out]
+  I --> M[Baja IDSE]
+  I --> N[Stripe]
+  M --> O[Finalizado]
+  N --> O
+  </div>
+
+  <!-- 5 -->
+  <h2 id="evento">5. Flujo: día del evento (QR + adhesión entrada)</h2>
+  <div class="mermaid">
+flowchart LR
+  A[Abrir evento] --> B[Asignar IDSE-ready]
+  B --> C[Emitir QR]
+  C --> E[Scan en zona]
+  E --> E2[GPS]
+  E2 --> K[INE si falta]
+  K --> L[Firma adhesión]
+  L --> F[Alta IDSE]
+  F --> G[Trabajando]
+  G --> H[Check-out]
+  H --> M[Baja]
+  H --> N[Pago]
+  </div>
+
+  <h2 id="campos">5b. Campos mínimos IDSE alta — origen</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Origen</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td>nss, nombre, apellido_paterno, curp, umf</td><td><strong>Candidato</strong></td><td>Bloqueantes en ATS; umf default 000</td></tr>
+      <tr><td>apellido_materno</td><td>Candidato</td><td>Opcional IDSE</td></tr>
+      <tr><td>employer_record</td><td><strong>Patrón</strong></td><td>Registro patronal</td></tr>
+      <tr><td>salario_diario_integrado</td><td><strong>Patrón</strong></td><td>SDI/SBC del evento</td></tr>
+      <tr><td>tipo_de_salario, tipo_de_jornada, codigo_tipo_de_trabajador</td><td><strong>Patrón</strong></td><td>Catálogos IDSE</td></tr>
+      <tr><td>fecha_de_movimiento, tipo movimiento 8</td><td>Sistema</td><td>Día check-in</td></tr>
+    </tbody>
+  </table>
+  <p class="meta">Fuente: Apimarket smart_movements · RFC/CLABE/INE siguen en expediente/contrato aunque no vayan en el payload de alta.</p>
+
+  <!-- 6 -->
+  <h2 id="post">6. Flujo: entrada (firma) y salida (baja + pago)</h2>
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant Pers as Personal
+  participant API as NIRC API
+  participant Cin as Cincel
+  participant Q as BullMQ
+  participant IDSE as IDSE PRO
+  participant Str as Stripe
+  Pers->>API: Scan QR geocerca
+  API->>Cin: Contrato adhesión ENTRADA
+  Cin-->>Pers: Firma
+  Cin->>API: Webhook Firmado
+  API->>Q: Alta IDSE tipo 8
+  Q->>IDSE: smart_movements
+  Note over Pers,Str: Jornada...
+  Pers->>API: Check-out
+  par Baja
+    Q->>IDSE: Baja
+  and Pago
+    Q->>Str: Transfer
+  end
+  </div>
+
+  <h3>Gates</h3>
+  <ol>
+    <li>QR/check-in — asignación + geocerca + token</li>
+    <li>Contrato adhesión — firma en <strong>entrada</strong></li>
+    <li>Alta IDSE — tras contrato + merge candidato/patrón</li>
+    <li>Check-out — baja + Stripe (sin contrato)</li>
+    <li>Disposal LFPDPPP — retención / borrado</li>
+  </ol>
+
+  <!-- 7 -->
+  <h2 id="idse">7. Adapter IDSE PRO</h2>
+  <pre class="mono">NIRC Cumplimiento Adapter  →  IDSE PRO API  →  Portal IDSE / IMSS
+         ↑ webhooks / acuses / constancias</pre>
+
+  <div class="mermaid">
+flowchart LR
+  subgraph NIRC
+    EVT[Evento dominio] --> VAL[Validar NSS RFC]
+    VAL --> JOB[BullMQ imss.*]
+    JOB --> MAP[Mapear payload]
+    MAP --> SEND[POST API]
+    SEND --> LOCAL[(imss_transactions)]
+    WH[Webhook] --> LOCAL
+    LOCAL --> FSM[FSM asignación]
+  end
+  subgraph Proveedor
+    SEND --> IDSE[IDSE PRO]
+    IDSE --> IMSS[IMSS]
+    IDSE --> WH
+  end
+  FSM -->|aceptado| OK[Continuar]
+  FSM -->|rechazado| ALERT[Alerta ops]
+  </div>
+
+  <h3>Estados <code>imss_transactions</code></h3>
+  <table>
+    <thead><tr><th>Estado</th><th>Criterio</th></tr></thead>
+    <tbody>
+      <tr><td>draft</td><td>Armado, no enviado</td></tr>
+      <tr><td>queued</td><td>En cola</td></tr>
+      <tr><td>submitted</td><td>Aceptado por IDSE PRO</td></tr>
+      <tr><td>lote_asignado</td><td>Lote o acuse (ejecución exitosa facturable)</td></tr>
+      <tr><td>accepted</td><td>IMSS aceptó el movimiento</td></tr>
+      <tr><td>rejected</td><td>Rechazo de negocio/dato</td></tr>
+      <tr><td>failed_technical</td><td>Error técnico agotado</td></tr>
+      <tr><td>cancelled</td><td>Cancelado antes de envío programado</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Importante:</strong> según la cotización IDSE PRO, obtener lote/acuse cuenta como
+    ejecución exitosa para facturación aunque el IMSS rechace después por datos.
+    NIRC debe distinguir <em>éxito técnico del proveedor</em> vs <em>aceptación IMSS</em>.
+  </div>
+
+  <h3>Colas BullMQ</h3>
+  <table>
+    <thead><tr><th>Cola</th><th>Trigger</th><th>Acción</th></tr></thead>
+    <tbody>
+      <tr><td>imss.alta</td><td>EmployeeCheckedIn</td><td>Validar → submit alta</td></tr>
+      <tr><td>imss.baja</td><td>ContractSigned</td><td>Validar → submit baja</td></tr>
+      <tr><td>imss.reconcile</td><td>Cron</td><td>Polling pendientes</td></tr>
+      <tr><td>imss.webhook</td><td>HTTP webhook</td><td>Idempotencia por event_id</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 8 -->
+  <h2 id="ats">8. Pool scoring y auto-convocatoria FCFS</h2>
+  <div class="mermaid">
+flowchart LR
+  V[Vacante] --> A[Aplicaciones]
+  A --> P[Pool]
+  P --> S[Score por labor]
+  S --> C[Criterios convocatoria]
+  C --> B[Auto-blast]
+  B --> F[FCFS acepta]
+  F --> Q[QR + entrada]
+  </div>
+  <p>
+    El pool se puntúa por afinidad a cada labor (skills, historial, performance, zona, docs
+    IDSE-ready, features contextuales). Al publicar criterios se dispara el blast; la aceptación
+    es <strong>first come, first served</strong> con reserva atómica de cupo y TTL de oferta.
+  </p>
+  <table>
+    <thead><tr><th>Señal de score</th><th>Origen</th></tr></thead>
+    <tbody>
+      <tr><td>Skills / certificados</td><td>Expediente ATS</td></tr>
+      <tr><td>Historial misma labor</td><td>Eventos completados</td></tr>
+      <tr><td>Performance / no-shows</td><td>Check-out · evaluaciones</td></tr>
+      <tr><td>Proximidad</td><td>Zona / domicilio consentido</td></tr>
+      <tr><td>IDSE-ready + docs vigentes</td><td>Validaciones</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <thead><tr><th>Regla FCFS</th><th>Detalle</th></tr></thead>
+    <tbody>
+      <tr><td>Reserva atómica</td><td>Cupo en DB; aceptación tardía → filled / waitlist</td></tr>
+      <tr><td>TTL oferta</td><td>Expira; se puede ampliar blast al siguiente tramo de scores</td></tr>
+      <tr><td>Penalización</td><td>No-show tras aceptar reduce score</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="backoffice">8b. Backoffice</h2>
+  <p>Centro de gestión interna (RBAC) que orquesta bolsa pública, app personal y PWA de sitio.</p>
+  <table>
+    <thead><tr><th>Módulo</th><th>Gestión</th></tr></thead>
+    <tbody>
+      <tr><td>Vacantes</td><td>Publicación, criterios, cierre</td></tr>
+      <tr><td>Aplicaciones</td><td>Pipeline, notas, entrevistas</td></tr>
+      <tr><td>Pools &amp; scoring</td><td>Labores, pesos, elegibilidad</td></tr>
+      <tr><td>Validaciones</td><td>INE, NSS/CURP, checklist docs</td></tr>
+      <tr><td>Convocatorias</td><td>Preview ranking, auto-blast, FCFS en vivo</td></tr>
+      <tr><td>Operación</td><td>Eventos, geocercas, QR, asistencia</td></tr>
+      <tr><td>Cumplimiento</td><td>Adhesión, Cincel, IDSE, acuses</td></tr>
+      <tr><td>Finanzas</td><td>Stripe, asientos, conciliación</td></tr>
+      <tr><td>Privacy / Auditoría</td><td>ARCO, retention, audit logs</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 9 -->
+  <h2 id="contabilidad">9. Contabilidad, LFPDPPP y seguridad</h2>
+  <div class="mermaid">
+flowchart TD
+  CI[Check-in / Alta] --> A1[Asiento provisional\nCosto operativo / CxP]
+  CS[Contrato firmado] --> A2[Confirma CxP]
+  PY[Stripe paid] --> A3[Cargo CxP · Abono Banco]
+  FL[Payment failed] --> A4[No cierra · alerta]
+  A1 --> AUD[audit_logs + UUID]
+  A2 --> AUD
+  A3 --> AUD
+  </div>
+
+  <h3>LFPDPPP — uso y disposal</h3>
+  <ul>
+    <li>Consentimiento al aplicar y al firmar adhesión; geolocalización al emitir/usar QR.</li>
+    <li>Minimización: a IDSE solo campos del movimiento; biometría con retención mínima.</li>
+    <li>Jobs <code>privacy.retention</code> / <code>privacy.dispose</code> tras descartes y cierres.</li>
+    <li>Acuses IMSS y contratos firmados: retención legal; resto anonimizar/borrar al vencer.</li>
+  </ul>
+
+  <h3>Seguridad</h3>
+  <ul>
+    <li>TLS en tránsito; cifrado en reposo para PII y documentos.</li>
+    <li>QR: token opaco firmado, TTL, un solo uso, sin PII en claro.</li>
+    <li>Certificados IMSS / e.firma: responsabilidad del cliente; alertas de vencimiento.</li>
+    <li>Auditoría de check-in/out: usuario, IP, GPS, timestamp.</li>
+  </ul>
+
+  <!-- 10 -->
+  <h2 id="comercial">10. Cotización IDSE PRO (referencia comercial)</h2>
+  <!-- numeración conservada; backoffice vive en 8b -->
+  <p class="meta">
+    Fuente: Propuesta comercial IDSE PRO API — Databridge Business Intelligence S.C. ·
+    Tijuana, 04 de agosto de 2026 · Cliente: Codiva · Volumen declarado 18,000–30,000 mov/año.
+  </p>
+
+  <h3>Capacidades relevantes para NIRC</h3>
+  <table>
+    <thead><tr><th>Capacidad</th><th>Uso en NIRC</th></tr></thead>
+    <tbody>
+      <tr><td>Altas / Bajas API REST</td><td>Check-in → alta; post-firma → baja</td></tr>
+      <tr><td>Validación NSS + pre-chequeo</td><td>Evitar rechazos antes de encolar</td></tr>
+      <tr><td>Reintentos 24/7 + offline</td><td>Estado pendiente_imss</td></tr>
+      <tr><td>Webhooks</td><td>Actualizar transacciones y FSM</td></tr>
+      <tr><td>Programación / cancelación</td><td>Ventanas operativas</td></tr>
+      <tr><td>Acuses y constancias</td><td>Expediente + evidencia legal</td></tr>
+      <tr><td>Sandbox ilimitado</td><td>Staging sin costo de prueba</td></tr>
+      <tr><td>Rate limit 50 req/min</td><td>Batching y backoff en workers</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tabulador (MXN / movimiento, sin IVA)</h3>
+  <table>
+    <thead>
+      <tr><th>Rango mensual</th><th>Postpago</th><th>Prepago</th><th>Excedente</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1 – 500</td><td>$8.63</td><td>$7.50</td><td>$9.38</td></tr>
+      <tr><td>501 – 1,000</td><td>$7.13</td><td>$6.20</td><td>$7.75</td></tr>
+      <tr><td>1,001 – 1,500</td><td>$6.67</td><td>$5.80</td><td>$7.25</td></tr>
+      <tr><td>1,501 – 2,000</td><td>$5.75</td><td>$5.00</td><td>$6.25</td></tr>
+      <tr><td>2,001 – 3,000</td><td>$4.83</td><td>$4.20</td><td>$5.25</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Estimación NIRC (1 ciclo ≈ alta + baja = 2 movimientos)</h3>
+  <table>
+    <thead>
+      <tr><th>Mov/mes</th><th>Ciclos ≈</th><th>Prepago/mes</th><th>Postpago/mes</th><th>Prepago/año</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1,500</td><td>750</td><td>~$8,700</td><td>~$10,005</td><td>~$104,400</td></tr>
+      <tr><td>2,000</td><td>1,000</td><td>~$10,000</td><td>~$11,500</td><td>~$120,000</td></tr>
+      <tr><td>2,500</td><td>1,250</td><td>~$10,500</td><td>~$12,075</td><td>~$126,000</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Condiciones clave</h3>
+  <ul>
+    <li><strong>Mínimo anual:</strong> 10,000 movimientos; si no → cuota almacenamiento $16,250 MXN/año.</li>
+    <li><strong>Postpago:</strong> mínimo 834 mov/mes; factura 30 días + 30 días crédito.</li>
+    <li><strong>Prepago:</strong> saldo vigencia 12 meses por lote; no reembolsable.</li>
+    <li><strong>Plazo:</strong> 12 meses; ajuste anual INPC + 1 pp (tope 8 %).</li>
+    <li><strong>SLA:</strong> ≥ 99.5 %; créditos por indisponibilidad imputable al proveedor (no caídas IMSS).</li>
+  </ul>
+
+  <div class="info">
+    <strong>Recomendación:</strong> modalidad prepago si el volumen es estable (~2,000 mov/mes);
+    sandbox obligatorio en MVP; persistir acuses/constancias también en NIRC.
+  </div>
+
+  <h2 id="mvp">11. MVP Fase 1 — unit economics y cotización</h2>
+  <p class="meta">
+    Detalle completo en docs/mvp-propuesta-fase1.md · Montos MXN sin IVA · Hipótesis IMSS a validar con contador.
+  </p>
+
+  <h3>Costo variable por jornada ($400 al personal)</h3>
+  <table>
+    <thead><tr><th>Rubro</th><th>Monto</th></tr></thead>
+    <tbody>
+      <tr><td>Pago personal (Stripe)</td><td>$400.00</td></tr>
+      <tr><td>Stripe 3.6% + $3</td><td>$17.40</td></tr>
+      <tr><td>IDSE alta + baja (ref. $5 × 2)</td><td>$10.00</td></tr>
+      <tr><td>Cincel one-shot ($60,000 → $9.60/doc)</td><td>$9.60</td></tr>
+      <tr><td>IMSS patrón est. (SDI $419.73 × 32%)</td><td>$134.31</td></tr>
+      <tr><td><strong>Total variable / jornada</strong></td><td><strong>≈ $571</strong></td></tr>
+      <tr><td>Precio piso cliente (+15% ops)</td><td>≈ $657 / persona-día</td></tr>
+    </tbody>
+  </table>
+  <p class="meta">SDI = 400 × 1.0493 ≈ $419.73. Frontera norte: SM $440.87 — $400 no alcanza.</p>
+
+  <h3>Políticas MVP</h3>
+  <ul>
+    <li><strong>Sin labor</strong> hasta contrato adhesión firmado + alta IMSS <em>aceptada</em> (no basta pendiente).</li>
+    <li>Falla Cincel/IDSE: bloqueo + reintentos + alerta; sin trabajar en contingencia en Fase 1.</li>
+    <li>Carga masiva CSV de pool/empleados incluida.</li>
+    <li>No-show: penalización score + auto-refill FCFS/waitlist.</li>
+  </ul>
+
+  <h3>Tiempos</h3>
+  <p><strong>18 semanas</strong> (~4.5 meses): fundaciones → pool/FCFS → entrada dura → salida/pagos → UAT.</p>
+
+  <h3>Cotización — separación de presupuestos</h3>
+  <table>
+    <thead><tr><th>Presupuesto</th><th>Qué incluye</th><th>Monto</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A. Desarrollo</strong></td><td>Software, integraciones, UAT, capacitación — paquete completo</td><td><strong>$980,000</strong></td></tr>
+      <tr><td><strong>B. Proveedores (aparte)</strong></td><td>Cliente paga directo a vendors</td><td>Ver abajo</td></tr>
+      <tr><td><strong>C. Por jornada</strong></td><td>Pago + fees + IMSS + docs</td><td>≈ $571</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>$980,000 es solo desarrollo.</strong> No incluye licencias ni consumo de terceros.</p>
+
+  <h3>Proveedores externos (cliente)</h3>
+  <table>
+    <thead><tr><th>Setup / one-shot</th><th>Monto est.</th></tr></thead>
+    <tbody>
+      <tr><td>Cincel one-shot 6,250 docs @ $9.60</td><td>$60,000</td></tr>
+      <tr><td>Cincel implementación</td><td>$3,200</td></tr>
+      <tr><td>IDSE prepago inicial (rango)</td><td>$10,000 – $50,000</td></tr>
+      <tr><td>Legal plantilla / dictamen SDI (orden magnitud)</td><td>$15,000 – $40,000</td></tr>
+      <tr><td><strong>Setup externos aprox.</strong></td><td><strong>≈ $88k – $158k</strong></td></tr>
+    </tbody>
+  </table>
+  <table>
+    <thead><tr><th>Operación @ 1,000 jornadas/mes</th><th>Monto</th></tr></thead>
+    <tbody>
+      <tr><td>Pagos al personal</td><td>$400,000</td></tr>
+      <tr><td>Stripe + IDSE + Cincel + IMSS est. + SMS/hosting</td><td>≈ $183k – $204k</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info">
+    <strong>Inversión inicial aprox.:</strong> desarrollo $980k + setup proveedores ~$120k ≈ <strong>$1.1M MXN</strong> (sin IVA),
+    más costo variable por jornada en operación.
+  </div>
+
+  <div class="note">
+    Alternativas desarrollo: Core $780k · Completo $980k · Completo + hypercare $1,120k.
+    Soporte mensual opcional post go-live: $45,000.
+  </div>
+
+  <footer>
+    NIRC — Documento de arquitectura + MVP integrado · Uso interno · Impresión A4 ·
+    Montos IDSE/Cincel/Stripe/IMSS son referencia; no sustituyen contratos con cada proveedor ni dictamen legal.
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "neutral",
+      securityLevel: "loose",
+      themeVariables: {
+        fontSize: "11px",
+        fontFamily: "Segoe UI, Arial, sans-serif"
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: "linear",
+        nodeSpacing: 20,
+        rankSpacing: 22,
+        padding: 4,
+        useMaxWidth: true
+      },
+      sequence: {
+        mirrorActors: false,
+        useMaxWidth: true,
+        boxMargin: 4,
+        actorMargin: 22,
+        messageMargin: 22,
+        noteMargin: 4
+      },
+      state: { useMaxWidth: true }
+    });
+
+    /** Render + escala diagramas altos para A4 (evita huecos por page-break). */
+    async function compactDiagrams() {
+      await mermaid.run({ querySelector: ".mermaid" });
+      const maxH = 580;
+      const maxW = 760;
+      document.querySelectorAll(".mermaid svg").forEach((svg) => {
+        let h = parseFloat(svg.getAttribute("height") || "0");
+        let w = parseFloat(svg.getAttribute("width") || "0");
+        if (!h || !w) {
+          try {
+            const box = svg.getBBox();
+            h = box.height;
+            w = box.width;
+          } catch {
+            h = svg.clientHeight;
+            w = svg.clientWidth;
+          }
+        }
+        if (!h || !w) return;
+        const scale = Math.min(1, maxH / h, maxW / w);
+        const nw = Math.round(w * scale);
+        const nh = Math.round(h * scale);
+        svg.setAttribute("width", String(nw));
+        svg.setAttribute("height", String(nh));
+        svg.style.width = `${nw}px`;
+        svg.style.height = `${nh}px`;
+        svg.style.maxWidth = "100%";
+      });
+      document.documentElement.setAttribute("data-diagrams-ready", "1");
+    }
+
+    compactDiagrams();
+  </script>
+</body>
+</html>

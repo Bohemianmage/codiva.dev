@@ -21,7 +21,12 @@ export default async function DashboardPage() {
     supabase.from('leads').select('id, name, company, status, created_at').eq('status', 'new').order('created_at', { ascending: false }).limit(5),
     supabase.from('inbox_messages').select('id, name, email, status, created_at').eq('status', 'unread').order('created_at', { ascending: false }).limit(5),
     supabase.from('tickets').select('id, title, priority, status, created_at').in('status', ['new', 'in_progress']).order('created_at', { ascending: false }).limit(5),
-    supabase.from('projects').select('id, name, slug, status, target_delivery_date, progress_percent').in('status', ['active', 'quoting']).order('updated_at', { ascending: false }).limit(5),
+    supabase
+      .from('projects')
+      .select('id, name, slug, status, target_delivery_date, progress_percent, client_visible')
+      .in('status', ['active', 'quoting', 'draft'])
+      .order('updated_at', { ascending: false })
+      .limit(8),
   ]);
 
   return (
@@ -98,9 +103,15 @@ export default async function DashboardPage() {
                   </Link>
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
                   <span>{p.progress_percent}% avance</span>
                   <span>Entrega: {formatDate(p.target_delivery_date)}</span>
+                  <Link
+                    href={`/p/${p.slug}`}
+                    className="font-medium text-codiva-primary hover:underline"
+                  >
+                    Ver como cliente
+                  </Link>
                 </div>
               </li>
             ))}
@@ -108,6 +119,34 @@ export default async function DashboardPage() {
           </ul>
         </section>
       </div>
+
+      <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Vista portal cliente</h2>
+            <p className="text-sm text-zinc-500">
+              Entra al portal con tu sesión staff (banner de vista previa). No registra aceptaciones legales.
+            </p>
+          </div>
+          <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
+            Todos los proyectos
+          </Link>
+        </div>
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {(projects ?? []).map((p) => (
+            <li key={`preview-${p.id}`}>
+              <Link
+                href={`/p/${p.slug}`}
+                className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2.5 text-sm hover:border-codiva-primary/40"
+              >
+                <span className="font-medium text-zinc-900">{p.name}</span>
+                <span className="text-xs text-codiva-primary">Abrir</span>
+              </Link>
+            </li>
+          ))}
+          {!projects?.length && <p className="text-sm text-zinc-500">Sin proyectos para previsualizar</p>}
+        </ul>
+      </section>
     </div>
   );
 }

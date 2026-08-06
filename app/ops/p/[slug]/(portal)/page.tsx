@@ -1,6 +1,7 @@
+import Link from 'next/link';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
-import { PROJECT_STATUS_LABELS, MILESTONE_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { PROJECT_STATUS_LABELS, MILESTONE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -20,14 +21,37 @@ export default async function PortalHomePage({
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
 
-  const { data: milestones } = await supabase
-    .from('milestones')
-    .select('id, title, status, due_date')
-    .eq('project_id', project.id)
-    .eq('visible_to_client', true)
-    .order('sort_order');
+  const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }] = await Promise.all([
+    supabase
+      .from('milestones')
+      .select('id, title, status, due_date')
+      .eq('project_id', project.id)
+      .eq('visible_to_client', true)
+      .order('sort_order'),
+    supabase
+      .from('quotes')
+      .select('id, title, total_amount, currency, status, valid_until')
+      .eq('project_id', project.id)
+      .in('status', ['sent', 'accepted', 'rejected', 'expired'])
+      .order('version', { ascending: false })
+      .limit(1),
+    supabase
+      .from('deliverables')
+      .select('id')
+      .eq('project_id', project.id)
+      .eq('visible_to_client', true)
+      .in('kind', ['architecture', 'mvp', 'proposal']),
+    supabase
+      .from('documents')
+      .select('id, type')
+      .eq('project_id', project.id)
+      .eq('visible_to_client', true)
+      .eq('type', 'nda'),
+  ]);
 
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
+  const quote = quotes?.[0];
+  const hasNda = (docs ?? []).length > 0;
 
   return (
     <div className="space-y-6">
@@ -36,6 +60,7 @@ export default async function PortalHomePage({
           <StatusBadge label={PROJECT_STATUS_LABELS[project.status]} tone={projectTone(project.status)} />
           <span className="text-sm text-zinc-500">Estado del proyecto</span>
         </div>
+        {project.description && <p className="mt-4 text-sm text-zinc-600">{project.description}</p>}
         <div className="mt-6">
           <div className="mb-2 flex justify-between text-sm">
             <span className="font-medium">Progreso</span>
@@ -55,6 +80,41 @@ export default async function PortalHomePage({
             <p className="text-sm text-zinc-500">{formatDate(nextMilestone.due_date)}</p>
           </div>
         )}
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <Link
+          href={`/p/${slug}/propuesta`}
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Propuesta</p>
+          <p className="mt-2 font-semibold text-zinc-900">Arquitectura y MVP</p>
+          <p className="mt-1 text-sm text-zinc-600">
+            {(canvases ?? []).length
+              ? `${canvases!.length} canvas publicados`
+              : 'Pendiente de publicar'}
+          </p>
+        </Link>
+        <Link
+          href={`/p/${slug}/cotizacion`}
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cotización</p>
+          <p className="mt-2 font-semibold text-zinc-900">
+            {quote ? formatCurrency(quote.total_amount, quote.currency) : 'Sin cotización'}
+          </p>
+          <p className="mt-1 text-sm text-zinc-600">
+            {quote?.valid_until ? `Válida hasta ${formatDate(quote.valid_until)}` : 'Revisa cuando esté lista'}
+          </p>
+        </Link>
+        <Link
+          href={`/p/${slug}/documentos`}
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Documentos / NDA</p>
+          <p className="mt-2 font-semibold text-zinc-900">{hasNda ? 'NDA disponible' : 'Bandeja lista'}</p>
+          <p className="mt-1 text-sm text-zinc-600">Descarga y devuelve firmados aquí</p>
+        </Link>
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">

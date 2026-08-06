@@ -7,9 +7,10 @@ import { createClient } from '@/lib/supabase/client';
 
 const links = (slug: string) => [
   { href: `/p/${slug}`, label: 'Resumen' },
-  { href: `/p/${slug}/timeline`, label: 'Timeline' },
+  { href: `/p/${slug}/propuesta`, label: 'Propuesta' },
   { href: `/p/${slug}/cotizacion`, label: 'Cotización' },
   { href: `/p/${slug}/documentos`, label: 'Documentos' },
+  { href: `/p/${slug}/timeline`, label: 'Timeline' },
   { href: `/p/${slug}/entregables`, label: 'Entregables' },
   { href: `/p/${slug}/tickets`, label: 'Tickets' },
 ];

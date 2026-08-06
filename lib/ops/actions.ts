@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireStaff, requirePortalAccess } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
@@ -12,11 +12,15 @@ import {
   templateQuoteSent,
   templateLeadQuoteSent,
   templateStaffAlert,
+  templateLegalReacceptance,
   templatePortalInviteNewUser,
   templatePortalInviteExistingUser,
 } from '@/lib/ops/email-templates';
+import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { uploadOpsFile } from '@/lib/ops/storage';
+import { ingestProjectDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
+import { getRequestAudit } from '@/lib/ops/request-audit';
 import { parseLineItemsJson } from '@/lib/ops/quote-document';
 import { ensureQuoteAccessToken, publicQuoteUrl } from '@/lib/ops/quote-tokens';
 
@@ -397,6 +401,7 @@ export async function createProject(formData: FormData) {
 export async function updateProject(projectId: string, formData: FormData) {
   const { supabase, user } = await requireStaff();
 
+  const retentionRaw = parseInt(String(formData.get('documentRetentionDays') || ''), 10);
   const payload = {
     name: String(formData.get('name') || ''),
     status: String(formData.get('status') || 'draft'),
@@ -405,6 +410,8 @@ export async function updateProject(projectId: string, formData: FormData) {
     progress_percent: parseInt(String(formData.get('progressPercent') || '0'), 10),
     start_date: String(formData.get('startDate') || '') || null,
     target_delivery_date: String(formData.get('targetDeliveryDate') || '') || null,
+    document_retention_days:
+      Number.isFinite(retentionRaw) && retentionRaw > 0 ? retentionRaw : 365,
   };
 
   const { error } = await supabase.from('projects').update(payload).eq('id', projectId);
@@ -646,24 +653,47 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
 }
 
 export async function uploadDocument(projectId: string, formData: FormData) {
-  await requireStaff();
-  const admin = createAdminClient();
-
+  const { user } = await requireStaff();
   const file = formData.get('file') as File | null;
   if (!file?.size) throw new Error('Archivo requerido');
 
-  const uploaded = await uploadOpsFile(file, `projects/${projectId}/documents`);
+  const title = String(formData.get('title') || file.name);
+  const type = String(formData.get('type') || 'other');
+  const audit = await getRequestAudit();
 
-  const { error } = await admin.from('documents').insert({
-    project_id: projectId,
-    type: String(formData.get('type') || 'other'),
-    title: String(formData.get('title') || file.name),
-    file_path: uploaded.path,
-    file_url: uploaded.url,
+  const { doc, sha256, path, scan } = await ingestProjectDocument({
+    projectId,
+    file,
+    type,
+    title,
+    notes: String(formData.get('notes') || ''),
     signed: formData.get('signed') === 'on',
-    visible_to_client: formData.get('visibleToClient') === 'on',
+    visibleToClient: formData.get('visibleToClient') === 'on',
+    source: 'staff',
+    uploadedBy: user.id,
+    folder: 'documents',
+    audit,
   });
-  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'document',
+    entityId: doc.id,
+    action: 'uploaded',
+    actorId: user.id,
+    metadata: {
+      project_id: projectId,
+      title,
+      type,
+      source: 'staff',
+      file_path: path,
+      content_sha256: sha256,
+      scan_status: scan.status,
+      scan_provider: scan.provider,
+      ip: audit.ip,
+      user_agent: audit.userAgent,
+    },
+  });
+
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -680,17 +710,191 @@ export async function createDeliverable(projectId: string, formData: FormData) {
     fileUrl = uploaded.url;
   }
 
-  const { error } = await supabase.from('deliverables').insert({
-    project_id: projectId,
-    title: String(formData.get('title') || ''),
-    description: String(formData.get('description') || ''),
-    url: String(formData.get('url') || '') || null,
-    file_path: filePath,
-    file_url: fileUrl,
-    visible_to_client: formData.get('visibleToClient') !== 'off',
+  const kind = String(formData.get('kind') || 'other');
+  const sortOrder = parseInt(String(formData.get('sortOrder') || '0'), 10) || 0;
+  const title = String(formData.get('title') || '');
+
+  const { data: deliverable, error } = await supabase
+    .from('deliverables')
+    .insert({
+      project_id: projectId,
+      title,
+      description: String(formData.get('description') || ''),
+      url: String(formData.get('url') || '') || null,
+      file_path: filePath,
+      file_url: fileUrl,
+      visible_to_client: formData.get('visibleToClient') !== 'off',
+      kind,
+      sort_order: sortOrder,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await logActivity({
+    entityType: 'deliverable',
+    entityId: deliverable.id,
+    action: 'created',
+    actorId: user?.id,
+    metadata: {
+      project_id: projectId,
+      title,
+      kind,
+      file_path: filePath,
+    },
   });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function markDocumentSigned(documentId: string, projectId: string, signed = true) {
+  await requireStaff();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('documents')
+    .update({ signed })
+    .eq('id', documentId)
+    .eq('project_id', projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/projects/${projectId}`);
+}
+
+export async function acceptPortalLegalDocuments(slug: string, formData: FormData) {
+  const access = await requirePortalAccess(slug);
+  if (access.isStaffPreview) {
+    throw new Error('La vista previa staff no registra aceptaciones');
+  }
+
+  const acceptTerms = formData.get('acceptTerms') === 'on';
+  const acceptPrivacy = formData.get('acceptPrivacy') === 'on';
+  const acceptNda = formData.get('acceptNda') === 'on';
+  if (!acceptTerms || !acceptPrivacy || !acceptNda) {
+    throw new Error('Debes aceptar Términos, Aviso de Privacidad y NDA');
+  }
+
+  const { LEGAL_DOCS_VERSION } = await import('@/lib/ops/legal/version');
+  const now = new Date().toISOString();
+  const admin = createAdminClient();
+
+  const { data: member, error } = await admin
+    .from('project_members')
+    .update({
+      terms_accepted_at: now,
+      terms_version: LEGAL_DOCS_VERSION,
+      privacy_accepted_at: now,
+      privacy_version: LEGAL_DOCS_VERSION,
+      nda_accepted_at: now,
+      nda_version: LEGAL_DOCS_VERSION,
+      accepted_at: now,
+    })
+    .eq('project_id', access.project.id)
+    .eq('user_id', access.user.id)
+    .select('id')
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  const audit = await getRequestAudit();
+  await logActivity({
+    entityType: 'project_member',
+    entityId: member.id,
+    action: 'legal_accepted',
+    actorId: access.user.id,
+    metadata: {
+      project_id: access.project.id,
+      project_slug: slug,
+      version: LEGAL_DOCS_VERSION,
+      documents: ['terms', 'privacy', 'nda'],
+      ip: audit.ip,
+      user_agent: audit.userAgent,
+    },
+  });
+
+  const { redirect } = await import('next/navigation');
+  redirect(`/p/${slug}`);
+}
+
+export async function clientUploadDocument(projectId: string, slug: string, formData: FormData) {
+  const access = await requirePortalAccess(slug);
+  if (access.isStaffPreview) {
+    throw new Error('Usa una cuenta de cliente para subir documentos');
+  }
+  const { user, project } = access;
+  if (project.id !== projectId) throw new Error('Proyecto inválido');
+
+  const file = formData.get('file') as File | null;
+  if (!file?.size) throw new Error('Archivo requerido');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
+
+  const type = String(formData.get('type') || 'other');
+  const title = String(formData.get('title') || file.name).trim();
+  const notes = String(formData.get('notes') || '').trim();
+  const isSignedNda = type === 'nda' || formData.get('signed') === 'on';
+
+  const audit = await getRequestAudit();
+  const { doc, sha256, path, scan } = await ingestProjectDocument({
+    projectId,
+    file,
+    type,
+    title,
+    notes,
+    signed: isSignedNda,
+    visibleToClient: true,
+    source: 'client',
+    uploadedBy: user.id,
+    folder: 'inbound',
+    audit,
+  });
+
+  await logActivity({
+    entityType: 'document',
+    entityId: doc.id,
+    action: 'uploaded',
+    actorId: user.id,
+    metadata: {
+      project_id: projectId,
+      title,
+      type,
+      source: 'client',
+      file_path: path,
+      content_sha256: sha256,
+      scan_status: scan.status,
+      scan_provider: scan.provider,
+      signed: isSignedNda,
+      ip: audit.ip,
+      user_agent: audit.userAgent,
+    },
+  });
+
+  await notifyStaff({
+    subject: `Documento del cliente — ${project.name}`,
+    html: templateStaffAlert(`Documento recibido · ${project.name}`, [
+      `Título: ${title}`,
+      `Tipo: ${type}`,
+      `SHA-256: ${sha256.slice(0, 16)}…`,
+      `Scan: ${scan.status}${scan.provider ? ` (${scan.provider})` : ''}`,
+      `Notas: ${notes || '—'}`,
+      `Portal: ${opsBaseUrl()}/projects/${projectId}?tab=documentos`,
+    ]),
+  });
+
+  revalidatePath(`/p/${slug}/documentos`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function runDocumentRetentionDisposal() {
+  await requireStaff();
+  const result = await disposeExpiredDocuments(200);
+  await logActivity({
+    entityType: 'system',
+    entityId: '00000000-0000-4000-8000-000000000001',
+    action: 'retention_disposal',
+    metadata: { disposed: result.disposed },
+  });
+  return result;
 }
 
 export async function clientAcceptQuote(quoteId: string, projectId: string) {
@@ -733,4 +937,95 @@ export async function clientRejectQuote(quoteId: string, projectId: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath(`/p`);
+}
+
+/**
+ * Publica (o registra) la versión legal vigente en bitácora y notifica
+ * a miembros de proyectos visibles cuya aceptación esté desactualizada.
+ */
+export async function publishLegalVersionAndNotify(formData: FormData) {
+  const { user } = await requireStaff();
+  const admin = createAdminClient();
+  const versionCode = String(formData.get('versionCode') || LEGAL_DOCS_VERSION).trim();
+  const changelog = String(formData.get('changelog') || '').trim();
+  const sendEmails = formData.get('sendEmails') === 'on';
+
+  const { error: versionError } = await admin.from('legal_document_versions').upsert(
+    {
+      kind: 'bundle',
+      version_code: versionCode,
+      changelog: changelog || `Bundle legal ${versionCode}`,
+      published_at: new Date().toISOString(),
+      published_by: user.id,
+    },
+    { onConflict: 'kind,version_code' }
+  );
+  if (versionError) throw new Error(versionError.message);
+
+  if (!sendEmails) {
+    revalidatePath('/settings');
+    return { notified: 0, versionCode };
+  }
+
+  const { data: members } = await admin.from('project_members').select(
+    'user_id, project_id, terms_version, privacy_version, nda_version, projects(id, name, slug, client_visible)'
+  );
+
+  let notified = 0;
+  for (const member of members ?? []) {
+    const projectRaw = member.projects as unknown as
+      | { id: string; name: string; slug: string; client_visible: boolean }
+      | { id: string; name: string; slug: string; client_visible: boolean }[]
+      | null;
+    const project = Array.isArray(projectRaw) ? projectRaw[0] : projectRaw;
+    if (!project?.client_visible) continue;
+
+    const outdated =
+      member.terms_version !== versionCode ||
+      member.privacy_version !== versionCode ||
+      member.nda_version !== versionCode;
+    if (!outdated) continue;
+
+    const { data: already } = await admin
+      .from('legal_reacceptance_notifications')
+      .select('id')
+      .eq('project_id', member.project_id)
+      .eq('user_id', member.user_id)
+      .eq('version_code', versionCode)
+      .maybeSingle();
+    if (already) continue;
+
+    const { data: authUser } = await admin.auth.admin.getUserById(member.user_id);
+    const email = authUser.user?.email;
+    if (!email) continue;
+
+    await sendClientEmail({
+      to: email,
+      subject: `Actualización legal — ${project.name}`,
+      html: templateLegalReacceptance(
+        project.name,
+        `${opsBaseUrl()}/p/${project.slug}/aceptar`,
+        versionCode
+      ),
+    });
+
+    await admin.from('legal_reacceptance_notifications').insert({
+      project_id: member.project_id,
+      user_id: member.user_id,
+      version_code: versionCode,
+      channel: 'email',
+    });
+    notified += 1;
+  }
+
+  await logActivity({
+    entityType: 'legal',
+    entityId: versionCode,
+    action: 'reacceptance_notified',
+    actorId: user.id,
+    metadata: { notified, versionCode },
+  });
+
+  revalidatePath('/settings');
+  return { notified, versionCode };
 }

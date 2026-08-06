@@ -17,7 +17,8 @@ INSERT INTO organizations (id, name, contact_email, contact_phone) VALUES
   ('a0000001-0001-4000-8000-000000000007', 'YOU Soluciones', 'hola@yousoluciones.com', '+52 55 1000 0007'),
   ('a0000001-0001-4000-8000-000000000008', 'RODPIM', 'proyectos@rodpim.com', NULL),
   ('a0000001-0001-4000-8000-000000000009', 'Grupo IAMSA', 'digital@iamsa.mx', NULL),
-  ('a0000001-0001-4000-8000-00000000000a', 'Kaucho Quimico', 'ventas@kauchoquimico.com', NULL)
+  ('a0000001-0001-4000-8000-00000000000a', 'Kaucho Quimico', 'ventas@kauchoquimico.com', NULL),
+  ('a0000001-0001-4000-8000-00000000000b', 'NIRC', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Proyectos
@@ -87,6 +88,15 @@ INSERT INTO projects (
     'draft',
     'Portal de clientes y cotizaciones para YOU Soluciones.',
     NULL, '2026-12-01', 0, false
+  ),
+  (
+    'b0000001-0001-4000-8000-00000000000b',
+    'a0000001-0001-4000-8000-00000000000b',
+    'NIRC MVP Fase 1',
+    'nirc',
+    'quoting',
+    'Plataforma de workforce / personal eventual: pool FCFS, entrada dura IDSE+Cincel, QR/geocerca y Stripe Connect.',
+    NULL, '2026-12-31', 5, true
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -135,6 +145,14 @@ INSERT INTO leads (
     'Auditoria de seguridad puntual, sin desarrollo.',
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL
+  ),
+  (
+    'c0000001-0001-4000-8000-00000000000b',
+    'qualified', 'manual',
+    'Equipo NIRC', 'NIRC', '', NULL,
+    'MVP Fase 1 workforce eventual con IDSE, Cincel y Stripe Connect. 18 semanas.',
+    NULL, NULL, 'NIRC', 'NIRC',
+    980000, NULL, 'b0000001-0001-4000-8000-00000000000b'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -195,8 +213,29 @@ INSERT INTO quotes (
     'En desarrollo',
     'Modulo de reportes, exportacion PDF y roles adicionales.',
     22000, 'USD', '2026-06-01', now() - interval '45 days'
+  ),
+  (
+    'd0000001-0001-4000-8000-00000000000b',
+    'b0000001-0001-4000-8000-00000000000b',
+    1, 'sent', 'NIRC MVP Fase 1 — Completo', 'Platform',
+    'Por iniciar - pendiente de aprobación formal',
+    'Backoffice, pool FCFS, carga masiva, QR/geocerca, entrada dura (Cincel+IDSE), Stripe Connect, privacy y UAT en 18 semanas. Solo desarrollo; proveedores externos aparte.',
+    980000, 'MXN', '2026-09-05', now()
   )
 ON CONFLICT (id) DO NOTHING;
+
+-- Detalle comercial NIRC (campos extendidos)
+UPDATE quotes SET
+  deliverables = E'• Código y /docs del cliente\n• Backoffice + app personal (PWA)\n• Integraciones IDSE PRO, Cincel, Stripe Connect (adapters + sandbox)\n• UAT y capacitación go-live asistido',
+  considerations = E'• Montos MXN sin IVA, vigencia 30 días\n• Hitos 25% en semanas 5 / 9 / 13 / 18\n• Cincel, IDSE, Stripe, SMS, cloud y legal los contrata el cliente\n• Semana 0: sandboxes y RP/certificados',
+  optional_extras = E'• EMA/EBA, face-match, WhatsApp masivo, Temporal cloud, app nativa, multi-país, CFDI automático\n• Hypercare 4 semanas (+$140,000)\n• Soporte mensual opcional $45,000',
+  line_items = '[
+    {"title":"Kickoff + fundaciones","detail":"Auth/RBAC, backoffice, expediente, carga masiva","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
+    {"title":"Pool + FCFS","detail":"Scoring, convocatorias, waitlist, no-show/refill","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
+    {"title":"Entrada dura","detail":"QR, geocerca, Cincel, IDSE alta y gate","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
+    {"title":"Salida + UAT","detail":"Stripe Connect, bajas, asientos, go-live","hours":0,"rate":0,"rateLabel":"paquete","total":245000}
+  ]'::jsonb
+WHERE id = 'd0000001-0001-4000-8000-00000000000b';
 
 -- Token publico de ejemplo (cotizacion Kaucho enviada)
 INSERT INTO quote_access_tokens (id, quote_id, token, expires_at) VALUES
@@ -204,6 +243,12 @@ INSERT INTO quote_access_tokens (id, quote_id, token, expires_at) VALUES
     'e0000001-0001-4000-8000-000000000001',
     'd0000001-0001-4000-8000-000000000002',
     'demo-kaucho-eshop-2026',
+    now() + interval '90 days'
+  ),
+  (
+    'e0000001-0001-4000-8000-00000000000b',
+    'd0000001-0001-4000-8000-00000000000b',
+    'nirc-mvp-fase1-2026',
     now() + interval '90 days'
   )
 ON CONFLICT (id) DO NOTHING;
@@ -214,7 +259,67 @@ INSERT INTO milestones (id, project_id, title, description, status, sort_order, 
   ('f0000001-0001-4000-8000-000000000002', 'b0000001-0001-4000-8000-000000000001', 'MVP en staging', 'Auth, leads y cotizador interno.', 'completed', 2, '2025-06-30'),
   ('f0000001-0001-4000-8000-000000000003', 'b0000001-0001-4000-8000-000000000001', 'Go-live produccion', 'Despliegue, DNS y capacitacion.', 'in_progress', 3, '2026-07-01'),
   ('f0000001-0001-4000-8000-000000000004', 'b0000001-0001-4000-8000-000000000006', 'Modulo reservas', 'Calendario, pagos y notificaciones.', 'in_progress', 1, '2026-05-15'),
-  ('f0000001-0001-4000-8000-000000000005', 'b0000001-0001-4000-8000-000000000006', 'Integracion contable', 'Exportacion CFDI y conciliacion.', 'pending', 2, '2026-08-01')
+  ('f0000001-0001-4000-8000-000000000005', 'b0000001-0001-4000-8000-000000000006', 'Integracion contable', 'Exportacion CFDI y conciliacion.', 'pending', 2, '2026-08-01'),
+  ('f0000001-0001-4000-8000-00000000000b', 'b0000001-0001-4000-8000-00000000000b', 'Kickoff y sandboxes', 'Accesos IDSE/Cincel/Stripe, catálogo RP.', 'pending', 1, '2026-08-20'),
+  ('f0000001-0001-4000-8000-00000000000c', 'b0000001-0001-4000-8000-00000000000b', 'Fundaciones demo', 'Auth, backoffice y carga masiva.', 'pending', 2, '2026-09-17'),
+  ('f0000001-0001-4000-8000-00000000000d', 'b0000001-0001-4000-8000-00000000000b', 'Pool + FCFS staging', 'Convocatorias y waitlist en staging.', 'pending', 3, '2026-10-15'),
+  ('f0000001-0001-4000-8000-00000000000e', 'b0000001-0001-4000-8000-00000000000b', 'Entrada dura staging', 'Cincel + IDSE alta con gate.', 'pending', 4, '2026-11-12'),
+  ('f0000001-0001-4000-8000-00000000000f', 'b0000001-0001-4000-8000-00000000000b', 'UAT / go-live', 'Pruebas punta a punta y producción.', 'pending', 5, '2026-12-17')
+ON CONFLICT (id) DO NOTHING;
+
+-- Canvas NIRC (arquitectura / MVP) + NDA borrador
+INSERT INTO deliverables (
+  id, project_id, title, description, url, kind, sort_order, visible_to_client
+) VALUES
+  (
+    '92000001-0001-4000-8000-000000000001',
+    'b0000001-0001-4000-8000-00000000000b',
+    'Arquitectura completa',
+    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos.',
+    '/client-packs/nirc/nirc-arquitectura-completa.html',
+    'architecture', 1, true
+  ),
+  (
+    '92000001-0001-4000-8000-000000000002',
+    'b0000001-0001-4000-8000-00000000000b',
+    'Arquitectura (PDF)',
+    'Versión imprimible de la arquitectura.',
+    '/client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
+    'architecture', 2, true
+  ),
+  (
+    '92000001-0001-4000-8000-000000000003',
+    'b0000001-0001-4000-8000-00000000000b',
+    'MVP Fase 1',
+    'Alcance, plan de 18 semanas, inversión y condiciones comerciales.',
+    '/client-packs/nirc/mvp-fase1.html',
+    'mvp', 3, true
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO documents (
+  id, project_id, type, title, file_path, file_url, signed, visible_to_client, source, notes
+) VALUES
+  (
+    '93000001-0001-4000-8000-000000000001',
+    'b0000001-0001-4000-8000-00000000000b',
+    'nda',
+    'NDA mutuo — borrador Codiva × NIRC',
+    'client-packs/nirc/nda-borrador.html',
+    '/client-packs/nirc/nda-borrador.html',
+    false, true, 'staff',
+    'Revisar, completar datos entre corchetes y devolver firmado por Tu bandeja.'
+  ),
+  (
+    '93000001-0001-4000-8000-000000000002',
+    'b0000001-0001-4000-8000-00000000000b',
+    'proposal_pdf',
+    'Arquitectura completa (PDF)',
+    'client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
+    '/client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
+    false, true, 'staff',
+    'También disponible en Propuesta como canvas.'
+  )
 ON CONFLICT (id) DO NOTHING;
 
 -- Inbox

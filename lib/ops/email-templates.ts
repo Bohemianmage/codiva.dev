@@ -211,6 +211,23 @@ export function templateLeadQuoteSent(
   });
 }
 
+export function templateLegalReacceptance(
+  projectName: string,
+  acceptUrl: string,
+  versionCode: string
+): string {
+  return emailLayout({
+    preview: `Actualización legal — ${projectName}`,
+    title: 'Debes aceptar los documentos legales actualizados',
+    bodyHtml: `
+      <p style="margin:0 0 12px;">Actualizamos los términos, el aviso de privacidad y/o el NDA del portal del proyecto <strong>${escapeHtml(projectName)}</strong> (versión <strong>${escapeHtml(versionCode)}</strong>).</p>
+      <p style="margin:0;">Para seguir usando el portal, acepta los documentos vigentes en tu próximo acceso.</p>
+    `,
+    cta: { label: 'Revisar y aceptar', href: acceptUrl },
+    footerNote: 'Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.',
+  });
+}
+
 export function templateStaffAlert(title: string, lines: string[]): string {
   const rows = lines
     .map(

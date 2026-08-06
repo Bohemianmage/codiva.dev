@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { clientAcceptQuote, clientRejectQuote } from '@/lib/ops/actions';
@@ -37,36 +38,76 @@ export default async function PortalQuotePage({
   }
 
   return (
-    <article className="rounded-2xl border border-zinc-200 bg-white p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">{active.title}</h2>
-        <StatusBadge
-          label={QUOTE_STATUS_LABELS[active.status]}
-          tone={active.status === 'accepted' ? 'success' : active.status === 'rejected' ? 'danger' : 'info'}
-        />
-      </div>
-      <p className="text-2xl font-bold text-codiva-primary">{formatCurrency(active.total_amount, active.currency)}</p>
-      {active.valid_until && (
-        <p className="mt-1 text-sm text-zinc-500">Válida hasta {formatDate(active.valid_until)}</p>
-      )}
-      <div className="mt-6 whitespace-pre-wrap text-sm text-zinc-700">{active.scope}</div>
-
-      {active.status === 'sent' && (
-        <div className="mt-8 flex gap-3">
-          <form action={onAccept}>
-            <input type="hidden" name="quoteId" value={active.id} />
-            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-              Aceptar propuesta
-            </button>
-          </form>
-          <form action={onReject}>
-            <input type="hidden" name="quoteId" value={active.id} />
-            <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium">
-              Rechazar
-            </button>
-          </form>
+    <div className="space-y-4">
+      <p className="text-sm text-zinc-600">
+        Complementa con los canvas de{' '}
+        <Link href={`/p/${slug}/propuesta`} className="text-codiva-primary hover:underline">
+          Propuesta / Arquitectura
+        </Link>
+        .
+      </p>
+      <article className="rounded-2xl border border-zinc-200 bg-white p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">{active.title}</h2>
+          <StatusBadge
+            label={QUOTE_STATUS_LABELS[active.status]}
+            tone={active.status === 'accepted' ? 'success' : active.status === 'rejected' ? 'danger' : 'info'}
+          />
         </div>
-      )}
-    </article>
+        <p className="text-2xl font-bold text-codiva-primary">
+          {formatCurrency(active.total_amount, active.currency)}
+        </p>
+        {active.valid_until && (
+          <p className="mt-1 text-sm text-zinc-500">Válida hasta {formatDate(active.valid_until)}</p>
+        )}
+        {active.service_type && (
+          <p className="mt-2 text-sm text-zinc-500">Tipo: {active.service_type}</p>
+        )}
+
+        <div className="mt-6 space-y-4 text-sm text-zinc-700">
+          {active.scope && (
+            <div>
+              <h3 className="mb-1 font-semibold text-zinc-900">Alcance</h3>
+              <div className="whitespace-pre-wrap">{active.scope}</div>
+            </div>
+          )}
+          {active.deliverables && (
+            <div>
+              <h3 className="mb-1 font-semibold text-zinc-900">Entregables</h3>
+              <div className="whitespace-pre-wrap">{active.deliverables}</div>
+            </div>
+          )}
+          {active.considerations && (
+            <div>
+              <h3 className="mb-1 font-semibold text-zinc-900">Consideraciones</h3>
+              <div className="whitespace-pre-wrap">{active.considerations}</div>
+            </div>
+          )}
+          {active.optional_extras && (
+            <div>
+              <h3 className="mb-1 font-semibold text-zinc-900">No incluido / extras</h3>
+              <div className="whitespace-pre-wrap">{active.optional_extras}</div>
+            </div>
+          )}
+        </div>
+
+        {active.status === 'sent' && (
+          <div className="mt-8 flex flex-wrap gap-3">
+            <form action={onAccept}>
+              <input type="hidden" name="quoteId" value={active.id} />
+              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
+                Aceptar propuesta
+              </button>
+            </form>
+            <form action={onReject}>
+              <input type="hidden" name="quoteId" value={active.id} />
+              <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium">
+                Rechazar
+              </button>
+            </form>
+          </div>
+        )}
+      </article>
+    </div>
   );
 }

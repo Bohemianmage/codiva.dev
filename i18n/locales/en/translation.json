@@ -212,7 +212,9 @@
   },
   "footer": {
     "rights": "All rights reserved.",
-    "ticketLink": "Tickets"
+    "ticketLink": "Tickets",
+    "terms": "Terms and conditions",
+    "privacy": "Privacy notice"
   },
   "fields": {
     "name": "Full name",
@@ -229,7 +231,9 @@
     "selectOption": "Select an option",
     "budget": "Estimated budget (MXN)",
     "referenceSite": "Reference site (URL)",
-    "privacyConsent": "I accept the privacy policy"
+    "privacyConsent": "I accept the privacy policy",
+    "privacyConsentPrefix": "I accept the",
+    "privacyConsentLink": "privacy notice"
   },
   "sections": {
     "start": "Home",

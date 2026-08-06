@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NIRC — MVP Fase 1</title>
+  <style>
+    :root {
+      --ink: #14201a;
+      --muted: #4a5c52;
+      --line: #d5ddd8;
+      --accent: #0f6b4c;
+      --bg: #f4f7f5;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, #d9ebe3 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, #e8f0ec 0%, transparent 50%),
+        var(--bg);
+      line-height: 1.55;
+    }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 24px 80px; }
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 8px 0 12px; letter-spacing: -0.02em; }
+    .lead { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 36px;
+    }
+    .pill {
+      border: 1px solid var(--line); background: var(--card);
+      border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--muted);
+    }
+    .pill strong { color: var(--ink); }
+    section {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 18px; padding: 24px 26px; margin-bottom: 16px;
+    }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    ul { margin: 0; padding-left: 1.15rem; }
+    li { margin: 6px 0; color: var(--muted); }
+    li strong { color: var(--ink); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .amount { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; color: var(--accent); }
+    .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">NIRC · Propuesta comercial</p>
+    <h1>MVP Fase 1 — Workforce / personal eventual</h1>
+    <p class="lead">
+      Plataforma operativa con entrada dura (adhesión + alta IDSE aceptada), pool FCFS,
+      check-in QR/geocerca, dispersión Stripe Connect y backoffice completo.
+    </p>
+    <div class="meta">
+      <span class="pill"><strong>18 semanas</strong> · ~4.5 meses</span>
+      <span class="pill"><strong>$980,000 MXN</strong> · solo desarrollo</span>
+      <span class="pill">Proveedores externos <strong>aparte</strong></span>
+    </div>
+
+    <section>
+      <h2>Alcance incluido</h2>
+      <ul>
+        <li><strong>Backoffice:</strong> vacantes, aplicaciones, pools, validaciones, convocatorias, eventos, finanzas, catálogos, RBAC</li>
+        <li><strong>Pool + FCFS:</strong> score, auto-blast, aceptación, waitlist, no-show/reemplazo</li>
+        <li><strong>Carga masiva:</strong> import CSV/Excel de candidatos/empleados</li>
+        <li><strong>Operación:</strong> QR, geocerca, check-in/out, evidencias</li>
+        <li><strong>Entrada dura:</strong> INE → contrato adhesión (Cincel) → alta IDSE aceptada → “Trabajando”</li>
+        <li><strong>Salida:</strong> baja IDSE + Stripe Connect + asientos básicos + auditoría</li>
+        <li><strong>Privacy:</strong> consentimientos, retención, jobs de disposal mínimos</li>
+        <li><strong>Integraciones:</strong> IDSE PRO, Cincel, Stripe Connect, email/SMS</li>
+      </ul>
+      <p class="note">Fuera de Fase 1: EMA/EBA, face-match, WhatsApp masivo, Temporal cloud, app nativa, multi-país, CFDI automático al personal.</p>
+    </section>
+
+    <section>
+      <h2>Plan de entregas</h2>
+      <table>
+        <thead>
+          <tr><th>Fase</th><th>Semanas</th><th>Entregable</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0. Kickoff</td><td>1</td><td>Ambientes, sandboxes, catálogo RP, plantilla adhesión</td></tr>
+          <tr><td>1. Fundaciones</td><td>2–5</td><td>Auth/RBAC, backoffice, expediente, carga masiva, consentimientos</td></tr>
+          <tr><td>2. Pool + FCFS</td><td>6–9</td><td>Scoring, convocatorias, offers, waitlist, no-show/refill</td></tr>
+          <tr><td>3. Entrada dura</td><td>10–13</td><td>QR, geocerca, Cincel, IDSE alta, gate sin alta</td></tr>
+          <tr><td>4. Salida + dinero</td><td>14–16</td><td>Check-out, baja IDSE, Stripe Connect, asientos</td></tr>
+          <tr><td>5. UAT / go-live</td><td>17–18</td><td>Pruebas punta a punta, capacitación, go-live asistido</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Inversión de desarrollo</h2>
+      <table>
+        <thead>
+          <tr><th>Paquete</th><th>Alcance</th><th>Monto</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>MVP Core</td><td>Sin OCR avanzado, SMS→email+push, un solo RP</td><td class="amount">$780,000</td></tr>
+          <tr><td>MVP Completo (recomendado)</td><td>Alcance íntegro Fase 1</td><td class="amount">$980,000</td></tr>
+          <tr><td>MVP + hypercare 4 sem</td><td>Completo + mes post go-live</td><td class="amount">$1,120,000</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Montos MXN sin IVA. Vigencia 30 días. Hitos de pago 25% en semanas 5 / 9 / 13 / 18. Cincel, IDSE, Stripe, SMS, cloud y legal se contratan aparte por el cliente.</p>
+    </section>
+
+    <section>
+      <h2>Condiciones clave</h2>
+      <ul>
+        <li>Labor sin alta IDSE aceptada: <strong>prohibida</strong> en el diseño del MVP</li>
+        <li>Repo y documentación del cliente incluidos</li>
+        <li>Garantía de defectos: 30 días post go-live (alcance acordado)</li>
+        <li>Soporte opcional post go-live: $45,000 / mes</li>
+        <li>Semana 0: credenciales sandbox/prod IDSE, Cincel, Stripe Connect; RP y certificados</li>
+      </ul>
+    </section>
+
+    <footer>
+      Documento de trabajo Codiva × NIRC — Agosto 2026. No sustituye dictamen legal ni cédula IMSS.
+      La cotización formal y el NDA viven en el portal del proyecto.
+    </footer>
+  </main>
+</body>
+</html>

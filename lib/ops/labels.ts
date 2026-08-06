@@ -45,6 +45,25 @@ export const MILESTONE_STATUS_LABELS: Record<string, string> = {
   blocked: 'Bloqueado',
 };
 
+export const DELIVERABLE_KIND_LABELS: Record<string, string> = {
+  architecture: 'Arquitectura',
+  mvp: 'MVP / Propuesta',
+  proposal: 'Propuesta',
+  other: 'Otro',
+};
+
+export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  contract: 'Contrato',
+  nda: 'NDA',
+  proposal_pdf: 'Propuesta PDF',
+  other: 'Otro',
+};
+
+export const DOCUMENT_SOURCE_LABELS: Record<string, string> = {
+  staff: 'Codiva',
+  client: 'Cliente',
+};
+
 export const INBOX_STATUS_LABELS: Record<string, string> = {
   unread: 'Sin leer',
   read: 'Leído',

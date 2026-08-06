@@ -1,15 +1,78 @@
+import { createHash } from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
+
+/** TTL corto para URLs firmadas (segundos). */
+export const OPS_SIGNED_URL_TTL_SECONDS = 60 * 5; // 5 minutos
+
+export function isOpsStoragePath(path: string | null | undefined): boolean {
+  return Boolean(path && path.startsWith('projects/'));
+}
+
+export function isPublicClientPackPath(pathOrUrl: string | null | undefined): boolean {
+  if (!pathOrUrl) return false;
+  return pathOrUrl.startsWith('/client-packs/') || pathOrUrl.startsWith('client-packs/');
+}
+
+/** Href seguro para UI: packs públicos o proxy autenticado. */
+export function opsFileHref(filePath: string | null | undefined, fileUrl?: string | null): string | null {
+  if (filePath && isOpsStoragePath(filePath)) {
+    return `/api/ops/file?path=${encodeURIComponent(filePath)}`;
+  }
+  if (fileUrl && isPublicClientPackPath(fileUrl)) {
+    return fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+  }
+  if (filePath && isPublicClientPackPath(filePath)) {
+    return filePath.startsWith('/') ? filePath : `/${filePath}`;
+  }
+  if (fileUrl && /^https?:\/\//i.test(fileUrl)) {
+    return fileUrl;
+  }
+  if (fileUrl && fileUrl.startsWith('/api/ops/file')) {
+    return fileUrl;
+  }
+  return null;
+}
+
+export function projectIdFromOpsPath(path: string): string | null {
+  const parts = path.split('/').filter(Boolean);
+  if (parts[0] !== 'projects' || !parts[1]) return null;
+  const id = parts[1];
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return id;
+}
+
+export function sha256Hex(buffer: Buffer): string {
+  return createHash('sha256').update(buffer).digest('hex');
+}
+
+export async function createOpsSignedUrl(
+  path: string,
+  expiresIn = OPS_SIGNED_URL_TTL_SECONDS
+): Promise<string> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage.from('ops-files').createSignedUrl(path, expiresIn);
+  if (error || !data?.signedUrl) {
+    throw error ?? new Error('No se pudo firmar URL');
+  }
+  return data.signedUrl;
+}
+
+export async function deleteOpsFile(path: string): Promise<void> {
+  const admin = createAdminClient();
+  await admin.storage.from('ops-files').remove([path]);
+}
 
 export async function uploadOpsFile(
   file: File | Blob,
   folder: string
-): Promise<{ path: string; url: string }> {
+): Promise<{ path: string; url: string | null; sha256: string; buffer: Buffer }> {
   const admin = createAdminClient();
   const name = file instanceof File ? file.name : 'file';
   const safeName = `${Date.now()}-${name.replace(/\s+/g, '-')}`;
   const path = `${folder}/${safeName}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const sha256 = sha256Hex(buffer);
 
   const { error } = await admin.storage.from('ops-files').upload(path, buffer, {
     contentType: file instanceof File ? file.type : 'application/octet-stream',
@@ -18,12 +81,16 @@ export async function uploadOpsFile(
 
   if (error) throw error;
 
-  const { data: signed } = await admin.storage
-    .from('ops-files')
-    .createSignedUrl(path, 60 * 60 * 24 * 365);
-
   return {
     path,
-    url: signed?.signedUrl ?? path,
+    url: opsFileHref(path),
+    sha256,
+    buffer,
   };
+}
+
+export function retainUntilFromDays(days: number, from = new Date()): string {
+  const d = new Date(from);
+  d.setUTCDate(d.getUTCDate() + Math.max(1, days));
+  return d.toISOString().slice(0, 10);
 }

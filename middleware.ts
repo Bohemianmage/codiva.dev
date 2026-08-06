@@ -17,6 +17,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
+  // Packs estáticos y legales públicos viven en /app (no bajo /ops)
+  if (ops && (pathname.startsWith('/client-packs') || pathname.startsWith('/legal'))) {
+    return sessionResponse;
+  }
+
   if (ops && !pathname.startsWith('/ops')) {
     const url = request.nextUrl.clone();
     if (pathname === '/') {

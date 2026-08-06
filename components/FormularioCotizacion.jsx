@@ -222,7 +222,12 @@ export default function FormularioCotizacion() {
           checked={formik.values.privacyConsent}
           className="mr-2 rounded border-zinc-300 text-codiva-primary focus:ring-codiva-primary"
         />
-        <label className="text-sm">{t('fields.privacyConsent')}</label>
+        <label className="text-sm">
+          {t('fields.privacyConsentPrefix')}{' '}
+          <a href="/legal/aviso-privacidad" target="_blank" rel="noreferrer" className="text-codiva-primary underline">
+            {t('fields.privacyConsentLink')}
+          </a>
+        </label>
       </div>
 
       {/* Botón submit */}

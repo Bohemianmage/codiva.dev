@@ -20,7 +20,15 @@ export default function PartnerRequestPage() {
 
         <PartnerRequestForm />
 
-        <footer className="mt-10 text-center text-xs text-zinc-500">
+        <footer className="mt-10 space-y-2 text-center text-xs text-zinc-500">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a href="/legal/terminos" className="hover:text-codiva-primary hover:underline">
+              Términos
+            </a>
+            <a href="/legal/aviso-privacidad" className="hover:text-codiva-primary hover:underline">
+              Aviso de privacidad
+            </a>
+          </div>
           <a href={marketingBaseUrl()} className="text-codiva-primary hover:underline">
             codiva.dev
           </a>

@@ -1,5 +1,7 @@
 import PortalNav from '@/components/ops/PortalNav';
-import { requireProjectMember } from '@/lib/ops/auth';
+import StaffPortalPreviewBanner from '@/components/ops/StaffPortalPreviewBanner';
+import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
+import Link from 'next/link';
 
 export default async function PortalLayout({
   children,
@@ -9,14 +11,29 @@ export default async function PortalLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { project } = await requireProjectMember(slug);
+  const access = await requirePortalMemberWithAcceptances(slug);
+  const { project, isStaffPreview } = access;
 
   return (
     <div className="min-h-screen bg-zinc-50">
+      {isStaffPreview && (
+        <StaffPortalPreviewBanner projectName={project.name} projectId={project.id} />
+      )}
       <PortalNav slug={slug} projectName={project.name} />
       <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
       <footer className="border-t border-zinc-200 py-6 text-center text-xs text-zinc-500">
-        Proyecto impulsado por Codiva
+        <p>Proyecto impulsado por Codiva</p>
+        <p className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <Link href="/legal/terminos" className="hover:text-codiva-primary hover:underline">
+            Términos
+          </Link>
+          <Link href="/legal/aviso-privacidad" className="hover:text-codiva-primary hover:underline">
+            Aviso de privacidad
+          </Link>
+          <Link href="/legal/nda" className="hover:text-codiva-primary hover:underline">
+            NDA
+          </Link>
+        </p>
       </footer>
     </div>
   );

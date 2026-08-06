@@ -212,7 +212,9 @@
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
-    "ticketLink": "Tickets"
+    "ticketLink": "Tickets",
+    "terms": "Términos y condiciones",
+    "privacy": "Aviso de privacidad"
   },
   "fields": {
     "name": "Nombre completo",
@@ -229,7 +231,9 @@
     "deliveryDate": "Fecha de entrega deseada",
     "budget": "Presupuesto estimado (MXN)",
     "referenceSite": "Sitio de referencia (URL)",
-    "privacyConsent": "Acepto el aviso de privacidad"
+    "privacyConsent": "Acepto el aviso de privacidad",
+    "privacyConsentPrefix": "Acepto el",
+    "privacyConsentLink": "aviso de privacidad"
   },
   "sections": {
     "start": "Inicio",

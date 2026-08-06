@@ -13,16 +13,25 @@ import {
   inviteProjectMember,
   uploadDocument,
   createDeliverable,
+  markDocumentSigned,
+  runDocumentRetentionDisposal,
 } from '@/lib/ops/actions';
 import {
   PROJECT_STATUS_LABELS,
   QUOTE_STATUS_LABELS,
   MILESTONE_STATUS_LABELS,
+  DELIVERABLE_KIND_LABELS,
+  DOCUMENT_TYPE_LABELS,
+  DOCUMENT_SOURCE_LABELS,
   formatDate,
   formatCurrency,
 } from '@/lib/ops/labels';
 import { opsBaseUrl } from '@/lib/ops/host';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
+import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
+import { opsFileHref } from '@/lib/ops/storage';
 
 export default async function ProjectDetailPage({
   params,
@@ -54,10 +63,47 @@ export default async function ProjectDetailPage({
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
     supabase.from('documents').select('*').eq('project_id', id).order('uploaded_at', { ascending: false }),
-    supabase.from('deliverables').select('*').eq('project_id', id).order('created_at', { ascending: false }),
-    supabase.from('project_members').select('id, role, invited_at, user_id').eq('project_id', id),
+    supabase.from('deliverables').select('*').eq('project_id', id).order('sort_order', { ascending: true }),
+    supabase
+      .from('project_members')
+      .select(
+        'id, role, invited_at, user_id, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version'
+      )
+      .eq('project_id', id),
     supabase.from('tickets').select('id, title, status, priority, created_at').eq('project_id', id).order('created_at', { ascending: false }).limit(10),
   ]);
+
+  const admin = createAdminClient();
+  const [{ data: fileAccess }, { data: recentActivity }] = await Promise.all([
+    admin
+      .from('file_access_log')
+      .select('id, file_path, action, actor_id, created_at, document_id, ip, user_agent')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    admin
+      .from('activity_log')
+      .select('id, entity_type, action, actor_id, metadata, created_at')
+      .contains('metadata', { project_id: id })
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ]);
+
+  const memberEmails = new Map<string, string>();
+  const actorIds = new Set<string>();
+  (members ?? []).forEach((m) => actorIds.add(m.user_id));
+  (fileAccess ?? []).forEach((a) => {
+    if (a.actor_id) actorIds.add(a.actor_id);
+  });
+  (recentActivity ?? []).forEach((a) => {
+    if (a.actor_id) actorIds.add(a.actor_id);
+  });
+  await Promise.all(
+    [...actorIds].map(async (userId) => {
+      const { data } = await admin.auth.admin.getUserById(userId);
+      if (data.user?.email) memberEmails.set(userId, data.user.email);
+    })
+  );
 
   const tabs = [
     { key: 'resumen', label: 'Resumen' },
@@ -80,16 +126,20 @@ export default async function ProjectDetailPage({
         title={project.name}
         description={(project.organizations as { name?: string })?.name}
         actions={
-          project.client_visible ? (
+          <div className="flex flex-wrap gap-2">
             <a
-              href={`${opsBaseUrl()}/p/${project.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium"
+              href={`/api/ops/projects/${id}/compliance-export`}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Abrir portal
+              Export compliance
             </a>
-          ) : null
+            <a
+              href={`/p/${project.slug}`}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            >
+              Ver como cliente
+            </a>
+          </div>
         }
       />
 
@@ -138,6 +188,18 @@ export default async function ProjectDetailPage({
             <div>
               <label className="mb-1 block text-sm font-medium">Entrega estimada</label>
               <input name="targetDeliveryDate" type="date" defaultValue={project.target_delivery_date ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Retención documentos (días)</label>
+              <input
+                name="documentRetentionDays"
+                type="number"
+                min={30}
+                max={3650}
+                defaultValue={project.document_retention_days ?? 365}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Tras vencer, el cron/disposicion borra el archivo del storage.</p>
             </div>
           </div>
           <div>
@@ -220,6 +282,19 @@ export default async function ProjectDetailPage({
 
       {tab === 'documentos' && (
         <div className="space-y-6">
+          <div className="flex flex-wrap gap-2">
+            <form action={async () => { 'use server'; await runDocumentRetentionDisposal(); }}>
+              <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                Ejecutar retención ahora
+              </button>
+            </form>
+            <a
+              href={`/api/ops/projects/${id}/compliance-export`}
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+            >
+              Descargar export JSON
+            </a>
+          </div>
           <form action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Subir documento</h3>
             <input name="title" placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -229,19 +304,97 @@ export default async function ProjectDetailPage({
               <option value="proposal_pdf">Propuesta PDF</option>
               <option value="other">Otro</option>
             </select>
+            <textarea name="notes" placeholder="Notas internas / para el cliente" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input name="file" type="file" required className="w-full text-sm" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" /> Visible al cliente</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="signed" /> Firmado</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Subir</button>
           </form>
           <ul className="space-y-2">
-            {(documents ?? []).map((d) => (
-              <li key={d.id} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm">
-                <span>{d.title} {d.signed && '✓'}</span>
-                {d.file_url && <a href={d.file_url} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">Ver</a>}
+            {(documents ?? []).map((d) => {
+              const href = (() => {
+                const base = opsFileHref(d.file_path, d.file_url);
+                if (!base) return null;
+                if (base.startsWith('/api/ops/file')) return `${base}&documentId=${encodeURIComponent(d.id)}`;
+                return base;
+              })();
+              return (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm">
+                <div>
+                  <p className="font-medium">
+                    {d.title} {d.signed ? '✓' : ''}
+                    {d.disposed_at ? ' · DISPUESTO' : ''}
+                  </p>
+                  <p className="text-zinc-500">
+                    {DOCUMENT_TYPE_LABELS[d.type] ?? d.type}
+                    {' · '}
+                    {DOCUMENT_SOURCE_LABELS[d.source] ?? d.source ?? 'staff'}
+                    {' · '}
+                    {formatDate(d.uploaded_at)}
+                    {d.scan_status ? ` · scan:${d.scan_status}` : ''}
+                    {d.retain_until ? ` · retener hasta ${formatDate(d.retain_until)}` : ''}
+                  </p>
+                  {d.content_sha256 && (
+                    <p className="mt-1 font-mono text-xs text-zinc-400" title={d.content_sha256}>
+                      SHA-256: {d.content_sha256.slice(0, 20)}…
+                    </p>
+                  )}
+                  {d.notes && <p className="mt-1 text-zinc-600">{d.notes}</p>}
+                </div>
+                <div className="flex items-center gap-2">
+                  {href && (
+                    <a href={href} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">
+                      Ver
+                    </a>
+                  )}
+                  {!d.signed && (
+                    <form action={async () => { 'use server'; await markDocumentSigned(d.id, id, true); }}>
+                      <button type="submit" className="rounded-lg border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
+                        Marcar firmado
+                      </button>
+                    </form>
+                  )}
+                </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
+
+          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+            <h3 className="mb-1 font-semibold">Auditoría reciente</h3>
+            <p className="mb-3 text-sm text-zinc-500">Descargas y eventos del proyecto (uploads, legales).</p>
+            <ul className="space-y-2 text-sm">
+              {(fileAccess ?? []).slice(0, 10).map((a) => (
+                <li key={a.id} className="rounded-lg border border-zinc-100 px-3 py-2">
+                  <span className="font-medium">Descarga</span>
+                  {' · '}
+                  {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? 'sistema'}
+                  {' · '}
+                  <span className="text-zinc-500">{formatDate(a.created_at)}</span>
+                  {a.ip && <span className="text-zinc-400"> · {a.ip}</span>}
+                  <p className="truncate text-xs text-zinc-400">{a.file_path}</p>
+                </li>
+              ))}
+              {(recentActivity ?? [])
+                .filter((a) => a.action === 'uploaded' || a.action === 'legal_accepted')
+                .slice(0, 10)
+                .map((a) => (
+                  <li key={a.id} className="rounded-lg border border-zinc-100 px-3 py-2">
+                    <span className="font-medium">
+                      {a.action === 'legal_accepted' ? 'Aceptación legal' : 'Documento subido'}
+                    </span>
+                    {' · '}
+                    {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? 'sistema'}
+                    {' · '}
+                    <span className="text-zinc-500">{formatDate(a.created_at)}</span>
+                  </li>
+                ))}
+              {!fileAccess?.length &&
+                !(recentActivity ?? []).some((a) => a.action === 'uploaded' || a.action === 'legal_accepted') && (
+                  <p className="text-zinc-500">Sin eventos de auditoría aún.</p>
+                )}
+            </ul>
+          </section>
         </div>
       )}
 
@@ -250,42 +403,100 @@ export default async function ProjectDetailPage({
           <form action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Nuevo entregable</h3>
             <input name="title" required placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="url" placeholder="URL (staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <select name="kind" defaultValue="other" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+              <option value="architecture">Arquitectura (canvas portal)</option>
+              <option value="mvp">MVP / Propuesta (canvas portal)</option>
+              <option value="proposal">Propuesta</option>
+              <option value="other">Otro / entregable</option>
+            </select>
+            <input name="sortOrder" type="number" defaultValue={0} placeholder="Orden" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="url" placeholder="URL (client-pack, staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <textarea name="description" placeholder="Descripción" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input name="file" type="file" className="w-full text-sm" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Guardar</button>
           </form>
           <ul className="space-y-2">
-            {(deliverables ?? []).map((d) => (
+            {(deliverables ?? []).map((d) => {
+              const fileHref = opsFileHref(d.file_path, d.file_url);
+              return (
               <li key={d.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm">
                 <p className="font-medium">{d.title}</p>
+                <p className="text-zinc-500">{DELIVERABLE_KIND_LABELS[d.kind] ?? d.kind ?? 'Otro'}</p>
                 {d.url && <a href={d.url} className="text-codiva-primary hover:underline">{d.url}</a>}
-                {d.file_url && <a href={d.file_url} className="block text-codiva-primary hover:underline">Descargar archivo</a>}
+                {fileHref && (
+                  <a href={fileHref} className="block text-codiva-primary hover:underline">
+                    Descargar archivo
+                  </a>
+                )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
       )}
 
       {tab === 'accesos' && (
-        <div className="max-w-lg space-y-6">
+        <div className="max-w-2xl space-y-6">
           <form action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <h3 className="font-semibold">Invitar cliente</h3>
+            <h3 className="font-semibold">Invitar usuario del cliente</h3>
+            <p className="text-sm text-zinc-600">
+              Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
+              privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}).
+            </p>
             <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="viewer">Viewer</option>
-              <option value="approver">Approver</option>
+              <option value="viewer">Viewer — solo lectura</option>
+              <option value="approver">Approver — puede aceptar cotización</option>
             </select>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
           </form>
-          <p className="text-sm text-zinc-500">Portal: {opsBaseUrl()}/p/{project.slug}/login</p>
-          <ul className="text-sm space-y-2">
-            {(members ?? []).map((m) => (
-              <li key={m.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-2">
-                Usuario {m.user_id.slice(0, 8)}… · {m.role}
-              </li>
-            ))}
+          <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
+            <span>Login: {opsBaseUrl()}/p/{project.slug}/login</span>
+            <Link href={`/p/${project.slug}`} className="text-codiva-primary hover:underline">
+              Ver como cliente
+            </Link>
+          </div>
+          <ul className="space-y-2 text-sm">
+            {(members ?? []).map((m) => {
+              const acceptance = getAcceptanceStatus(m);
+              return (
+                <li key={m.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{memberEmails.get(m.user_id) ?? m.user_id.slice(0, 8)}</p>
+                      <p className="text-zinc-500">
+                        {m.role} · invitado {formatDate(m.invited_at)}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        acceptance.complete
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      {acceptance.complete ? 'Legales OK' : 'Pendiente aceptar'}
+                    </span>
+                  </div>
+                  {!acceptance.complete && (
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Falta:{' '}
+                      {[
+                        !acceptance.terms ? 'TyC' : null,
+                        !acceptance.privacy ? 'Privacidad' : null,
+                        !acceptance.nda ? 'NDA' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+            {!members?.length && (
+              <p className="text-sm text-zinc-500">Aún no hay usuarios invitados. Agrega el primero arriba.</p>
+            )}
           </ul>
         </div>
       )}
