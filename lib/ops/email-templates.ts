@@ -1,8 +1,15 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { opsBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
-import { BRAND_EMAIL } from '@/lib/brand';
+import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
 
 const BRAND = BRAND_EMAIL;
+const BRAND_NAME = CODIVA_BRAND.name;
+const CONTACT_EMAIL = CODIVA_BRAND.urls.email;
+const FONT_BODY = `'Inter', Arial, Helvetica, sans-serif`;
+const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, Arial, Helvetica, sans-serif`;
+const CTA_RADIUS = '12px';
+/** Mark oficial: primary teal sobre fondo transparente. */
+const LOGO_URL = `${CODIVA_BRAND.urls.site.replace(/\/$/, '')}/logo.svg`;
 
 type LayoutOptions = {
   preview?: string;
@@ -16,15 +23,15 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
   const ctaBlock = cta
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
         <tr>
-          <td style="border-radius:8px;background:${BRAND.primary};">
+          <td style="border-radius:${CTA_RADIUS};background:${BRAND.primary};">
             <a href="${cta.href}" target="_blank" rel="noopener noreferrer"
-               style="display:inline-block;padding:14px 28px;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+               style="display:inline-block;padding:14px 28px;font-family:${FONT_BODY};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:${CTA_RADIUS};">
               ${escapeHtml(cta.label)}
             </a>
           </td>
         </tr>
       </table>
-      <p style="margin:12px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
+      <p style="margin:12px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
         Si el botón no funciona, copia este enlace:<br/>
         <a href="${cta.href}" style="color:${BRAND.primary};">${escapeHtml(cta.href)}</a>
       </p>`
@@ -34,12 +41,17 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preview)}</div>`
     : '';
 
+  const defaultFooter = CODIVA_BRAND.tagline;
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${escapeHtml(title)}</title>
+  <!--[if !mso]><!-->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet"/>
+  <!--<![endif]-->
 </head>
 <body style="margin:0;padding:0;background:${BRAND.background};">
   ${previewText}
@@ -48,14 +60,15 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;">
           <tr>
-            <td style="background:${BRAND.primary};padding:24px 32px;">
-              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.85);">Codiva</p>
-              <h1 style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:22px;line-height:1.3;font-weight:700;color:#ffffff;">${escapeHtml(title)}</h1>
+            <td bgcolor="${BRAND.card}" style="background:${BRAND.card};padding:24px 32px 20px;border-bottom:1px solid ${BRAND.border};">
+              <img src="${LOGO_URL}" alt="${escapeHtml(BRAND_NAME)}" width="40" height="40" style="display:block;border:0;outline:none;margin:0 0 12px;"/>
+              <p style="margin:0;font-family:${FONT_BODY};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(BRAND_NAME)}</p>
+              <h1 style="margin:8px 0 0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${escapeHtml(title)}</h1>
             </td>
           </tr>
           <tr>
             <td style="padding:32px;">
-              <div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.65;color:${BRAND.text};">
+              <div style="font-family:${FONT_BODY};font-size:15px;line-height:1.65;color:${BRAND.text};">
                 ${bodyHtml}
               </div>
               ${ctaBlock}
@@ -63,10 +76,12 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
           </tr>
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};">
-              <p style="margin:0;font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">
-                ${footerNote ? escapeHtml(footerNote) : 'Codiva - software a la medida y productos digitales'}
+              <p style="margin:0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};">
+                ${footerNote ? escapeHtml(footerNote) : escapeHtml(defaultFooter)}
               </p>
-              <p style="margin:8px 0 0;font-family:Inter,Arial,sans-serif;font-size:12px;">
+              <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;">
+                <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};text-decoration:none;">${CONTACT_EMAIL}</a>
+                <span style="color:${BRAND.muted};"> · </span>
                 <a href="${marketingBaseUrl()}" style="color:${BRAND.primary};text-decoration:none;">codiva.dev</a>
               </p>
             </td>
@@ -83,16 +98,22 @@ function greeting(name: string): string {
   return `<p style="margin:0 0 16px;">Hola <strong>${escapeHtml(name)}</strong>,</p>`;
 }
 
+export type QuoteEmailContext = {
+  recipientName?: string;
+  partnerName?: string;
+  endClientLabel?: string;
+};
+
 export function templateLeadConfirmation(name: string): string {
   return emailLayout({
-    preview: 'Recibimos tu solicitud de cotización en Codiva.dev',
+    preview: `Recibimos tu solicitud de cotización en ${BRAND_NAME}`,
     title: 'Recibimos tu solicitud',
     bodyHtml: `
       ${greeting(name)}
       <p style="margin:0 0 12px;">Gracias por contactarnos. Hemos recibido tu solicitud de cotización y nuestro equipo la revisará pronto.</p>
-      <p style="margin:0;">Te responderemos a la brevedad por este mismo correo.</p>
+      <p style="margin:0;">Te responderemos a la brevedad. Si necesitas escribirnos, usa <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
-    footerNote: 'Este es un mensaje automático. No respondas a este correo.',
+    footerNote: 'Mensaje automático de Codiva.dev. Las respuestas a noreply no se monitorean; escribe a hello@codiva.dev.',
   });
 }
 
@@ -140,16 +161,25 @@ export function templatePortalInviteNewUser(
   projectName: string,
   email: string,
   tempPassword: string,
-  loginUrl: string
+  loginUrl: string,
+  options?: QuoteEmailContext
 ): string {
+  const hello = options?.recipientName ? greeting(options.recipientName) : '';
+  const clientLine = options?.endClientLabel
+    ? `<p style="margin:0 0 12px;">Cliente: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    : '';
+
   return emailLayout({
     preview: `Tu acceso al portal del proyecto ${projectName}`,
     title: 'Bienvenido a tu portal',
     bodyHtml: `
-      <p style="margin:0 0 12px;">Se creó tu acceso al portal del proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${hello}
+      <p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${clientLine}
+      <p style="margin:0 0 12px;">Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
         <tr>
-          <td style="padding:16px;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.6;">
+          <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
             <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
             <p style="margin:0;"><strong>Contraseña temporal:</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;">${escapeHtml(tempPassword)}</code></p>
           </td>
@@ -161,25 +191,53 @@ export function templatePortalInviteNewUser(
   });
 }
 
-export function templatePortalInviteExistingUser(projectName: string, loginUrl: string): string {
+export function templatePortalInviteExistingUser(
+  projectName: string,
+  loginUrl: string,
+  options?: QuoteEmailContext
+): string {
+  const hello = options?.recipientName ? greeting(options.recipientName) : '';
+  const clientLine = options?.endClientLabel
+    ? `<p style="margin:0 0 12px;">Cliente: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    : '';
+
   return emailLayout({
     preview: `Tienes acceso al portal: ${projectName}`,
     title: 'Acceso al portal del proyecto',
     bodyHtml: `
-      <p style="margin:0 0 12px;">Se te otorgó acceso al portal del proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
-      <p style="margin:0;">Usa tu correo y contraseña habituales para entrar.</p>
+      ${hello}
+      <p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${clientLine}
+      <p style="margin:0 0 12px;">Usa tu correo y contraseña habituales. En el portal encontrarás propuesta, arquitectura y cotización.</p>
+      <p style="margin:0;">Si necesitas ayuda, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
     cta: { label: 'Entrar al portal', href: loginUrl },
   });
 }
 
-export function templateQuoteSent(projectName: string, portalUrl: string): string {
+export function templateQuoteSent(
+  projectName: string,
+  portalUrl: string,
+  options?: QuoteEmailContext
+): string {
+  const hello = options?.recipientName
+    ? greeting(options.recipientName)
+    : options?.partnerName
+      ? greeting(options.partnerName)
+      : '';
+  const clientLine = options?.endClientLabel
+    ? `<p style="margin:0 0 12px;">Cliente de referencia: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    : '';
+
   return emailLayout({
     preview: `Nueva cotización disponible: ${projectName}`,
     title: 'Nueva propuesta comercial',
     bodyHtml: `
-      <p style="margin:0 0 12px;">Tienes una nueva propuesta disponible para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
-      <p style="margin:0;">Revisa los detalles y, si estás de acuerdo, puedes aceptarla desde tu portal.</p>
+      ${hello}
+      <p style="margin:0 0 12px;">Tienes una nueva propuesta comercial de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${clientLine}
+      <p style="margin:0 0 12px;">Revisa alcance, arquitectura y montos en tu portal. Si estás de acuerdo, puedes aceptarla desde ahí.</p>
+      <p style="margin:0;">Dudas comerciales: <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
     cta: { label: 'Ver cotización', href: portalUrl },
   });
@@ -188,11 +246,13 @@ export function templateQuoteSent(projectName: string, portalUrl: string): strin
 export function templateLeadQuoteSent(
   subjectLabel: string,
   quoteUrl: string,
-  options?: { partnerName?: string; endClientLabel?: string }
+  options?: QuoteEmailContext
 ): string {
-  const greeting = options?.partnerName
-    ? `<p style="margin:0 0 12px;">Hola <strong>${escapeHtml(options.partnerName)}</strong>,</p>`
-    : '';
+  const hello = options?.partnerName
+    ? greeting(options.partnerName)
+    : options?.recipientName
+      ? greeting(options.recipientName)
+      : '';
   const clientLine = options?.endClientLabel
     ? `<p style="margin:0 0 12px;">Cliente de referencia: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
     : '';
@@ -201,13 +261,13 @@ export function templateLeadQuoteSent(
     preview: `Propuesta comercial: ${subjectLabel}`,
     title: 'Propuesta comercial disponible',
     bodyHtml: `
-      ${greeting}
-      <p style="margin:0 0 12px;">Te compartimos una propuesta comercial de Codiva para <strong>${escapeHtml(subjectLabel)}</strong>.</p>
+      ${hello}
+      <p style="margin:0 0 12px;">Te compartimos una propuesta comercial de <strong>${escapeHtml(BRAND_NAME)}</strong> para <strong>${escapeHtml(subjectLabel)}</strong>.</p>
       ${clientLine}
-      <p style="margin:0;">Puedes consultar el detalle completo en el enlace siguiente. Si tienes dudas, responde a este correo.</p>
+      <p style="margin:0;">Puedes consultar el detalle completo en el enlace. Si tienes dudas, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
     cta: { label: 'Ver propuesta', href: quoteUrl },
-    footerNote: 'Documento informativo - consulta únicamente.',
+    footerNote: 'Documento informativo — consulta únicamente.',
   });
 }
 
@@ -224,7 +284,7 @@ export function templateLegalReacceptance(
       <p style="margin:0;">Para seguir usando el portal, acepta los documentos vigentes en tu próximo acceso.</p>
     `,
     cta: { label: 'Revisar y aceptar', href: acceptUrl },
-    footerNote: 'Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.',
+    footerNote: 'Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.dev.',
   });
 }
 
@@ -232,7 +292,7 @@ export function templateStaffAlert(title: string, lines: string[]): string {
   const rows = lines
     .map(
       (line) =>
-        `<p style="margin:0 0 8px;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.5;color:${BRAND.text};">${escapeHtml(line)}</p>`
+        `<p style="margin:0 0 8px;font-family:${FONT_BODY};font-size:14px;line-height:1.5;color:${BRAND.text};">${escapeHtml(line)}</p>`
     )
     .join('');
 
@@ -241,7 +301,7 @@ export function templateStaffAlert(title: string, lines: string[]): string {
     title,
     bodyHtml: rows,
     cta: { label: 'Abrir Codiva Ops', href: `${opsBaseUrl()}/dashboard` },
-    footerNote: 'Notificación interna - Codiva Ops',
+    footerNote: 'Notificación interna — Codiva Ops',
   });
 }
 

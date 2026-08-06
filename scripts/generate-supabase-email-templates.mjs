@@ -9,7 +9,7 @@ const outDir = join(__dirname, '..', 'supabase', 'email-templates');
 const templates = [
   {
     file: 'recovery.html',
-    subject: 'Restablecer contraseña - Codiva Ops',
+    subject: 'Restablecer contraseña - Codiva.dev',
     title: 'Restablecer contraseña',
     preview: 'Restablece tu contraseña de Codiva Ops',
     paragraphs: [
@@ -21,29 +21,29 @@ const templates = [
   },
   {
     file: 'confirmation.html',
-    subject: 'Confirma tu cuenta - Codiva',
+    subject: 'Confirma tu cuenta - Codiva.dev',
     title: 'Confirma tu cuenta',
-    preview: 'Confirma tu correo para activar tu cuenta en Codiva',
+    preview: 'Confirma tu correo para activar tu cuenta en Codiva.dev',
     paragraphs: [
-      'Gracias por registrarte en Codiva.',
+      'Gracias por registrarte en Codiva.dev.',
       'Confirma tu correo electrónico para activar tu cuenta y continuar.',
     ],
     ctaLabel: 'Confirmar email',
   },
   {
     file: 'invite.html',
-    subject: 'Invitación al portal - Codiva',
+    subject: 'Invitación al portal - Codiva.dev',
     title: 'Invitación al portal',
-    preview: 'Has sido invitado a un portal de proyecto en Codiva',
+    preview: 'Has sido invitado a un portal de proyecto en Codiva.dev',
     paragraphs: [
-      'Has sido invitado a acceder al portal de un proyecto en Codiva Ops.',
+      'Has sido invitado a acceder al portal de un proyecto en Codiva.dev.',
       'Acepta la invitación para configurar tu acceso.',
     ],
     ctaLabel: 'Aceptar invitación',
   },
   {
     file: 'magic-link.html',
-    subject: 'Tu enlace de acceso - Codiva Ops',
+    subject: 'Tu enlace de acceso - Codiva.dev',
     title: 'Iniciar sesión',
     preview: 'Usa este enlace para iniciar sesión en Codiva Ops',
     paragraphs: [
@@ -55,9 +55,9 @@ const templates = [
   },
   {
     file: 'email-change.html',
-    subject: 'Confirma tu nuevo email - Codiva',
+    subject: 'Confirma tu nuevo email - Codiva.dev',
     title: 'Confirmar cambio de email',
-    preview: 'Confirma tu nuevo correo electrónico en Codiva',
+    preview: 'Confirma tu nuevo correo electrónico en Codiva.dev',
     paragraphs: [
       'Recibimos una solicitud para cambiar el correo de tu cuenta.',
       'Confirma tu nuevo email haciendo clic en el botón.',

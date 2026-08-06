@@ -547,19 +547,34 @@ export async function sendQuote(quoteId: string, projectId: string) {
 
   const { data: project } = await admin
     .from('projects')
-    .select('slug, name, organizations(contact_email)')
+    .select(
+      'slug, name, organizations(contact_email), leads!lead_id(partner_name, end_client_company, end_client_name)'
+    )
     .eq('id', projectId)
     .single();
 
   const email = (project as { organizations?: { contact_email?: string } })?.organizations
     ?.contact_email;
+  const lead = (
+    project as {
+      leads?: {
+        partner_name?: string | null;
+        end_client_company?: string | null;
+        end_client_name?: string | null;
+      } | null;
+    }
+  )?.leads;
   if (email) {
     await sendClientEmail({
       to: email,
       subject: `Nueva cotización: ${project?.name}`,
       html: templateQuoteSent(
         project?.name ?? 'Tu proyecto',
-        projectPortalUrl(project?.slug ?? '', '/cotizacion')
+        projectPortalUrl(project?.slug ?? '', '/cotizacion'),
+        {
+          partnerName: lead?.partner_name || undefined,
+          endClientLabel: lead?.end_client_company || lead?.end_client_name || undefined,
+        }
       ),
     });
   }
@@ -595,10 +610,26 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
 
   const { data: project } = await admin
     .from('projects')
-    .select('slug, name, client_visible')
+    .select(
+      'slug, name, client_visible, leads!lead_id(partner_name, end_client_company, end_client_name)'
+    )
     .eq('id', projectId)
     .single();
   if (!project) throw new Error('Proyecto no encontrado');
+
+  const lead = (
+    project as {
+      leads?: {
+        partner_name?: string | null;
+        end_client_company?: string | null;
+        end_client_name?: string | null;
+      } | null;
+    }
+  )?.leads;
+  const inviteContext = {
+    partnerName: lead?.partner_name || undefined,
+    endClientLabel: lead?.end_client_company || lead?.end_client_name || undefined,
+  };
 
   let userId: string;
   const { data: existingUsers } = await admin.auth.admin.listUsers();
@@ -611,7 +642,8 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
       subject: `Acceso a tu portal - ${project.name}`,
       html: templatePortalInviteExistingUser(
         project.name,
-        projectPortalUrl(project.slug, '/login')
+        projectPortalUrl(project.slug, '/login'),
+        inviteContext
       ),
     });
   } else {
@@ -631,7 +663,8 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
         project.name,
         email,
         tempPassword,
-        projectPortalUrl(project.slug, '/login')
+        projectPortalUrl(project.slug, '/login'),
+        inviteContext
       ),
     });
   }
