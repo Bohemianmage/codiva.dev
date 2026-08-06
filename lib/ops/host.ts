@@ -56,6 +56,12 @@ export function projectPortalUrl(slug: string, path = ''): string {
   return `${portalBaseUrl()}/p/${slug}${suffix}`;
 }
 
+/** Etiqueta corta para UI staff (sin protocolo). */
+export function projectPortalShortLabel(slug: string, path = ''): string {
+  const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
+  return `portal/p/${slug}${suffix}`;
+}
+
 /**
  * Vista previa staff: path relativo en ops (misma cookie de sesión).
  * No usar portal.* para preview staff - la sesión no se comparte entre hosts.

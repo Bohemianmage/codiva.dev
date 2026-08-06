@@ -11,7 +11,7 @@ export default async function PortalDeliverablesPage({
 
   const { data: deliverables } = await supabase
     .from('deliverables')
-    .select('*')
+    .select('id, title, description, url, file_path, file_url, kind, sort_order')
     .eq('project_id', project.id)
     .eq('visible_to_client', true)
     .order('sort_order', { ascending: true });

@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { createProject } from '@/lib/ops/actions';
 import { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
-import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
+import { staffPortalPreviewPath } from '@/lib/ops/host';
 
 export default async function ProjectsPage() {
   const { supabase } = await requireStaff();
@@ -63,13 +64,14 @@ export default async function ProjectsPage() {
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col items-start gap-1.5">
                     <Link href={staffPortalPreviewPath(p.slug)} className="text-codiva-primary hover:underline">
                       Vista previa
                     </Link>
-                    <a href={projectPortalUrl(p.slug)} className="text-xs text-zinc-600 hover:underline">
-                      {p.client_visible ? 'URL cliente' : 'URL cliente (aún oculto)'}
-                    </a>
+                    <PortalClientUrl slug={p.slug} />
+                    {!p.client_visible && (
+                      <span className="text-[11px] text-amber-700">Aún oculto al cliente</span>
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-zinc-500">{formatDate(p.target_delivery_date)}</td>

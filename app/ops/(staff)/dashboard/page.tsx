@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { leadTone, projectTone, ticketTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import {
@@ -8,7 +9,6 @@ import {
   TICKET_STATUS_LABELS,
   formatDate,
 } from '@/lib/ops/labels';
-import { projectPortalUrl } from '@/lib/ops/host';
 
 export default async function DashboardPage() {
   const { supabase } = await requireStaff();
@@ -114,14 +114,7 @@ export default async function DashboardPage() {
                   >
                     Vista previa
                   </a>
-                  <span className="text-zinc-300">·</span>
-                  <a
-                    href={projectPortalUrl(p.slug)}
-                    className="font-medium text-zinc-600 hover:underline"
-                    title="URL del cliente en portal.codiva.dev"
-                  >
-                    URL cliente
-                  </a>
+                  <PortalClientUrl slug={p.slug} />
                 </div>
               </li>
             ))}
@@ -135,8 +128,8 @@ export default async function DashboardPage() {
           <div>
             <h2 className="font-semibold">Vista portal cliente</h2>
             <p className="text-sm text-zinc-500">
-              <strong>Vista previa</strong> usa tu sesión en ops (mismo host). La{' '}
-              <strong>URL cliente</strong> es portal.codiva.dev (invitar / compartir).
+              <strong>Vista previa</strong> usa tu sesión en ops. El chip corto es la URL del cliente
+              (copiar / abrir en portal.codiva.dev).
             </p>
           </div>
           <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
@@ -147,13 +140,11 @@ export default async function DashboardPage() {
           {(projects ?? []).map((p) => (
             <li key={`preview-${p.id}`} className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm">
               <p className="font-medium text-zinc-900">{p.name}</p>
-              <div className="mt-2 flex flex-wrap gap-3 text-xs">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                 <a href={`/p/${p.slug}`} className="text-codiva-primary hover:underline">
                   Vista previa (ops)
                 </a>
-                <a href={projectPortalUrl(p.slug)} className="text-zinc-600 hover:underline">
-                  URL cliente
-                </a>
+                <PortalClientUrl slug={p.slug} />
               </div>
             </li>
           ))}

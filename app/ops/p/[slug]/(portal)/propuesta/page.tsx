@@ -45,7 +45,7 @@ export default async function PortalProposalPage({
         <p className="mb-5 text-sm text-zinc-600">
           {visibility.showCosts
             ? 'Vista canvas interactiva de arquitectura y MVP. El PDF, si existe, se descarga desde el canvas (no sustituye esta vista).'
-            : 'Vista canvas de arquitectura y flujos. Los materiales comerciales se publicarán cuando Codiva los habilite.'}
+            : 'Vista canvas de arquitectura y flujos. Los materiales comerciales se publican cuando el proyecto lo habilite.'}
         </p>
         <PortalCanvasViewer items={visibleCanvases} />
       </section>
@@ -76,11 +76,12 @@ export default async function PortalProposalPage({
       <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-600">
         <p className="font-medium text-zinc-800">Siguiente paso</p>
         <p className="mt-1">
-          Completa las solicitudes (NDA, brandbook, accesos) en{' '}
+          Completa las solicitudes en{' '}
           <Link href={`/p/${slug}/documentos`} className="text-codiva-primary hover:underline">
             Documentos
           </Link>
-          .
+          {' '}
+          (NDA firmado por representante legal, brandbook y accesos).
         </p>
       </section>
     </div>
