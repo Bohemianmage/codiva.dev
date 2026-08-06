@@ -1,8 +1,22 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { clientAcceptQuote, clientRejectQuote } from '@/lib/ops/actions';
 import { QUOTE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
+import { parseLineItemsJson } from '@/lib/ops/quote-document';
+import { getPortalVisibility } from '@/lib/ops/portal-visibility';
+
+type QuotePhase = {
+  name?: string;
+  weeks?: string;
+  deliverable?: string;
+};
+
+function parsePhases(value: unknown): QuotePhase[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((p): p is QuotePhase => Boolean(p) && typeof p === 'object');
+}
 
 export default async function PortalQuotePage({
   params,
@@ -11,11 +25,17 @@ export default async function PortalQuotePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const visibility = getPortalVisibility(project);
+
+  if (!visibility.showQuote) {
+    redirect(`/p/${slug}`);
+  }
 
   const { data: quotes } = await supabase
     .from('quotes')
     .select('*')
     .eq('project_id', project.id)
+    .eq('visible_to_client', true)
     .in('status', ['sent', 'accepted', 'rejected', 'expired'])
     .order('version', { ascending: false });
 
@@ -37,12 +57,15 @@ export default async function PortalQuotePage({
     return <p className="text-sm text-zinc-500">No hay cotización disponible en este momento.</p>;
   }
 
+  const lineItems = parseLineItemsJson(active.line_items);
+  const phases = parsePhases(active.phases);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-600">
-        Complementa con los canvas de{' '}
+        Detalle de arquitectura en{' '}
         <Link href={`/p/${slug}/propuesta`} className="text-codiva-primary hover:underline">
-          Propuesta / Arquitectura
+          Propuesta / Canvas
         </Link>
         .
       </p>
@@ -51,12 +74,19 @@ export default async function PortalQuotePage({
           <h2 className="text-lg font-semibold">{active.title}</h2>
           <StatusBadge
             label={QUOTE_STATUS_LABELS[active.status]}
-            tone={active.status === 'accepted' ? 'success' : active.status === 'rejected' ? 'danger' : 'info'}
+            tone={
+              active.status === 'accepted'
+                ? 'success'
+                : active.status === 'rejected'
+                  ? 'danger'
+                  : 'info'
+            }
           />
         </div>
         <p className="text-2xl font-bold text-codiva-primary">
           {formatCurrency(active.total_amount, active.currency)}
         </p>
+        <p className="mt-1 text-sm text-zinc-500">Solo desarrollo · MXN sin IVA</p>
         {active.valid_until && (
           <p className="mt-1 text-sm text-zinc-500">Válida hasta {formatDate(active.valid_until)}</p>
         )}
@@ -64,13 +94,81 @@ export default async function PortalQuotePage({
           <p className="mt-2 text-sm text-zinc-500">Tipo: {active.service_type}</p>
         )}
 
-        <div className="mt-6 space-y-4 text-sm text-zinc-700">
+        <div className="mt-6 space-y-6 text-sm text-zinc-700">
           {active.scope && (
             <div>
               <h3 className="mb-1 font-semibold text-zinc-900">Alcance</h3>
               <div className="whitespace-pre-wrap">{active.scope}</div>
             </div>
           )}
+
+          {lineItems.length > 0 && (
+            <div>
+              <h3 className="mb-2 font-semibold text-zinc-900">Hitos de pago</h3>
+              <div className="overflow-x-auto rounded-xl border border-zinc-200">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Concepto</th>
+                      <th className="px-3 py-2 font-medium">%</th>
+                      <th className="px-3 py-2 font-medium text-right">Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.map((item, idx) => (
+                      <tr key={`${item.title}-${idx}`} className="border-t border-zinc-100">
+                        <td className="px-3 py-3">
+                          <p className="font-medium text-zinc-900">{item.title}</p>
+                          {item.detail && <p className="mt-0.5 text-zinc-500">{item.detail}</p>}
+                        </td>
+                        <td className="px-3 py-3 text-zinc-600">{item.rateLabel ?? '-'}</td>
+                        <td className="px-3 py-3 text-right font-semibold text-codiva-primary">
+                          {formatCurrency(item.total, active.currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-zinc-200 bg-zinc-50">
+                      <td className="px-3 py-3 font-semibold" colSpan={2}>
+                        Total desarrollo
+                      </td>
+                      <td className="px-3 py-3 text-right font-bold text-codiva-primary">
+                        {formatCurrency(active.total_amount, active.currency)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {phases.length > 0 && (
+            <div>
+              <h3 className="mb-2 font-semibold text-zinc-900">Plan de entregas</h3>
+              <ul className="space-y-2">
+                {phases.map((phase, idx) => (
+                  <li
+                    key={`${phase.name ?? 'phase'}-${idx}`}
+                    className="rounded-xl border border-zinc-200 px-3 py-2"
+                  >
+                    <p className="font-medium text-zinc-900">
+                      {phase.name}
+                      {phase.weeks ? (
+                        <span className="ml-2 text-xs font-normal text-zinc-500">
+                          Sem. {phase.weeks}
+                        </span>
+                      ) : null}
+                    </p>
+                    {phase.deliverable && (
+                      <p className="mt-0.5 text-zinc-600">{phase.deliverable}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {active.deliverables && (
             <div>
               <h3 className="mb-1 font-semibold text-zinc-900">Entregables</h3>
@@ -85,7 +183,7 @@ export default async function PortalQuotePage({
           )}
           {active.optional_extras && (
             <div>
-              <h3 className="mb-1 font-semibold text-zinc-900">No incluido / extras</h3>
+              <h3 className="mb-1 font-semibold text-zinc-900">Alternativas / no incluido</h3>
               <div className="whitespace-pre-wrap">{active.optional_extras}</div>
             </div>
           )}
@@ -95,13 +193,19 @@ export default async function PortalQuotePage({
           <div className="mt-8 flex flex-wrap gap-3">
             <form action={onAccept}>
               <input type="hidden" name="quoteId" value={active.id} />
-              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
+              <button
+                type="submit"
+                className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white"
+              >
                 Aceptar propuesta
               </button>
             </form>
             <form action={onReject}>
               <input type="hidden" name="quoteId" value={active.id} />
-              <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium">
+              <button
+                type="submit"
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium"
+              >
                 Rechazar
               </button>
             </form>

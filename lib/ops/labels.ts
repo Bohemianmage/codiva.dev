@@ -64,6 +64,19 @@ export const DOCUMENT_SOURCE_LABELS: Record<string, string> = {
   client: 'Cliente',
 };
 
+export const DOCUMENT_REQUEST_STATUS_LABELS: Record<string, string> = {
+  open: 'Pendiente',
+  fulfilled: 'Entregado',
+  waived: 'Omitido',
+  cancelled: 'Cancelado',
+};
+
+export const DOCUMENT_REQUEST_INPUT_LABELS: Record<string, string> = {
+  file: 'Archivo',
+  text: 'Texto',
+  credentials: 'Accesos',
+};
+
 export const INBOX_STATUS_LABELS: Record<string, string> = {
   unread: 'Sin leer',
   read: 'Leído',

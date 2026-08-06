@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NIRC — MVP Fase 1</title>
+  <title>NIRC - MVP Fase 1</title>
   <style>
     :root {
       --ink: #14201a;
@@ -28,9 +28,7 @@
     .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
     h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 8px 0 12px; letter-spacing: -0.02em; }
     .lead { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
-    .meta {
-      display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 36px;
-    }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 36px; }
     .pill {
       border: 1px solid var(--line); background: var(--card);
       border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--muted);
@@ -49,21 +47,28 @@
     th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     .amount { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; color: var(--accent); }
     .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+    .callout {
+      margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+      background: #eef6f1; border: 1px solid #cfe3d8; font-size: 13px; color: var(--muted);
+    }
+    .callout strong { color: var(--ink); }
     footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
   <main>
     <p class="eyebrow">NIRC · Propuesta comercial</p>
-    <h1>MVP Fase 1 — Workforce / personal eventual</h1>
+    <h1>MVP Fase 1 - Workforce / personal eventual</h1>
     <p class="lead">
       Plataforma operativa con entrada dura (adhesión + alta IDSE aceptada), pool FCFS,
-      check-in QR/geocerca, dispersión Stripe Connect y backoffice completo.
+      check-in QR/geocerca, dispersión Stripe Connect, backoffice completo y deploy híbrido
+      Vercel + Railway + Neon.
     </p>
     <div class="meta">
       <span class="pill"><strong>18 semanas</strong> · ~4.5 meses</span>
       <span class="pill"><strong>$980,000 MXN</strong> · solo desarrollo</span>
-      <span class="pill">Proveedores externos <strong>aparte</strong></span>
+      <span class="pill">Proveedores / hosting <strong>aparte</strong></span>
+      <span class="pill">~<strong>$571</strong> / persona-día variable</span>
     </div>
 
     <section>
@@ -79,6 +84,25 @@
         <li><strong>Integraciones:</strong> IDSE PRO, Cincel, Stripe Connect, email/SMS</li>
       </ul>
       <p class="note">Fuera de Fase 1: EMA/EBA, face-match, WhatsApp masivo, Temporal cloud, app nativa, multi-país, CFDI automático al personal.</p>
+    </section>
+
+    <section>
+      <h2>Unit economics (jornada $400)</h2>
+      <table>
+        <thead>
+          <tr><th>Rubro</th><th>Monto</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Pago al personal (Stripe)</td><td class="amount">$400.00</td></tr>
+          <tr><td>Fee Stripe (3.6% + $3)</td><td class="amount">$17.40</td></tr>
+          <tr><td>IDSE alta + baja</td><td class="amount">$10.00</td></tr>
+          <tr><td>Cincel (one-shot @ $9.60/doc)</td><td class="amount">$9.60</td></tr>
+          <tr><td>IMSS patrón est. (32% SBC $419.73)</td><td class="amount">$134.31</td></tr>
+          <tr><td><strong>Total variable / jornada</strong></td><td class="amount">≈ $571</td></tr>
+          <tr><td>Precio piso sugerido al cliente (+15% ops)</td><td class="amount">≈ $657</td></tr>
+        </tbody>
+      </table>
+      <p class="note">$400 neto a dispersar. SDI escenario A $419.73 sujeto a validación contable. Cincel one-shot $60,000 (6,250 docs) + impl. $3,200.</p>
     </section>
 
     <section>
@@ -110,7 +134,29 @@
           <tr><td>MVP + hypercare 4 sem</td><td>Completo + mes post go-live</td><td class="amount">$1,120,000</td></tr>
         </tbody>
       </table>
-      <p class="note">Montos MXN sin IVA. Vigencia 30 días. Hitos de pago 25% en semanas 5 / 9 / 13 / 18. Cincel, IDSE, Stripe, SMS, cloud y legal se contratan aparte por el cliente.</p>
+      <div class="callout">
+        <strong>Separación de presupuestos:</strong> los $980,000 son solo software.
+        Setup proveedores ~$88k–$158k (medio ~$120k) → inversión inicial aprox. <strong>$1.1M MXN</strong> sin IVA.
+        Hosting Base recomendado: <strong>$8k–$15k/mes</strong> (punto comercial $10k).
+      </div>
+      <p class="note">Montos MXN sin IVA. Vigencia 30 días. Hitos 25% en semanas 5 / 9 / 13 / 18.</p>
+    </section>
+
+    <section>
+      <h2>Hosting (presupuesto B, cliente)</h2>
+      <table>
+        <thead>
+          <tr><th>Servicio</th><th>Rol</th><th>Base típ.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Vercel</td><td>Next.js PWA + webhooks cortos</td><td class="amount">$900–$1,200</td></tr>
+          <tr><td>Railway</td><td>API + workers BullMQ</td><td class="amount">$1,500–$2,850</td></tr>
+          <tr><td>Neon</td><td>PostgreSQL</td><td class="amount">$950–$1,900</td></tr>
+          <tr><td>Upstash + R2 + Sentry</td><td>Colas, archivos, obs.</td><td class="amount">resto</td></tr>
+          <tr><td><strong>Total infra a presupuestar</strong></td><td>Punto comercial</td><td class="amount">~$10k/mes</td></tr>
+        </tbody>
+      </table>
+      <p class="note">No incluido en los $980k. Capacidad MVP ~1,000 jornadas/mes con holgura; riesgo = picos del día de evento.</p>
     </section>
 
     <section>
@@ -120,13 +166,13 @@
         <li>Repo y documentación del cliente incluidos</li>
         <li>Garantía de defectos: 30 días post go-live (alcance acordado)</li>
         <li>Soporte opcional post go-live: $45,000 / mes</li>
-        <li>Semana 0: credenciales sandbox/prod IDSE, Cincel, Stripe Connect; RP y certificados</li>
+        <li>Semana 0: sandboxes IDSE, Cincel, Stripe Connect; RP y certificados; brandbook y formatos</li>
       </ul>
     </section>
 
     <footer>
-      Documento de trabajo Codiva × NIRC — Agosto 2026. No sustituye dictamen legal ni cédula IMSS.
-      La cotización formal y el NDA viven en el portal del proyecto.
+      Documento de trabajo Codiva × NIRC - Agosto 2026. Alineado a docs/mvp-propuesta-fase1.md y arquitectura integrada.
+      No sustituye dictamen legal ni cédula IMSS. La cotización formal y el NDA viven en el portal del proyecto.
     </footer>
   </main>
 </body>

@@ -50,7 +50,7 @@ export function marketingBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL ?? 'https://codiva.dev').replace(/\/$/, '');
 }
 
-/** URL absoluta al portal de un proyecto (host portal — clientes). */
+/** URL absoluta al portal de un proyecto (host portal - clientes). */
 export function projectPortalUrl(slug: string, path = ''): string {
   const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
   return `${portalBaseUrl()}/p/${slug}${suffix}`;
@@ -58,7 +58,7 @@ export function projectPortalUrl(slug: string, path = ''): string {
 
 /**
  * Vista previa staff: path relativo en ops (misma cookie de sesión).
- * No usar portal.* para preview staff — la sesión no se comparte entre hosts.
+ * No usar portal.* para preview staff - la sesión no se comparte entre hosts.
  */
 export function staffPortalPreviewPath(slug: string, path = ''): string {
   const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';

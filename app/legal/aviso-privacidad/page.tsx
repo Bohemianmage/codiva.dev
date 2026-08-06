@@ -3,7 +3,7 @@ import { PRIVACY_NOTICE } from '@/lib/ops/legal/content';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Aviso de Privacidad — Codiva',
+  title: 'Aviso de Privacidad - Codiva',
 };
 
 export default function PrivacyPage() {

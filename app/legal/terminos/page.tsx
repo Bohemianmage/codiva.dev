@@ -3,7 +3,7 @@ import { TERMS_OF_USE } from '@/lib/ops/legal/content';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Términos y Condiciones — Codiva',
+  title: 'Términos y Condiciones - Codiva',
 };
 
 export default function TermsPage() {

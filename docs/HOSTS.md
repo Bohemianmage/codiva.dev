@@ -1,4 +1,4 @@
-# Codiva — hosts y subdominios
+# Codiva - hosts y subdominios
 
 | Host | Superficie | Quién |
 |------|------------|--------|
@@ -11,7 +11,7 @@ Sesiones **no se comparten** entre `ops` y `portal` (cookies por host). Por eso:
 - **Vista previa staff** → `ops.codiva.dev/p/{slug}` (misma sesión)
 - **URL / emails al cliente** → `portal.codiva.dev/p/{slug}`
 
-## Checklist — tu lado (infra)
+## Checklist - tu lado (infra)
 
 ### 1. DNS
 Crear registro para el portal (mismo proyecto Vercel que codiva.dev):

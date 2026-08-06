@@ -1,4 +1,4 @@
--- Codiva Ops — schema inicial (public + RLS)
+-- Codiva Ops - schema inicial (public + RLS)
 -- Aplicar con: supabase db push  o  Supabase Dashboard SQL Editor
 -- Luego ejecutar: 20250619000001_codiva_ops_storage.sql (requiere schema storage de Supabase)
 
@@ -219,7 +219,7 @@ CREATE INDEX idx_tickets_status ON tickets(status);
 CREATE INDEX idx_inbox_status ON inbox_messages(status);
 CREATE INDEX idx_activity_entity ON activity_log(entity_type, entity_id);
 
--- Helper functions (security definer in private schema pattern — use public with care)
+-- Helper functions (security definer in private schema pattern - use public with care)
 CREATE OR REPLACE FUNCTION public.is_staff()
 RETURNS boolean
 LANGUAGE sql

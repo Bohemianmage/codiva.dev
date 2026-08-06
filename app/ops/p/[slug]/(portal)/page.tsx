@@ -2,6 +2,7 @@ import Link from 'next/link';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { PROJECT_STATUS_LABELS, MILESTONE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
+import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -20,6 +21,7 @@ export default async function PortalHomePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const visibility = getPortalVisibility(project);
 
   const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }] = await Promise.all([
     supabase
@@ -28,16 +30,19 @@ export default async function PortalHomePage({
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .order('sort_order'),
-    supabase
-      .from('quotes')
-      .select('id, title, total_amount, currency, status, valid_until')
-      .eq('project_id', project.id)
-      .in('status', ['sent', 'accepted', 'rejected', 'expired'])
-      .order('version', { ascending: false })
-      .limit(1),
+    visibility.showQuote
+      ? supabase
+          .from('quotes')
+          .select('id, title, total_amount, currency, status, valid_until')
+          .eq('project_id', project.id)
+          .eq('visible_to_client', true)
+          .in('status', ['sent', 'accepted', 'rejected', 'expired'])
+          .order('version', { ascending: false })
+          .limit(1)
+      : Promise.resolve({ data: [] as { id: string; title: string; total_amount: number; currency: string; status: string; valid_until: string | null }[] }),
     supabase
       .from('deliverables')
-      .select('id')
+      .select('id, kind')
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .in('kind', ['architecture', 'mvp', 'proposal']),
@@ -52,6 +57,7 @@ export default async function PortalHomePage({
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
   const quote = quotes?.[0];
   const hasNda = (docs ?? []).length > 0;
+  const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
 
   return (
     <div className="space-y-6">
@@ -82,31 +88,37 @@ export default async function PortalHomePage({
         )}
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className={`grid gap-3 ${visibility.showQuote ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <Link
           href={`/p/${slug}/propuesta`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Propuesta</p>
-          <p className="mt-2 font-semibold text-zinc-900">Arquitectura y MVP</p>
+          <p className="mt-2 font-semibold text-zinc-900">
+            {visibility.showCosts ? 'Arquitectura y MVP' : 'Arquitectura'}
+          </p>
           <p className="mt-1 text-sm text-zinc-600">
-            {(canvases ?? []).length
-              ? `${canvases!.length} canvas publicados`
+            {visibleCanvases.length
+              ? `${visibleCanvases.length} canvas publicados`
               : 'Pendiente de publicar'}
           </p>
         </Link>
-        <Link
-          href={`/p/${slug}/cotizacion`}
-          className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
-        >
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cotización</p>
-          <p className="mt-2 font-semibold text-zinc-900">
-            {quote ? formatCurrency(quote.total_amount, quote.currency) : 'Sin cotización'}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            {quote?.valid_until ? `Válida hasta ${formatDate(quote.valid_until)}` : 'Revisa cuando esté lista'}
-          </p>
-        </Link>
+        {visibility.showQuote && (
+          <Link
+            href={`/p/${slug}/cotizacion`}
+            className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cotización</p>
+            <p className="mt-2 font-semibold text-zinc-900">
+              {quote ? formatCurrency(quote.total_amount, quote.currency) : 'Sin cotización'}
+            </p>
+            <p className="mt-1 text-sm text-zinc-600">
+              {quote?.valid_until
+                ? `Válida hasta ${formatDate(quote.valid_until)}`
+                : 'Revisa cuando esté lista'}
+            </p>
+          </Link>
+        )}
         <Link
           href={`/p/${slug}/documentos`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"

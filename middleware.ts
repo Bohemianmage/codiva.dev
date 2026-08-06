@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
   const onOps = isOpsHost(host);
   const onPortal = isPortalHost(host);
 
-  // ——— PORTAL (clientes) ———
+  // --- PORTAL (clientes) ---
   if (onPortal) {
     // Estáticos / legales / auth callback
     if (
@@ -82,17 +82,16 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Todo lo demás del portal → marketing
-    return withSessionCookies(
-      sessionResponse,
-      absoluteRedirect(request, marketingBaseUrl(), '/')
-    );
+    // Rutas desconocidas en portal → 404 (bajo árbol /ops)
+    const missing = request.nextUrl.clone();
+    missing.pathname = '/ops/__missing';
+    return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
   }
 
-  // ——— OPS (staff) ———
+  // --- OPS (staff) ---
   if (onOps) {
     // Cliente debe usar portal.*; redirigir /p/* hacia portal
-    // Excepción: ?preview=1 o header interno — usamos cookie/session en ops
+    // Excepción: ?preview=1 o header interno - usamos cookie/session en ops
     // Mantenemos /p/* en ops SOLO como vista previa staff (misma sesión).
     // Los emails de cliente apuntan a portal.*.
 
@@ -113,7 +112,7 @@ export async function middleware(request: NextRequest) {
     return sessionResponse;
   }
 
-  // ——— MARKETING ———
+  // --- MARKETING ---
   if (pathname.startsWith('/ops')) {
     return withSessionCookies(
       sessionResponse,

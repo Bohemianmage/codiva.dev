@@ -1,4 +1,4 @@
-# Codiva.dev — Brand guidelines
+# Codiva.dev - Brand guidelines
 
 Reference for visual identity across marketing, Codiva Ops, emails, and commercial documents.
 
@@ -23,7 +23,7 @@ Assets: `public/logo.svg`, `public/wordmark.svg`, `public/logo-white.svg`, `publ
 | `text` | `#18181B` | Body text (zinc-900) |
 | `accentLight` | `#5EEAD4` | Links on dark backgrounds (footer) |
 
-Source of truth: [`lib/brand.json`](../lib/brand.json) — import via [`lib/brand.ts`](../lib/brand.ts).
+Source of truth: [`lib/brand.json`](../lib/brand.json) - import via [`lib/brand.ts`](../lib/brand.ts).
 
 ## Typography
 
@@ -57,9 +57,9 @@ Do not label Plus Jakarta Sans as “Satoshi” in code or docs.
 
 ## Don't
 
-- Hardcode `#104E4E` or hover hex in components — use Tailwind tokens
+- Hardcode `#104E4E` or hover hex in components - use Tailwind tokens
 - Use the PWA icon as social share image
-- Link GitHub to personal profiles — use `https://github.com/Codiva-dev`
+- Link GitHub to personal profiles - use `https://github.com/Codiva-dev`
 - Add client product screenshots to marketing without explicit approval
 
 ## Touchpoints

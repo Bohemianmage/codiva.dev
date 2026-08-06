@@ -1,4 +1,4 @@
-# NIRC — Propuesta MVP Fase 1  
+# NIRC - Propuesta MVP Fase 1  
 ## Unit economics · políticas · tiempos · cotización
 
 Documento de trabajo para decisión comercial y arranque. Montos en **MXN, sin IVA**, salvo que se indique. Hipótesis marcadas como tales; validar SDI/IMSS con contador laboral antes de producción.
@@ -22,7 +22,7 @@ Fuera de Fase 1 (fase 2+): EMA/EBA autodeterminación, face-match biométrico, W
 
 ---
 
-## 2. Unit economics — jornada de 1 día a $400
+## 2. Unit economics - jornada de 1 día a $400
 
 ### 2.1 Referencias 2026
 
@@ -49,9 +49,9 @@ SDI = 400 × 1.049315 ≈ $419.73
 
 | Escenario | SBC a reportar en IDSE (`salario_diario_integrado`) | Uso |
 |-----------|-----------------------------------------------------|-----|
-| **A — Recomendado** | **$419.73** | $400 retribución + factor prestaciones |
-| B — Conservador simple | $400.00 | Solo si asesoría confirma que el día eventual se reporta sin factor |
-| C — Frontera | ≥ $440.87 | Cumplir SM zona |
+| **A - Recomendado** | **$419.73** | $400 retribución + factor prestaciones |
+| B - Conservador simple | $400.00 | Solo si asesoría confirma que el día eventual se reporta sin factor |
+| C - Frontera | ≥ $440.87 | Cumplir SM zona |
 
 **Tipo trabajador IDSE típico staffing 1 día:** `codigo_tipo_de_trabajador = "2"` (eventual ciudad), `tipo_de_jornada = "1"` (un día), `tipo_de_salario` según política (frecuente `"0"` fijo o `"1"` variable).
 
@@ -67,9 +67,9 @@ Las cuotas reales dependen de **prima de riesgo de trabajo** del RP y desglose L
 | Carga patrón 32% | 419.73 × 0.32 | **$134.31** |
 | Cuota obrera ref. ~2.375% | 419.73 × 0.02375 | $9.97 |
 
-**Política MVP:** el **$400 es neto a dispersar**; la carga IMSS patrón ($134.31 est.) la absorbe la operación/cliente. Si se descuenta cuota obrera del trabajador, bajaría el neto — no recomendado en la promesa “$400 al día” sin avisarlo.
+**Política MVP:** el **$400 es neto a dispersar**; la carga IMSS patrón ($134.31 est.) la absorbe la operación/cliente. Si se descuenta cuota obrera del trabajador, bajaría el neto - no recomendado en la promesa “$400 al día” sin avisarlo.
 
-### 2.4 Stripe — 3.6% + $3
+### 2.4 Stripe - 3.6% + $3
 
 Sobre dispersión de **$400**:
 
@@ -134,7 +134,7 @@ Si usaran plan mensual $7,200/500 sin one-shot: Cincel $14.40 → total ≈ **$5
 
 Fijos/semi aparte: IDSE volumen, SMS, hosting, soporte; Cincel ya va prorrateado en el $9.60 si compraron el one-shot.
 
-### 2.8 Ejemplo mensual (1,000 jornadas) — Cincel one-shot $9.60
+### 2.8 Ejemplo mensual (1,000 jornadas) - Cincel one-shot $9.60
 
 | Rubro | Cálculo | Monto |
 |-------|---------|------:|
@@ -161,7 +161,7 @@ Trabajando  ⇔  ContractSigned (Cincel)  AND  ImssAltaAccepted
 
 - **No** basta `alta pendiente` / `submitted` / `lote_asignado` sin aceptación IMSS.  
 - **No** hay check-in “parcial” que habilite piso de trabajo.  
-- El personal puede estar en sitio en estado `En_proceso_entrada`, pero **no** cuenta como labor ni genera derecho a $400 hasta gate OK (definir si hay compensación de espera — ver 3.3).
+- El personal puede estar en sitio en estado `En_proceso_entrada`, pero **no** cuenta como labor ni genera derecho a $400 hasta gate OK (definir si hay compensación de espera - ver 3.3).
 
 ### 3.2 Si Cincel falla
 
@@ -177,13 +177,13 @@ Trabajando  ⇔  ContractSigned (Cincel)  AND  ImssAltaAccepted
 |-----------|--------|
 | IDSE PRO offline (reintentos proveedor) | Mantener `alta_pendiente`; **bloquear Trabajando** |
 | Rechazo por datos | Incidencia RH; corregir expediente; nuevo movimiento; sin labor |
-| IMSS lento (> ventana check-in, ej. 30–45 min) | Personal en sala de espera digital; opción ops: **liberar** y re-convocar FCFS waitlist; o reprogramar |
+| IMSS lento (> ventana check-in, ej. 30-45 min) | Personal en sala de espera digital; opción ops: **liberar** y re-convocar FCFS waitlist; o reprogramar |
 | Certificado RP vencido | Bloqueo total de altas ese RP; alerta Super Admin |
 
 ### 3.4 Compensación por espera (opción a decidir)
 
 - **Opción A (MVP simple):** sin pago si no hay alta aceptada.  
-- **Opción B:** “bono espera” fijo (ej. $50–100) si el fallo es del patrón/proveedor y el trabajador llegó a tiempo — **no** incluido en unit economics base hasta que lo aprueben.
+- **Opción B:** “bono espera” fijo (ej. $50-100) si el fallo es del patrón/proveedor y el trabajador llegó a tiempo - **no** incluido en unit economics base hasta que lo aprueben.
 
 ---
 
@@ -202,7 +202,7 @@ Validaciones al importar: NSS/CURP formato, duplicados, consentimiento flag, IDS
 
 ---
 
-## 5. Propuesta #4 — No-show, cancelación y reemplazo FCFS
+## 5. Propuesta #4 - No-show, cancelación y reemplazo FCFS
 
 ### 5.1 Definiciones
 
@@ -224,7 +224,7 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 ### 5.3 Reglas
 
 1. **Cancelación temprana:** cupo++; offer `cancelled_by_user`; score −0 o −2.  
-2. **Cancelación tarde / no-show:** score −15 (configurable); flag `recent_no_show`; exclusiones temporales de blast (ej. 7–14 días).  
+2. **Cancelación tarde / no-show:** score −15 (configurable); flag `recent_no_show`; exclusiones temporales de blast (ej. 7-14 días).  
 3. **Reemplazo automático:** job `convocatoria.refill` dispara a waitlist (orden FCFS de lista de espera) o enlarge blast.  
 4. **Si ya hubo ContractSigned + Alta aceptada y abandona:**  
    - Check-out forzado / baja IDSE con causa (ej. abandono `"3"` o término `"1"` según legal).  
@@ -253,11 +253,11 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 | Fase | Semanas | Entregable |
 |------|---------|------------|
 | **0. Kickoff** | 1 | Ambientes, accesos sandbox IDSE/Cincel/Stripe, catálogo RP, plantilla adhesión |
-| **1. Fundaciones** | 2–5 | Auth/RBAC, backoffice shell, empleados/expediente, **carga masiva**, consentimientos |
-| **2. Pool + FCFS** | 6–9 | Labores, scoring, vacantes/aplicaciones básicas, convocatorias, offers, waitlist, no-show/refill |
-| **3. Entrada dura** | 10–13 | QR, geocerca, INE/OCR básico, Cincel, IDSE alta, **gate sin Trabajando sin alta aceptada** |
-| **4. Salida + dinero** | 14–16 | Check-out, baja IDSE, Stripe Connect, asientos simples, dashboard pagos |
-| **5. UAT / go-live** | 17–18 | Pruebas punta a punta, capacitación, hardening, go-live asistido |
+| **1. Fundaciones** | 2-5 | Auth/RBAC, backoffice shell, empleados/expediente, **carga masiva**, consentimientos |
+| **2. Pool + FCFS** | 6-9 | Labores, scoring, vacantes/aplicaciones básicas, convocatorias, offers, waitlist, no-show/refill |
+| **3. Entrada dura** | 10-13 | QR, geocerca, INE/OCR básico, Cincel, IDSE alta, **gate sin Trabajando sin alta aceptada** |
+| **4. Salida + dinero** | 14-16 | Check-out, baja IDSE, Stripe Connect, asientos simples, dashboard pagos |
+| **5. UAT / go-live** | 17-18 | Pruebas punta a punta, capacitación, hardening, go-live asistido |
 
 ### Hitos de pago sugeridos (desarrollo)
 
@@ -277,7 +277,7 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 
 ---
 
-## 7. Cotización — qué incluye y qué no
+## 7. Cotización - qué incluye y qué no
 
 ### 7.0 Separación de presupuestos (importante)
 
@@ -289,7 +289,7 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 
 Los **$980,000 son solo desarrollo**. No incluyen saldo ni mensualidades de terceros. Sin contratos/sandbox de proveedores, las integraciones no pueden certificarse en producción (el código sí se entrega con adapters + sandbox).
 
-### 7.1 Paquete completo — solo desarrollo
+### 7.1 Paquete completo - solo desarrollo
 
 | Concepto | Monto MXN |
 |----------|----------:|
@@ -308,7 +308,7 @@ No incluye: comprar ni fondear esos servicios.
 | **MVP Completo (recomendado)** | §1 íntegro | **$980,000** |
 | **MVP + hypercare 4 sem** | Completo + mes post go-live | $1,120,000 |
 
-### 7.3 Proveedores externos — presupuesto aparte (cliente)
+### 7.3 Proveedores externos - presupuesto aparte (cliente)
 
 #### Setup / one-shot (antes o en paralelo al go-live)
 
@@ -316,11 +316,11 @@ No incluye: comprar ni fondear esos servicios.
 |-----------|----------|---------------:|
 | Cincel | One-shot bolsa docs @ $9.60 → $60,000 | 60,000 |
 | Cincel | Implementación | 3,200 |
-| IDSE PRO | Prepago inicial / depósito (según contrato ApiMarket; ej. tramo ~2k mov) | 10,000 – 50,000 |
+| IDSE PRO | Prepago inicial / depósito (según contrato ApiMarket; ej. tramo ~2k mov) | 10,000 - 50,000 |
 | Stripe | Sin fee de alta típica; KYC Connect | 0 |
-| Cloud | Setup proyecto (suele ser bajo) | 0 – 5,000 |
-| Legal | Plantilla adhesión + dictamen SDI (orden de magnitud) | 15,000 – 40,000 |
-| **Total setup externos (orden de magnitud)** | | **≈ $88k – $158k** |
+| Cloud | Setup proyecto (suele ser bajo) | 0 - 5,000 |
+| Legal | Plantilla adhesión + dictamen SDI (orden de magnitud) | 15,000 - 40,000 |
+| **Total setup externos (orden de magnitud)** | | **≈ $88k - $158k** |
 
 #### Mensual / variable en operación
 
@@ -330,10 +330,13 @@ No incluye: comprar ni fondear esos servicios.
 | IDSE PRO | $/movimiento (alta+baja) | ~10,000 |
 | Stripe | 3.6% + $3 sobre payout | 17,400 |
 | IMSS | Cuotas patrón (no es “SaaS”) | ~134,310 |
-| SMS/email | Por envío | 2,000 – 15,000 |
-| Hosting (Vercel/DB/Redis/S3) | Infra | 10,000 – 18,000 |
-| **Subtotal ops (sin el $400 al personal)** | | **≈ $183k – $204k** |
+| SMS/email | Por envío | 2,000 - 15,000 |
+| **Hosting** (Vercel + Nest workers + Postgres + Redis + R2 + Sentry) | Infra mensuales | **8,000 - 15,000** (Base); pico hasta ~25,000 |
+| **Subtotal ops (sin el $400 al personal)** | | **≈ $183k - $204k** |
 | **+ pagos al personal** | 1,000 × $400 | **+ $400,000** |
+
+Detalle de hosting por escenario (Lite / Base / Pico): [hosting-costos.md](./hosting-costos.md).  
+**No incluido en los $980k** - presupuesto B (cliente).
 
 ### 7.4 Vista combinada para el cliente (ejemplo go-live)
 
@@ -374,16 +377,16 @@ No incluye: comprar ni fondear esos servicios.
 
 | Tema | Decisión propuesta MVP |
 |------|------------------------|
-| Labor sin alta | **Prohibida** — adhesión firmada + alta IMSS **aceptada** |
+| Labor sin alta | **Prohibida** - adhesión firmada + alta IMSS **aceptada** |
 | Falla Cincel/IDSE | Bloqueo + reintentos + alerta |
 | Carga masiva | **Sí** en Fase 1 |
 | No-show | Penalización + auto-refill FCFS |
 | Costo var. / día $400 | **≈ $571** |
 | Precio piso cliente | **≈ $657** / persona-día |
 | Tiempo | **18 semanas** |
-| **Desarrollo** | **$980,000 MXN** — **solo software** |
+| **Desarrollo** | **$980,000 MXN** - **solo software** |
 | **Proveedores** | **Aparte** (Cincel, IDSE, Stripe, cloud, SMS, legal) |
 
 ---
 
-*Documento generado para NIRC / Codiva — Agosto 2026. No sustituye dictamen legal ni cédula IMSS real.*
+*Documento generado para NIRC / Codiva - Agosto 2026. No sustituye dictamen legal ni cédula IMSS real.*

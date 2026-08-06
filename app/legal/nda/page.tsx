@@ -3,7 +3,7 @@ import { PORTAL_NDA } from '@/lib/ops/legal/content';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'NDA — Codiva',
+  title: 'NDA - Codiva',
 };
 
 export default function NdaPage() {

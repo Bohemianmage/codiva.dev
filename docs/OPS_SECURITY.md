@@ -1,4 +1,4 @@
-# Codiva Ops — seguridad de documentos
+# Codiva Ops - seguridad de documentos
 
 ## Controles activos
 

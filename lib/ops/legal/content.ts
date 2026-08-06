@@ -103,7 +103,7 @@ export const TERMS_OF_USE: LegalDocument = {
     {
       id: 'confidentiality',
       title: '9. Confidencialidad y NDA',
-      body: 'La información comercial, técnica y de proyecto compartida en el Portal se trata como confidencial. Cuando el Proyecto incluya un NDA, su aceptación en el Portal complementa —y no sustituye— cualquier acuerdo firmado por separado. El Usuario se obliga a no divulgar Información Confidencial fuera del círculo de necesidad de conocer de su organización.',
+      body: 'La información comercial, técnica y de proyecto compartida en el Portal se trata como confidencial. Cuando el Proyecto incluya un NDA, su aceptación en el Portal complementa -y no sustituye- cualquier acuerdo firmado por separado. El Usuario se obliga a no divulgar Información Confidencial fuera del círculo de necesidad de conocer de su organización.',
     },
     {
       id: 'ip',
@@ -242,10 +242,10 @@ export const PRIVACY_NOTICE: LegalDocument = {
       title: '5. Encargados y subprocesadores',
       lead: 'Proveedores relevantes que pueden tratar datos en nombre de Codiva para operar el servicio:',
       items: [
-        'Vercel — alojamiento y edge.',
-        'Supabase — base de datos, autenticación y almacenamiento.',
-        'Resend — correo transaccional.',
-        'Stripe — pagos, cuando el proyecto lo use.',
+        'Vercel - alojamiento y edge.',
+        'Supabase - base de datos, autenticación y almacenamiento.',
+        'Resend - correo transaccional.',
+        'Stripe - pagos, cuando el proyecto lo use.',
       ],
       closing:
         'Cada proveedor aplica sus propias medidas. Codiva permanece como responsable frente al titular por las finalidades que determina.',
@@ -296,14 +296,14 @@ export const PRIVACY_NOTICE: LegalDocument = {
       items: [
         `Correo general y protección de datos: ${CONTACT_EMAIL}`,
         `Domicilio: ${DOMICILIO}`,
-        'Marca: Codiva.dev — software a la medida y productos digitales.',
+        'Marca: Codiva.dev - software a la medida y productos digitales.',
       ],
     },
   ],
 };
 
 export const PORTAL_NDA: LegalDocument = {
-  title: 'Acuerdo de Confidencialidad (NDA) — Portal de proyecto',
+  title: 'Acuerdo de Confidencialidad (NDA) - Portal de proyecto',
   versionCode: LEGAL_DOCS_VERSION,
   updated: LEGAL_UPDATED_LABEL,
   intro: [

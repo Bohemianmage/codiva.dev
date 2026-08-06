@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getAcceptanceStatus, type MemberAcceptanceFields } from '@/lib/ops/legal/acceptances';
 
 const PROJECT_SELECT =
-  'id, name, slug, status, client_visible, organization_id, progress_percent, description, target_delivery_date';
+  'id, name, slug, status, client_visible, organization_id, progress_percent, description, target_delivery_date, portal_show_quote, portal_show_costs';
 
 const MEMBER_SELECT =
   'id, role, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version';
@@ -104,7 +104,7 @@ export async function requirePortalAccess(slug: string) {
   };
 }
 
-/** @deprecated prefer requirePortalAccess — mantiene compatibilidad */
+/** @deprecated prefer requirePortalAccess - mantiene compatibilidad */
 export async function requireProjectMember(slug: string) {
   const access = await requirePortalAccess(slug);
   if (access.isStaffPreview) {

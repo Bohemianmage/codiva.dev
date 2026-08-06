@@ -13,7 +13,7 @@ ALTER TABLE quotes
 ALTER TABLE quotes
   ADD COLUMN IF NOT EXISTS lead_id uuid REFERENCES leads(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS service_type text NOT NULL DEFAULT '',
-  ADD COLUMN IF NOT EXISTS project_state text NOT NULL DEFAULT 'Por iniciar — pendiente de aprobación formal',
+  ADD COLUMN IF NOT EXISTS project_state text NOT NULL DEFAULT 'Por iniciar - pendiente de aprobación formal',
   ADD COLUMN IF NOT EXISTS deliverables text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS considerations text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS optional_extras text NOT NULL DEFAULT '',

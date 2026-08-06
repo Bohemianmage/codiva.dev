@@ -4,18 +4,33 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import type { PortalVisibility } from '@/lib/ops/portal-visibility';
 
-const links = (slug: string) => [
-  { href: `/p/${slug}`, label: 'Resumen' },
-  { href: `/p/${slug}/propuesta`, label: 'Propuesta' },
-  { href: `/p/${slug}/cotizacion`, label: 'Cotización' },
-  { href: `/p/${slug}/documentos`, label: 'Documentos' },
-  { href: `/p/${slug}/timeline`, label: 'Timeline' },
-  { href: `/p/${slug}/entregables`, label: 'Entregables' },
-  { href: `/p/${slug}/tickets`, label: 'Tickets' },
-];
+function links(slug: string, visibility: PortalVisibility) {
+  const all = [
+    { href: `/p/${slug}`, label: 'Resumen', key: 'home' },
+    { href: `/p/${slug}/propuesta`, label: 'Propuesta', key: 'proposal' },
+    { href: `/p/${slug}/cotizacion`, label: 'Cotización', key: 'quote' },
+    { href: `/p/${slug}/documentos`, label: 'Documentos', key: 'docs' },
+    { href: `/p/${slug}/timeline`, label: 'Timeline', key: 'timeline' },
+    { href: `/p/${slug}/entregables`, label: 'Entregables', key: 'deliverables' },
+    { href: `/p/${slug}/tickets`, label: 'Tickets', key: 'tickets' },
+  ];
+  return all.filter((l) => {
+    if (l.key === 'quote') return visibility.showQuote;
+    return true;
+  });
+}
 
-export default function PortalNav({ slug, projectName }: { slug: string; projectName: string }) {
+export default function PortalNav({
+  slug,
+  projectName,
+  visibility,
+}: {
+  slug: string;
+  projectName: string;
+  visibility: PortalVisibility;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const normalized = pathname.replace(/^\/ops/, '');
@@ -35,7 +50,9 @@ export default function PortalNav({ slug, projectName }: { slug: string; project
             <Image src="/logo.svg" alt="Codiva" width={32} height={32} />
           </Link>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Portal del proyecto</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">
+              Portal del proyecto
+            </p>
             <h1 className="text-xl font-bold text-zinc-900">{projectName}</h1>
           </div>
         </div>
@@ -44,8 +61,11 @@ export default function PortalNav({ slug, projectName }: { slug: string; project
         </button>
       </div>
       <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-6 pb-3">
-        {links(slug).map((l) => {
-          const active = normalized === l.href || normalized.startsWith(`${l.href}/`);
+        {links(slug, visibility).map((l) => {
+          const active =
+            l.href === `/p/${slug}`
+              ? normalized === l.href
+              : normalized === l.href || normalized.startsWith(`${l.href}/`);
           return (
             <Link
               key={l.href}

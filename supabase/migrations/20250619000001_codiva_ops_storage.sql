@@ -1,4 +1,4 @@
--- Codiva Ops — bucket y políticas de Storage
+-- Codiva Ops - bucket y políticas de Storage
 -- Requiere el schema storage de Supabase (no aplica en Postgres plano).
 -- Si falla aquí, crea el bucket manualmente: Dashboard → Storage → New bucket → ops-files (privado, 10 MB).
 

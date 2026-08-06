@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NIRC - Arquitectura, Flujos e Integración IDSE PRO</title>
+  <title>NIRC - Arquitectura (portal)</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
     :root {
@@ -169,11 +169,9 @@
       <li>Arquitectura lógica, backoffice y stack técnico</li>
       <li>Pool scoring por labor, auto-convocatoria FCFS y QR de entrada</li>
       <li>Flujos: ciclo de vida, día del evento, adhesión en entrada, IDSE, contabilidad</li>
-      <li>Integración IMSS vía IDSE PRO (ApiMarket / Codiva) y estimación comercial</li>
+      <li>Integración IMSS vía IDSE PRO (ApiMarket / Codiva)</li>
       <li>LFPDPPP (uso/disposal), gates de negocio y modelo de datos</li>
-      <li>MVP Fase 1: unit economics, políticas, tiempos y cotización ($980k desarrollo vs proveedores)</li>
-      <li>Deploy híbrido Vercel + Railway · DB en Neon · capacidad vs demanda</li>
-    </ul>
+      </ul>
   </div>
 
   <div class="kpi">
@@ -195,11 +193,7 @@
     <li><a href="#ats">Pool scoring y convocatoria FCFS</a></li>
     <li><a href="#backoffice">Backoffice</a></li>
     <li><a href="#contabilidad">Contabilidad, LFPDPPP y seguridad</a></li>
-    <li><a href="#comercial">Cotización IDSE PRO</a></li>
-    <li><a href="#mvp">MVP Fase 1 - economics y cotización</a></li>
-    <li><a href="#deploy">Deploy Vercel + Railway + Neon</a></li>
-    <li><a href="#capacidad">Capacidad vs demanda</a></li>
-  </ol>
+    </ol>
 
   <!-- 1 -->
   <h2 id="resumen">1. Resumen ejecutivo</h2>
@@ -469,7 +463,7 @@ flowchart LR
   </table>
 
   <div class="note">
-    <strong>Importante:</strong> según la cotización IDSE PRO, obtener lote/acuse cuenta como
+    <strong>Importante:</strong> según el modelo operativo de IDSE PRO, obtener lote/acuse cuenta como
     ejecución exitosa para facturación aunque el IMSS rechace después por datos.
     NIRC debe distinguir <em>éxito técnico del proveedor</em> vs <em>aceptación IMSS</em>.
   </div>
@@ -568,180 +562,8 @@ flowchart TD
   </ul>
 
   <!-- 10 -->
-  <h2 id="comercial">10. Cotización IDSE PRO (referencia comercial)</h2>
-  <!-- numeración conservada; backoffice vive en 8b -->
-  <p class="meta">
-    Fuente: Propuesta comercial IDSE PRO API - Databridge Business Intelligence S.C. ·
-    Tijuana, 04 de agosto de 2026 · Cliente: Codiva · Volumen declarado 18,000-30,000 mov/año.
-  </p>
-
-  <h3>Capacidades relevantes para NIRC</h3>
-  <table>
-    <thead><tr><th>Capacidad</th><th>Uso en NIRC</th></tr></thead>
-    <tbody>
-      <tr><td>Altas / Bajas API REST</td><td>Check-in → alta; post-firma → baja</td></tr>
-      <tr><td>Validación NSS + pre-chequeo</td><td>Evitar rechazos antes de encolar</td></tr>
-      <tr><td>Reintentos 24/7 + offline</td><td>Estado pendiente_imss</td></tr>
-      <tr><td>Webhooks</td><td>Actualizar transacciones y FSM</td></tr>
-      <tr><td>Programación / cancelación</td><td>Ventanas operativas</td></tr>
-      <tr><td>Acuses y constancias</td><td>Expediente + evidencia legal</td></tr>
-      <tr><td>Sandbox ilimitado</td><td>Staging sin costo de prueba</td></tr>
-      <tr><td>Rate limit 50 req/min</td><td>Batching y backoff en workers</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Tabulador (MXN / movimiento, sin IVA)</h3>
-  <table>
-    <thead>
-      <tr><th>Rango mensual</th><th>Postpago</th><th>Prepago</th><th>Excedente</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>1 - 500</td><td>$8.63</td><td>$7.50</td><td>$9.38</td></tr>
-      <tr><td>501 - 1,000</td><td>$7.13</td><td>$6.20</td><td>$7.75</td></tr>
-      <tr><td>1,001 - 1,500</td><td>$6.67</td><td>$5.80</td><td>$7.25</td></tr>
-      <tr><td>1,501 - 2,000</td><td>$5.75</td><td>$5.00</td><td>$6.25</td></tr>
-      <tr><td>2,001 - 3,000</td><td>$4.83</td><td>$4.20</td><td>$5.25</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Estimación NIRC (1 ciclo ≈ alta + baja = 2 movimientos)</h3>
-  <table>
-    <thead>
-      <tr><th>Mov/mes</th><th>Ciclos ≈</th><th>Prepago/mes</th><th>Postpago/mes</th><th>Prepago/año</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>1,500</td><td>750</td><td>~$8,700</td><td>~$10,005</td><td>~$104,400</td></tr>
-      <tr><td>2,000</td><td>1,000</td><td>~$10,000</td><td>~$11,500</td><td>~$120,000</td></tr>
-      <tr><td>2,500</td><td>1,250</td><td>~$10,500</td><td>~$12,075</td><td>~$126,000</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Condiciones clave</h3>
-  <ul>
-    <li><strong>Mínimo anual:</strong> 10,000 movimientos; si no → cuota almacenamiento $16,250 MXN/año.</li>
-    <li><strong>Postpago:</strong> mínimo 834 mov/mes; factura 30 días + 30 días crédito.</li>
-    <li><strong>Prepago:</strong> saldo vigencia 12 meses por lote; no reembolsable.</li>
-    <li><strong>Plazo:</strong> 12 meses; ajuste anual INPC + 1 pp (tope 8 %).</li>
-    <li><strong>SLA:</strong> ≥ 99.5 %; créditos por indisponibilidad imputable al proveedor (no caídas IMSS).</li>
-  </ul>
-
-  <div class="info">
-    <strong>Recomendación:</strong> modalidad prepago si el volumen es estable (~2,000 mov/mes);
-    sandbox obligatorio en MVP; persistir acuses/constancias también en NIRC.
-  </div>
-
-  <h2 id="mvp">11. MVP Fase 1 - unit economics y cotización</h2>
-  <p class="meta">
-    Detalle completo en docs/mvp-propuesta-fase1.md · Montos MXN sin IVA · Hipótesis IMSS a validar con contador.
-  </p>
-
-  <h3>Costo variable por jornada ($400 al personal)</h3>
-  <table>
-    <thead><tr><th>Rubro</th><th>Monto</th></tr></thead>
-    <tbody>
-      <tr><td>Pago personal (Stripe)</td><td>$400.00</td></tr>
-      <tr><td>Stripe 3.6% + $3</td><td>$17.40</td></tr>
-      <tr><td>IDSE alta + baja (ref. $5 × 2)</td><td>$10.00</td></tr>
-      <tr><td>Cincel one-shot ($60,000 → $9.60/doc)</td><td>$9.60</td></tr>
-      <tr><td>IMSS patrón est. (SDI $419.73 × 32%)</td><td>$134.31</td></tr>
-      <tr><td><strong>Total variable / jornada</strong></td><td><strong>≈ $571</strong></td></tr>
-      <tr><td>Precio piso cliente (+15% ops)</td><td>≈ $657 / persona-día</td></tr>
-    </tbody>
-  </table>
-  <p class="meta">SDI = 400 × 1.0493 ≈ $419.73. Frontera norte: SM $440.87 - $400 no alcanza.</p>
-
-  <h3>Políticas MVP</h3>
-  <ul>
-    <li><strong>Sin labor</strong> hasta contrato adhesión firmado + alta IMSS <em>aceptada</em> (no basta pendiente).</li>
-    <li>Falla Cincel/IDSE: bloqueo + reintentos + alerta; sin trabajar en contingencia en Fase 1.</li>
-    <li>Carga masiva CSV de pool/empleados incluida.</li>
-    <li>No-show: penalización score + auto-refill FCFS/waitlist.</li>
-  </ul>
-
-  <h3>Tiempos</h3>
-  <p><strong>18 semanas</strong> (~4.5 meses): fundaciones → pool/FCFS → entrada dura → salida/pagos → UAT.</p>
-
-  <h3>Cotización - separación de presupuestos</h3>
-  <table>
-    <thead><tr><th>Presupuesto</th><th>Qué incluye</th><th>Monto</th></tr></thead>
-    <tbody>
-      <tr><td><strong>A. Desarrollo</strong></td><td>Software, integraciones, UAT, capacitación - paquete completo</td><td><strong>$980,000</strong></td></tr>
-      <tr><td><strong>B. Proveedores (aparte)</strong></td><td>Cliente paga directo a vendors</td><td>Ver abajo</td></tr>
-      <tr><td><strong>C. Por jornada</strong></td><td>Pago + fees + IMSS + docs</td><td>≈ $571</td></tr>
-    </tbody>
-  </table>
-
-  <p><strong>$980,000 es solo desarrollo.</strong> No incluye licencias ni consumo de terceros.</p>
-
-  <h3>Proveedores externos (cliente)</h3>
-  <table>
-    <thead><tr><th>Setup / one-shot</th><th>Monto est.</th></tr></thead>
-    <tbody>
-      <tr><td>Cincel one-shot 6,250 docs @ $9.60</td><td>$60,000</td></tr>
-      <tr><td>Cincel implementación</td><td>$3,200</td></tr>
-      <tr><td>IDSE prepago inicial (rango)</td><td>$10,000 - $50,000</td></tr>
-      <tr><td>Legal plantilla / dictamen SDI (orden magnitud)</td><td>$15,000 - $40,000</td></tr>
-      <tr><td><strong>Setup externos aprox.</strong></td><td><strong>≈ $88k - $158k</strong></td></tr>
-    </tbody>
-  </table>
-  <table>
-    <thead><tr><th>Operación @ 1,000 jornadas/mes</th><th>Monto</th></tr></thead>
-    <tbody>
-      <tr><td>Pagos al personal</td><td>$400,000</td></tr>
-      <tr><td>Stripe + IDSE + Cincel + IMSS est. + SMS/hosting</td><td>≈ $183k - $204k</td></tr>
-    </tbody>
-  </table>
-
-  <div class="info">
-    <strong>Inversión inicial aprox.:</strong> desarrollo $980k + setup proveedores ~$120k ≈ <strong>$1.1M MXN</strong> (sin IVA),
-    más costo variable por jornada en operación.
-  </div>
-
-  <div class="note">
-    Alternativas desarrollo: Core $780k · Completo $980k · Completo + hypercare $1,120k.
-    Soporte mensual opcional post go-live: $45,000.
-  </div>
-
-  <h2 id="deploy">12. Deploy - Vercel + Railway + Neon</h2>
-  <p>
-    <strong>Híbrido:</strong> UI/BFF en Vercel · workers Nest/BullMQ en Railway ·
-    <strong>PostgreSQL en Neon</strong> (no en Vercel ni embebido en Railway). Ambos runtimes
-    usan <code>DATABASE_URL</code>. Redis = Upstash · archivos = R2.
-  </p>
-  <table>
-    <thead><tr><th>Servicio</th><th>Rol</th><th>MXN/mes Base (típ.)</th></tr></thead>
-    <tbody>
-      <tr><td>Vercel</td><td>Next.js PWA + webhooks cortos</td><td>$900 - $1,200</td></tr>
-      <tr><td>Railway</td><td>API + workers IDSE/Cincel/Stripe/FCFS</td><td>$1,500 - $2,850</td></tr>
-      <tr><td>Neon</td><td>Postgres fuente de verdad</td><td>$950 - $1,900</td></tr>
-      <tr><td>Upstash + R2 + Sentry + colchón</td><td>Colas, archivos, buffer</td><td>resto</td></tr>
-      <tr><td><strong>Total infra presupuestar</strong></td><td>Punto comercial</td><td><strong>~$8-13k ($10k)</strong></td></tr>
-    </tbody>
-  </table>
-  <p class="meta">Fuera de los $980k de desarrollo. Detalle: docs/costos-vercel-railway-db.md · docs/deploy-vercel-hibrido.md</p>
-
-  <h2 id="capacidad">13. Capacidad vs demanda</h2>
-  <table>
-    <thead><tr><th>Demanda MVP</th><th>Valor</th><th>¿Aguanta stack Base?</th></tr></thead>
-    <tbody>
-      <tr><td>Jornadas / mes</td><td>~1,000</td><td>Sí (holgura hasta ~3k antes de rediseño)</td></tr>
-      <tr><td>Movimientos IDSE / mes</td><td>1,500 - 2,500</td><td>Sí (límite suele ser $ IDSE)</td></tr>
-      <tr><td>Check-ins pico (hipótesis)</td><td>200 - 500 / 1-2 h</td><td>Sí con colas + 1-2 workers + pooler Neon</td></tr>
-      <tr><td>FCFS concurrente</td><td>Ráfagas de aceptaciones</td><td>Sí con locks atómicos DB/Redis</td></tr>
-    </tbody>
-  </table>
-  <ul>
-    <li>Webhooks delgados en Vercel; trabajo pesado en Railway.</li>
-    <li>UAT: simular ~300 check-ins en 10 minutos.</li>
-    <li>Techos no-infra: IMSS portal, cupos Cincel/IDSE, onboarding Stripe Connect.</li>
-  </ul>
-  <div class="info">
-    <strong>Conclusión:</strong> el stack propuesto soporta la demanda NIRC del MVP con margen;
-    el riesgo operativo son picos del día de evento, no el promedio mensual.
-  </div>
-
   <footer>
-    NIRC - Documento de arquitectura + MVP + deploy/capacidad · Uso interno · Impresión A4 ·
+    NIRC - Arquitectura (vista cliente) · Uso interno · Impresión A4 ·
     Montos y capacidades son referencia; no sustituyen contratos con proveedores ni pruebas de carga reales.
   </footer>
 

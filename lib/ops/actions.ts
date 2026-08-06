@@ -407,6 +407,8 @@ export async function updateProject(projectId: string, formData: FormData) {
     status: String(formData.get('status') || 'draft'),
     description: String(formData.get('description') || ''),
     client_visible: formData.get('clientVisible') === 'on',
+    portal_show_quote: formData.get('portalShowQuote') === 'on',
+    portal_show_costs: formData.get('portalShowCosts') === 'on',
     progress_percent: parseInt(String(formData.get('progressPercent') || '0'), 10),
     start_date: String(formData.get('startDate') || '') || null,
     target_delivery_date: String(formData.get('targetDeliveryDate') || '') || null,
@@ -762,6 +764,38 @@ export async function markDocumentSigned(documentId: string, projectId: string, 
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function setDeliverableVisibility(
+  projectId: string,
+  deliverableId: string,
+  visibleToClient: boolean
+) {
+  const { supabase } = await requireStaff();
+  const { error } = await supabase
+    .from('deliverables')
+    .update({ visible_to_client: visibleToClient })
+    .eq('id', deliverableId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/p', 'layout');
+}
+
+export async function setQuoteVisibility(
+  projectId: string,
+  quoteId: string,
+  visibleToClient: boolean
+) {
+  const { supabase } = await requireStaff();
+  const { error } = await supabase
+    .from('quotes')
+    .update({ visible_to_client: visibleToClient })
+    .eq('id', quoteId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/p', 'layout');
+}
+
 export async function acceptPortalLegalDocuments(slug: string, formData: FormData) {
   const access = await requirePortalAccess(slug);
   if (access.isStaffPreview) {
@@ -817,72 +851,209 @@ export async function acceptPortalLegalDocuments(slug: string, formData: FormDat
   redirect(`/p/${slug}`);
 }
 
-export async function clientUploadDocument(projectId: string, slug: string, formData: FormData) {
+export async function createDocumentRequest(projectId: string, formData: FormData) {
+  const { user, supabase } = await requireStaff();
+  const title = String(formData.get('title') || '').trim();
+  if (!title) throw new Error('Título requerido');
+
+  const inputMode = String(formData.get('inputMode') || 'file');
+  if (!['file', 'text', 'credentials'].includes(inputMode)) {
+    throw new Error('Modo de respuesta inválido');
+  }
+
+  const { data, error } = await supabase
+    .from('document_requests')
+    .insert({
+      project_id: projectId,
+      code: String(formData.get('code') || '').trim() || null,
+      title,
+      description: String(formData.get('description') || '').trim(),
+      instructions: String(formData.get('instructions') || '').trim(),
+      expected_type: String(formData.get('expectedType') || 'other'),
+      input_mode: inputMode,
+      required: formData.get('required') === 'on',
+      sort_order: parseInt(String(formData.get('sortOrder') || '0'), 10) || 0,
+      due_date: String(formData.get('dueDate') || '') || null,
+      created_by: user.id,
+      visible_to_client: formData.get('visibleToClient') !== 'off',
+      status: 'open',
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'document_request',
+    entityId: data.id,
+    action: 'created',
+    actorId: user.id,
+    metadata: { project_id: projectId, title, input_mode: inputMode },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateDocumentRequestStatus(
+  projectId: string,
+  requestId: string,
+  status: 'open' | 'waived' | 'cancelled'
+) {
+  const { user, supabase } = await requireStaff();
+  const patch: Record<string, unknown> = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+  if (status === 'open') {
+    patch.fulfilled_at = null;
+    patch.fulfilled_document_id = null;
+  }
+
+  const { error } = await supabase
+    .from('document_requests')
+    .update(patch)
+    .eq('id', requestId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'document_request',
+    entityId: requestId,
+    action: `status_${status}`,
+    actorId: user.id,
+    metadata: { project_id: projectId, status },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+/** Cliente responde a una solicitud abierta (archivo, texto o accesos). */
+export async function clientFulfillDocumentRequest(
+  projectId: string,
+  slug: string,
+  formData: FormData
+) {
   const access = await requirePortalAccess(slug);
   if (access.isStaffPreview) {
-    throw new Error('Usa una cuenta de cliente para subir documentos');
+    throw new Error('Usa una cuenta de cliente para responder solicitudes');
   }
   const { user, project } = access;
   if (project.id !== projectId) throw new Error('Proyecto inválido');
 
-  const file = formData.get('file') as File | null;
-  if (!file?.size) throw new Error('Archivo requerido');
-  if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
+  const requestId = String(formData.get('requestId') || '');
+  if (!requestId) throw new Error('Solicitud requerida');
 
-  const type = String(formData.get('type') || 'other');
-  const title = String(formData.get('title') || file.name).trim();
+  const admin = createAdminClient();
+  const { data: req } = await admin
+    .from('document_requests')
+    .select('*')
+    .eq('id', requestId)
+    .eq('project_id', projectId)
+    .eq('visible_to_client', true)
+    .maybeSingle();
+
+  if (!req || req.status !== 'open') {
+    throw new Error('Esta solicitud no está disponible');
+  }
+
   const notes = String(formData.get('notes') || '').trim();
-  const isSignedNda = type === 'nda' || formData.get('signed') === 'on';
-
   const audit = await getRequestAudit();
-  const { doc, sha256, path, scan } = await ingestProjectDocument({
-    projectId,
-    file,
-    type,
-    title,
-    notes,
-    signed: isSignedNda,
-    visibleToClient: true,
-    source: 'client',
-    uploadedBy: user.id,
-    folder: 'inbound',
-    audit,
-  });
+  let documentId: string | null = null;
+  let sha256 = '';
+  let path = '';
+  let scanStatus = 'n/a';
+  let responseText: string | null = null;
+
+  if (req.input_mode === 'file') {
+    const file = formData.get('file') as File | null;
+    if (!file?.size) throw new Error('Archivo requerido');
+    if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
+
+    const isSignedNda = req.expected_type === 'nda' || formData.get('signed') === 'on';
+    const { doc, sha256: hash, path: storedPath, scan } = await ingestProjectDocument({
+      projectId,
+      file,
+      type: req.expected_type,
+      title: req.title,
+      notes,
+      signed: isSignedNda,
+      visibleToClient: true,
+      source: 'client',
+      uploadedBy: user.id,
+      folder: 'inbound',
+      requestId: req.id,
+      audit,
+    });
+    documentId = doc.id;
+    sha256 = hash;
+    path = storedPath;
+    scanStatus = scan.status;
+  } else if (req.input_mode === 'credentials') {
+    const payload = {
+      provider: String(formData.get('provider') || '').trim(),
+      domain: String(formData.get('domain') || '').trim(),
+      panelUrl: String(formData.get('panelUrl') || '').trim(),
+      username: String(formData.get('username') || '').trim(),
+      accessNotes: String(formData.get('accessNotes') || '').trim(),
+      notes,
+    };
+    if (!payload.provider && !payload.domain && !payload.accessNotes) {
+      throw new Error('Indica al menos proveedor, dominio o notas de acceso');
+    }
+    responseText = JSON.stringify(payload, null, 2);
+  } else {
+    responseText = String(formData.get('responseText') || '').trim();
+    if (!responseText) throw new Error('Escribe la información solicitada');
+  }
+
+  const { error: updateError } = await admin
+    .from('document_requests')
+    .update({
+      status: 'fulfilled',
+      fulfilled_document_id: documentId,
+      fulfilled_at: new Date().toISOString(),
+      response_text: responseText,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', req.id)
+    .eq('status', 'open');
+  if (updateError) throw new Error(updateError.message);
 
   await logActivity({
-    entityType: 'document',
-    entityId: doc.id,
-    action: 'uploaded',
+    entityType: 'document_request',
+    entityId: req.id,
+    action: 'fulfilled',
     actorId: user.id,
     metadata: {
       project_id: projectId,
-      title,
-      type,
-      source: 'client',
-      file_path: path,
-      content_sha256: sha256,
-      scan_status: scan.status,
-      scan_provider: scan.provider,
-      signed: isSignedNda,
+      title: req.title,
+      input_mode: req.input_mode,
+      document_id: documentId,
+      content_sha256: sha256 || undefined,
+      file_path: path || undefined,
+      scan_status: scanStatus,
       ip: audit.ip,
       user_agent: audit.userAgent,
     },
   });
 
   await notifyStaff({
-    subject: `Documento del cliente — ${project.name}`,
-    html: templateStaffAlert(`Documento recibido · ${project.name}`, [
-      `Título: ${title}`,
-      `Tipo: ${type}`,
-      `SHA-256: ${sha256.slice(0, 16)}…`,
-      `Scan: ${scan.status}${scan.provider ? ` (${scan.provider})` : ''}`,
-      `Notas: ${notes || '—'}`,
+    subject: `Respuesta del cliente - ${project.name}`,
+    html: templateStaffAlert(`Solicitud respondida · ${project.name}`, [
+      `Solicitud: ${req.title}`,
+      `Modo: ${req.input_mode}`,
+      sha256 ? `SHA-256: ${sha256.slice(0, 16)}…` : `Respuesta: texto/accesos`,
+      `Notas: ${notes || '-'}`,
       `Portal: ${opsBaseUrl()}/projects/${projectId}?tab=documentos`,
     ]),
   });
 
   revalidatePath(`/p/${slug}/documentos`);
   revalidatePath(`/projects/${projectId}`);
+}
+
+/** @deprecated usar clientFulfillDocumentRequest con requestId */
+export async function clientUploadDocument(projectId: string, slug: string, formData: FormData) {
+  return clientFulfillDocumentRequest(projectId, slug, formData);
 }
 
 export async function runDocumentRetentionDisposal() {
@@ -1001,7 +1172,7 @@ export async function publishLegalVersionAndNotify(formData: FormData) {
 
     await sendClientEmail({
       to: email,
-      subject: `Actualización legal — ${project.name}`,
+      subject: `Actualización legal - ${project.name}`,
       html: templateLegalReacceptance(
         project.name,
         projectPortalUrl(project.slug, '/aceptar'),

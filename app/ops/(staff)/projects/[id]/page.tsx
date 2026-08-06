@@ -15,6 +15,10 @@ import {
   createDeliverable,
   markDocumentSigned,
   runDocumentRetentionDisposal,
+  createDocumentRequest,
+  updateDocumentRequestStatus,
+  setDeliverableVisibility,
+  setQuoteVisibility,
 } from '@/lib/ops/actions';
 import {
   PROJECT_STATUS_LABELS,
@@ -23,6 +27,8 @@ import {
   DELIVERABLE_KIND_LABELS,
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_SOURCE_LABELS,
+  DOCUMENT_REQUEST_STATUS_LABELS,
+  DOCUMENT_REQUEST_INPUT_LABELS,
   formatDate,
   formatCurrency,
 } from '@/lib/ops/labels';
@@ -59,6 +65,7 @@ export default async function ProjectDetailPage({
     { data: deliverables },
     { data: members },
     { data: tickets },
+    { data: docRequests },
   ] = await Promise.all([
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
@@ -71,6 +78,11 @@ export default async function ProjectDetailPage({
       )
       .eq('project_id', id),
     supabase.from('tickets').select('id, title, status, priority, created_at').eq('project_id', id).order('created_at', { ascending: false }).limit(10),
+    supabase
+      .from('document_requests')
+      .select('*')
+      .eq('project_id', id)
+      .order('sort_order', { ascending: true }),
   ]);
 
   const admin = createAdminClient();
@@ -214,10 +226,33 @@ export default async function ProjectDetailPage({
             <label className="mb-1 block text-sm font-medium">Descripción</label>
             <textarea name="description" rows={4} defaultValue={project.description ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="clientVisible" defaultChecked={project.client_visible} />
-            Portal visible para el cliente
-          </label>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 space-y-3">
+            <p className="text-sm font-medium text-zinc-900">Visibilidad en portal</p>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="clientVisible" defaultChecked={project.client_visible} />
+              Portal visible para el cliente
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="portalShowQuote"
+                defaultChecked={project.portal_show_quote !== false}
+              />
+              Mostrar cotización (nav + página + cards)
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="portalShowCosts"
+                defaultChecked={project.portal_show_costs !== false}
+              />
+              Mostrar temas de costos (canvas MVP/comercial y montos)
+            </label>
+            <p className="text-xs text-zinc-500">
+              Cada entregable y cada cotización también tienen su propio switch de “visible al
+              cliente”.
+            </p>
+          </div>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
             Guardar cambios
           </button>
@@ -258,31 +293,37 @@ export default async function ProjectDetailPage({
               </div>
               <p className="text-sm text-zinc-600 whitespace-pre-wrap">{q.scope}</p>
               <p className="mt-2 text-sm font-medium">{formatCurrency(q.total_amount, q.currency)}</p>
-              {q.status === 'draft' && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={`/quotes/${q.id}/preview`}
-                    target="_blank"
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
-                  >
-                    Vista previa
-                  </Link>
+              <p className="mt-2 text-xs text-zinc-500">
+                Portal:{' '}
+                {q.visible_to_client !== false ? 'visible al cliente' : 'oculta al cliente'}
+                {!project.portal_show_quote ? ' · módulo cotización OFF en proyecto' : ''}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/quotes/${q.id}/preview`}
+                  target="_blank"
+                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+                >
+                  Vista previa
+                </Link>
+                {q.status === 'draft' && (
                   <form action={async () => { 'use server'; await sendQuote(q.id, id); }}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
                       Enviar al cliente
                     </button>
                   </form>
-                </div>
-              )}
-              {q.status !== 'draft' && (
-                <Link
-                  href={`/quotes/${q.id}/preview`}
-                  target="_blank"
-                  className="mt-4 inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+                )}
+                <form
+                  action={async () => {
+                    'use server';
+                    await setQuoteVisibility(id, q.id, q.visible_to_client === false);
+                  }}
                 >
-                  Vista previa
-                </Link>
-              )}
+                  <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                    {q.visible_to_client === false ? 'Mostrar en portal' : 'Ocultar en portal'}
+                  </button>
+                </form>
+              </div>
             </article>
           ))}
         </div>
@@ -303,8 +344,148 @@ export default async function ProjectDetailPage({
               Descargar export JSON
             </a>
           </div>
+
+          <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
+            <div>
+              <h3 className="font-semibold">Solicitudes al cliente</h3>
+              <p className="mt-1 text-sm text-zinc-500">
+                Al crear una solicitud se habilita el slot en el portal. El cliente solo puede
+                responder a lo que pidas aquí.
+              </p>
+            </div>
+            <form
+              action={async (fd) => {
+                'use server';
+                await createDocumentRequest(id, fd);
+              }}
+              className="grid gap-3 rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2"
+            >
+              <input
+                name="title"
+                required
+                placeholder="Título (ej. Brandbook)"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
+              />
+              <input
+                name="code"
+                placeholder="Código interno (opcional)"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              />
+              <select name="inputMode" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
+                <option value="file">Archivo</option>
+                <option value="text">Texto</option>
+                <option value="credentials">Accesos (hosting/dominio)</option>
+              </select>
+              <select name="expectedType" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
+                <option value="other">Otro</option>
+                <option value="nda">NDA</option>
+                <option value="contract">Contrato</option>
+                <option value="proposal_pdf">Propuesta PDF</option>
+              </select>
+              <input
+                name="sortOrder"
+                type="number"
+                defaultValue={((docRequests ?? []).length + 1) * 10}
+                placeholder="Orden"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              />
+              <textarea
+                name="description"
+                rows={2}
+                placeholder="Descripción corta para el cliente"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
+              />
+              <textarea
+                name="instructions"
+                rows={2}
+                placeholder="Instrucciones (qué incluir, formato, etc.)"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
+              />
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input type="checkbox" name="required" defaultChecked />
+                Requerido
+              </label>
+              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white sm:col-span-2 sm:w-fit">
+                Crear solicitud (habilita en portal)
+              </button>
+            </form>
+
+            <ul className="space-y-2">
+              {(docRequests ?? []).map((r) => (
+                <li
+                  key={r.id}
+                  className="rounded-lg border border-zinc-200 px-4 py-3 text-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">
+                        {r.title}
+                        {r.code ? (
+                          <span className="ml-2 font-mono text-xs text-zinc-400">{r.code}</span>
+                        ) : null}
+                      </p>
+                      <p className="text-zinc-500">
+                        {DOCUMENT_REQUEST_STATUS_LABELS[r.status] ?? r.status}
+                        {' · '}
+                        {DOCUMENT_REQUEST_INPUT_LABELS[r.input_mode] ?? r.input_mode}
+                        {r.required ? ' · requerido' : ''}
+                      </p>
+                      {r.description && <p className="mt-1 text-zinc-600">{r.description}</p>}
+                      {r.response_text && (
+                        <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs text-zinc-700">
+                          {r.response_text}
+                        </pre>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {r.status !== 'open' && (
+                        <form
+                          action={async () => {
+                            'use server';
+                            await updateDocumentRequestStatus(id, r.id, 'open');
+                          }}
+                        >
+                          <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
+                            Reabrir
+                          </button>
+                        </form>
+                      )}
+                      {r.status === 'open' && (
+                        <>
+                          <form
+                            action={async () => {
+                              'use server';
+                              await updateDocumentRequestStatus(id, r.id, 'waived');
+                            }}
+                          >
+                            <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
+                              Omitir
+                            </button>
+                          </form>
+                          <form
+                            action={async () => {
+                              'use server';
+                              await updateDocumentRequestStatus(id, r.id, 'cancelled');
+                            }}
+                          >
+                            <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
+                              Cancelar
+                            </button>
+                          </form>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+              {!docRequests?.length && (
+                <p className="text-sm text-zinc-500">Sin solicitudes. Crea la primera para desbloquear la bandeja del cliente.</p>
+              )}
+            </ul>
+          </section>
+
           <form action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <h3 className="font-semibold">Subir documento</h3>
+            <h3 className="font-semibold">Subir documento (Codiva → cliente)</h3>
             <input name="title" placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="type" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
               <option value="contract">Contrato</option>
@@ -429,14 +610,32 @@ export default async function ProjectDetailPage({
               const fileHref = opsFileHref(d.file_path, d.file_url);
               return (
               <li key={d.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm">
-                <p className="font-medium">{d.title}</p>
-                <p className="text-zinc-500">{DELIVERABLE_KIND_LABELS[d.kind] ?? d.kind ?? 'Otro'}</p>
-                {d.url && <a href={d.url} className="text-codiva-primary hover:underline">{d.url}</a>}
-                {fileHref && (
-                  <a href={fileHref} className="block text-codiva-primary hover:underline">
-                    Descargar archivo
-                  </a>
-                )}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{d.title}</p>
+                    <p className="text-zinc-500">
+                      {DELIVERABLE_KIND_LABELS[d.kind] ?? d.kind ?? 'Otro'}
+                      {' · '}
+                      {d.visible_to_client ? 'visible al cliente' : 'oculto al cliente'}
+                    </p>
+                    {d.url && <a href={d.url} className="text-codiva-primary hover:underline">{d.url}</a>}
+                    {fileHref && (
+                      <a href={fileHref} className="block text-codiva-primary hover:underline">
+                        Descargar archivo
+                      </a>
+                    )}
+                  </div>
+                  <form
+                    action={async () => {
+                      'use server';
+                      await setDeliverableVisibility(id, d.id, !d.visible_to_client);
+                    }}
+                  >
+                    <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
+                      {d.visible_to_client ? 'Ocultar' : 'Mostrar'}
+                    </button>
+                  </form>
+                </div>
               </li>
               );
             })}
@@ -454,8 +653,8 @@ export default async function ProjectDetailPage({
             </p>
             <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="viewer">Viewer — solo lectura</option>
-              <option value="approver">Approver — puede aceptar cotización</option>
+              <option value="viewer">Viewer - solo lectura</option>
+              <option value="approver">Approver - puede aceptar cotización</option>
             </select>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
           </form>

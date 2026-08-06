@@ -2,6 +2,7 @@ import Link from 'next/link';
 import PortalCanvasViewer from '@/components/ops/PortalCanvasViewer';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { formatCurrency, formatDate } from '@/lib/ops/labels';
+import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalProposalPage({
   params,
@@ -10,6 +11,7 @@ export default async function PortalProposalPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const visibility = getPortalVisibility(project);
 
   const [{ data: canvases }, { data: quotes }] = await Promise.all([
     supabase
@@ -19,28 +21,36 @@ export default async function PortalProposalPage({
       .eq('visible_to_client', true)
       .in('kind', ['architecture', 'mvp', 'proposal'])
       .order('sort_order', { ascending: true }),
-    supabase
-      .from('quotes')
-      .select('id, title, total_amount, currency, status, valid_until, version')
-      .eq('project_id', project.id)
-      .in('status', ['sent', 'accepted', 'rejected', 'expired'])
-      .order('version', { ascending: false })
-      .limit(1),
+    visibility.showQuote
+      ? supabase
+          .from('quotes')
+          .select('id, title, total_amount, currency, status, valid_until, version')
+          .eq('project_id', project.id)
+          .eq('visible_to_client', true)
+          .in('status', ['sent', 'accepted', 'rejected', 'expired'])
+          .order('version', { ascending: false })
+          .limit(1)
+      : Promise.resolve({ data: [] as { id: string; title: string; total_amount: number; currency: string; status: string; valid_until: string | null; version: number }[] }),
   ]);
 
   const quote = quotes?.[0];
+  const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-1 text-lg font-semibold">Propuesta y arquitectura</h2>
+        <h2 className="mb-1 text-lg font-semibold">
+          {visibility.showCosts ? 'Propuesta y arquitectura' : 'Arquitectura'}
+        </h2>
         <p className="mb-5 text-sm text-zinc-600">
-          Canvas de discovery, alcance MVP y materiales de decisión comercial.
+          {visibility.showCosts
+            ? 'Vista canvas interactiva de arquitectura y MVP. El PDF, si existe, se descarga desde el canvas (no sustituye esta vista).'
+            : 'Vista canvas de arquitectura y flujos. Los materiales comerciales se publicarán cuando Codiva los habilite.'}
         </p>
-        <PortalCanvasViewer items={canvases ?? []} />
+        <PortalCanvasViewer items={visibleCanvases} />
       </section>
 
-      {quote && (
+      {visibility.showQuote && quote && (
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -66,11 +76,11 @@ export default async function PortalProposalPage({
       <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-600">
         <p className="font-medium text-zinc-800">Siguiente paso</p>
         <p className="mt-1">
-          Revisa el NDA y la cotización en{' '}
+          Completa las solicitudes (NDA, brandbook, accesos) en{' '}
           <Link href={`/p/${slug}/documentos`} className="text-codiva-primary hover:underline">
             Documentos
           </Link>
-          . Puedes devolver el NDA firmado desde tu bandeja del mismo apartado.
+          .
         </p>
       </section>
     </div>

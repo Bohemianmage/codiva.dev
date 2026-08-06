@@ -14,6 +14,7 @@ export async function ingestProjectDocument(opts: {
   source: 'staff' | 'client';
   uploadedBy: string;
   folder: 'documents' | 'inbound';
+  requestId?: string | null;
   audit?: RequestAudit;
 }) {
   const admin = createAdminClient();
@@ -50,6 +51,7 @@ export async function ingestProjectDocument(opts: {
       source: opts.source,
       uploaded_by: opts.uploadedBy,
       notes: opts.notes ?? '',
+      request_id: opts.requestId ?? null,
       content_sha256: uploaded.sha256,
       scan_status: scan.status,
       scan_provider: scan.provider,

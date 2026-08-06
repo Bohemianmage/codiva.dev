@@ -217,7 +217,7 @@ export function templateLegalReacceptance(
   versionCode: string
 ): string {
   return emailLayout({
-    preview: `Actualización legal — ${projectName}`,
+    preview: `Actualización legal - ${projectName}`,
     title: 'Debes aceptar los documentos legales actualizados',
     bodyHtml: `
       <p style="margin:0 0 12px;">Actualizamos los términos, el aviso de privacidad y/o el NDA del portal del proyecto <strong>${escapeHtml(projectName)}</strong> (versión <strong>${escapeHtml(versionCode)}</strong>).</p>

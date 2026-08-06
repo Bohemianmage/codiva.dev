@@ -95,10 +95,16 @@ INSERT INTO projects (
     'NIRC MVP Fase 1',
     'nirc',
     'quoting',
-    'Plataforma de workforce / personal eventual: pool FCFS, entrada dura IDSE+Cincel, QR/geocerca y Stripe Connect.',
+    'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas.',
     NULL, '2026-12-31', 5, true
   )
 ON CONFLICT (id) DO NOTHING;
+
+UPDATE projects SET
+  portal_show_quote = false,
+  portal_show_costs = false,
+  description = 'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas.'
+WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 -- Leads
 INSERT INTO leads (
@@ -150,7 +156,7 @@ INSERT INTO leads (
     'c0000001-0001-4000-8000-00000000000b',
     'qualified', 'manual',
     'Equipo NIRC', 'NIRC', '', NULL,
-    'MVP Fase 1 workforce eventual con IDSE, Cincel y Stripe Connect. 18 semanas.',
+    'MVP Fase 1 workforce eventual con IDSE, Cincel y Stripe Connect. 18 semanas · $980k desarrollo. Unit economics ≈ $571/jornada. Hosting Base ~$10k/mes aparte.',
     NULL, NULL, 'NIRC', 'NIRC',
     980000, NULL, 'b0000001-0001-4000-8000-00000000000b'
   )
@@ -217,25 +223,49 @@ INSERT INTO quotes (
   (
     'd0000001-0001-4000-8000-00000000000b',
     'b0000001-0001-4000-8000-00000000000b',
-    1, 'sent', 'NIRC MVP Fase 1 — Completo', 'Platform',
+    1, 'sent', 'NIRC MVP Fase 1 - Completo', 'Platform',
     'Por iniciar - pendiente de aprobación formal',
-    'Backoffice, pool FCFS, carga masiva, QR/geocerca, entrada dura (Cincel+IDSE), Stripe Connect, privacy y UAT en 18 semanas. Solo desarrollo; proveedores externos aparte.',
+    E'Paquete completo de desarrollo (18 semanas): backoffice, pool FCFS, carga masiva, QR/geocerca, entrada dura (Cincel + alta IDSE aceptada), Stripe Connect, privacy, UAT y go-live asistido.\n\nSolo software. Proveedores (Cincel/IDSE/Stripe/SMS), hosting híbrido Vercel+Railway+Neon y costo variable por jornada (~$571) van aparte.',
     980000, 'MXN', '2026-09-05', now()
   )
 ON CONFLICT (id) DO NOTHING;
 
--- Detalle comercial NIRC (campos extendidos)
+-- Detalle comercial NIRC (alineado a docs/mvp-propuesta-fase1.md + hosting/deploy)
 UPDATE quotes SET
-  deliverables = E'• Código y /docs del cliente\n• Backoffice + app personal (PWA)\n• Integraciones IDSE PRO, Cincel, Stripe Connect (adapters + sandbox)\n• UAT y capacitación go-live asistido',
-  considerations = E'• Montos MXN sin IVA, vigencia 30 días\n• Hitos 25% en semanas 5 / 9 / 13 / 18\n• Cincel, IDSE, Stripe, SMS, cloud y legal los contrata el cliente\n• Semana 0: sandboxes y RP/certificados',
-  optional_extras = E'• EMA/EBA, face-match, WhatsApp masivo, Temporal cloud, app nativa, multi-país, CFDI automático\n• Hypercare 4 semanas (+$140,000)\n• Soporte mensual opcional $45,000',
+  title = 'NIRC MVP Fase 1 - Completo',
+  scope = E'Paquete completo de desarrollo (18 semanas): backoffice, pool FCFS, carga masiva, QR/geocerca, entrada dura (Cincel + alta IDSE aceptada), Stripe Connect, privacy, UAT y go-live asistido.\n\nSolo software. Proveedores (Cincel/IDSE/Stripe/SMS), hosting híbrido Vercel+Railway+Neon y costo variable por jornada (~$571) van aparte.',
+  deliverables = E'• Código fuente y /docs del cliente\n• Backoffice + app personal (PWA)\n• Integraciones IDSE PRO, Cincel, Stripe Connect (adapters + sandbox)\n• Gates: sin labor sin adhesión + alta IMSS aceptada\n• Deploy híbrido documentado (Vercel UI/BFF · Railway workers · Neon Postgres)\n• UAT y capacitación go-live asistido',
+  considerations = E'• Montos MXN sin IVA · vigencia 30 días\n• Hitos SPEI 25% en semanas 5 / 9 / 13 / 18\n• Unit economics ref.: ≈ $571 / persona-día; piso cliente ≈ $657\n• Cincel one-shot $60,000 ($9.60/doc) + impl. $3,200 (cliente)\n• Setup proveedores estimado ≈ $88k–$158k (medio ~$120k) → inversión inicial ≈ $1.1M con desarrollo\n• Hosting Base a presupuestar ≈ $8k–$15k/mes (punto $10k); no incluido en $980k\n• Semana 0: sandboxes IDSE/Cincel/Stripe, RP/certificados, brandbook y formatos',
+  optional_extras = E'• Alternativa MVP Core: $780,000 (un RP, sin OCR avanzado, SMS→email+push)\n• Alternativa MVP + hypercare 4 sem: $1,120,000\n• Soporte mensual opcional post go-live: $45,000\n• Fuera de Fase 1: EMA/EBA, face-match, WhatsApp masivo, Temporal cloud, app nativa, multi-país, CFDI automático',
   line_items = '[
-    {"title":"Kickoff + fundaciones","detail":"Auth/RBAC, backoffice, expediente, carga masiva","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
-    {"title":"Pool + FCFS","detail":"Scoring, convocatorias, waitlist, no-show/refill","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
-    {"title":"Entrada dura","detail":"QR, geocerca, Cincel, IDSE alta y gate","hours":0,"rate":0,"rateLabel":"paquete","total":245000},
-    {"title":"Salida + UAT","detail":"Stripe Connect, bajas, asientos, go-live","hours":0,"rate":0,"rateLabel":"paquete","total":245000}
-  ]'::jsonb
+    {"title":"Hito 1 - Arranque + fundaciones","detail":"Semana 5 · Auth/RBAC, backoffice, expediente, carga masiva, consentimientos","hours":null,"rate":null,"rateLabel":"25%","total":245000},
+    {"title":"Hito 2 - Pool + FCFS","detail":"Semana 9 · Scoring, convocatorias, waitlist, no-show/refill en staging","hours":null,"rate":null,"rateLabel":"25%","total":245000},
+    {"title":"Hito 3 - Entrada dura","detail":"Semana 13 · QR, geocerca, Cincel, IDSE alta y gate sin Trabajando","hours":null,"rate":null,"rateLabel":"25%","total":245000},
+    {"title":"Hito 4 - Salida + UAT / go-live","detail":"Semana 18 · Stripe Connect, bajas, asientos, UAT y producción","hours":null,"rate":null,"rateLabel":"25%","total":245000}
+  ]'::jsonb,
+  phases = '[
+    {"name":"0. Kickoff","weeks":"1","deliverable":"Ambientes, sandboxes IDSE/Cincel/Stripe, catálogo RP, plantilla adhesión"},
+    {"name":"1. Fundaciones","weeks":"2-5","deliverable":"Auth/RBAC, backoffice, expediente, carga masiva, consentimientos"},
+    {"name":"2. Pool + FCFS","weeks":"6-9","deliverable":"Scoring, convocatorias, offers, waitlist, no-show/refill"},
+    {"name":"3. Entrada dura","weeks":"10-13","deliverable":"QR, geocerca, Cincel, IDSE alta, gate"},
+    {"name":"4. Salida + dinero","weeks":"14-16","deliverable":"Check-out, baja IDSE, Stripe Connect, asientos"},
+    {"name":"5. UAT / go-live","weeks":"17-18","deliverable":"Pruebas E2E, capacitación, go-live asistido"}
+  ]'::jsonb,
+  valid_until = '2026-09-05',
+  total_amount = 980000,
+  currency = 'MXN',
+  status = 'sent'
 WHERE id = 'd0000001-0001-4000-8000-00000000000b';
+
+UPDATE projects SET
+  name = 'NIRC MVP Fase 1',
+  description = E'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect, privacy. 18 semanas · $980k MXN desarrollo. Hosting Vercel+Railway+Neon aparte.'
+WHERE id = 'b0000001-0001-4000-8000-00000000000b';
+
+UPDATE leads SET
+  need = E'MVP Fase 1 workforce eventual con IDSE, Cincel y Stripe Connect. 18 semanas · $980k desarrollo. Unit economics ≈ $571/jornada. Hosting Base ~$10k/mes aparte.',
+  budget = 980000
+WHERE id = 'c0000001-0001-4000-8000-00000000000b';
 
 -- Token publico de ejemplo (cotizacion Kaucho enviada)
 INSERT INTO quote_access_tokens (id, quote_id, token, expires_at) VALUES
@@ -274,28 +304,24 @@ INSERT INTO deliverables (
   (
     '92000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
-    'Arquitectura completa',
-    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos.',
-    '/client-packs/nirc/nirc-arquitectura-completa.html',
+    'Arquitectura',
+    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos (sin precios).',
+    '/client-packs/nirc/nirc-arquitectura-portal.html',
     'architecture', 1, true
-  ),
-  (
-    '92000001-0001-4000-8000-000000000002',
-    'b0000001-0001-4000-8000-00000000000b',
-    'Arquitectura (PDF)',
-    'Versión imprimible de la arquitectura.',
-    '/client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
-    'architecture', 2, true
   ),
   (
     '92000001-0001-4000-8000-000000000003',
     'b0000001-0001-4000-8000-00000000000b',
     'MVP Fase 1',
-    'Alcance, plan de 18 semanas, inversión y condiciones comerciales.',
+    'Alcance, unit economics, hosting, plan 18 semanas e inversión de desarrollo.',
     '/client-packs/nirc/mvp-fase1.html',
-    'mvp', 3, true
+    'mvp', 3, false
   )
 ON CONFLICT (id) DO NOTHING;
+
+-- Cotización NIRC: existe en Ops pero oculta al portal hasta que se habilite
+UPDATE quotes SET visible_to_client = false
+WHERE id = 'd0000001-0001-4000-8000-00000000000b';
 
 INSERT INTO documents (
   id, project_id, type, title, file_path, file_url, signed, visible_to_client, source, notes
@@ -304,21 +330,72 @@ INSERT INTO documents (
     '93000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
     'nda',
-    'NDA mutuo — borrador Codiva × NIRC',
+    'NDA mutuo - borrador Codiva × NIRC',
     'client-packs/nirc/nda-borrador.html',
     '/client-packs/nirc/nda-borrador.html',
     false, true, 'staff',
-    'Revisar, completar datos entre corchetes y devolver firmado por Tu bandeja.'
+    'Revisar, completar datos entre corchetes y devolver firmado desde Solicitudes.'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Solicitudes NIRC (habilitan slots en portal Documentos)
+INSERT INTO document_requests (
+  id, project_id, code, title, description, instructions,
+  expected_type, input_mode, status, required, sort_order, visible_to_client
+) VALUES
+  (
+    '94000001-0001-4000-8000-000000000001',
+    'b0000001-0001-4000-8000-00000000000b',
+    'nda_signed',
+    'NDA firmado',
+    'Devolver el NDA mutuo firmado por ambas partes (o al menos por NIRC).',
+    'Descarga el borrador en Materiales de Codiva, fírmalo y súbelo en PDF.',
+    'nda', 'file', 'open', true, 10, true
   ),
   (
-    '93000001-0001-4000-8000-000000000002',
+    '94000001-0001-4000-8000-000000000002',
     'b0000001-0001-4000-8000-00000000000b',
-    'proposal_pdf',
-    'Arquitectura completa (PDF)',
-    'client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
-    '/client-packs/nirc/NIRC-Arquitectura-Completa.pdf',
-    false, true, 'staff',
-    'También disponible en Propuesta como canvas.'
+    'brandbook',
+    'Brandbook / identidad visual',
+    'Logos, colores, tipografías y usos de marca NIRC.',
+    'PDF, Figma o ZIP con logos (SVG/PNG) y guía de marca si existe.',
+    'other', 'file', 'open', true, 20, true
+  ),
+  (
+    '94000001-0001-4000-8000-000000000003',
+    'b0000001-0001-4000-8000-00000000000b',
+    'process_manuals',
+    'Manuales de procesos',
+    'Procedimientos operativos relevantes para el producto (altas, nómina, IDSE, etc.).',
+    'PDF o Word. Si son varios, un ZIP.',
+    'other', 'file', 'open', true, 30, true
+  ),
+  (
+    '94000001-0001-4000-8000-000000000004',
+    'b0000001-0001-4000-8000-00000000000b',
+    'formats',
+    'Formatos y plantillas',
+    'Plantillas, formatos y archivos de trabajo que deba reflejar el sistema.',
+    'Excel/CSV/PDF de catálogos, adhesión, reportes u otros formatos vigentes.',
+    'other', 'file', 'open', true, 40, true
+  ),
+  (
+    '94000001-0001-4000-8000-000000000005',
+    'b0000001-0001-4000-8000-00000000000b',
+    'hosting_domain_access',
+    'Accesos hosting / dominio',
+    'Datos para DNS, hosting y publicación (sin pegar contraseñas en claro).',
+    'Indica proveedor, dominio, URL del panel y cómo invitarnos (ej. agregar hello@codiva.dev o share de 1Password).',
+    'other', 'credentials', 'open', true, 50, true
+  ),
+  (
+    '94000001-0001-4000-8000-000000000006',
+    'b0000001-0001-4000-8000-00000000000b',
+    'sandbox_access',
+    'Accesos sandbox (IDSE / Cincel / Stripe)',
+    'Credenciales o invitaciones a ambientes de prueba para integraciones.',
+    'Puedes describir el acceso aquí o adjuntar un documento en una solicitud aparte si lo prefieres.',
+    'other', 'text', 'open', false, 60, true
   )
 ON CONFLICT (id) DO NOTHING;
 
