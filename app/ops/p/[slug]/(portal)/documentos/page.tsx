@@ -2,6 +2,7 @@ import PortalDocumentRequests from '@/components/ops/PortalDocumentRequests';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { clientFulfillDocumentRequest } from '@/lib/ops/actions';
 import { DOCUMENT_SOURCE_LABELS, DOCUMENT_TYPE_LABELS, formatDate } from '@/lib/ops/labels';
+import { mutualNdaPath } from '@/lib/ops/legal/mutual-nda';
 import { opsFileHref } from '@/lib/ops/storage';
 
 export default async function PortalDocumentsPage({
@@ -12,7 +13,7 @@ export default async function PortalDocumentsPage({
   const { slug } = await params;
   const { project, supabase } = await requirePortalMemberWithAcceptances(slug);
 
-  const [{ data: documents }, { data: requests }] = await Promise.all([
+  const [{ data: documents }, { data: requests }, { data: organization }] = await Promise.all([
     supabase
       .from('documents')
       .select('id, type, title, file_path, file_url, signed, source, uploaded_at')
@@ -28,17 +29,28 @@ export default async function PortalDocumentsPage({
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .order('sort_order', { ascending: true }),
+    project.organization_id
+      ? supabase
+          .from('organizations')
+          .select('name')
+          .eq('id', project.organization_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null as { name: string } | null }),
   ]);
 
   const shared = (documents ?? []).filter((d) => d.source !== 'client');
   const inbound = (documents ?? []).filter((d) => d.source === 'client');
+  const clientName = organization?.name?.trim() || project.name;
+  const liveNdaHref = mutualNdaPath(slug);
+  const liveNdaTitle = `NDA mutuo - borrador Codiva × ${clientName}`;
 
   async function onFulfill(formData: FormData) {
     'use server';
     await clientFulfillDocumentRequest(project.id, slug, formData);
   }
 
-  function hrefFor(d: { id: string; file_path: string | null; file_url: string | null }) {
+  function hrefFor(d: { id: string; type: string; file_path: string | null; file_url: string | null }) {
+    if (d.type === 'nda') return liveNdaHref;
     const base = opsFileHref(d.file_path, d.file_url);
     if (!base) return null;
     if (base.startsWith('/api/ops/file')) {
@@ -47,9 +59,33 @@ export default async function PortalDocumentsPage({
     return base;
   }
 
+  const templates = shared
+    .map((d) => {
+      const href = hrefFor(d);
+      if (!href) return null;
+      return {
+        type: d.type,
+        title: d.type === 'nda' ? liveNdaTitle : d.title,
+        href,
+      };
+    })
+    .filter((t): t is { type: string; title: string; href: string } => Boolean(t));
+
+  // Si hay solicitud NDA pero aún no hay material tipado, igual ofrecemos el borrador vivo.
+  if (
+    (requests ?? []).some((r) => r.expected_type === 'nda') &&
+    !templates.some((t) => t.type === 'nda')
+  ) {
+    templates.unshift({ type: 'nda', title: liveNdaTitle, href: liveNdaHref });
+  }
+
   return (
     <div className="space-y-10">
-      <PortalDocumentRequests requests={requests ?? []} fulfillAction={onFulfill} />
+      <PortalDocumentRequests
+        requests={requests ?? []}
+        templates={templates}
+        fulfillAction={onFulfill}
+      />
 
       <section>
         <h2 className="mb-1 text-lg font-semibold">Materiales de Codiva</h2>
@@ -66,7 +102,7 @@ export default async function PortalDocumentsPage({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm"
               >
                 <div>
-                  <p className="font-medium">{d.title}</p>
+                  <p className="font-medium">{d.type === 'nda' ? liveNdaTitle : d.title}</p>
                   <p className="text-zinc-500">
                     {DOCUMENT_TYPE_LABELS[d.type] ?? d.type}
                     {d.signed ? ' · Firmado' : ''}

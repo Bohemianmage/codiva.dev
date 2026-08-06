@@ -968,7 +968,7 @@ export async function clientFulfillDocumentRequest(
     if (!file?.size) throw new Error('Archivo requerido');
     if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
 
-    const isSignedNda = req.expected_type === 'nda' || formData.get('signed') === 'on';
+    const isSignedNda = req.expected_type === 'nda';
     const { doc, sha256: hash, path: storedPath, scan } = await ingestProjectDocument({
       projectId,
       file,
