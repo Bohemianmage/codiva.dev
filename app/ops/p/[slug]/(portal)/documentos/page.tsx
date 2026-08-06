@@ -39,6 +39,7 @@ export default async function PortalDocumentsPage({
   ]);
 
   const shared = (documents ?? []).filter((d) => d.source !== 'client');
+  const materials = shared.filter((d) => d.type !== 'nda');
   const inbound = (documents ?? []).filter((d) => d.source === 'client');
   const clientName = organization?.name?.trim() || project.name;
   const liveNdaHref = mutualNdaPath(slug);
@@ -50,7 +51,6 @@ export default async function PortalDocumentsPage({
   }
 
   function hrefFor(d: { id: string; type: string; file_path: string | null; file_url: string | null }) {
-    if (d.type === 'nda') return liveNdaHref;
     const base = opsFileHref(d.file_path, d.file_url);
     if (!base) return null;
     if (base.startsWith('/api/ops/file')) {
@@ -59,23 +59,16 @@ export default async function PortalDocumentsPage({
     return base;
   }
 
-  const templates = shared
+  const templates = materials
     .map((d) => {
       const href = hrefFor(d);
       if (!href) return null;
-      return {
-        type: d.type,
-        title: d.type === 'nda' ? liveNdaTitle : d.title,
-        href,
-      };
+      return { type: d.type, title: d.title, href };
     })
     .filter((t): t is { type: string; title: string; href: string } => Boolean(t));
 
-  // Si hay solicitud NDA pero aún no hay material tipado, igual ofrecemos el borrador vivo.
-  if (
-    (requests ?? []).some((r) => r.expected_type === 'nda') &&
-    !templates.some((t) => t.type === 'nda')
-  ) {
+  // NDA vive solo en la solicitud (borrador generado), no en Materiales.
+  if ((requests ?? []).some((r) => r.expected_type === 'nda')) {
     templates.unshift({ type: 'nda', title: liveNdaTitle, href: liveNdaHref });
   }
 
@@ -90,11 +83,11 @@ export default async function PortalDocumentsPage({
       <section>
         <h2 className="mb-1 text-lg font-semibold">Materiales de Codiva</h2>
         <p className="mb-4 text-sm text-zinc-600">
-          NDA, contratos y archivos que compartimos contigo. La arquitectura interactiva está en
-          Propuesta.
+          Contratos y archivos que compartimos contigo. El NDA se descarga desde su solicitud. La
+          arquitectura interactiva está en Propuesta.
         </p>
         <ul className="space-y-3">
-          {shared.map((d) => {
+          {materials.map((d) => {
             const href = hrefFor(d);
             return (
               <li
@@ -102,7 +95,7 @@ export default async function PortalDocumentsPage({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm"
               >
                 <div>
-                  <p className="font-medium">{d.type === 'nda' ? liveNdaTitle : d.title}</p>
+                  <p className="font-medium">{d.title}</p>
                   <p className="text-zinc-500">
                     {DOCUMENT_TYPE_LABELS[d.type] ?? d.type}
                     {d.signed ? ' · Firmado' : ''}
@@ -118,7 +111,7 @@ export default async function PortalDocumentsPage({
               </li>
             );
           })}
-          {!shared.length && <p className="text-sm text-zinc-500">Sin materiales compartidos aún.</p>}
+          {!materials.length && <p className="text-sm text-zinc-500">Sin materiales compartidos aún.</p>}
         </ul>
       </section>
 
