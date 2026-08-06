@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import {
@@ -165,7 +167,7 @@ export default async function ProjectDetailPage({
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <StatusBadge label={PROJECT_STATUS_LABELS[project.status]} tone={projectTone(project.status)} />
-        <span className="text-sm text-zinc-500">Slug: {project.slug}</span>
+        <PortalClientUrl slug={project.slug} />
       </div>
 
       <nav className="mb-8 flex flex-wrap gap-2 border-b border-zinc-200 pb-3">
@@ -246,11 +248,11 @@ export default async function ProjectDetailPage({
                 name="portalShowCosts"
                 defaultChecked={project.portal_show_costs !== false}
               />
-              Mostrar temas de costos (canvas MVP/comercial y montos)
+              Mostrar canvas MVP / propuesta comercial
             </label>
             <p className="text-xs text-zinc-500">
-              Cada entregable y cada cotización también tienen su propio switch de “visible al
-              cliente”.
+              Cotización y canvas comercial también dependen de “visible al cliente” en cada ítem.
+              No uses la descripción del proyecto para montos si costos está apagado.
             </p>
           </div>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
@@ -493,8 +495,8 @@ export default async function ProjectDetailPage({
               <option value="proposal_pdf">Propuesta PDF</option>
               <option value="other">Otro</option>
             </select>
-            <textarea name="notes" placeholder="Notas internas / para el cliente" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="file" type="file" required className="w-full text-sm" />
+            <textarea name="notes" placeholder="Nota visible para el cliente (opcional)" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <BrandedFileInput required hint="PDF, imagen, Office o ZIP" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="signed" /> Firmado</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Subir</button>
@@ -601,7 +603,7 @@ export default async function ProjectDetailPage({
             <input name="sortOrder" type="number" defaultValue={0} placeholder="Orden" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input name="url" placeholder="URL (client-pack, staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <textarea name="description" placeholder="Descripción" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="file" type="file" className="w-full text-sm" />
+            <BrandedFileInput hint="Opcional · PDF, imagen, Office o ZIP" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Guardar</button>
           </form>
@@ -659,11 +661,9 @@ export default async function ProjectDetailPage({
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
           </form>
           <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
-            <span>
-              Login cliente:{' '}
-              <a href={projectPortalUrl(project.slug, '/login')} className="text-codiva-primary hover:underline">
-                {projectPortalUrl(project.slug, '/login')}
-              </a>
+            <span className="inline-flex flex-wrap items-center gap-2">
+              Login cliente:
+              <PortalClientUrl slug={project.slug} path="/login" />
             </span>
             <Link href={staffPortalPreviewPath(project.slug)} className="text-codiva-primary hover:underline">
               Vista previa (ops)

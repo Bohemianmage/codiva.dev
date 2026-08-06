@@ -15,6 +15,17 @@ function withSessionCookies(from: NextResponse, to: NextResponse) {
   return to;
 }
 
+/** Packs comerciales / internos: no servir en portal del cliente. */
+const STAFF_ONLY_CLIENT_PACKS = [
+  '/client-packs/nirc/mvp-fase1.html',
+  '/client-packs/nirc/nirc-arquitectura-completa.html',
+  '/client-packs/nirc/mvp-propuesta-fase1.md',
+];
+
+function isStaffOnlyClientPack(pathname: string) {
+  return STAFF_ONLY_CLIENT_PACKS.some((p) => pathname === p || pathname.endsWith(p));
+}
+
 function absoluteRedirect(request: NextRequest, base: string, path: string) {
   const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
   // Preserve query string
@@ -44,6 +55,11 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/legal') ||
       pathname.startsWith('/auth/')
     ) {
+      if (isStaffOnlyClientPack(pathname)) {
+        const missing = request.nextUrl.clone();
+        missing.pathname = '/ops/__missing';
+        return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
+      }
       if (pathname.startsWith('/auth/')) {
         const url = request.nextUrl.clone();
         url.pathname = `/ops${pathname}`;

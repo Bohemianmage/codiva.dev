@@ -95,7 +95,7 @@ INSERT INTO projects (
     'NIRC MVP Fase 1',
     'nirc',
     'quoting',
-    'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas.',
+    'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas. Hosting e integraciones de terceros se presupuestan aparte.',
     NULL, '2026-12-31', 5, true
   )
 ON CONFLICT (id) DO NOTHING;
@@ -103,7 +103,7 @@ ON CONFLICT (id) DO NOTHING;
 UPDATE projects SET
   portal_show_quote = false,
   portal_show_costs = false,
-  description = 'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas.'
+  description = 'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas. Hosting e integraciones de terceros se presupuestan aparte.'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 -- Leads
@@ -259,7 +259,7 @@ WHERE id = 'd0000001-0001-4000-8000-00000000000b';
 
 UPDATE projects SET
   name = 'NIRC MVP Fase 1',
-  description = E'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect, privacy. 18 semanas · $980k MXN desarrollo. Hosting Vercel+Railway+Neon aparte.'
+  description = 'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas. Hosting e integraciones de terceros se presupuestan aparte.'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 UPDATE leads SET
@@ -268,25 +268,24 @@ UPDATE leads SET
 WHERE id = 'c0000001-0001-4000-8000-00000000000b';
 
 -- Token publico de ejemplo (cotizacion Kaucho enviada)
+-- NIRC: sin token público mientras portal_show_quote / visible_to_client estén off
 INSERT INTO quote_access_tokens (id, quote_id, token, expires_at) VALUES
   (
     'e0000001-0001-4000-8000-000000000001',
     'd0000001-0001-4000-8000-000000000002',
     'demo-kaucho-eshop-2026',
     now() + interval '90 days'
-  ),
-  (
-    'e0000001-0001-4000-8000-00000000000b',
-    'd0000001-0001-4000-8000-00000000000b',
-    'nirc-mvp-fase1-2026',
-    now() + interval '90 days'
   )
 ON CONFLICT (id) DO NOTHING;
+
+DELETE FROM quote_access_tokens
+WHERE id = 'e0000001-0001-4000-8000-00000000000b'
+   OR token = 'nirc-mvp-fase1-2026';
 
 -- Hitos
 INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date) VALUES
   ('f0000001-0001-4000-8000-000000000001', 'b0000001-0001-4000-8000-000000000001', 'Discovery y UX', 'Workshops, wireframes y validacion de flujos.', 'completed', 1, '2025-02-28'),
-  ('f0000001-0001-4000-8000-000000000002', 'b0000001-0001-4000-8000-000000000001', 'MVP en staging', 'Auth, leads y cotizador interno.', 'completed', 2, '2025-06-30'),
+  ('f0000001-0001-4000-8000-000000000002', 'b0000001-0001-4000-8000-000000000001', 'MVP en staging', 'Auth, leads y cotizador.', 'completed', 2, '2025-06-30'),
   ('f0000001-0001-4000-8000-000000000003', 'b0000001-0001-4000-8000-000000000001', 'Go-live produccion', 'Despliegue, DNS y capacitacion.', 'in_progress', 3, '2026-07-01'),
   ('f0000001-0001-4000-8000-000000000004', 'b0000001-0001-4000-8000-000000000006', 'Modulo reservas', 'Calendario, pagos y notificaciones.', 'in_progress', 1, '2026-05-15'),
   ('f0000001-0001-4000-8000-000000000005', 'b0000001-0001-4000-8000-000000000006', 'Integracion contable', 'Exportacion CFDI y conciliacion.', 'pending', 2, '2026-08-01'),
@@ -305,7 +304,7 @@ INSERT INTO deliverables (
     '92000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
     'Arquitectura',
-    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos (sin precios).',
+    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos.',
     '/client-packs/nirc/nirc-arquitectura-portal.html',
     'architecture', 1, true
   ),
@@ -334,7 +333,7 @@ INSERT INTO documents (
     'client-packs/nirc/nda-borrador.html',
     '/client-packs/nirc/nda-borrador.html',
     false, true, 'staff',
-    'Revisar, completar datos entre corchetes y devolver firmado desde Solicitudes.'
+    ''
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -348,8 +347,8 @@ INSERT INTO document_requests (
     'b0000001-0001-4000-8000-00000000000b',
     'nda_signed',
     'NDA firmado',
-    'Devolver el NDA mutuo firmado por ambas partes (o al menos por NIRC).',
-    'Descarga el borrador en Materiales de Codiva, fírmalo y súbelo en PDF.',
+    'Devolver el NDA mutuo firmado por el representante legal de la organización.',
+    'Descarga el borrador en Materiales de Codiva, hazlo firmar por el representante legal y súbelo en PDF.',
     'nda', 'file', 'open', true, 10, true
   ),
   (
@@ -357,7 +356,7 @@ INSERT INTO document_requests (
     'b0000001-0001-4000-8000-00000000000b',
     'brandbook',
     'Brandbook / identidad visual',
-    'Logos, colores, tipografías y usos de marca NIRC.',
+    'Logos, colores, tipografías y guía de uso de marca.',
     'PDF, Figma o ZIP con logos (SVG/PNG) y guía de marca si existe.',
     'other', 'file', 'open', true, 20, true
   ),

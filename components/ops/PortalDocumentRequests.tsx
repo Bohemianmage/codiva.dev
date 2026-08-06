@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import {
   DOCUMENT_REQUEST_INPUT_LABELS,
   DOCUMENT_REQUEST_STATUS_LABELS,
@@ -147,17 +148,27 @@ export default function PortalDocumentRequests({ requests, fulfillAction }: Prop
 
                       {req.input_mode === 'file' && (
                         <>
-                          <input
-                            name="file"
-                            type="file"
+                          <BrandedFileInput
                             required
                             accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
-                            className="w-full text-sm"
+                            hint={
+                              req.expected_type === 'nda'
+                                ? 'PDF firmado por el representante legal'
+                                : 'PDF, imagen, Office o ZIP'
+                            }
                           />
                           {req.expected_type === 'nda' && (
-                            <label className="flex items-center gap-2 text-sm text-zinc-700">
-                              <input type="checkbox" name="signed" defaultChecked />
-                              Marcar como firmado
+                            <label className="flex items-start gap-2 text-sm text-zinc-700">
+                              <input
+                                type="checkbox"
+                                name="signed"
+                                defaultChecked
+                                className="mt-0.5 rounded border-zinc-300 text-codiva-primary focus:ring-codiva-primary/30"
+                              />
+                              <span>
+                                Confirmo que el documento está firmado por el representante legal
+                                de la organización.
+                              </span>
                             </label>
                           )}
                         </>

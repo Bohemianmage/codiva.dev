@@ -169,7 +169,7 @@
       <li>Arquitectura lógica, backoffice y stack técnico</li>
       <li>Pool scoring por labor, auto-convocatoria FCFS y QR de entrada</li>
       <li>Flujos: ciclo de vida, día del evento, adhesión en entrada, IDSE, contabilidad</li>
-      <li>Integración IMSS vía IDSE PRO (ApiMarket / Codiva)</li>
+      <li>Integración IMSS vía IDSE PRO</li>
       <li>LFPDPPP (uso/disposal), gates de negocio y modelo de datos</li>
       </ul>
   </div>
@@ -210,7 +210,7 @@
 Backoffice: vacantes · aplicaciones · pools · validaciones · convocatorias · finanzas</pre>
 
   <div class="info">
-    <strong>IMSS:</strong> adapter <strong>IDSE PRO</strong> (<a href="https://documenter.getpostman.com/view/8823093/2sAYHwJ4iz#f3f4e16d-4be7-41f0-ac08-d72cee089f90">docs Apimarket</a>).
+    <strong>IMSS:</strong> adapter <strong>IDSE PRO</strong> (integración vía proveedor autorizado).
     <strong>Contrato de adhesión:</strong> se firma a la <em>entrada</em>, no a la salida.
     <strong>Check-in:</strong> QR en zona de trabajo + geocerca.
   </div>
@@ -221,7 +221,7 @@ Backoffice: vacantes · aplicaciones · pools · validaciones · convocatorias �
   <ol>
     <li><strong>Dominios desacoplados</strong> - CRM/ATS, Operación, Cumplimiento, Finanzas.</li>
     <li><strong>Orquestación por eventos y colas</strong> - no acoplar IMSS/Cincel/Stripe al request HTTP del check-in.</li>
-    <li><strong>Adapter IMSS = IDSE PRO</strong> - proveedor ApiMarket/Codiva.</li>
+    <li><strong>Adapter IMSS = IDSE PRO</strong> - integración con proveedor de cumplimiento IMSS.</li>
     <li><strong>Inmutabilidad contable y de auditoría</strong> - solo reversas.</li>
     <li><strong>PWA operativa</strong> - admin de sitio y flujos de personal.</li>
   </ol>
@@ -290,7 +290,7 @@ flowchart LR
       <tr><td>Colas</td><td>Redis + BullMQ</td></tr>
       <tr><td>Storage</td><td>S3-compatible (R2 / S3 / Backblaze)</td></tr>
       <tr><td>Orquestación</td><td>Temporal o máquina de estados propia</td></tr>
-      <tr><td>IMSS</td><td>IDSE PRO API (ApiMarket / Codiva)</td></tr>
+      <tr><td>IMSS</td><td>IDSE PRO API</td></tr>
       <tr><td>Firma</td><td>Cincel</td></tr>
       <tr><td>Pagos</td><td>Stripe Connect Express</td></tr>
       <tr><td>Notificaciones</td><td>SES/Resend/SendGrid + Twilio/Infobip</td></tr>
@@ -385,7 +385,7 @@ flowchart LR
       <tr><td>fecha_de_movimiento, tipo movimiento 8</td><td>Sistema</td><td>Día check-in</td></tr>
     </tbody>
   </table>
-  <p class="meta">Fuente: Apimarket smart_movements · RFC/CLABE/INE siguen en expediente/contrato aunque no vayan en el payload de alta.</p>
+  <p class="meta">Campos de alta alineados al contrato IDSE PRO · RFC/CLABE/INE siguen en expediente/contrato aunque no vayan en el payload de alta.</p>
 
   <!-- 6 -->
   <h2 id="post">6. Flujo: entrada (firma) y salida (baja + pago)</h2>
@@ -563,8 +563,8 @@ flowchart TD
 
   <!-- 10 -->
   <footer>
-    NIRC - Arquitectura (vista cliente) · Uso interno · Impresión A4 ·
-    Montos y capacidades son referencia; no sustituyen contratos con proveedores ni pruebas de carga reales.
+    NIRC - Arquitectura · Vista para revisión del cliente · Impresión A4 ·
+    Referencia técnica de alcance; no sustituye contratos con proveedores ni pruebas de carga reales.
   </footer>
 
   <script>
@@ -627,6 +627,23 @@ flowchart TD
     }
 
     compactDiagrams();
+
+    // Portal cliente: anclas internas OK; bloquear hipervínculos externos en el canvas.
+    document.addEventListener(
+      'click',
+      (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const anchor = target.closest('a');
+        if (!anchor) return;
+        const href = anchor.getAttribute('href') || '';
+        if (/^https?:\/\//i.test(href) || href.startsWith('//')) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      true
+    );
   </script>
 </body>
 </html>

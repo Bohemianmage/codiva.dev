@@ -204,6 +204,13 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
               src={src}
               className={`w-full bg-white ${preferHtml ? 'h-[min(85vh,920px)]' : 'h-[70vh]'}`}
               allow="fullscreen"
+              // Scripts for Mermaid; block popups / top navigation so vendor docs can't escape the canvas.
+              sandbox={
+                preferHtml
+                  ? 'allow-scripts allow-same-origin allow-downloads'
+                  : 'allow-scripts allow-same-origin allow-downloads allow-popups'
+              }
+              referrerPolicy="no-referrer"
             />
           ) : src ? (
             <div className="p-6 text-sm text-zinc-600">

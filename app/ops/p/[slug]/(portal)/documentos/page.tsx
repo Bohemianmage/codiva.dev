@@ -15,7 +15,7 @@ export default async function PortalDocumentsPage({
   const [{ data: documents }, { data: requests }] = await Promise.all([
     supabase
       .from('documents')
-      .select('*')
+      .select('id, type, title, file_path, file_url, signed, source, uploaded_at')
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .is('disposed_at', null)
@@ -73,7 +73,6 @@ export default async function PortalDocumentsPage({
                     {' · '}
                     {formatDate(d.uploaded_at)}
                   </p>
-                  {d.notes && <p className="mt-1 text-zinc-600">{d.notes}</p>}
                 </div>
                 {href && (
                   <a href={href} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">

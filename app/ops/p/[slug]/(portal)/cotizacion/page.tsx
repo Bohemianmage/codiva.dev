@@ -33,7 +33,9 @@ export default async function PortalQuotePage({
 
   const { data: quotes } = await supabase
     .from('quotes')
-    .select('*')
+    .select(
+      'id, title, status, total_amount, currency, valid_until, service_type, scope, line_items, phases, deliverables, considerations, optional_extras'
+    )
     .eq('project_id', project.id)
     .eq('visible_to_client', true)
     .in('status', ['sent', 'accepted', 'rejected', 'expired'])
