@@ -71,13 +71,14 @@ export function getActiveChargeNotices(
 }
 
 export function chargeNoticeSummary(notice: ActiveChargeNotice): string {
-  const amount = formatChargeAmount(chargeAmountNumber(notice.amount), notice.currency);
-  const amountBit = chargeAmountNumber(notice.amount) == null ? 'monto al confirmar' : amount;
+  const amountNum = chargeAmountNumber(notice.amount);
+  const amountBit =
+    amountNum == null ? 'monto por confirmar al renovar' : formatChargeAmount(amountNum, notice.currency);
   if (notice.isOverdue) {
     return `${notice.title} venció el ${formatDate(notice.dueDate)} · ${amountBit}`;
   }
   if (notice.daysUntilDue === 0) {
     return `${notice.title} vence hoy · ${amountBit}`;
   }
-  return `${notice.title} vence en ${notice.daysUntilDue} día(s) (${formatDate(notice.dueDate)}) · ${amountBit}`;
+  return `${notice.title} · vence el ${formatDate(notice.dueDate)} (en ${notice.daysUntilDue} días) · ${amountBit}`;
 }

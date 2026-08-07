@@ -3,7 +3,13 @@ import PortalRenewalNotices from '@/components/ops/PortalRenewalNotices';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { getActiveChargeNotices } from '@/lib/ops/charges';
-import { PROJECT_STATUS_LABELS, MILESTONE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
+import {
+  PROJECT_STATUS_LABELS,
+  MILESTONE_STATUS_LABELS,
+  QUOTE_STATUS_LABELS,
+  formatCurrency,
+  formatDate,
+} from '@/lib/ops/labels';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 function milestoneTone(status: string) {
@@ -14,6 +20,31 @@ function milestoneTone(status: string) {
     blocked: 'danger',
   };
   return map[status] ?? 'neutral';
+}
+
+function quoteCardSubtitle(quote: {
+  status: string;
+  valid_until: string | null;
+} | undefined) {
+  if (!quote) return 'Aún no hay cotización publicada';
+  if (quote.status === 'accepted') return 'Aprobada · lista para consultar';
+  if (quote.status === 'rejected') return 'Rechazada';
+  if (quote.status === 'expired') return 'Expirada';
+  if (quote.valid_until) return `Válida hasta ${formatDate(quote.valid_until)}`;
+  if (quote.status === 'sent') return 'Pendiente de tu respuesta';
+  return QUOTE_STATUS_LABELS[quote.status] ?? 'Ver detalle';
+}
+
+function proposalCardCopy(kinds: string[]) {
+  const set = new Set(kinds);
+  const hasArch = set.has('architecture');
+  const hasMvp = set.has('mvp');
+  const hasProposal = set.has('proposal') || set.has('other');
+  if (hasArch && hasMvp) return { title: 'Arquitectura y MVP', empty: 'Pendiente de publicar' };
+  if (hasArch) return { title: 'Arquitectura', empty: 'Pendiente de publicar' };
+  if (hasMvp) return { title: 'MVP / alcance', empty: 'Pendiente de publicar' };
+  if (hasProposal) return { title: 'Identidad y propuesta', empty: 'Pendiente de publicar' };
+  return { title: 'Propuesta', empty: 'Pendiente de publicar' };
 }
 
 export default async function PortalHomePage({
@@ -51,7 +82,7 @@ export default async function PortalHomePage({
       .in('kind', ['architecture', 'mvp', 'proposal']),
     supabase
       .from('documents')
-      .select('id, type')
+      .select('id, type, signed')
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .eq('type', 'nda'),
@@ -67,8 +98,10 @@ export default async function PortalHomePage({
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
   const quote = quotes?.[0];
   const hasNda = (docs ?? []).length > 0;
+  const signedNda = (docs ?? []).some((d) => d.type === 'nda' && d.signed);
   const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
   const renewalNotices = getActiveChargeNotices(charges ?? []);
+  const proposalCopy = proposalCardCopy(visibleCanvases.map((c) => c.kind));
 
   return (
     <div className="space-y-6">
@@ -107,13 +140,11 @@ export default async function PortalHomePage({
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Propuesta</p>
-          <p className="mt-2 font-semibold text-zinc-900">
-            {visibility.showCosts ? 'Arquitectura y MVP' : 'Arquitectura'}
-          </p>
+          <p className="mt-2 font-semibold text-zinc-900">{proposalCopy.title}</p>
           <p className="mt-1 text-sm text-zinc-600">
             {visibleCanvases.length
-              ? `${visibleCanvases.length} canvas publicados`
-              : 'Pendiente de publicar'}
+              ? `${visibleCanvases.length} material(es) publicado(s)`
+              : proposalCopy.empty}
           </p>
         </Link>
         {visibility.showQuote && (
@@ -125,11 +156,7 @@ export default async function PortalHomePage({
             <p className="mt-2 font-semibold text-zinc-900">
               {quote ? formatCurrency(quote.total_amount, quote.currency) : 'Sin cotización'}
             </p>
-            <p className="mt-1 text-sm text-zinc-600">
-              {quote?.valid_until
-                ? `Válida hasta ${formatDate(quote.valid_until)}`
-                : 'Revisa cuando esté lista'}
-            </p>
+            <p className="mt-1 text-sm text-zinc-600">{quoteCardSubtitle(quote)}</p>
           </Link>
         )}
         {visibility.showCosts && (
@@ -138,17 +165,19 @@ export default async function PortalHomePage({
             className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
           >
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Pagos</p>
-            <p className="mt-2 font-semibold text-zinc-900">Estado de cobros</p>
-            <p className="mt-1 text-sm text-zinc-600">Anticipos, saldo y hosting</p>
+            <p className="mt-2 font-semibold text-zinc-900">Estado de pagos</p>
+            <p className="mt-1 text-sm text-zinc-600">Desarrollo, saldo y alojamiento</p>
           </Link>
         )}
         <Link
           href={`/p/${slug}/documentos`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
         >
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Documentos / NDA</p>
-          <p className="mt-2 font-semibold text-zinc-900">{hasNda ? 'NDA disponible' : 'Bandeja lista'}</p>
-          <p className="mt-1 text-sm text-zinc-600">Solicitudes y materiales del proyecto</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Documentos</p>
+          <p className="mt-2 font-semibold text-zinc-900">
+            {signedNda ? 'NDA firmado' : hasNda ? 'NDA disponible' : 'Bandeja lista'}
+          </p>
+          <p className="mt-1 text-sm text-zinc-600">Contrato, NDA y solicitudes</p>
         </Link>
       </section>
 

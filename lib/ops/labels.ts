@@ -79,7 +79,7 @@ export const DOCUMENT_REQUEST_INPUT_LABELS: Record<string, string> = {
 
 export const CHARGE_KIND_LABELS: Record<string, string> = {
   development: 'Desarrollo',
-  hosting: 'Alojamiento / hosting',
+  hosting: 'Alojamiento',
   domain: 'Dominio',
   pass_through: 'Gasto a cargo del cliente',
   other: 'Otro',
