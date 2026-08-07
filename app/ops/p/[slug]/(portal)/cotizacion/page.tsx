@@ -69,6 +69,14 @@ export default async function PortalQuotePage({
         <Link href={`/p/${slug}/propuesta`} className="text-codiva-primary hover:underline">
           Propuesta / Canvas
         </Link>
+        {visibility.showCosts ? (
+          <>
+            . Estado de anticipos, saldo y hosting en{' '}
+            <Link href={`/p/${slug}/pagos`} className="text-codiva-primary hover:underline">
+              Pagos
+            </Link>
+          </>
+        ) : null}
         .
       </p>
       <article className="rounded-2xl border border-zinc-200 bg-white p-6">
@@ -106,7 +114,7 @@ export default async function PortalQuotePage({
 
           {lineItems.length > 0 && (
             <div>
-              <h3 className="mb-2 font-semibold text-zinc-900">Hitos de pago</h3>
+              <h3 className="mb-2 font-semibold text-zinc-900">Módulos / alcance</h3>
               <div className="overflow-x-auto rounded-xl border border-zinc-200">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">

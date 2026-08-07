@@ -11,6 +11,7 @@ function links(slug: string, visibility: PortalVisibility) {
     { href: `/p/${slug}`, label: 'Resumen', key: 'home' },
     { href: `/p/${slug}/propuesta`, label: 'Propuesta', key: 'proposal' },
     { href: `/p/${slug}/cotizacion`, label: 'Cotización', key: 'quote' },
+    { href: `/p/${slug}/pagos`, label: 'Pagos', key: 'payments' },
     { href: `/p/${slug}/documentos`, label: 'Documentos', key: 'docs' },
     { href: `/p/${slug}/timeline`, label: 'Timeline', key: 'timeline' },
     { href: `/p/${slug}/entregables`, label: 'Entregables', key: 'deliverables' },
@@ -18,6 +19,7 @@ function links(slug: string, visibility: PortalVisibility) {
   ];
   return all.filter((l) => {
     if (l.key === 'quote') return visibility.showQuote;
+    if (l.key === 'payments') return visibility.showCosts;
     return true;
   });
 }

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
-import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
+import StatusBadge, { chargeTone, projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import {
   updateProject,
@@ -21,6 +21,9 @@ import {
   updateDocumentRequestStatus,
   setDeliverableVisibility,
   setQuoteVisibility,
+  createProjectCharge,
+  updateProjectCharge,
+  deleteProjectCharge,
 } from '@/lib/ops/actions';
 import {
   PROJECT_STATUS_LABELS,
@@ -31,8 +34,12 @@ import {
   DOCUMENT_SOURCE_LABELS,
   DOCUMENT_REQUEST_STATUS_LABELS,
   DOCUMENT_REQUEST_INPUT_LABELS,
+  CHARGE_KIND_LABELS,
+  CHARGE_STATUS_LABELS,
   formatDate,
   formatCurrency,
+  formatChargeAmount,
+  isClientBorneChargeKind,
 } from '@/lib/ops/labels';
 import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
@@ -68,6 +75,7 @@ export default async function ProjectDetailPage({
     { data: members },
     { data: tickets },
     { data: docRequests },
+    { data: charges },
   ] = await Promise.all([
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
@@ -82,6 +90,11 @@ export default async function ProjectDetailPage({
     supabase.from('tickets').select('id, title, status, priority, created_at').eq('project_id', id).order('created_at', { ascending: false }).limit(10),
     supabase
       .from('document_requests')
+      .select('*')
+      .eq('project_id', id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('project_charges')
       .select('*')
       .eq('project_id', id)
       .order('sort_order', { ascending: true }),
@@ -123,6 +136,7 @@ export default async function ProjectDetailPage({
     { key: 'resumen', label: 'Resumen' },
     { key: 'timeline', label: 'Timeline' },
     { key: 'cotizaciones', label: 'Cotizaciones' },
+    { key: 'pagos', label: 'Pagos' },
     { key: 'documentos', label: 'Documentos' },
     { key: 'entregables', label: 'Entregables' },
     { key: 'accesos', label: 'Accesos' },
@@ -328,6 +342,203 @@ export default async function ProjectDetailPage({
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {tab === 'pagos' && (
+        <div className="space-y-6">
+          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+            <h3 className="font-semibold">Nuevo cargo</h3>
+            <p className="mt-1 text-sm text-zinc-500">
+              Desarrollo (honorarios Codiva) o pass-through: hosting/dominio siempre a cargo del
+              cliente cuando aplican. Vacío en monto = “Por confirmar” (p. ej. renovación anual al
+              costo real).
+            </p>
+            <form
+              action={async (fd) => {
+                'use server';
+                await createProjectCharge(id, fd);
+              }}
+              className="mt-4 grid gap-3 md:grid-cols-2"
+            >
+              <input
+                name="title"
+                required
+                placeholder="Concepto"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <select name="kind" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" defaultValue="development">
+                {Object.entries(CHARGE_KIND_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Monto (opcional)"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <select name="status" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" defaultValue="pending">
+                {Object.entries(CHARGE_STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input name="periodLabel" placeholder="Periodo (ej. 2025)" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="dueDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input
+                name="noticeDays"
+                type="number"
+                min="0"
+                defaultValue={30}
+                placeholder="Aviso T-N (días)"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-zinc-500 md:col-span-1">
+                Con fecha de vencimiento, el portal avisa desde T-N (default 30).
+              </p>
+              <textarea
+                name="description"
+                rows={2}
+                placeholder="Descripción visible al cliente"
+                className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <textarea
+                name="staffNotes"
+                rows={2}
+                placeholder="Notas internas (no salen al portal)"
+                className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <label className="flex items-center gap-2 text-sm text-zinc-700 md:col-span-2">
+                <input type="checkbox" name="visibleToClient" value="on" defaultChecked />
+                Visible en portal (requiere “temas de costos” ON)
+              </label>
+              <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
+                Agregar cargo
+              </button>
+            </form>
+          </section>
+
+          {(charges ?? []).map((c) => (
+            <article key={c.id} className="rounded-xl border border-zinc-200 bg-white p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge label={CHARGE_STATUS_LABELS[c.status]} tone={chargeTone(c.status)} />
+                  <span className="text-xs uppercase tracking-wide text-zinc-500">
+                    {CHARGE_KIND_LABELS[c.kind] ?? c.kind}
+                  </span>
+                  {isClientBorneChargeKind(c.kind) && (
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                      A cargo del cliente
+                    </span>
+                  )}
+                </div>
+                <p className="font-semibold text-codiva-primary">
+                  {formatChargeAmount(c.amount, c.currency)}
+                </p>
+              </div>
+              <form
+                action={async (fd) => {
+                  'use server';
+                  await updateProjectCharge(c.id, id, fd);
+                }}
+                className="grid gap-3 md:grid-cols-2"
+              >
+                <input type="hidden" name="existingPaidAt" value={c.paid_at ?? ''} />
+                <input
+                  name="title"
+                  required
+                  defaultValue={c.title}
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <select name="kind" defaultValue={c.kind} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                  {Object.entries(CHARGE_KIND_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  name="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={c.amount ?? ''}
+                  placeholder="Por confirmar"
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <select name="status" defaultValue={c.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                  {Object.entries(CHARGE_STATUS_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  name="periodLabel"
+                  defaultValue={c.period_label ?? ''}
+                  placeholder="Periodo"
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <input
+                  name="dueDate"
+                  type="date"
+                  defaultValue={c.due_date ?? ''}
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <input
+                  name="noticeDays"
+                  type="number"
+                  min="0"
+                  defaultValue={c.notice_days ?? 30}
+                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                  title="Aviso T-N en días"
+                />
+                <textarea
+                  name="description"
+                  rows={2}
+                  defaultValue={c.description ?? ''}
+                  className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <textarea
+                  name="staffNotes"
+                  rows={2}
+                  defaultValue={c.staff_notes ?? ''}
+                  placeholder="Notas internas"
+                  className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                  <input type="checkbox" name="visibleToClient" defaultChecked={c.visible_to_client !== false} />
+                  Visible en portal
+                </label>
+                <p className="text-xs text-zinc-500">
+                  {c.status === 'paid' ? `Pagado ${formatDate(c.paid_at)}` : c.due_date ? `Vence ${formatDate(c.due_date)}` : 'Sin vencimiento'}
+                </p>
+                <div className="flex flex-wrap gap-2 md:col-span-2">
+                  <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
+                    Guardar
+                  </button>
+                </div>
+              </form>
+              <form
+                action={async () => {
+                  'use server';
+                  await deleteProjectCharge(c.id, id);
+                }}
+                className="mt-3"
+              >
+                <button type="submit" className="text-sm text-red-600 hover:underline">
+                  Eliminar cargo
+                </button>
+              </form>
+            </article>
+          ))}
+          {!charges?.length && <p className="text-sm text-zinc-500">Sin cargos. Agrega anticipo, saldo u hosting arriba.</p>}
         </div>
       )}
 

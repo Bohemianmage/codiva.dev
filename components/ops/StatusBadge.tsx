@@ -52,3 +52,13 @@ export function ticketTone(status: string) {
   };
   return map[status] ?? 'neutral';
 }
+
+export function chargeTone(status: string) {
+  const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
+    pending: 'warning',
+    paid: 'success',
+    overdue: 'danger',
+    waived: 'neutral',
+  };
+  return map[status] ?? 'neutral';
+}
