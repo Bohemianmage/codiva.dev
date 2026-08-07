@@ -47,9 +47,9 @@ export default async function PortalPaymentsPage({
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-600">
-        Honorarios de desarrollo y gastos operativos. El{' '}
-        <strong className="font-medium text-zinc-800">alojamiento y dominios</strong> van a cargo
-        del cliente cuando aplican (reembolso al costo). Detalle comercial en{' '}
+        Resumen de pagos de tu proyecto: lo ya cubierto del desarrollo, lo que falta por pagar y el
+        alojamiento del sitio. El hosting lo pagas tú (nosotros te avisamos y te pasamos el monto
+        cuando toque renovar). Para ver el alcance aprobado, entra a{' '}
         <Link href={`/p/${slug}/cotizacion`} className="text-codiva-primary hover:underline">
           Cotización
         </Link>
@@ -100,11 +100,11 @@ export default async function PortalPaymentsPage({
                       <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                         {CHARGE_KIND_LABELS[c.kind] ?? c.kind}
                       </span>
-                      {isClientBorneChargeKind(c.kind) && (
-                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                          A cargo del cliente
-                        </span>
-                      )}
+                    {isClientBorneChargeKind(c.kind) && (
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                        A tu cargo
+                      </span>
+                    )}
                     </div>
                     <h3 className="font-semibold text-zinc-900">{c.title}</h3>
                     {c.period_label && (
@@ -122,7 +122,7 @@ export default async function PortalPaymentsPage({
                     </p>
                     {noticeStart && (
                       <p className="mt-1 text-xs text-zinc-500">
-                        Aviso en portal desde {formatDate(noticeStart)} (T-{noticeDays})
+                        Te avisamos en el portal desde {formatDate(noticeStart)}
                       </p>
                     )}
                   </div>

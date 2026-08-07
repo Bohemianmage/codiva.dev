@@ -25,11 +25,11 @@ export default function PortalRenewalNotices({
           }`}
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
-            {n.isOverdue ? 'Vencido' : `Aviso T-${n.noticeDays}`}
+            {n.isOverdue ? 'Pago vencido' : 'Renovación próxima'}
           </p>
           <p className="mt-1 font-semibold text-zinc-900">{chargeNoticeSummary(n)}</p>
           <p className="mt-1 text-sm text-zinc-600">
-            Alojamiento y renovaciones van a cargo del cliente. Revisa el detalle en{' '}
+            El alojamiento del sitio lo pagas tú. Detalle en{' '}
             <Link href={`/p/${slug}/pagos`} className="font-medium text-codiva-primary hover:underline">
               Pagos
             </Link>
