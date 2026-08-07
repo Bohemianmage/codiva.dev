@@ -1233,3 +1233,133 @@ export async function publishLegalVersionAndNotify(formData: FormData) {
   revalidatePath('/settings');
   return { notified, versionCode };
 }
+
+function parseChargeAmount(raw: FormDataEntryValue | null): number | null {
+  const text = String(raw ?? '').trim();
+  if (!text) return null;
+  const n = Number(text.replace(/,/g, ''));
+  if (!Number.isFinite(n) || n < 0) throw new Error('Monto inválido');
+  return n;
+}
+
+function parseNoticeDays(raw: FormDataEntryValue | null): number {
+  const text = String(raw ?? '').trim();
+  if (!text) return 30;
+  const n = parseInt(text, 10);
+  if (!Number.isFinite(n) || n < 0) throw new Error('Días de aviso inválidos');
+  return n;
+}
+
+export async function createProjectCharge(projectId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const status = String(formData.get('status') || 'pending');
+  const kind = String(formData.get('kind') || 'development');
+  const paidAt =
+    status === 'paid'
+      ? String(formData.get('paidAt') || '') || new Date().toISOString()
+      : null;
+
+  const { data: last } = await supabase
+    .from('project_charges')
+    .select('sort_order')
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from('project_charges').insert({
+    project_id: projectId,
+    kind,
+    title: String(formData.get('title') || '').trim() || 'Cargo',
+    description: String(formData.get('description') || ''),
+    amount: parseChargeAmount(formData.get('amount')),
+    currency: String(formData.get('currency') || 'MXN'),
+    status,
+    due_date: String(formData.get('dueDate') || '') || null,
+    paid_at: paidAt,
+    period_label: String(formData.get('periodLabel') || '') || null,
+    notice_days: parseNoticeDays(formData.get('noticeDays')),
+    sort_order: (last?.sort_order ?? -1) + 1,
+    visible_to_client: formData.get('visibleToClient') === 'on',
+    staff_notes: String(formData.get('staffNotes') || ''),
+  });
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_charge',
+    entityId: projectId,
+    action: 'created',
+    actorId: user.id,
+    metadata: { project_id: projectId, kind, status },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectCharge(
+  chargeId: string,
+  projectId: string,
+  formData: FormData
+) {
+  const { supabase, user } = await requireStaff();
+
+  const status = String(formData.get('status') || 'pending');
+  const existingPaidAt = String(formData.get('existingPaidAt') || '') || null;
+  const paidAt =
+    status === 'paid'
+      ? String(formData.get('paidAt') || '') || existingPaidAt || new Date().toISOString()
+      : null;
+
+  const { error } = await supabase
+    .from('project_charges')
+    .update({
+      kind: String(formData.get('kind') || 'development'),
+      title: String(formData.get('title') || '').trim() || 'Cargo',
+      description: String(formData.get('description') || ''),
+      amount: parseChargeAmount(formData.get('amount')),
+      currency: String(formData.get('currency') || 'MXN'),
+      status,
+      due_date: String(formData.get('dueDate') || '') || null,
+      paid_at: paidAt,
+      period_label: String(formData.get('periodLabel') || '') || null,
+      notice_days: parseNoticeDays(formData.get('noticeDays')),
+      visible_to_client: formData.get('visibleToClient') === 'on',
+      staff_notes: String(formData.get('staffNotes') || ''),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', chargeId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_charge',
+    entityId: chargeId,
+    action: 'updated',
+    actorId: user.id,
+    metadata: { project_id: projectId, status },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function deleteProjectCharge(chargeId: string, projectId: string) {
+  const { supabase, user } = await requireStaff();
+
+  const { error } = await supabase
+    .from('project_charges')
+    .delete()
+    .eq('id', chargeId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_charge',
+    entityId: chargeId,
+    action: 'deleted',
+    actorId: user.id,
+    metadata: { project_id: projectId },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}

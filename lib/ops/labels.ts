@@ -77,6 +77,28 @@ export const DOCUMENT_REQUEST_INPUT_LABELS: Record<string, string> = {
   credentials: 'Accesos',
 };
 
+export const CHARGE_KIND_LABELS: Record<string, string> = {
+  development: 'Desarrollo',
+  hosting: 'Alojamiento / hosting',
+  domain: 'Dominio',
+  pass_through: 'Gasto a cargo del cliente',
+  other: 'Otro',
+};
+
+export const CHARGE_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendiente',
+  paid: 'Pagado',
+  overdue: 'Vencido',
+  waived: 'Omitido',
+};
+
+/** Hosting, dominio y pass-through siempre van a cargo del cliente cuando aplican. */
+export const CLIENT_BORNE_CHARGE_KINDS = ['hosting', 'domain', 'pass_through'] as const;
+
+export function isClientBorneChargeKind(kind: string): boolean {
+  return (CLIENT_BORNE_CHARGE_KINDS as readonly string[]).includes(kind);
+}
+
 export const INBOX_STATUS_LABELS: Record<string, string> = {
   unread: 'Sin leer',
   read: 'Leído',
@@ -95,6 +117,11 @@ export function formatDate(date: string | null | undefined): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+export function formatChargeAmount(amount: number | null | undefined, currency = 'MXN'): string {
+  if (amount == null) return 'Por confirmar';
+  return formatCurrency(amount, currency);
 }
 
 export function formatCurrency(amount: number | null | undefined, currency = 'USD'): string {

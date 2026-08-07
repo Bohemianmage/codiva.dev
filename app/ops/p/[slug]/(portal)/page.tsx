@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import PortalRenewalNotices from '@/components/ops/PortalRenewalNotices';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
+import { getActiveChargeNotices } from '@/lib/ops/charges';
 import { PROJECT_STATUS_LABELS, MILESTONE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
@@ -23,7 +25,8 @@ export default async function PortalHomePage({
   const { project, supabase } = await requireProjectMember(slug);
   const visibility = getPortalVisibility(project);
 
-  const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }] = await Promise.all([
+  const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }, { data: charges }] =
+    await Promise.all([
     supabase
       .from('milestones')
       .select('id, title, status, due_date')
@@ -52,15 +55,25 @@ export default async function PortalHomePage({
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .eq('type', 'nda'),
+    visibility.showCosts
+      ? supabase
+          .from('project_charges')
+          .select('id, kind, title, amount, currency, status, due_date, notice_days, period_label')
+          .eq('project_id', project.id)
+          .eq('visible_to_client', true)
+      : Promise.resolve({ data: [] as never[] }),
   ]);
 
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
   const quote = quotes?.[0];
   const hasNda = (docs ?? []).length > 0;
   const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
+  const renewalNotices = getActiveChargeNotices(charges ?? []);
 
   return (
     <div className="space-y-6">
+      {visibility.showCosts && <PortalRenewalNotices slug={slug} notices={renewalNotices} />}
+
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge label={PROJECT_STATUS_LABELS[project.status]} tone={projectTone(project.status)} />
@@ -88,7 +101,7 @@ export default async function PortalHomePage({
         )}
       </section>
 
-      <section className={`grid gap-3 ${visibility.showQuote ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      <section className={`grid gap-3 ${visibility.showQuote && visibility.showCosts ? 'sm:grid-cols-2 lg:grid-cols-4' : visibility.showQuote || visibility.showCosts ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <Link
           href={`/p/${slug}/propuesta`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
@@ -117,6 +130,16 @@ export default async function PortalHomePage({
                 ? `Válida hasta ${formatDate(quote.valid_until)}`
                 : 'Revisa cuando esté lista'}
             </p>
+          </Link>
+        )}
+        {visibility.showCosts && (
+          <Link
+            href={`/p/${slug}/pagos`}
+            className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Pagos</p>
+            <p className="mt-2 font-semibold text-zinc-900">Estado de cobros</p>
+            <p className="mt-1 text-sm text-zinc-600">Anticipos, saldo y hosting</p>
           </Link>
         )}
         <Link
