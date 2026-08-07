@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kauchoquímico — Propuesta web corporativa</title>
+  <style>
+    :root {
+      --ink: #152018;
+      --muted: #5a655e;
+      --line: #d5ddd8;
+      --bg: #f3f6f4;
+      --card: #fff;
+      --accent: #1f6b4a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 8% -8%, #d7ebe1 0%, transparent 55%),
+        var(--bg);
+    }
+    main { max-width: 860px; margin: 0 auto; padding: 28px 20px 48px; }
+    h1 { margin: 0 0 8px; font-size: 1.7rem; letter-spacing: -0.02em; }
+    .lede { margin: 0 0 24px; color: var(--muted); line-height: 1.5; max-width: 40rem; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+      padding: 18px 18px 8px;
+      margin-bottom: 14px;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    .card p, .card li { color: var(--muted); font-size: 0.95rem; line-height: 1.45; }
+    ul { margin: 0 0 12px; padding-left: 1.2rem; }
+    a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .meta { margin-top: 8px; font-size: 0.9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Kauchoquímico · Sitio web corporativo</h1>
+    <p class="lede">
+      Presencia B2B para comunicar líneas de producto, aplicaciones por industria y contacto técnico.
+      Paquete contratado: identidad (cortesía), arquitectura/diseño (cortesía) y desarrollo web corporativo.
+    </p>
+
+    <section class="card">
+      <h2>Qué incluye el desarrollo</h2>
+      <ul>
+        <li>Home, Nosotros, Líneas de producto, Aplicaciones, Certificaciones, Contacto y Blog básico</li>
+        <li>Responsive, SEO técnico base, performance y deploy profesional</li>
+        <li>Arquitectura preparada para catálogo técnico y e-shop en una fase posterior</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Documentos</h2>
+      <p>
+        <a href="./cotizacion-web.pdf" target="_blank" rel="noreferrer">Cotización web (PDF)</a>
+        ·
+        <a href="./cotizacion-catalogo-eshop.pdf" target="_blank" rel="noreferrer">Fase opcional catálogo + e-shop (PDF)</a>
+      </p>
+      <p class="meta">El catálogo + e-shop es una propuesta complementaria; no forma parte del contrato web actual.</p>
+    </section>
+  </main>
+</body>
+</html>
