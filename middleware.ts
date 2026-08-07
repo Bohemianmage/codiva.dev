@@ -80,7 +80,12 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/p/')) {
       const url = request.nextUrl.clone();
       url.pathname = `/ops${pathname}`;
-      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      const rewritten = withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      if (/\/p\/[^/]+\/sitio\/?$/.test(pathname)) {
+        rewritten.headers.set('Cache-Control', 'private, no-store');
+        rewritten.headers.set('Pragma', 'no-cache');
+      }
+      return rewritten;
     }
 
     // Staff / partners no viven aquí
@@ -122,7 +127,17 @@ export async function middleware(request: NextRequest) {
       } else {
         url.pathname = `/ops${pathname}`;
       }
-      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      const rewritten = withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      if (/\/p\/[^/]+\/sitio\/?$/.test(pathname) || /\/ops\/p\/[^/]+\/sitio\/?$/.test(pathname)) {
+        rewritten.headers.set('Cache-Control', 'private, no-store');
+        rewritten.headers.set('Pragma', 'no-cache');
+      }
+      return rewritten;
+    }
+
+    if (/\/ops\/p\/[^/]+\/sitio\/?$/.test(pathname)) {
+      sessionResponse.headers.set('Cache-Control', 'private, no-store');
+      sessionResponse.headers.set('Pragma', 'no-cache');
     }
 
     return sessionResponse;

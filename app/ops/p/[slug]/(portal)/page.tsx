@@ -96,7 +96,10 @@ export default async function PortalHomePage({
   ]);
 
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
-  const quote = quotes?.[0];
+  const quote =
+    quotes?.find((q) => q.status === 'accepted') ??
+    quotes?.find((q) => q.status === 'sent') ??
+    quotes?.[0];
   const hasNda = (docs ?? []).length > 0;
   const signedNda = (docs ?? []).some((d) => d.type === 'nda' && d.signed);
   const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
@@ -134,7 +137,15 @@ export default async function PortalHomePage({
         )}
       </section>
 
-      <section className={`grid gap-3 ${visibility.showQuote && visibility.showCosts ? 'sm:grid-cols-2 lg:grid-cols-4' : visibility.showQuote || visibility.showCosts ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+      <section
+        className={`grid gap-3 sm:grid-cols-2 ${
+          visibility.showQuote && visibility.showCosts
+            ? 'lg:grid-cols-3 xl:grid-cols-5'
+            : visibility.showQuote || visibility.showCosts
+              ? 'lg:grid-cols-4'
+              : 'lg:grid-cols-3'
+        }`}
+      >
         <Link
           href={`/p/${slug}/propuesta`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
@@ -169,6 +180,18 @@ export default async function PortalHomePage({
             <p className="mt-1 text-sm text-zinc-600">Desarrollo, saldo y alojamiento</p>
           </Link>
         )}
+        <Link
+          href={`/p/${slug}/sitio`}
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Tu sitio</p>
+          <p className="mt-2 font-semibold text-zinc-900">
+            {project.site_preview_url || project.site_production_url
+              ? 'URL y accesos'
+              : 'En preparación'}
+          </p>
+          <p className="mt-1 text-sm text-zinc-600">Preview, producción y credenciales</p>
+        </Link>
         <Link
           href={`/p/${slug}/documentos`}
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-codiva-primary/40"

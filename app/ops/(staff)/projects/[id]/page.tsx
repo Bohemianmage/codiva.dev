@@ -25,6 +25,7 @@ import {
   updateProjectCharge,
   deleteProjectCharge,
 } from '@/lib/ops/actions';
+import OpsProjectSiteAccess from '@/components/ops/OpsProjectSiteAccess';
 import {
   PROJECT_STATUS_LABELS,
   QUOTE_STATUS_LABELS,
@@ -76,6 +77,7 @@ export default async function ProjectDetailPage({
     { data: tickets },
     { data: docRequests },
     { data: charges },
+    { data: siteAccess },
   ] = await Promise.all([
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
@@ -96,6 +98,11 @@ export default async function ProjectDetailPage({
     supabase
       .from('project_charges')
       .select('*')
+      .eq('project_id', id)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('project_site_access')
+      .select('id, label, kind, url, username, secret, notes, visible_to_client, sort_order')
       .eq('project_id', id)
       .order('sort_order', { ascending: true }),
   ]);
@@ -519,10 +526,14 @@ export default async function ProjectDetailPage({
                 <p className="text-xs text-zinc-500">
                   {c.status === 'paid' ? `Pagado ${formatDate(c.paid_at)}` : c.due_date ? `Vence ${formatDate(c.due_date)}` : 'Sin vencimiento'}
                 </p>
-                <div className="flex flex-wrap gap-2 md:col-span-2">
+                <div className="flex flex-wrap items-center gap-2 md:col-span-2">
                   <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
                     Guardar
                   </button>
+                  <p className="text-xs text-zinc-500">
+                    Para quitar un cargo (p. ej. hosting que no aplica): usa Eliminar abajo, o marca estado
+                    Omitido y ocúltalo del portal.
+                  </p>
                 </div>
               </form>
               <form
@@ -530,9 +541,12 @@ export default async function ProjectDetailPage({
                   'use server';
                   await deleteProjectCharge(c.id, id);
                 }}
-                className="mt-3"
+                className="mt-3 border-t border-zinc-100 pt-3"
               >
-                <button type="submit" className="text-sm text-red-600 hover:underline">
+                <button
+                  type="submit"
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
                   Eliminar cargo
                 </button>
               </form>
@@ -857,70 +871,83 @@ export default async function ProjectDetailPage({
       )}
 
       {tab === 'accesos' && (
-        <div className="max-w-2xl space-y-6">
-          <form action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <h3 className="font-semibold">Invitar usuario del cliente</h3>
-            <p className="text-sm text-zinc-600">
-              Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
-              privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}).
-            </p>
-            <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="viewer">Viewer - solo lectura</option>
-              <option value="approver">Approver - puede aceptar cotización</option>
-            </select>
-            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
-          </form>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
-            <span className="inline-flex flex-wrap items-center gap-2">
-              Login cliente:
-              <PortalClientUrl slug={project.slug} path="/login" />
-            </span>
-            <Link href={staffPortalPreviewPath(project.slug)} className="text-codiva-primary hover:underline">
-              Vista previa (ops)
-            </Link>
-          </div>
-          <ul className="space-y-2 text-sm">
-            {(members ?? []).map((m) => {
-              const acceptance = getAcceptanceStatus(m);
-              return (
-                <li key={m.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-medium">{memberEmails.get(m.user_id) ?? m.user_id.slice(0, 8)}</p>
-                      <p className="text-zinc-500">
-                        {m.role} · invitado {formatDate(m.invited_at)}
-                      </p>
+        <div className="max-w-2xl space-y-10">
+          <section className="space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Portal Codiva</h3>
+              <p className="mt-1 text-sm text-zinc-600">Invitaciones al portal del proyecto (no son logins del sitio web).</p>
+            </div>
+            <form action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+              <h3 className="font-semibold">Invitar usuario del cliente</h3>
+              <p className="text-sm text-zinc-600">
+                Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
+                privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}).
+              </p>
+              <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                <option value="viewer">Viewer - solo lectura</option>
+                <option value="approver">Approver - puede aceptar cotización</option>
+              </select>
+              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
+            </form>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
+              <span className="inline-flex flex-wrap items-center gap-2">
+                Login cliente:
+                <PortalClientUrl slug={project.slug} path="/login" />
+              </span>
+              <Link href={staffPortalPreviewPath(project.slug)} className="text-codiva-primary hover:underline">
+                Vista previa (ops)
+              </Link>
+            </div>
+            <ul className="space-y-2 text-sm">
+              {(members ?? []).map((m) => {
+                const acceptance = getAcceptanceStatus(m);
+                return (
+                  <li key={m.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{memberEmails.get(m.user_id) ?? m.user_id.slice(0, 8)}</p>
+                        <p className="text-zinc-500">
+                          {m.role} · invitado {formatDate(m.invited_at)}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          acceptance.complete
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-amber-50 text-amber-800'
+                        }`}
+                      >
+                        {acceptance.complete ? 'Legales OK' : 'Pendiente aceptar'}
+                      </span>
                     </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        acceptance.complete
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-amber-50 text-amber-800'
-                      }`}
-                    >
-                      {acceptance.complete ? 'Legales OK' : 'Pendiente aceptar'}
-                    </span>
-                  </div>
-                  {!acceptance.complete && (
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Falta:{' '}
-                      {[
-                        !acceptance.terms ? 'TyC' : null,
-                        !acceptance.privacy ? 'Privacidad' : null,
-                        !acceptance.nda ? 'NDA' : null,
-                      ]
-                        .filter(Boolean)
-                        .join(', ')}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-            {!members?.length && (
-              <p className="text-sm text-zinc-500">Aún no hay usuarios invitados. Agrega el primero arriba.</p>
-            )}
-          </ul>
+                    {!acceptance.complete && (
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Falta:{' '}
+                        {[
+                          !acceptance.terms ? 'TyC' : null,
+                          !acceptance.privacy ? 'Privacidad' : null,
+                          !acceptance.nda ? 'NDA' : null,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+              {!members?.length && (
+                <p className="text-sm text-zinc-500">Aún no hay usuarios invitados. Agrega el primero arriba.</p>
+              )}
+            </ul>
+          </section>
+
+          <OpsProjectSiteAccess
+            projectId={id}
+            sitePreviewUrl={project.site_preview_url}
+            siteProductionUrl={project.site_production_url}
+            items={siteAccess ?? []}
+          />
         </div>
       )}
 

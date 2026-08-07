@@ -1363,3 +1363,146 @@ export async function deleteProjectCharge(chargeId: string, projectId: string) {
 
   revalidatePath(`/projects/${projectId}`);
 }
+
+export async function updateProjectSiteUrls(projectId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const preview = String(formData.get('sitePreviewUrl') || '').trim() || null;
+  const production = String(formData.get('siteProductionUrl') || '').trim() || null;
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      site_preview_url: preview,
+      site_production_url: production,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project',
+    entityId: projectId,
+    action: 'site_urls_updated',
+    actorId: user.id,
+    metadata: {
+      project_id: projectId,
+      has_preview: Boolean(preview),
+      has_production: Boolean(production),
+    },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/p`);
+}
+
+export async function createSiteAccess(projectId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const { data: last } = await supabase
+    .from('project_site_access')
+    .select('sort_order')
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const label = String(formData.get('label') || '').trim() || 'Acceso';
+  const kind = String(formData.get('kind') || 'other');
+  const hasSecret = Boolean(String(formData.get('secret') || '').trim());
+
+  const { data: created, error } = await supabase
+    .from('project_site_access')
+    .insert({
+      project_id: projectId,
+      label,
+      kind,
+      url: String(formData.get('url') || '').trim() || null,
+      username: String(formData.get('username') || '').trim() || null,
+      secret: String(formData.get('secret') || '').trim() || null,
+      notes: String(formData.get('notes') || ''),
+      visible_to_client: formData.get('visibleToClient') === 'on',
+      sort_order: (last?.sort_order ?? -1) + 1,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_site_access',
+    entityId: created.id,
+    action: 'created',
+    actorId: user.id,
+    metadata: { project_id: projectId, kind, label, has_secret: hasSecret },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateSiteAccess(accessId: string, projectId: string, formData: FormData) {
+  const { supabase, user } = await requireStaff();
+
+  const label = String(formData.get('label') || '').trim() || 'Acceso';
+  const kind = String(formData.get('kind') || 'other');
+  const secretRaw = String(formData.get('secret') || '');
+  const keepSecret = formData.get('keepSecret') === 'on';
+  const hasSecretInput = Boolean(secretRaw.trim());
+
+  const payload: Record<string, unknown> = {
+    label,
+    kind,
+    url: String(formData.get('url') || '').trim() || null,
+    username: String(formData.get('username') || '').trim() || null,
+    notes: String(formData.get('notes') || ''),
+    visible_to_client: formData.get('visibleToClient') === 'on',
+    updated_at: new Date().toISOString(),
+  };
+  if (hasSecretInput) {
+    payload.secret = secretRaw.trim();
+  } else if (!keepSecret) {
+    payload.secret = null;
+  }
+
+  const { error } = await supabase
+    .from('project_site_access')
+    .update(payload)
+    .eq('id', accessId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_site_access',
+    entityId: accessId,
+    action: 'updated',
+    actorId: user.id,
+    metadata: {
+      project_id: projectId,
+      kind,
+      label,
+      secret_changed: hasSecretInput || !keepSecret,
+    },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function deleteSiteAccess(accessId: string, projectId: string) {
+  const { supabase, user } = await requireStaff();
+
+  const { error } = await supabase
+    .from('project_site_access')
+    .delete()
+    .eq('id', accessId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_site_access',
+    entityId: accessId,
+    action: 'deleted',
+    actorId: user.id,
+    metadata: { project_id: projectId },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+}

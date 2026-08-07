@@ -12,6 +12,7 @@ function links(slug: string, visibility: PortalVisibility) {
     { href: `/p/${slug}/propuesta`, label: 'Propuesta', key: 'proposal' },
     { href: `/p/${slug}/cotizacion`, label: 'Cotización', key: 'quote' },
     { href: `/p/${slug}/pagos`, label: 'Pagos', key: 'payments' },
+    { href: `/p/${slug}/sitio`, label: 'Tu sitio', key: 'site' },
     { href: `/p/${slug}/documentos`, label: 'Documentos', key: 'docs' },
     { href: `/p/${slug}/timeline`, label: 'Timeline', key: 'timeline' },
     { href: `/p/${slug}/entregables`, label: 'Entregables', key: 'deliverables' },
