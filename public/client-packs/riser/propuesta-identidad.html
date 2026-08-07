@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RISER — Identidad y look &amp; feel</title>
+  <style>
+    :root {
+      --ink: #1a1f1c;
+      --muted: #5b6560;
+      --line: #d7ddd9;
+      --bg: #f3f6f4;
+      --card: #ffffff;
+      --accent: #0f5c45;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 40% at 10% -10%, #d9ebe3 0%, transparent 55%),
+        var(--bg);
+    }
+    main { max-width: 920px; margin: 0 auto; padding: 28px 20px 48px; }
+    h1 { margin: 0 0 8px; font-size: 1.75rem; letter-spacing: -0.02em; }
+    .lede { margin: 0 0 28px; color: var(--muted); line-height: 1.5; max-width: 40rem; }
+    .hero {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: 0 10px 30px rgba(20, 40, 30, 0.06);
+    }
+    .hero img { display: block; width: 100%; height: auto; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .meta a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .meta a:hover { text-decoration: underline; }
+    .panel {
+      margin-top: 22px;
+      padding: 18px 18px 8px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--card);
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 1rem; }
+    .panel p { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+    .gif {
+      display: block;
+      max-width: 220px;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>RISER · Identidad visual</h1>
+    <p class="lede">
+      Dirección de marca entregada para el sitio corporativo: paleta, tipografía y aplicaciones.
+      Documento de referencia del look &amp; feel del proyecto.
+    </p>
+
+    <section class="hero" aria-label="Look and feel">
+      <img src="./look-and-feel.jpg" alt="Look and feel RISER" />
+    </section>
+
+    <div class="meta">
+      <a href="./look-and-feel.pdf" target="_blank" rel="noreferrer">Descargar PDF</a>
+      <span>Cliente: RISER Real Estate Consulting</span>
+    </div>
+
+    <section class="panel">
+      <h2>Animación / marca en movimiento</h2>
+      <p>Referencia de motion de identidad (GIF).</p>
+      <img class="gif" src="./look-and-feel.gif" alt="Animación de marca RISER" />
+    </section>
+  </main>
+</body>
+</html>

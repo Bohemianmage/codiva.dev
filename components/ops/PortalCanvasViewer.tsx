@@ -140,7 +140,7 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
   const preferHtml = src ? isHtml(src) : false;
 
   if (!tabs.length) {
-    return <p className="text-sm text-zinc-500">Aún no hay arquitectura ni MVP publicados.</p>;
+    return <p className="text-sm text-zinc-500">Aún no hay materiales de propuesta publicados.</p>;
   }
 
   return (

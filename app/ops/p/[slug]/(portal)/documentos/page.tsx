@@ -39,11 +39,15 @@ export default async function PortalDocumentsPage({
   ]);
 
   const shared = (documents ?? []).filter((d) => d.source !== 'client');
-  const materials = shared.filter((d) => d.type !== 'nda');
+  const signedNdas = shared.filter((d) => d.type === 'nda' && d.signed);
+  const materials = shared.filter((d) => d.type !== 'nda' || d.signed);
   const inbound = (documents ?? []).filter((d) => d.source === 'client');
   const clientName = organization?.name?.trim() || project.name;
   const liveNdaHref = mutualNdaPath(slug);
   const liveNdaTitle = `NDA mutuo - borrador Codiva × ${clientName}`;
+  const hasOpenNdaRequest = (requests ?? []).some(
+    (r) => r.expected_type === 'nda' && r.status === 'open'
+  );
 
   async function onFulfill(formData: FormData) {
     'use server';
@@ -60,6 +64,7 @@ export default async function PortalDocumentsPage({
   }
 
   const templates = materials
+    .filter((d) => d.type !== 'nda')
     .map((d) => {
       const href = hrefFor(d);
       if (!href) return null;
@@ -67,9 +72,12 @@ export default async function PortalDocumentsPage({
     })
     .filter((t): t is { type: string; title: string; href: string } => Boolean(t));
 
-  // NDA vive solo en la solicitud (borrador generado), no en Materiales.
-  if ((requests ?? []).some((r) => r.expected_type === 'nda')) {
+  // Solo ofrecer borrador generado si aún falta cumplir la solicitud de NDA.
+  if (hasOpenNdaRequest) {
     templates.unshift({ type: 'nda', title: liveNdaTitle, href: liveNdaHref });
+  } else if (signedNdas[0]) {
+    const href = hrefFor(signedNdas[0]);
+    if (href) templates.unshift({ type: 'nda', title: signedNdas[0].title, href });
   }
 
   return (
@@ -83,8 +91,8 @@ export default async function PortalDocumentsPage({
       <section>
         <h2 className="mb-1 text-lg font-semibold">Materiales de Codiva</h2>
         <p className="mb-4 text-sm text-zinc-600">
-          Contratos y archivos que compartimos contigo. El NDA se descarga desde su solicitud. La
-          arquitectura interactiva está en Propuesta.
+          Contratos, NDA firmado y archivos que compartimos contigo. La identidad y propuesta están
+          en Propuesta.
         </p>
         <ul className="space-y-3">
           {materials.map((d) => {
