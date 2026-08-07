@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import PortalCanvasViewer from '@/components/ops/PortalCanvasViewer';
+import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
-import { formatCurrency, formatDate } from '@/lib/ops/labels';
+import { formatCurrency, formatDate, QUOTE_STATUS_LABELS } from '@/lib/ops/labels';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalProposalPage({
@@ -19,7 +20,7 @@ export default async function PortalProposalPage({
       .select('id, title, description, kind, url, file_url, sort_order')
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
-      .in('kind', ['architecture', 'mvp', 'proposal'])
+      .in('kind', ['architecture', 'mvp', 'proposal', 'other'])
       .order('sort_order', { ascending: true }),
     visibility.showQuote
       ? supabase
@@ -30,22 +31,30 @@ export default async function PortalProposalPage({
           .in('status', ['sent', 'accepted', 'rejected', 'expired'])
           .order('version', { ascending: false })
           .limit(1)
-      : Promise.resolve({ data: [] as { id: string; title: string; total_amount: number; currency: string; status: string; valid_until: string | null; version: number }[] }),
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            title: string;
+            total_amount: number;
+            currency: string;
+            status: string;
+            valid_until: string | null;
+            version: number;
+          }[],
+        }),
   ]);
 
   const quote = quotes?.[0];
   const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
+  const showValidity = Boolean(quote?.valid_until && quote.status !== 'accepted');
 
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-1 text-lg font-semibold">
-          {visibility.showCosts ? 'Propuesta y arquitectura' : 'Arquitectura'}
-        </h2>
+        <h2 className="mb-1 text-lg font-semibold">Propuesta</h2>
         <p className="mb-5 text-sm text-zinc-600">
-          {visibility.showCosts
-            ? 'Vista canvas interactiva de arquitectura y MVP. El PDF, si existe, se descarga desde el canvas (no sustituye esta vista).'
-            : 'Vista canvas de arquitectura y flujos. Los materiales comerciales se publican cuando el proyecto lo habilite.'}
+          Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o
+          descargar el PDF cuando exista.
         </p>
         <PortalCanvasViewer items={visibleCanvases} />
       </section>
@@ -55,11 +64,17 @@ export default async function PortalProposalPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cotización</p>
-              <h3 className="font-semibold text-zinc-900">{quote.title}</h3>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-zinc-900">{quote.title}</h3>
+                <StatusBadge
+                  label={QUOTE_STATUS_LABELS[quote.status] ?? quote.status}
+                  tone={quote.status === 'accepted' ? 'success' : 'info'}
+                />
+              </div>
               <p className="mt-1 text-2xl font-bold text-codiva-primary">
                 {formatCurrency(quote.total_amount, quote.currency)}
               </p>
-              {quote.valid_until && (
+              {showValidity && (
                 <p className="text-sm text-zinc-500">Válida hasta {formatDate(quote.valid_until)}</p>
               )}
             </div>
@@ -72,18 +87,6 @@ export default async function PortalProposalPage({
           </div>
         </section>
       )}
-
-      <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm text-zinc-600">
-        <p className="font-medium text-zinc-800">Siguiente paso</p>
-        <p className="mt-1">
-          Completa las solicitudes en{' '}
-          <Link href={`/p/${slug}/documentos`} className="text-codiva-primary hover:underline">
-            Documentos
-          </Link>
-          {' '}
-          (NDA firmado por representante legal, brandbook y accesos).
-        </p>
-      </section>
     </div>
   );
 }

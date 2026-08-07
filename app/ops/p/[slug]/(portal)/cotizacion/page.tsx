@@ -97,7 +97,7 @@ export default async function PortalQuotePage({
           {formatCurrency(active.total_amount, active.currency)}
         </p>
         <p className="mt-1 text-sm text-zinc-500">Solo desarrollo · MXN sin IVA</p>
-        {active.valid_until && (
+        {active.valid_until && active.status !== 'accepted' && (
           <p className="mt-1 text-sm text-zinc-500">Válida hasta {formatDate(active.valid_until)}</p>
         )}
         {active.service_type && (

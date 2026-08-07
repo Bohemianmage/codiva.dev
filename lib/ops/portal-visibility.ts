@@ -14,8 +14,8 @@ export function getPortalVisibility(project: {
   };
 }
 
-/** Kinds de canvas que exponen precios / unit economics. */
-export const COST_DELIVERABLE_KINDS = ['mvp', 'proposal'] as const;
+/** Kinds de canvas que exponen precios / unit economics (ocultar si costos OFF). */
+export const COST_DELIVERABLE_KINDS = ['mvp'] as const;
 
 export function filterClientCanvases<T extends { kind: string }>(
   items: T[],
