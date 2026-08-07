@@ -92,6 +92,13 @@ export const CHARGE_STATUS_LABELS: Record<string, string> = {
   waived: 'Omitido',
 };
 
+export const SITE_ACCESS_KIND_LABELS: Record<string, string> = {
+  preview: 'Preview / staging',
+  production: 'Producción',
+  cms: 'Admin / CMS',
+  other: 'Otro acceso',
+};
+
 /** Hosting, dominio y pass-through siempre van a cargo del cliente cuando aplican. */
 export const CLIENT_BORNE_CHARGE_KINDS = ['hosting', 'domain', 'pass_through'] as const;
 

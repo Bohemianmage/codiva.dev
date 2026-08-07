@@ -41,7 +41,11 @@ export default async function PortalQuotePage({
     .in('status', ['sent', 'accepted', 'rejected', 'expired'])
     .order('version', { ascending: false });
 
-  const active = quotes?.[0];
+  const active =
+    quotes?.find((q) => q.status === 'accepted') ??
+    quotes?.find((q) => q.status === 'sent') ??
+    quotes?.[0];
+  const otherQuotes = (quotes ?? []).filter((q) => q.id !== active?.id);
 
   async function onAccept(formData: FormData) {
     'use server';
@@ -71,7 +75,7 @@ export default async function PortalQuotePage({
         </Link>
         {visibility.showCosts ? (
           <>
-            . Estado de anticipos, saldo y hosting en{' '}
+            . Estado de anticipos y saldo en{' '}
             <Link href={`/p/${slug}/pagos`} className="text-codiva-primary hover:underline">
               Pagos
             </Link>
@@ -222,6 +226,68 @@ export default async function PortalQuotePage({
           </div>
         )}
       </article>
+
+      {otherQuotes.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-zinc-900">Otras propuestas</h3>
+          {otherQuotes.map((q) => (
+            <article key={q.id} className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <StatusBadge
+                      label={QUOTE_STATUS_LABELS[q.status]}
+                      tone={
+                        q.status === 'accepted'
+                          ? 'success'
+                          : q.status === 'rejected'
+                            ? 'danger'
+                            : 'info'
+                      }
+                    />
+                    {q.service_type && (
+                      <span className="text-xs uppercase tracking-wide text-zinc-500">
+                        {q.service_type}
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-semibold text-zinc-900">{q.title}</h4>
+                  {q.scope && (
+                    <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-sm text-zinc-600">
+                      {q.scope}
+                    </p>
+                  )}
+                </div>
+                <p className="text-lg font-bold text-codiva-primary">
+                  {formatCurrency(q.total_amount, q.currency)}
+                </p>
+              </div>
+              {q.status === 'sent' && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <form action={onAccept}>
+                    <input type="hidden" name="quoteId" value={q.id} />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white"
+                    >
+                      Aceptar
+                    </button>
+                  </form>
+                  <form action={onReject}>
+                    <input type="hidden" name="quoteId" value={q.id} />
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium"
+                    >
+                      Rechazar
+                    </button>
+                  </form>
+                </div>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
