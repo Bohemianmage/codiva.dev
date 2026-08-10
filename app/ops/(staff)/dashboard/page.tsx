@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import DashboardFinance from '@/components/ops/DashboardFinance';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { leadTone, projectTone, ticketTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
+import { buildFinanceSummary, type FinanceFilters } from '@/lib/ops/finance';
 import {
   LEAD_STATUS_LABELS,
   PROJECT_STATUS_LABELS,
@@ -10,25 +12,87 @@ import {
   formatDate,
 } from '@/lib/ops/labels';
 
-export default async function DashboardPage() {
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0] || undefined;
+  return value || undefined;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    org?: string | string[];
+    chargeStatus?: string | string[];
+    kind?: string | string[];
+    projectStatus?: string | string[];
+  }>;
+}) {
   const { supabase } = await requireStaff();
+  const params = await searchParams;
+
+  const filters: FinanceFilters = {
+    org: firstParam(params.org),
+    chargeStatus: firstParam(params.chargeStatus),
+    kind: firstParam(params.kind),
+    projectStatus: firstParam(params.projectStatus),
+  };
 
   const [
     { data: leads },
     { data: inbox },
     { data: tickets },
     { data: projects },
+    { data: financeProjects },
+    { data: charges },
+    { data: quotes },
   ] = await Promise.all([
-    supabase.from('leads').select('id, name, company, status, created_at').eq('status', 'new').order('created_at', { ascending: false }).limit(5),
-    supabase.from('inbox_messages').select('id, name, email, status, created_at').eq('status', 'unread').order('created_at', { ascending: false }).limit(5),
-    supabase.from('tickets').select('id, title, priority, status, created_at').in('status', ['new', 'in_progress']).order('created_at', { ascending: false }).limit(5),
+    supabase
+      .from('leads')
+      .select('id, name, company, status, created_at')
+      .eq('status', 'new')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('inbox_messages')
+      .select('id, name, email, status, created_at')
+      .eq('status', 'unread')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('tickets')
+      .select('id, title, priority, status, created_at')
+      .in('status', ['new', 'in_progress'])
+      .order('created_at', { ascending: false })
+      .limit(5),
     supabase
       .from('projects')
       .select('id, name, slug, status, target_delivery_date, progress_percent, client_visible')
       .in('status', ['active', 'quoting', 'draft'])
       .order('updated_at', { ascending: false })
       .limit(8),
+    supabase
+      .from('projects')
+      .select('id, name, status, organization_id, organizations(id, name)')
+      .order('name', { ascending: true }),
+    supabase
+      .from('project_charges')
+      .select(
+        'id, kind, title, amount, currency, status, due_date, project_id, projects(id, name, status, organization_id, organizations(id, name))'
+      )
+      .order('due_date', { ascending: true }),
+    supabase
+      .from('quotes')
+      .select('id, project_id, status, total_amount, currency, version')
+      .not('project_id', 'is', null)
+      .order('version', { ascending: false }),
   ]);
+
+  const financeSummary = buildFinanceSummary(
+    charges ?? [],
+    quotes ?? [],
+    financeProjects ?? [],
+    filters
+  );
 
   return (
     <div>
@@ -36,6 +100,8 @@ export default async function DashboardPage() {
         title="Dashboard"
         description="Resumen operativo de Codiva Ops"
       />
+
+      <DashboardFinance summary={financeSummary} filters={filters} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
