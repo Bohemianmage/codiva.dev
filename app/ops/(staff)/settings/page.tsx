@@ -50,7 +50,7 @@ export default async function SettingsPage() {
           {staff.role === 'admin' && (
             <p className="mt-4 text-sm">
               <Link href="/team" className="text-codiva-primary hover:underline">
-                Gestionar equipo Ops →
+                Gestionar equipo y altas →
               </Link>
             </p>
           )}
