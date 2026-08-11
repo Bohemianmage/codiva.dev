@@ -29,10 +29,12 @@ export default function PortalNav({
   slug,
   projectName,
   visibility,
+  showProjectsLink = false,
 }: {
   slug: string;
   projectName: string;
   visibility: PortalVisibility;
+  showProjectsLink?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -41,7 +43,7 @@ export default function PortalNav({
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push(`/p/${slug}/login`);
+    router.push(showProjectsLink ? '/login' : `/p/${slug}/login`);
     router.refresh();
   }
 
@@ -57,6 +59,14 @@ export default function PortalNav({
               Portal del proyecto
             </p>
             <h1 className="text-xl font-bold text-zinc-900">{projectName}</h1>
+            {showProjectsLink ? (
+              <Link
+                href="/proyectos"
+                className="mt-1 inline-block text-xs font-medium text-codiva-primary hover:underline"
+              >
+                ← Mis proyectos
+              </Link>
+            ) : null}
           </div>
         </div>
         <button type="button" onClick={signOut} className="text-sm text-zinc-500 hover:text-zinc-800">

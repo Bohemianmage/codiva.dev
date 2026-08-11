@@ -7,7 +7,7 @@ import {
   templatePasswordRecoveryHtml,
   templatePortalPasswordRecoveryHtml,
 } from '@/lib/ops/email-templates';
-import { opsAuthCallbackUrl, portalAuthCallbackUrl } from '@/lib/ops/auth-urls';
+import { opsAuthCallbackUrl, portalAuthCallbackUrl, portalHubAuthCallbackUrl } from '@/lib/ops/auth-urls';
 
 type ResetResult = { ok: true; message: string } | { ok: false; message: string };
 
@@ -193,6 +193,52 @@ export async function requestPortalPasswordReset(
   return sendRecoveryEmail(
     normalized,
     portalAuthCallbackUrl(slug, `/p/${slug}/reset-password`),
+    { projectName: project.name }
+  );
+}
+
+/** Recuperación desde el login hub (sin slug): usa el primer proyecto visible del miembro. */
+export async function requestPortalHubPasswordReset(email: string): Promise<ResetResult> {
+  const normalized = email.toLowerCase().trim();
+  if (!normalized) {
+    return { ok: false, message: 'Datos incompletos.' };
+  }
+
+  const admin = createAdminClient();
+  const userId = await findUserIdByEmail(normalized);
+  if (!userId) {
+    return {
+      ok: true,
+      message: 'Si tienes acceso al portal, recibirás un enlace en breve.',
+    };
+  }
+
+  const { data: member } = await admin
+    .from('project_members')
+    .select('project_id, projects!inner(id, name, slug, client_visible)')
+    .eq('user_id', userId)
+    .limit(20);
+
+  const project = (member ?? [])
+    .map((row) => {
+      const raw = row.projects as
+        | { id: string; name: string; slug: string; client_visible: boolean }
+        | { id: string; name: string; slug: string; client_visible: boolean }[]
+        | null;
+      return Array.isArray(raw) ? raw[0] : raw;
+    })
+    .find((p) => p && p.client_visible);
+
+  if (!project) {
+    return {
+      ok: true,
+      message: 'Si tienes acceso al portal, recibirás un enlace en breve.',
+    };
+  }
+
+  return sendRecoveryEmail(
+    normalized,
+    portalHubAuthCallbackUrl('/reset-password'),
     { projectName: project.name }
   );
 }

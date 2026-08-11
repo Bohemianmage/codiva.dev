@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function PortalLoginForm({ slug }: { slug: string }) {
+export default function ClientPortalLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
@@ -41,43 +41,20 @@ export default function PortalLoginForm({ slug }: { slug: string }) {
       return;
     }
 
-    const { data: staff } = await supabase
-      .from('staff_profiles')
-      .select('id')
-      .eq('id', data.user.id)
-      .eq('active', true)
-      .maybeSingle();
-
-    if (staff) {
-      router.push(`/p/${slug}`);
-      router.refresh();
-      return;
-    }
-
-    const { data: project } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('slug', slug)
-      .eq('client_visible', true)
-      .maybeSingle();
-
-    if (!project) {
-      await supabase.auth.signOut();
-      setMessage('Proyecto no disponible.');
-      setLoading(false);
-      return;
-    }
-
-    const { data: member } = await supabase
+    const { data: memberships } = await supabase
       .from('project_members')
-      .select('id')
-      .eq('project_id', project.id)
-      .eq('user_id', data.user.id)
-      .maybeSingle();
+      .select('id, projects!inner(id, client_visible)')
+      .eq('user_id', data.user.id);
 
-    if (!member) {
+    const hasVisible = (memberships ?? []).some((row) => {
+      const raw = row.projects as { client_visible?: boolean } | { client_visible?: boolean }[] | null;
+      const p = Array.isArray(raw) ? raw[0] : raw;
+      return p?.client_visible === true;
+    });
+
+    if (!hasVisible) {
       await supabase.auth.signOut();
-      setMessage('No tienes acceso a este proyecto.');
+      setMessage('No tienes acceso a ningún proyecto publicado.');
       setLoading(false);
       return;
     }
@@ -88,12 +65,10 @@ export default function PortalLoginForm({ slug }: { slug: string }) {
 
   const errorMsg =
     error === 'no_access'
-      ? 'No tienes acceso a este proyecto.'
-      : error === 'not_found'
-        ? 'Proyecto no encontrado o no publicado.'
-        : error === 'auth'
-          ? 'Enlace inválido o expirado.'
-          : message;
+      ? 'No tienes acceso a este portal.'
+      : error === 'auth'
+        ? 'Enlace inválido o expirado.'
+        : message;
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -121,10 +96,7 @@ export default function PortalLoginForm({ slug }: { slug: string }) {
           <div>
             <div className="mb-1 flex items-center justify-between">
               <label className="text-sm font-medium">Contraseña</label>
-              <Link
-                href={`/p/${slug}/login/forgot-password`}
-                className="text-xs text-codiva-primary hover:underline"
-              >
+              <Link href="/login/forgot-password" className="text-xs text-codiva-primary hover:underline">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>

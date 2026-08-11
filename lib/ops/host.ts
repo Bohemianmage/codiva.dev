@@ -50,6 +50,17 @@ export function marketingBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL ?? 'https://codiva.dev').replace(/\/$/, '');
 }
 
+/** Login del cliente (host portal, multi-proyecto). */
+export function portalLoginUrl(path = ''): string {
+  const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
+  return `${portalBaseUrl()}/login${suffix}`;
+}
+
+/** Home “Mis proyectos” del cliente. */
+export function portalHomeUrl(): string {
+  return `${portalBaseUrl()}/proyectos`;
+}
+
 /** URL absoluta al portal de un proyecto (host portal - clientes). */
 export function projectPortalUrl(slug: string, path = ''): string {
   const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
