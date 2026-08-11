@@ -5,6 +5,7 @@ import {
   updateSiteAccess,
 } from '@/lib/ops/actions';
 import { SITE_ACCESS_KIND_LABELS } from '@/lib/ops/labels';
+import ToastForm from '@/components/ops/ToastForm';
 
 type SiteAccessRow = {
   id: string;
@@ -40,7 +41,7 @@ export default function OpsProjectSiteAccess({
             rótalo.
           </p>
         </div>
-        <form
+        <ToastForm success="URLs guardadas"
           action={async (fd) => {
             'use server';
             await updateProjectSiteUrls(projectId, fd);
@@ -70,10 +71,10 @@ export default function OpsProjectSiteAccess({
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
             Guardar URLs
           </button>
-        </form>
+        </ToastForm>
       </div>
 
-      <form
+      <ToastForm success="Acceso creado"
         action={async (fd) => {
           'use server';
           await createSiteAccess(projectId, fd);
@@ -125,12 +126,12 @@ export default function OpsProjectSiteAccess({
         <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
           Crear acceso
         </button>
-      </form>
+      </ToastForm>
 
       <ul className="space-y-3">
         {items.map((item) => (
           <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <form
+            <ToastForm success="Acceso actualizado"
               action={async (fd) => {
                 'use server';
                 await updateSiteAccess(item.id, projectId, fd);
@@ -203,8 +204,8 @@ export default function OpsProjectSiteAccess({
                   Guardar
                 </button>
               </div>
-            </form>
-            <form
+            </ToastForm>
+            <ToastForm success="Eliminado"
               action={async () => {
                 'use server';
                 await deleteSiteAccess(item.id, projectId);
@@ -216,7 +217,7 @@ export default function OpsProjectSiteAccess({
               >
                 Eliminar acceso
               </button>
-            </form>
+            </ToastForm>
           </li>
         ))}
         {!items.length && (

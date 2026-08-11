@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { updatePassword } from '@/lib/ops/password-reset';
 
 export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?: string }) {
@@ -15,16 +16,22 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
-      setMessage({ type: 'err', text: 'Las contraseñas no coinciden.' });
+      const msg = 'Las contraseñas no coinciden.';
+      setMessage({ type: 'err', text: msg });
+      toast.error(msg);
       return;
     }
     setLoading(true);
     setMessage(null);
+    const toastId = toast.loading('Guardando…');
     const result = await updatePassword(password);
     setMessage({ type: result.ok ? 'ok' : 'err', text: result.message });
     setLoading(false);
     if (result.ok) {
+      toast.success(result.message, { id: toastId });
       setTimeout(() => router.push(loginPath), 2000);
+    } else {
+      toast.error(result.message, { id: toastId });
     }
   }
 

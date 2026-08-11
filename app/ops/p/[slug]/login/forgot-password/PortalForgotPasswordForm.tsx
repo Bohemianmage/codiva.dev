@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { requestPortalPasswordReset } from '@/lib/ops/password-reset';
 
 export default function PortalForgotPasswordForm({ slug }: { slug: string }) {
@@ -13,8 +14,11 @@ export default function PortalForgotPasswordForm({ slug }: { slug: string }) {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    const toastId = toast.loading('Enviando…');
     const result = await requestPortalPasswordReset(email, slug);
     setMessage({ type: result.ok ? 'ok' : 'err', text: result.message });
+    if (result.ok) toast.success(result.message, { id: toastId });
+    else toast.error(result.message, { id: toastId });
     setLoading(false);
   }
 

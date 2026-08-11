@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import BrandedFileInput from '@/components/ops/BrandedFileInput';
+import ToastForm from '@/components/ops/ToastForm';
 import {
   DOCUMENT_REQUEST_INPUT_LABELS,
   DOCUMENT_REQUEST_STATUS_LABELS,
@@ -181,7 +182,12 @@ export default function PortalDocumentRequests({
                   )}
 
                   {open ? (
-                    <form action={fulfillAction} className="space-y-3 rounded-xl bg-zinc-50 p-4">
+                    <ToastForm
+                      action={fulfillAction}
+                      success="Respuesta enviada"
+                      loading="Enviando…"
+                      className="space-y-3 rounded-xl bg-zinc-50 p-4"
+                    >
                       <input type="hidden" name="requestId" value={req.id} />
 
                       {req.input_mode === 'file' && (
@@ -249,7 +255,7 @@ export default function PortalDocumentRequests({
                       >
                         Enviar respuesta
                       </button>
-                    </form>
+                    </ToastForm>
                   ) : req.status === 'fulfilled' ? (
                     <div className="rounded-xl bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
                       <p className="font-medium">

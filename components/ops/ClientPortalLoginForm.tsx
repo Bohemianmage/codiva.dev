@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ClientPortalLoginForm() {
@@ -18,6 +19,7 @@ export default function ClientPortalLoginForm() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    const toastId = toast.loading('Entrando…');
 
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -26,17 +28,20 @@ export default function ClientPortalLoginForm() {
     });
 
     if (authError) {
-      setMessage(
+      const msg =
         authError.message === 'Invalid login credentials'
           ? 'Email o contraseña incorrectos.'
-          : authError.message
-      );
+          : authError.message;
+      setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
 
     if (!data.user) {
-      setMessage('No se pudo iniciar sesión.');
+      const msg = 'No se pudo iniciar sesión.';
+      setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
@@ -54,11 +59,14 @@ export default function ClientPortalLoginForm() {
 
     if (!hasVisible) {
       await supabase.auth.signOut();
-      setMessage('No tienes acceso a ningún proyecto publicado.');
+      const msg = 'No tienes acceso a ningún proyecto publicado.';
+      setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
 
+    toast.success('Bienvenido', { id: toastId });
     router.push('/proyectos');
     router.refresh();
   }

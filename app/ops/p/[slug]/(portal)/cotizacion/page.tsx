@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ToastForm from '@/components/ops/ToastForm';
 import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
@@ -205,7 +206,7 @@ export default async function PortalQuotePage({
 
         {active.status === 'sent' && (
           <div className="mt-8 flex flex-wrap gap-3">
-            <form action={onAccept}>
+            <ToastForm success="Aceptado" action={onAccept}>
               <input type="hidden" name="quoteId" value={active.id} />
               <button
                 type="submit"
@@ -213,8 +214,8 @@ export default async function PortalQuotePage({
               >
                 Aceptar propuesta
               </button>
-            </form>
-            <form action={onReject}>
+            </ToastForm>
+            <ToastForm success="Rechazado" action={onReject}>
               <input type="hidden" name="quoteId" value={active.id} />
               <button
                 type="submit"
@@ -222,7 +223,7 @@ export default async function PortalQuotePage({
               >
                 Rechazar
               </button>
-            </form>
+            </ToastForm>
           </div>
         )}
       </article>
@@ -264,7 +265,7 @@ export default async function PortalQuotePage({
               </div>
               {q.status === 'sent' && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <form action={onAccept}>
+                  <ToastForm success="Aceptado" action={onAccept}>
                     <input type="hidden" name="quoteId" value={q.id} />
                     <button
                       type="submit"
@@ -272,8 +273,8 @@ export default async function PortalQuotePage({
                     >
                       Aceptar
                     </button>
-                  </form>
-                  <form action={onReject}>
+                  </ToastForm>
+                  <ToastForm success="Rechazado" action={onReject}>
                     <input type="hidden" name="quoteId" value={q.id} />
                     <button
                       type="submit"
@@ -281,7 +282,7 @@ export default async function PortalQuotePage({
                     >
                       Rechazar
                     </button>
-                  </form>
+                  </ToastForm>
                 </div>
               )}
             </article>

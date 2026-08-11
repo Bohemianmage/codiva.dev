@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ToastForm from '@/components/ops/ToastForm';
 import { redirect } from 'next/navigation';
 import { requirePortalAccess } from '@/lib/ops/auth';
 import { acceptPortalLegalDocuments } from '@/lib/ops/actions';
@@ -38,7 +39,7 @@ export default async function PortalAcceptLegalPage({
           colaboradores invitados al proyecto.
         </p>
 
-        <form action={onAccept} className="mt-8 space-y-4">
+        <ToastForm success="Aceptado" action={onAccept} className="mt-8 space-y-4">
           <label className="flex gap-3 rounded-xl border border-zinc-200 p-4 text-sm">
             <input type="checkbox" name="acceptTerms" required className="mt-1" />
             <span>
@@ -81,7 +82,7 @@ export default async function PortalAcceptLegalPage({
           >
             Aceptar y continuar al portal
           </button>
-        </form>
+        </ToastForm>
 
         <p className="mt-6 text-xs text-zinc-500">
           Si representas a tu empresa, confirmas tener facultades para vincularla respecto de

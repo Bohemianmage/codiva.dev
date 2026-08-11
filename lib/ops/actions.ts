@@ -880,8 +880,8 @@ export async function acceptPortalLegalDocuments(slug: string, formData: FormDat
     },
   });
 
-  const { redirect } = await import('next/navigation');
-  redirect(`/p/${slug}`);
+  const { redirectWithToast } = await import('@/lib/ops/toast');
+  redirectWithToast(`/p/${slug}`, 'Documentos legales aceptados');
 }
 
 export async function createDocumentRequest(projectId: string, formData: FormData) {

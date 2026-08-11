@@ -26,6 +26,7 @@ import {
   deleteProjectCharge,
 } from '@/lib/ops/actions';
 import OpsProjectSiteAccess from '@/components/ops/OpsProjectSiteAccess';
+import ToastForm from '@/components/ops/ToastForm';
 import {
   PROJECT_STATUS_LABELS,
   QUOTE_STATUS_LABELS,
@@ -206,7 +207,7 @@ export default async function ProjectDetailPage({
       </nav>
 
       {tab === 'resumen' && (
-        <form action={onUpdateProject} className="max-w-2xl space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
+        <ToastForm success="Proyecto actualizado" action={onUpdateProject} className="max-w-2xl space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
           <div>
             <label className="mb-1 block text-sm font-medium">Nombre</label>
             <input name="name" defaultValue={project.name} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -279,7 +280,7 @@ export default async function ProjectDetailPage({
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
             Guardar cambios
           </button>
-        </form>
+        </ToastForm>
       )}
 
       {tab === 'timeline' && (
@@ -330,13 +331,13 @@ export default async function ProjectDetailPage({
                   Vista previa
                 </Link>
                 {q.status === 'draft' && (
-                  <form action={async () => { 'use server'; await sendQuote(q.id, id); }}>
+                  <ToastForm success="Cotización enviada" action={async () => { 'use server'; await sendQuote(q.id, id); }}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
                       Enviar al cliente
                     </button>
-                  </form>
+                  </ToastForm>
                 )}
-                <form
+                <ToastForm success="Visibilidad actualizada"
                   action={async () => {
                     'use server';
                     await setQuoteVisibility(id, q.id, q.visible_to_client === false);
@@ -345,7 +346,7 @@ export default async function ProjectDetailPage({
                   <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
                     {q.visible_to_client === false ? 'Mostrar en portal' : 'Ocultar en portal'}
                   </button>
-                </form>
+                </ToastForm>
               </div>
             </article>
           ))}
@@ -361,7 +362,7 @@ export default async function ProjectDetailPage({
               cliente cuando aplican. Vacío en monto = “Por confirmar” (p. ej. renovación anual al
               costo real).
             </p>
-            <form
+            <ToastForm success="Cargo creado"
               action={async (fd) => {
                 'use server';
                 await createProjectCharge(id, fd);
@@ -428,7 +429,7 @@ export default async function ProjectDetailPage({
               <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
                 Agregar cargo
               </button>
-            </form>
+            </ToastForm>
           </section>
 
           {(charges ?? []).map((c) => (
@@ -449,7 +450,7 @@ export default async function ProjectDetailPage({
                   {formatChargeAmount(c.amount, c.currency)}
                 </p>
               </div>
-              <form
+              <ToastForm success="Cargo actualizado"
                 action={async (fd) => {
                   'use server';
                   await updateProjectCharge(c.id, id, fd);
@@ -535,8 +536,8 @@ export default async function ProjectDetailPage({
                     Omitido y ocúltalo del portal.
                   </p>
                 </div>
-              </form>
-              <form
+              </ToastForm>
+              <ToastForm success="Eliminado"
                 action={async () => {
                   'use server';
                   await deleteProjectCharge(c.id, id);
@@ -549,7 +550,7 @@ export default async function ProjectDetailPage({
                 >
                   Eliminar cargo
                 </button>
-              </form>
+              </ToastForm>
             </article>
           ))}
           {!charges?.length && <p className="text-sm text-zinc-500">Sin cargos. Agrega anticipo, saldo u hosting arriba.</p>}
@@ -559,11 +560,11 @@ export default async function ProjectDetailPage({
       {tab === 'documentos' && (
         <div className="space-y-6">
           <div className="flex flex-wrap gap-2">
-            <form action={async () => { 'use server'; await runDocumentRetentionDisposal(); }}>
+            <ToastForm success="Retención ejecutada" action={async () => { 'use server'; await runDocumentRetentionDisposal(); }}>
               <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
                 Ejecutar retención ahora
               </button>
-            </form>
+            </ToastForm>
             <a
               href={`/api/ops/projects/${id}/compliance-export`}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
@@ -580,7 +581,7 @@ export default async function ProjectDetailPage({
                 responder a lo que pidas aquí.
               </p>
             </div>
-            <form
+            <ToastForm success="Solicitud creada"
               action={async (fd) => {
                 'use server';
                 await createDocumentRequest(id, fd);
@@ -635,7 +636,7 @@ export default async function ProjectDetailPage({
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white sm:col-span-2 sm:w-fit">
                 Crear solicitud (habilita en portal)
               </button>
-            </form>
+            </ToastForm>
 
             <ul className="space-y-2">
               {(docRequests ?? []).map((r) => (
@@ -666,7 +667,7 @@ export default async function ProjectDetailPage({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {r.status !== 'open' && (
-                        <form
+                        <ToastForm success="Solicitud reabierta"
                           action={async () => {
                             'use server';
                             await updateDocumentRequestStatus(id, r.id, 'open');
@@ -675,11 +676,11 @@ export default async function ProjectDetailPage({
                           <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
                             Reabrir
                           </button>
-                        </form>
+                        </ToastForm>
                       )}
                       {r.status === 'open' && (
                         <>
-                          <form
+                          <ToastForm success="Solicitud omitida"
                             action={async () => {
                               'use server';
                               await updateDocumentRequestStatus(id, r.id, 'waived');
@@ -688,8 +689,8 @@ export default async function ProjectDetailPage({
                             <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
                               Omitir
                             </button>
-                          </form>
-                          <form
+                          </ToastForm>
+                          <ToastForm success="Solicitud cancelada"
                             action={async () => {
                               'use server';
                               await updateDocumentRequestStatus(id, r.id, 'cancelled');
@@ -698,7 +699,7 @@ export default async function ProjectDetailPage({
                             <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
                               Cancelar
                             </button>
-                          </form>
+                          </ToastForm>
                         </>
                       )}
                     </div>
@@ -711,7 +712,7 @@ export default async function ProjectDetailPage({
             </ul>
           </section>
 
-          <form action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+          <ToastForm success="Documento subido" action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Subir documento (Codiva → cliente)</h3>
             <input name="title" placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="type" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -725,7 +726,7 @@ export default async function ProjectDetailPage({
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="signed" /> Firmado</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Subir</button>
-          </form>
+          </ToastForm>
           <ul className="space-y-2">
             {(documents ?? []).map((d) => {
               const href = (() => {
@@ -764,11 +765,11 @@ export default async function ProjectDetailPage({
                     </a>
                   )}
                   {!d.signed && (
-                    <form action={async () => { 'use server'; await markDocumentSigned(d.id, id, true); }}>
+                    <ToastForm success="Documento marcado como firmado" action={async () => { 'use server'; await markDocumentSigned(d.id, id, true); }}>
                       <button type="submit" className="rounded-lg border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
                         Marcar firmado
                       </button>
-                    </form>
+                    </ToastForm>
                   )}
                 </div>
               </li>
@@ -816,7 +817,7 @@ export default async function ProjectDetailPage({
 
       {tab === 'entregables' && (
         <div className="space-y-6">
-          <form action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+          <ToastForm success="Entregable creado" action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Nuevo entregable</h3>
             <input name="title" required placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="kind" defaultValue="other" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -831,7 +832,7 @@ export default async function ProjectDetailPage({
             <BrandedFileInput hint="Opcional · PDF, imagen, Office o ZIP" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Guardar</button>
-          </form>
+          </ToastForm>
           <ul className="space-y-2">
             {(deliverables ?? []).map((d) => {
               const fileHref = opsFileHref(d.file_path, d.file_url);
@@ -852,7 +853,7 @@ export default async function ProjectDetailPage({
                       </a>
                     )}
                   </div>
-                  <form
+                  <ToastForm success="Visibilidad actualizada"
                     action={async () => {
                       'use server';
                       await setDeliverableVisibility(id, d.id, !d.visible_to_client);
@@ -861,7 +862,7 @@ export default async function ProjectDetailPage({
                     <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
                       {d.visible_to_client ? 'Ocultar' : 'Mostrar'}
                     </button>
-                  </form>
+                  </ToastForm>
                 </div>
               </li>
               );
@@ -877,7 +878,7 @@ export default async function ProjectDetailPage({
               <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Portal Codiva</h3>
               <p className="mt-1 text-sm text-zinc-600">Invitaciones al portal del proyecto (no son logins del sitio web).</p>
             </div>
-            <form action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <ToastForm success="Invitación enviada" action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
               <h3 className="font-semibold">Invitar usuario del cliente</h3>
               <p className="text-sm text-zinc-600">
                 Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
@@ -889,7 +890,7 @@ export default async function ProjectDetailPage({
                 <option value="approver">Approver - puede aceptar cotización</option>
               </select>
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
-            </form>
+            </ToastForm>
             <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
               <span className="inline-flex flex-wrap items-center gap-2">
                 Login cliente:
@@ -980,7 +981,7 @@ function MilestoneForm({
   }
 
   return (
-    <form action={action} className="rounded-xl border border-zinc-200 bg-white p-5 grid gap-3 md:grid-cols-2">
+    <ToastForm success="Hito agregado" action={action} className="rounded-xl border border-zinc-200 bg-white p-5 grid gap-3 md:grid-cols-2">
       <h3 className="md:col-span-2 font-semibold">Nuevo hito</h3>
       <input name="title" required placeholder="Título del hito" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
       <input name="dueDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -992,7 +993,7 @@ function MilestoneForm({
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
       <textarea name="description" placeholder="Descripción" rows={2} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
       <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Agregar hito</button>
-    </form>
+    </ToastForm>
   );
 }
 
@@ -1028,7 +1029,7 @@ function MilestoneCard({
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-5">
-      <form action={onUpdate} className="space-y-3">
+      <ToastForm success="Guardado" action={onUpdate} className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <input name="title" defaultValue={milestone.title} className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium" />
           <select name="status" defaultValue={milestone.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -1045,7 +1046,7 @@ function MilestoneCard({
           </label>
           <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">Guardar</button>
         </div>
-      </form>
+      </ToastForm>
       {milestone.milestone_updates && milestone.milestone_updates.length > 0 && (
         <ul className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
           {milestone.milestone_updates.map((u) => (
@@ -1056,10 +1057,10 @@ function MilestoneCard({
           ))}
         </ul>
       )}
-      <form action={onAddUpdate} className="mt-3 flex gap-2">
+      <ToastForm success="Actualización publicada" action={onAddUpdate} className="mt-3 flex gap-2">
         <input name="body" placeholder="Actualización…" className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
         <button type="submit" className="rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white">Publicar</button>
-      </form>
+      </ToastForm>
     </article>
   );
 }

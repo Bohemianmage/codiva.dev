@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import {
@@ -75,7 +76,8 @@ export default async function LeadDetailPage({
   async function onConvert() {
     'use server';
     const result = await convertLeadToProject(id);
-    redirect(`/projects/${result.projectId}`);
+    const { redirectWithToast } = await import('@/lib/ops/toast');
+    redirectWithToast(`/projects/${result.projectId}`, 'Lead convertido a proyecto');
   }
 
   const displayTitle =
@@ -88,11 +90,11 @@ export default async function LeadDetailPage({
         description={`${LEAD_SOURCE_LABELS[lead.source] || lead.source}${lead.partner_company ? ` · vía ${lead.partner_company}` : ''}`}
         actions={
           lead.status !== 'converted' ? (
-            <form action={onConvert}>
+            <ToastForm success="Convertido" action={onConvert}>
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
                 Convertir a proyecto
               </button>
-            </form>
+            </ToastForm>
           ) : lead.converted_project_id ? (
             <Link
               href={`/projects/${lead.converted_project_id}`}
@@ -125,7 +127,7 @@ export default async function LeadDetailPage({
 
       {tab === 'resumen' && (
         <div className="space-y-8">
-          <form action={onStatus} className="flex items-end gap-3">
+          <ToastForm success="Guardado" action={onStatus} className="flex items-end gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium">Estado</label>
               <select name="status" defaultValue={lead.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -137,9 +139,9 @@ export default async function LeadDetailPage({
             <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50">
               Actualizar estado
             </button>
-          </form>
+          </ToastForm>
 
-          <form action={onUpdateDetails} className="max-w-3xl space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
+          <ToastForm success="Guardado" action={onUpdateDetails} className="max-w-3xl space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
             <h2 className="font-semibold">Datos del lead</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <input name="name" defaultValue={lead.name} placeholder="Nombre contacto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -178,7 +180,7 @@ export default async function LeadDetailPage({
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
               Guardar
             </button>
-          </form>
+          </ToastForm>
 
           <div className="grid gap-6 md:grid-cols-2">
             <section className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -239,11 +241,11 @@ export default async function LeadDetailPage({
                   Vista previa
                 </Link>
                 {q.status === 'draft' && (
-                  <form action={async () => { 'use server'; await sendLeadQuote(q.id, id); }}>
+                  <ToastForm success="Cotización enviada" action={async () => { 'use server'; await sendLeadQuote(q.id, id); }}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
                       Enviar al intermediario / contacto
                     </button>
-                  </form>
+                  </ToastForm>
                 )}
               </div>
             </article>
