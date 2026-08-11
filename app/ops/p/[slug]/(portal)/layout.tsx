@@ -21,7 +21,12 @@ export default async function PortalLayout({
       {isStaffPreview && (
         <StaffPortalPreviewBanner projectName={project.name} projectId={project.id} />
       )}
-      <PortalNav slug={slug} projectName={project.name} visibility={visibility} />
+      <PortalNav
+        slug={slug}
+        projectName={project.name}
+        visibility={visibility}
+        showProjectsLink={!isStaffPreview}
+      />
       <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
       <footer className="border-t border-zinc-200 py-6 text-center text-xs text-zinc-500">
         <p>Proyecto impulsado por Codiva</p>

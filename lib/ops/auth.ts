@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { chargeAmountNumber } from '@/lib/ops/charges';
 import { getAcceptanceStatus, type MemberAcceptanceFields } from '@/lib/ops/legal/acceptances';
 
 const PROJECT_SELECT =
@@ -149,4 +150,142 @@ export async function getStaffIfAny() {
 
   const staff = await getActiveStaff(supabase, user.id);
   return staff ? { user, staff, supabase } : null;
+}
+
+export type PortalProjectSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  progress_percent: number;
+  description: string | null;
+  portal_show_costs: boolean;
+};
+
+export type PortalProjectHubCard = PortalProjectSummary & {
+  pendingAmount: number | null;
+  pendingCurrency: string;
+  nextMilestone: { title: string; due_date: string | null; status: string } | null;
+};
+
+/**
+ * Sesión de cliente en el hub del portal (no staff).
+ * Staff autenticado en portal.* no tiene cookie compartida con ops; si llega aquí, se trata como usuario normal.
+ */
+export async function requirePortalUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  return { user, supabase };
+}
+
+/** Proyectos client_visible donde el usuario es miembro. */
+export async function listPortalProjectsForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<PortalProjectSummary[]> {
+  const { data: rows } = await supabase
+    .from('project_members')
+    .select(
+      'projects!inner(id, name, slug, status, progress_percent, description, client_visible, portal_show_costs)'
+    )
+    .eq('user_id', userId);
+
+  const projects: PortalProjectSummary[] = [];
+  for (const row of rows ?? []) {
+    const raw = row.projects as
+      | (PortalProjectSummary & { client_visible: boolean })
+      | (PortalProjectSummary & { client_visible: boolean })[]
+      | null;
+    const p = Array.isArray(raw) ? raw[0] : raw;
+    if (!p || p.client_visible === false) continue;
+    projects.push({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      status: p.status,
+      progress_percent: p.progress_percent,
+      description: p.description ?? null,
+      portal_show_costs: Boolean(p.portal_show_costs),
+    });
+  }
+
+  return projects.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
+/** Resume adeudo pendiente y próximo hito para el hub “Mis proyectos”. */
+export async function enrichPortalProjectHubCards(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projects: PortalProjectSummary[]
+): Promise<PortalProjectHubCard[]> {
+  if (projects.length === 0) return [];
+
+  const ids = projects.map((p) => p.id);
+  const costIds = projects.filter((p) => p.portal_show_costs).map((p) => p.id);
+
+  const [{ data: milestones }, { data: charges }] = await Promise.all([
+    supabase
+      .from('milestones')
+      .select('project_id, title, status, due_date, sort_order')
+      .in('project_id', ids)
+      .eq('visible_to_client', true)
+      .order('sort_order', { ascending: true }),
+    costIds.length
+      ? supabase
+          .from('project_charges')
+          .select('project_id, amount, currency, status')
+          .in('project_id', costIds)
+          .eq('visible_to_client', true)
+          .in('status', ['pending', 'overdue'])
+      : Promise.resolve({
+          data: [] as {
+            project_id: string;
+            amount: number | string | null;
+            currency: string;
+            status: string;
+          }[],
+        }),
+  ]);
+
+  const nextByProject = new Map<string, { title: string; due_date: string | null; status: string }>();
+  for (const m of milestones ?? []) {
+    if (m.status === 'completed') continue;
+    if (nextByProject.has(m.project_id)) continue;
+    nextByProject.set(m.project_id, {
+      title: m.title,
+      due_date: m.due_date,
+      status: m.status,
+    });
+  }
+
+  const pendingByProject = new Map<string, { amount: number; currency: string }>();
+  for (const c of charges ?? []) {
+    const n = chargeAmountNumber(c.amount);
+    if (n == null) continue;
+    const prev = pendingByProject.get(c.project_id);
+    if (!prev) {
+      pendingByProject.set(c.project_id, { amount: n, currency: c.currency || 'MXN' });
+    } else {
+      pendingByProject.set(c.project_id, {
+        amount: prev.amount + n,
+        currency: prev.currency || c.currency || 'MXN',
+      });
+    }
+  }
+
+  return projects.map((p) => {
+    const pending = pendingByProject.get(p.id);
+    return {
+      ...p,
+      pendingAmount: p.portal_show_costs ? (pending?.amount ?? 0) : null,
+      pendingCurrency: pending?.currency ?? 'MXN',
+      nextMilestone: nextByProject.get(p.id) ?? null,
+    };
+  });
 }

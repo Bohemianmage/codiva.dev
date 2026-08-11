@@ -4,12 +4,12 @@
 |------|------------|--------|
 | `codiva.dev` | Marketing, cotiza, tickets, `/legal/*` | Público |
 | `ops.codiva.dev` | Staff Ops + vista previa `/p/*` + cotizaciones `/q/*` + partners | Equipo Codiva |
-| `portal.codiva.dev` | Portal cliente `/p/{slug}` | Clientes invitados |
+| `portal.codiva.dev` | Portal cliente `/login`, `/proyectos`, `/p/{slug}` | Clientes invitados |
 
 Sesiones **no se comparten** entre `ops` y `portal` (cookies por host). Por eso:
 
 - **Vista previa staff** → `ops.codiva.dev/p/{slug}` (misma sesión)
-- **URL / emails al cliente** → `portal.codiva.dev/p/{slug}`
+- **URL / emails al cliente** → `portal.codiva.dev/p/{slug}` (o `/login` / `/proyectos` si tiene varios)
 
 ## Checklist - tu lado (infra)
 
@@ -69,8 +69,8 @@ PORTAL_HOST=portal.localhost
 1. Staff: login en `ops.codiva.dev` → Vista previa `/p/nirc`
 2. Copiar **URL cliente** → debe ser `portal.codiva.dev/p/nirc`
 3. Invitar un email de prueba → el mail apunta a `portal.codiva.dev/.../login`
-4. Login cliente en portal → aceptar legales → ver propuesta
-5. Recovery password desde portal login
+4. Login cliente en `portal.codiva.dev/login` → `/proyectos` (o directo al proyecto si solo hay uno) → aceptar legales → ver propuesta
+5. Recovery password desde portal login (`/login/forgot-password`)
 
 ### 6. No olvidar
 - Cron retención sigue en el mismo deploy (`/api/ops/cron/...`); no requiere subdominio nuevo

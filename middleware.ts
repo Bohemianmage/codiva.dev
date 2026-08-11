@@ -68,15 +68,29 @@ export async function middleware(request: NextRequest) {
       return sessionResponse;
     }
 
-    // Raíz: mensaje → marketing
+    // Raíz → hub de proyectos (la página redirige a /login si no hay sesión)
     if (pathname === '/' || pathname === '') {
       return withSessionCookies(
         sessionResponse,
-        absoluteRedirect(request, marketingBaseUrl(), '/')
+        absoluteRedirect(request, portalBaseUrl(), '/proyectos')
       );
     }
 
-    // Solo rutas de portal de proyecto
+    // Login / hub / reset del cliente (no confundir con staff /login en ops)
+    if (
+      pathname === '/login' ||
+      pathname.startsWith('/login/') ||
+      pathname === '/proyectos' ||
+      pathname.startsWith('/proyectos/') ||
+      pathname === '/reset-password' ||
+      pathname.startsWith('/reset-password/')
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/ops/portal${pathname}`;
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    // Rutas de portal de proyecto
     if (pathname.startsWith('/p/')) {
       const url = request.nextUrl.clone();
       url.pathname = `/ops${pathname}`;
@@ -93,7 +107,6 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/dashboard') ||
       pathname.startsWith('/projects') ||
       pathname.startsWith('/leads') ||
-      pathname.startsWith('/login') ||
       pathname.startsWith('/partner') ||
       pathname.startsWith('/q/')
     ) {
