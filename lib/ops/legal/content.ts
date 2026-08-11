@@ -314,12 +314,12 @@ export const PORTAL_NDA: LegalDocument = {
     {
       id: 'object',
       title: '1. Objeto',
-      body: 'Las partes compartirán Información Confidencial para evaluar, negociar o ejecutar el Proyecto mostrado en el Portal (cotizaciones, arquitectura, documentos, entregables y comunicaciones asociadas).',
+      body: 'Las partes compartirán Información Confidencial para evaluar, negociar o ejecutar el Proyecto mostrado en el Portal (cotizaciones, arquitectura, documentos, entregables y comunicaciones asociadas). Este Acuerdo regula exclusivamente el intercambio de Información Confidencial y no constituye oferta, promesa, compromiso u obligación de celebrar contrato alguno, desarrollar el Proyecto o mantener negociaciones.',
     },
     {
       id: 'confidential',
       title: '2. Información Confidencial',
-      body: 'Incluye información técnica, comercial, financiera, de producto, arquitectura, código, unit economics, credenciales, documentación y cualquier material marcado como confidencial o que por su naturaleza deba tratarse como tal.',
+      body: 'Incluye información técnica, comercial, financiera, de producto, arquitectura, código, unit economics, credenciales, documentación y cualquier material marcado como confidencial o que por su naturaleza deba tratarse como tal. También se considera Información Confidencial cualquier análisis, compilación, resumen, reporte, desarrollo, prueba, prototipo o documento elaborado por la Parte Receptora que incorpore, reproduzca, derive o revele Información Confidencial de la Parte Reveladora.',
     },
     {
       id: 'obligations',
@@ -329,6 +329,10 @@ export const PORTAL_NDA: LegalDocument = {
         'No divulgarla a terceros sin autorización escrita, salvo asesores bajo deber de confidencialidad equivalente.',
         'Aplicar al menos el mismo cuidado que con su propia información sensible.',
         'Limitar el acceso a personas con necesidad de conocerla dentro de su organización.',
+        'No copiar, reproducir, modificar, descompilar, realizar ingeniería inversa o utilizar la Información Confidencial para fines distintos al Proyecto, salvo lo estrictamente necesario para evaluar o ejecutar el Proyecto o con autorización previa por escrito.',
+        'No utilizar la Información Confidencial para entrenar modelos de inteligencia artificial, sistemas automatizados o herramientas de aprendizaje automático sin autorización previa por escrito.',
+        'Notificar sin demora a la Parte Reveladora cualquier acceso, uso o divulgación no autorizada de la que tenga conocimiento.',
+        'Adoptar medidas administrativas, físicas y técnicas razonablemente necesarias para proteger la Información Confidencial frente a accesos no autorizados.',
       ],
     },
     {
@@ -339,7 +343,7 @@ export const PORTAL_NDA: LegalDocument = {
     {
       id: 'ip',
       title: '5. Propiedad intelectual',
-      body: 'Nada en este NDA transfiere titularidad de PI. Los entregables de desarrollo se rigen por la cotización o contrato de servicios.',
+      body: 'Nada en este NDA transfiere titularidad de Propiedad Intelectual. Los entregables de desarrollo se rigen por la cotización o contrato de servicios. Ninguna disposición se interpretará como cesión, licencia o autorización de uso respecto de marcas, derechos de autor, patentes, secretos industriales, software, desarrollos, invenciones u otros derechos de propiedad intelectual de cualquiera de las Partes.',
     },
     {
       id: 'term',
@@ -347,8 +351,13 @@ export const PORTAL_NDA: LegalDocument = {
       body: 'Las obligaciones de confidencialidad subsistirán durante 2 años desde la aceptación en el Portal, o mientras exista negociación/contrato del Proyecto, lo que ocurra después. Los secretos comerciales se protegen mientras mantengan ese carácter.',
     },
     {
+      id: 'breach',
+      title: '7. Incumplimiento',
+      body: 'Las Partes reconocen que la divulgación no autorizada de la Información Confidencial puede ocasionar daños de difícil reparación. La Parte afectada podrá solicitar las medidas cautelares, precautorias o judiciales procedentes conforme a la legislación aplicable, sin perjuicio de las demás acciones legales que correspondan.',
+    },
+    {
       id: 'law',
-      title: '7. Ley aplicable',
+      title: '8. Ley aplicable',
       body: 'Leyes de los Estados Unidos Mexicanos. Jurisdicción: tribunales de la Ciudad de México.',
     },
   ],

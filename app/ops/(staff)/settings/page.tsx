@@ -1,4 +1,5 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import { requireStaff } from '@/lib/ops/auth';
 import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
 import { publishLegalVersionAndNotify } from '@/lib/ops/actions';
@@ -69,7 +70,7 @@ export default async function SettingsPage() {
             </Link>
           </p>
 
-          <form action={onPublish} className="space-y-3 rounded-lg bg-zinc-50 p-4">
+          <ToastForm success="Versión publicada" action={onPublish} className="space-y-3 rounded-lg bg-zinc-50 p-4">
             <input
               name="versionCode"
               defaultValue={LEGAL_DOCS_VERSION}
@@ -89,7 +90,7 @@ export default async function SettingsPage() {
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
               Publicar versión en bitácora
             </button>
-          </form>
+          </ToastForm>
 
           <ul className="mt-4 space-y-2 text-sm">
             {(versions ?? []).map((v) => (

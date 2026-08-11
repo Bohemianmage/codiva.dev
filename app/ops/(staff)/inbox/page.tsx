@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { updateInboxStatus, convertInboxToLead } from '@/lib/ops/actions';
@@ -25,8 +26,8 @@ export default async function InboxPage() {
           async function onConvertToLead() {
             'use server';
             const result = await convertInboxToLead(m.id);
-            const { redirect } = await import('next/navigation');
-            redirect(`/leads/${result.leadId}`);
+            const { redirectWithToast } = await import('@/lib/ops/toast');
+            redirectWithToast(`/leads/${result.leadId}`, 'Lead creado desde inbox');
           }
 
           return (
@@ -43,7 +44,7 @@ export default async function InboxPage() {
               </div>
               <p className="text-sm whitespace-pre-wrap text-zinc-700">{m.message}</p>
               <div className="mt-4 flex flex-wrap items-end gap-2">
-                <form action={onStatus} className="flex items-end gap-2">
+                <ToastForm success="Guardado" action={onStatus} className="flex items-end gap-2">
                   <select name="status" defaultValue={m.status} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm">
                     {Object.entries(INBOX_STATUS_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -52,7 +53,7 @@ export default async function InboxPage() {
                   <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
                     Guardar
                   </button>
-                </form>
+                </ToastForm>
                 {m.lead_id ? (
                   <Link
                     href={`/leads/${m.lead_id}`}
@@ -61,11 +62,11 @@ export default async function InboxPage() {
                     Ver lead
                   </Link>
                 ) : (
-                  <form action={onConvertToLead}>
+                  <ToastForm success="Convertido" action={onConvertToLead}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white">
                       Convertir a lead
                     </button>
-                  </form>
+                  </ToastForm>
                 )}
               </div>
             </article>

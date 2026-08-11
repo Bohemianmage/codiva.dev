@@ -8,6 +8,6 @@
  *
  * Los miembros del portal deben volver a aceptar cuando su `*_version` ≠ este valor.
  */
-export const LEGAL_DOCS_VERSION = '2026.08.06';
+export const LEGAL_DOCS_VERSION = '2026.08.11';
 
-export const LEGAL_UPDATED_LABEL = '6 de agosto de 2026';
+export const LEGAL_UPDATED_LABEL = '11 de agosto de 2026';

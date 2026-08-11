@@ -1,4 +1,5 @@
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
+import ToastForm from '@/components/ops/ToastForm';
 
 export const DEFAULT_QUOTE_LINE_ITEMS = JSON.stringify(
   [
@@ -31,7 +32,7 @@ export default function OpsQuoteForm({
   submitLabel = 'Crear borrador',
 }: OpsQuoteFormProps) {
   return (
-    <form action={action} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
+    <ToastForm success="Cotización creada" action={action} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
       <h3 className="font-semibold">{heading || title}</h3>
       <div className="grid gap-3 md:grid-cols-2">
         <input
@@ -104,6 +105,6 @@ export default function OpsQuoteForm({
       <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
         {submitLabel}
       </button>
-    </form>
+    </ToastForm>
   );
 }

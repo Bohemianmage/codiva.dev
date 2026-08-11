@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
@@ -17,8 +18,8 @@ export default async function ProjectsPage() {
   async function onCreate(formData: FormData) {
     'use server';
     const id = await createProject(formData);
-    const { redirect } = await import('next/navigation');
-    redirect(`/projects/${id}`);
+    const { redirectWithToast } = await import('@/lib/ops/toast');
+    redirectWithToast(`/projects/${id}`, 'Proyecto creado');
   }
 
   return (
@@ -27,7 +28,7 @@ export default async function ProjectsPage() {
 
       <section className="mb-8 rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-4 font-semibold">Nuevo proyecto</h2>
-        <form action={onCreate} className="grid gap-3 md:grid-cols-2">
+        <ToastForm success="Creado" action={onCreate} className="grid gap-3 md:grid-cols-2">
           <input name="name" required placeholder="Nombre del proyecto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           <input name="organizationName" placeholder="Empresa cliente" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           <input name="contactEmail" type="email" placeholder="Email contacto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -36,7 +37,7 @@ export default async function ProjectsPage() {
           <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
             Crear proyecto
           </button>
-        </form>
+        </ToastForm>
       </section>
 
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">

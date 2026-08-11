@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { updateTicketStatus } from '@/lib/ops/actions';
@@ -32,7 +33,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <span className="text-sm text-zinc-500">{formatDate(ticket.created_at)}</span>
       </div>
 
-      <form action={onStatus} className="mb-8 flex items-end gap-3">
+      <ToastForm success="Guardado" action={onStatus} className="mb-8 flex items-end gap-3">
         <select name="status" defaultValue={ticket.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
           {Object.entries(TICKET_STATUS_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
@@ -41,7 +42,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
           Actualizar estado
         </button>
-      </form>
+      </ToastForm>
 
       <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-3 font-semibold">Descripción</h2>

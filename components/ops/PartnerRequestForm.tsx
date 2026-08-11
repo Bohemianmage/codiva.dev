@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function PartnerRequestForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -16,6 +17,7 @@ export default function PartnerRequestForm() {
     const form = e.currentTarget;
     const formData = new FormData(form);
     const body = Object.fromEntries(formData.entries());
+    const toastId = toast.loading('Enviando solicitud…');
 
     try {
       const res = await fetch('/api/partner-leads', {
@@ -25,13 +27,18 @@ export default function PartnerRequestForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'No se pudo enviar la solicitud.');
+        const msg = data.error || 'No se pudo enviar la solicitud.';
+        setError(msg);
+        toast.error(msg, { id: toastId });
         return;
       }
       setSubmitted(true);
       form.reset();
+      toast.success('Solicitud enviada', { id: toastId });
     } catch {
-      setError('Error de conexión. Intenta de nuevo.');
+      const msg = 'Error de conexión. Intenta de nuevo.';
+      setError(msg);
+      toast.error(msg, { id: toastId });
     } finally {
       setLoading(false);
     }

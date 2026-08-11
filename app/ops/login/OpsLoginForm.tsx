@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
 
 export default function OpsLoginForm() {
@@ -25,6 +26,7 @@ export default function OpsLoginForm() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    const toastId = toast.loading('Entrando…');
 
     const supabase = createClient();
     const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -38,12 +40,15 @@ export default function OpsLoginForm() {
           ? 'Email o contraseña incorrectos.'
           : authError.message;
       setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
 
     if (!data.user) {
-      setMessage('No se pudo iniciar sesión.');
+      const msg = 'No se pudo iniciar sesión.';
+      setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
@@ -57,11 +62,14 @@ export default function OpsLoginForm() {
 
     if (staffError || !staff) {
       await supabase.auth.signOut();
-      setMessage('Tu cuenta no tiene permisos de staff. Usa el email registrado en el equipo.');
+      const msg = 'Tu cuenta no tiene permisos de staff. Usa el email registrado en el equipo.';
+      setMessage(msg);
+      toast.error(msg, { id: toastId });
       setLoading(false);
       return;
     }
 
+    toast.success('Bienvenido', { id: toastId });
     router.push('/dashboard');
     router.refresh();
   }
