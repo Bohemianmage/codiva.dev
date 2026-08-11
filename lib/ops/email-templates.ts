@@ -172,6 +172,32 @@ export function templatePortalPasswordRecovery(projectName: string): string {
   });
 }
 
+function projectAccessBlock(projectName: string): string {
+  const names = projectName
+    .split(/\s+y\s+/)
+    .flatMap((part) => part.split(/,\s*/))
+    .map((n) => n.trim())
+    .filter(Boolean);
+  if (names.length <= 1) {
+    return `<p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>`;
+  }
+  const list = names.map((n) => `<li style="margin:0 0 4px;"><strong>${escapeHtml(n)}</strong></li>`).join('');
+  return `<p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para estos proyectos:</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
+}
+
+function projectAccessBlockExisting(projectName: string): string {
+  const names = projectName
+    .split(/\s+y\s+/)
+    .flatMap((part) => part.split(/,\s*/))
+    .map((n) => n.trim())
+    .filter(Boolean);
+  if (names.length <= 1) {
+    return `<p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>`;
+  }
+  const list = names.map((n) => `<li style="margin:0 0 4px;"><strong>${escapeHtml(n)}</strong></li>`).join('');
+  return `<p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para estos proyectos:</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
+}
+
 export function templatePortalInviteNewUser(
   projectName: string,
   email: string,
@@ -185,13 +211,13 @@ export function templatePortalInviteNewUser(
     : '';
 
   return emailLayout({
-    preview: `Tu acceso al portal del proyecto ${projectName}`,
+    preview: `Tu acceso al portal: ${projectName}`,
     title: 'Bienvenido a tu portal',
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${projectAccessBlock(projectName)}
       ${clientLine}
-      <p style="margin:0 0 12px;">Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas.</p>
+      <p style="margin:0 0 12px;">Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas. Si tienes más de un proyecto, verás el listado al entrar.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
         <tr>
           <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
@@ -218,15 +244,61 @@ export function templatePortalInviteExistingUser(
 
   return emailLayout({
     preview: `Tienes acceso al portal: ${projectName}`,
-    title: 'Acceso al portal del proyecto',
+    title: 'Acceso al portal',
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      ${projectAccessBlockExisting(projectName)}
       ${clientLine}
       <p style="margin:0 0 12px;">Usa tu correo y contraseña habituales. En el portal encontrarás propuesta, arquitectura y cotización.</p>
       <p style="margin:0;">Si necesitas ayuda, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
     cta: { label: 'Entrar al portal', href: loginUrl },
+  });
+}
+
+export function templateStaffInviteNewUser(
+  fullName: string,
+  email: string,
+  tempPassword: string,
+  loginUrl: string,
+  roleLabel: string
+): string {
+  const hello = fullName ? greeting(fullName) : '';
+  return emailLayout({
+    preview: `Acceso a Codiva Ops`,
+    title: 'Bienvenido al equipo',
+    bodyHtml: `
+      ${hello}
+      <p style="margin:0 0 12px;">Se creó tu acceso a <strong>${escapeHtml(BRAND_NAME)} Ops</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
+        <tr>
+          <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
+            <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p style="margin:0;"><strong>Contraseña temporal:</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;">${escapeHtml(tempPassword)}</code></p>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0;color:${BRAND.muted};font-size:14px;">Cambia tu contraseña al ingresar.</p>
+    `,
+    cta: { label: 'Entrar a Ops', href: loginUrl },
+  });
+}
+
+export function templateStaffInviteExistingUser(
+  fullName: string,
+  loginUrl: string,
+  roleLabel: string
+): string {
+  const hello = fullName ? greeting(fullName) : '';
+  return emailLayout({
+    preview: `Acceso a Codiva Ops`,
+    title: 'Acceso a Ops',
+    bodyHtml: `
+      ${hello}
+      <p style="margin:0 0 12px;">Se te otorgó acceso a <strong>${escapeHtml(BRAND_NAME)} Ops</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
+      <p style="margin:0;">Usa tu correo y contraseña habituales.</p>
+    `,
+    cta: { label: 'Entrar a Ops', href: loginUrl },
   });
 }
 

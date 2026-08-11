@@ -33,6 +33,15 @@ export async function requireStaff() {
   return { user, staff, supabase };
 }
 
+/** Solo administradores (gestión de equipo). */
+export async function requireAdminStaff() {
+  const access = await requireStaff();
+  if (access.staff.role !== 'admin') {
+    redirect('/settings?error=admin_required');
+  }
+  return access;
+}
+
 async function getActiveStaff(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string

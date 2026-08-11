@@ -5,7 +5,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export const OPS_SIGNED_URL_TTL_SECONDS = 60 * 5; // 5 minutos
 
 export function isOpsStoragePath(path: string | null | undefined): boolean {
-  return Boolean(path && path.startsWith('projects/'));
+  return Boolean(
+    path && (path.startsWith('projects/') || path.startsWith('organizations/'))
+  );
 }
 
 export function isPublicClientPackPath(pathOrUrl: string | null | undefined): boolean {
@@ -36,6 +38,14 @@ export function opsFileHref(filePath: string | null | undefined, fileUrl?: strin
 export function projectIdFromOpsPath(path: string): string | null {
   const parts = path.split('/').filter(Boolean);
   if (parts[0] !== 'projects' || !parts[1]) return null;
+  const id = parts[1];
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return id;
+}
+
+export function organizationIdFromOpsPath(path: string): string | null {
+  const parts = path.split('/').filter(Boolean);
+  if (parts[0] !== 'organizations' || !parts[1]) return null;
   const id = parts[1];
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   return id;

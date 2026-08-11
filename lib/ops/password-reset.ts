@@ -8,27 +8,11 @@ import {
   templatePortalPasswordRecoveryHtml,
 } from '@/lib/ops/email-templates';
 import { opsAuthCallbackUrl, portalAuthCallbackUrl, portalHubAuthCallbackUrl } from '@/lib/ops/auth-urls';
+import { findUserIdByEmail } from '@/lib/ops/auth-users';
 
 type ResetResult = { ok: true; message: string } | { ok: false; message: string };
 
-async function findUserIdByEmail(email: string): Promise<string | null> {
-  const admin = createAdminClient();
-  let page = 1;
-  const perPage = 200;
-
-  while (page <= 10) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) {
-      console.error('listUsers:', error);
-      return null;
-    }
-    const match = data.users.find((u) => u.email?.toLowerCase() === email);
-    if (match) return match.id;
-    if (data.users.length < perPage) break;
-    page += 1;
-  }
-  return null;
-}
+export { findUserIdByEmail };
 
 async function sendSupabaseRecoveryEmail(email: string, redirectTo: string): Promise<ResetResult | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

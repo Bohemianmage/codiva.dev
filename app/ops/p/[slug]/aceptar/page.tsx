@@ -34,9 +34,9 @@ export default async function PortalAcceptLegalPage({
         <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Portal del proyecto</p>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">{access.project.name}</h1>
         <p className="mt-3 text-sm text-zinc-600">
-          Antes de entrar, cada usuario debe aceptar los documentos legales vigentes
-          (versión {LEGAL_DOCS_VERSION} · {LEGAL_UPDATED_LABEL}). Esto aplica a todos los
-          colaboradores invitados al proyecto.
+          Antes de entrar, acepta los documentos legales vigentes
+          (versión {LEGAL_DOCS_VERSION} · {LEGAL_UPDATED_LABEL}). La aceptación aplica a{' '}
+          <strong>todos tus proyectos</strong> en el portal.
         </p>
 
         <ToastForm success="Aceptado" action={onAccept} className="mt-8 space-y-4">

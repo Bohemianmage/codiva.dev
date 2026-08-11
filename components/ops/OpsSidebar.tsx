@@ -11,6 +11,8 @@ import {
   Ticket,
   LogOut,
   Settings,
+  ContactRound,
+  UserCog,
 } from 'lucide-react';
 
 const NAV = [
@@ -18,15 +20,24 @@ const NAV = [
   { href: '/leads', label: 'Leads', icon: Users },
   { href: '/inbox', label: 'Inbox', icon: Inbox },
   { href: '/projects', label: 'Proyectos', icon: FolderKanban },
+  { href: '/users', label: 'Usuarios', icon: ContactRound },
   { href: '/tickets', label: 'Tickets', icon: Ticket },
+  { href: '/team', label: 'Equipo', icon: UserCog, adminOnly: true },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
 
-export default function OpsSidebar({ staffName }: { staffName: string }) {
+export default function OpsSidebar({
+  staffName,
+  isAdmin = false,
+}: {
+  staffName: string;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
   const normalized = pathname.replace(/^\/ops/, '') || '/dashboard';
+  const items = NAV.filter((item) => !item.adminOnly || isAdmin);
 
   async function signOut() {
     const supabase = createClient();
@@ -44,7 +55,7 @@ export default function OpsSidebar({ staffName }: { staffName: string }) {
         <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
       </div>
       <nav className="flex-1 space-y-1 p-3">
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon }) => {
           const active = normalized === href || normalized.startsWith(`${href}/`);
           return (
             <Link

@@ -42,6 +42,12 @@ export function opsBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_OPS_URL ?? 'https://ops.codiva.dev').replace(/\/$/, '');
 }
 
+/** Login staff (host ops). */
+export function opsLoginUrl(path = ''): string {
+  const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
+  return `${opsBaseUrl()}/login${suffix}`;
+}
+
 export function portalBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.codiva.dev').replace(/\/$/, '');
 }

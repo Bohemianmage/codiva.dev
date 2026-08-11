@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { requireStaff, requirePortalAccess } from '@/lib/ops/auth';
+import { requireStaff, requireAdminStaff, requirePortalAccess } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
@@ -13,16 +13,19 @@ import {
   templateLeadQuoteSent,
   templateStaffAlert,
   templateLegalReacceptance,
-  templatePortalInviteNewUser,
   templatePortalInviteExistingUser,
+  templateStaffInviteNewUser,
+  templateStaffInviteExistingUser,
 } from '@/lib/ops/email-templates';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
-import { opsBaseUrl, projectPortalUrl } from '@/lib/ops/host';
+import { opsBaseUrl, opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib/ops/host';
 import { uploadOpsFile } from '@/lib/ops/storage';
-import { ingestProjectDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
+import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
 import { parseLineItemsJson } from '@/lib/ops/quote-document';
 import { ensureQuoteAccessToken, publicQuoteUrl } from '@/lib/ops/quote-tokens';
+import { invitePortalUserCore } from '@/lib/ops/portal-invite';
+import { findUserIdByEmail } from '@/lib/ops/auth-users';
 
 function parseQuoteFormData(formData: FormData) {
   const lineItemsRaw = String(formData.get('lineItems') || '[]');
@@ -600,91 +603,214 @@ export async function acceptQuote(quoteId: string, projectId: string) {
   revalidatePath(`/projects/${projectId}`);
 }
 
+export async function invitePortalUser(formData: FormData) {
+  await requireStaff();
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const role = String(formData.get('role') || 'viewer');
+  const projectIds = formData
+    .getAll('projectIds')
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+
+  const result = await invitePortalUserCore({ email, role, projectIds });
+
+  revalidatePath('/users');
+  revalidatePath(`/users/${result.userId}`);
+  for (const id of result.projectIds) {
+    revalidatePath(`/projects/${id}`);
+  }
+  return result;
+}
+
 export async function inviteProjectMember(projectId: string, formData: FormData) {
+  await requireStaff();
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const role = String(formData.get('role') || 'viewer');
+  const siblingIds = formData
+    .getAll('siblingProjectIds')
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+
+  const projectIds = [...new Set([projectId, ...siblingIds])];
+  const result = await invitePortalUserCore({ email, role, projectIds });
+
+  revalidatePath('/users');
+  revalidatePath(`/users/${result.userId}`);
+  for (const id of result.projectIds) {
+    revalidatePath(`/projects/${id}`);
+  }
+}
+
+export async function resendPortalInvite(userId: string) {
   await requireStaff();
   const admin = createAdminClient();
 
-  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);
+  if (userError || !authUser.user?.email) throw new Error('Usuario no encontrado');
+
+  const email = authUser.user.email.toLowerCase();
+  const { data: memberships } = await admin
+    .from('project_members')
+    .select('project_id, projects(id, name)')
+    .eq('user_id', userId);
+
+  const names = (memberships ?? [])
+    .map((m) => {
+      const p = m.projects as { name?: string } | { name?: string }[] | null;
+      if (Array.isArray(p)) return p[0]?.name;
+      return p?.name;
+    })
+    .filter((n): n is string => Boolean(n));
+
+  const label =
+    names.length === 0
+      ? 'portal'
+      : names.length === 1
+        ? names[0]
+        : names.length === 2
+          ? `${names[0]} y ${names[1]}`
+          : `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`;
+
+  const mail = await sendClientEmail({
+    to: email,
+    subject: `Acceso a tu portal - ${label}`,
+    html: templatePortalInviteExistingUser(label, portalLoginUrl()),
+  });
+  if (!mail.ok && !mail.skipped) {
+    throw new Error(mail.error || 'No se pudo reenviar la invitación');
+  }
+
+  revalidatePath(`/users/${userId}`);
+}
+
+export async function addPortalUserProjects(userId: string, formData: FormData) {
+  await requireStaff();
   const role = String(formData.get('role') || 'viewer');
+  const projectIds = formData
+    .getAll('projectIds')
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  if (!projectIds.length) throw new Error('Selecciona al menos un proyecto');
+
+  const admin = createAdminClient();
+  const { data: authUser } = await admin.auth.admin.getUserById(userId);
+  if (!authUser.user?.email) throw new Error('Usuario no encontrado');
+
+  await invitePortalUserCore({
+    email: authUser.user.email,
+    role,
+    projectIds,
+    sendEmail: formData.get('sendEmail') === 'on',
+  });
+
+  revalidatePath('/users');
+  revalidatePath(`/users/${userId}`);
+  for (const id of projectIds) revalidatePath(`/projects/${id}`);
+}
+
+export async function removePortalUserProject(userId: string, projectId: string) {
+  await requireStaff();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('project_members')
+    .delete()
+    .eq('user_id', userId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/users');
+  revalidatePath(`/users/${userId}`);
+  revalidatePath(`/projects/${projectId}`);
+}
+
+const STAFF_ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrador',
+  pm: 'Project Manager',
+  dev: 'Desarrollador',
+};
+
+export async function inviteStaff(formData: FormData) {
+  await requireAdminStaff();
+  const admin = createAdminClient();
+
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const fullName = String(formData.get('fullName') || '').trim();
+  const role = String(formData.get('role') || 'pm');
   if (!email) throw new Error('Email requerido');
+  if (!['admin', 'pm', 'dev'].includes(role)) throw new Error('Rol inválido');
 
-  const { data: project } = await admin
-    .from('projects')
-    .select(
-      'slug, name, client_visible, leads!lead_id(partner_name, end_client_company, end_client_name)'
-    )
-    .eq('id', projectId)
-    .single();
-  if (!project) throw new Error('Proyecto no encontrado');
+  let userId = await findUserIdByEmail(email);
+  let isNew = false;
+  let tempPassword: string | undefined;
 
-  const lead = (
-    project as {
-      leads?: {
-        partner_name?: string | null;
-        end_client_company?: string | null;
-        end_client_name?: string | null;
-      } | null;
-    }
-  )?.leads;
-  const inviteContext = {
-    partnerName: lead?.partner_name || undefined,
-    endClientLabel: lead?.end_client_company || lead?.end_client_name || undefined,
-  };
-
-  let userId: string;
-  const { data: existingUsers } = await admin.auth.admin.listUsers();
-  const found = existingUsers?.users?.find((u) => u.email === email);
-
-  if (found) {
-    userId = found.id;
-    await sendClientEmail({
-      to: email,
-      subject: `Acceso a tu portal - ${project.name}`,
-      html: templatePortalInviteExistingUser(
-        project.name,
-        projectPortalUrl(project.slug, '/login'),
-        inviteContext
-      ),
-    });
-  } else {
-    const tempPassword = crypto.randomUUID();
+  if (!userId) {
+    tempPassword = crypto.randomUUID();
     const { data: created, error } = await admin.auth.admin.createUser({
       email,
       password: tempPassword,
       email_confirm: true,
+      user_metadata: fullName ? { full_name: fullName } : undefined,
     });
     if (error || !created.user) throw new Error(error?.message ?? 'No se pudo crear usuario');
     userId = created.user.id;
-
-    await sendClientEmail({
-      to: email,
-      subject: `Acceso a tu portal - ${project.name}`,
-      html: templatePortalInviteNewUser(
-        project.name,
-        email,
-        tempPassword,
-        projectPortalUrl(project.slug, '/login'),
-        inviteContext
-      ),
-    });
+    isNew = true;
   }
 
-  const { error: memberError } = await admin.from('project_members').upsert(
+  const { error: profileError } = await admin.from('staff_profiles').upsert(
     {
-      project_id: projectId,
-      user_id: userId,
+      id: userId,
+      full_name: fullName || email.split('@')[0],
       role,
-      accepted_at: new Date().toISOString(),
+      active: true,
     },
-    { onConflict: 'project_id,user_id' }
+    { onConflict: 'id' }
   );
-  if (memberError) throw new Error(memberError.message);
+  if (profileError) throw new Error(profileError.message);
 
-  if (!project.client_visible) {
-    await admin.from('projects').update({ client_visible: true }).eq('id', projectId);
+  const roleLabel = STAFF_ROLE_LABELS[role] ?? role;
+  const loginUrl = opsLoginUrl();
+  const html = isNew
+    ? templateStaffInviteNewUser(fullName || email, email, tempPassword!, loginUrl, roleLabel)
+    : templateStaffInviteExistingUser(fullName || email, loginUrl, roleLabel);
+
+  const mail = await sendClientEmail({
+    to: email,
+    subject: `Acceso a Codiva Ops - ${roleLabel}`,
+    html,
+  });
+  if (!mail.ok && !mail.skipped) {
+    throw new Error(mail.error || 'No se pudo enviar el correo');
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/team');
+  revalidatePath('/settings');
+}
+
+export async function updateStaffProfile(staffId: string, formData: FormData) {
+  const { user } = await requireAdminStaff();
+  const admin = createAdminClient();
+
+  const fullName = String(formData.get('fullName') || '').trim();
+  const role = String(formData.get('role') || 'pm');
+  const active = formData.get('active') === 'on';
+
+  if (!['admin', 'pm', 'dev'].includes(role)) throw new Error('Rol inválido');
+  if (staffId === user.id && !active) {
+    throw new Error('No puedes desactivar tu propia cuenta');
+  }
+
+  const { error } = await admin
+    .from('staff_profiles')
+    .update({
+      full_name: fullName || undefined,
+      role,
+      active,
+    })
+    .eq('id', staffId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/team');
+  revalidatePath('/settings');
 }
 
 export async function uploadDocument(projectId: string, formData: FormData) {
@@ -846,39 +972,43 @@ export async function acceptPortalLegalDocuments(slug: string, formData: FormDat
   const now = new Date().toISOString();
   const admin = createAdminClient();
 
-  const { data: member, error } = await admin
+  const acceptancePatch = {
+    terms_accepted_at: now,
+    terms_version: LEGAL_DOCS_VERSION,
+    privacy_accepted_at: now,
+    privacy_version: LEGAL_DOCS_VERSION,
+    nda_accepted_at: now,
+    nda_version: LEGAL_DOCS_VERSION,
+    accepted_at: now,
+  };
+
+  const { data: members, error } = await admin
     .from('project_members')
-    .update({
-      terms_accepted_at: now,
-      terms_version: LEGAL_DOCS_VERSION,
-      privacy_accepted_at: now,
-      privacy_version: LEGAL_DOCS_VERSION,
-      nda_accepted_at: now,
-      nda_version: LEGAL_DOCS_VERSION,
-      accepted_at: now,
-    })
-    .eq('project_id', access.project.id)
+    .update(acceptancePatch)
     .eq('user_id', access.user.id)
-    .select('id')
-    .single();
+    .select('id, project_id');
 
   if (error) throw new Error(error.message);
+  if (!members?.length) throw new Error('Membresía no encontrada');
 
   const audit = await getRequestAudit();
-  await logActivity({
-    entityType: 'project_member',
-    entityId: member.id,
-    action: 'legal_accepted',
-    actorId: access.user.id,
-    metadata: {
-      project_id: access.project.id,
-      project_slug: slug,
-      version: LEGAL_DOCS_VERSION,
-      documents: ['terms', 'privacy', 'nda'],
-      ip: audit.ip,
-      user_agent: audit.userAgent,
-    },
-  });
+  for (const member of members) {
+    await logActivity({
+      entityType: 'project_member',
+      entityId: member.id,
+      action: 'legal_accepted',
+      actorId: access.user.id,
+      metadata: {
+        project_id: member.project_id,
+        project_slug: slug,
+        version: LEGAL_DOCS_VERSION,
+        documents: ['terms', 'privacy', 'nda'],
+        propagated: member.project_id !== access.project.id,
+        ip: audit.ip,
+        user_agent: audit.userAgent,
+      },
+    });
+  }
 
   const { redirectWithToast } = await import('@/lib/ops/toast');
   redirectWithToast(`/p/${slug}`, 'Documentos legales aceptados');
@@ -1002,24 +1132,76 @@ export async function clientFulfillDocumentRequest(
     if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
 
     const isSignedNda = req.expected_type === 'nda';
-    const { doc, sha256: hash, path: storedPath, scan } = await ingestProjectDocument({
-      projectId,
-      file,
-      type: req.expected_type,
-      title: req.title,
-      notes,
-      signed: isSignedNda,
-      visibleToClient: true,
-      source: 'client',
-      uploadedBy: user.id,
-      folder: 'inbound',
-      requestId: req.id,
-      audit,
-    });
-    documentId = doc.id;
-    sha256 = hash;
-    path = storedPath;
-    scanStatus = scan.status;
+    const organizationId = project.organization_id;
+
+    if (isSignedNda && organizationId) {
+      const { doc, sha256: hash, path: storedPath, scan } = await ingestOrgDocument({
+        organizationId,
+        projectId,
+        file,
+        type: req.expected_type,
+        title: req.title,
+        notes,
+        signed: true,
+        visibleToClient: true,
+        source: 'client',
+        uploadedBy: user.id,
+        folder: 'nda',
+        requestId: req.id,
+        audit,
+      });
+      documentId = doc.id;
+      sha256 = hash;
+      path = storedPath;
+      scanStatus = scan.status;
+
+      await admin
+        .from('organizations')
+        .update({
+          mutual_nda_document_id: doc.id,
+          mutual_nda_signed_at: new Date().toISOString(),
+        })
+        .eq('id', organizationId);
+
+      const { data: siblingProjects } = await admin
+        .from('projects')
+        .select('id')
+        .eq('organization_id', organizationId);
+      const siblingIds = (siblingProjects ?? []).map((p) => p.id);
+      if (siblingIds.length) {
+        await admin
+          .from('document_requests')
+          .update({
+            status: 'fulfilled',
+            fulfilled_document_id: documentId,
+            fulfilled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .in('project_id', siblingIds)
+          .eq('expected_type', 'nda')
+          .eq('status', 'open');
+      }
+    } else {
+      const { doc, sha256: hash, path: storedPath, scan } = await ingestProjectDocument({
+        projectId,
+        file,
+        type: req.expected_type,
+        title: req.title,
+        notes,
+        signed: isSignedNda,
+        visibleToClient: true,
+        source: 'client',
+        uploadedBy: user.id,
+        folder: 'inbound',
+        requestId: req.id,
+        audit,
+        organizationId,
+      });
+      documentId = doc.id;
+      sha256 = hash;
+      path = storedPath;
+      scanStatus = scan.status;
+    }
   } else if (req.input_mode === 'credentials') {
     const payload = {
       provider: String(formData.get('provider') || '').trim(),
