@@ -79,6 +79,7 @@ export default async function ProjectDetailPage({
     { data: docRequests },
     { data: charges },
     { data: siteAccess },
+    { data: siblingProjects },
   ] = await Promise.all([
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
@@ -106,7 +107,31 @@ export default async function ProjectDetailPage({
       .select('id, label, kind, url, username, secret, notes, visible_to_client, sort_order')
       .eq('project_id', id)
       .order('sort_order', { ascending: true }),
+    project.organization_id
+      ? supabase
+          .from('projects')
+          .select('id, name')
+          .eq('organization_id', project.organization_id)
+          .neq('id', id)
+          .order('name')
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
+
+  const { data: orgNdaDocs } = project.organization_id
+    ? await supabase
+        .from('documents')
+        .select('*')
+        .eq('organization_id', project.organization_id)
+        .eq('type', 'nda')
+        .eq('signed', true)
+        .is('disposed_at', null)
+        .order('uploaded_at', { ascending: false })
+    : { data: [] as never[] };
+
+  const staffDocuments = [
+    ...(documents ?? []),
+    ...(orgNdaDocs ?? []).filter((d) => !(documents ?? []).some((p) => p.id === d.id)),
+  ];
 
   const admin = createAdminClient();
   const [{ data: fileAccess }, { data: recentActivity }] = await Promise.all([
@@ -728,7 +753,7 @@ export default async function ProjectDetailPage({
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Subir</button>
           </ToastForm>
           <ul className="space-y-2">
-            {(documents ?? []).map((d) => {
+            {staffDocuments.map((d) => {
               const href = (() => {
                 const base = opsFileHref(d.file_path, d.file_url);
                 if (!base) return null;
@@ -882,13 +907,31 @@ export default async function ProjectDetailPage({
               <h3 className="font-semibold">Invitar usuario del cliente</h3>
               <p className="text-sm text-zinc-600">
                 Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
-                privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}).
+                privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}). También puedes
+                gestionar usuarios multi-proyecto en{' '}
+                <Link href="/users" className="text-codiva-primary hover:underline">
+                  Usuarios
+                </Link>
+                .
               </p>
               <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
                 <option value="viewer">Viewer - solo lectura</option>
                 <option value="approver">Approver - puede aceptar cotización</option>
               </select>
+              {(siblingProjects ?? []).length > 0 && (
+                <fieldset className="space-y-2 rounded-lg border border-zinc-200 p-3">
+                  <legend className="px-1 text-sm font-medium text-zinc-700">
+                    También en otros proyectos de este cliente
+                  </legend>
+                  {(siblingProjects ?? []).map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="siblingProjectIds" value={p.id} defaultChecked />
+                      {p.name}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
             </ToastForm>
             <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">

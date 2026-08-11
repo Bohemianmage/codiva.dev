@@ -56,7 +56,7 @@ export default async function PortalHomePage({
   const { project, supabase } = await requireProjectMember(slug);
   const visibility = getPortalVisibility(project);
 
-  const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }, { data: charges }] =
+  const [{ data: milestones }, { data: quotes }, { data: canvases }, { data: docs }, { data: orgNda }, { data: charges }] =
     await Promise.all([
     supabase
       .from('milestones')
@@ -86,6 +86,16 @@ export default async function PortalHomePage({
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .eq('type', 'nda'),
+    project.organization_id
+      ? supabase
+          .from('documents')
+          .select('id, type, signed')
+          .eq('organization_id', project.organization_id)
+          .eq('visible_to_client', true)
+          .eq('type', 'nda')
+          .eq('signed', true)
+          .limit(1)
+      : Promise.resolve({ data: [] as { id: string; type: string; signed: boolean }[] }),
     visibility.showCosts
       ? supabase
           .from('project_charges')
@@ -100,8 +110,9 @@ export default async function PortalHomePage({
     quotes?.find((q) => q.status === 'accepted') ??
     quotes?.find((q) => q.status === 'sent') ??
     quotes?.[0];
-  const hasNda = (docs ?? []).length > 0;
-  const signedNda = (docs ?? []).some((d) => d.type === 'nda' && d.signed);
+  const ndaDocs = [...(docs ?? []), ...(orgNda ?? [])];
+  const hasNda = ndaDocs.length > 0;
+  const signedNda = ndaDocs.some((d) => d.type === 'nda' && d.signed);
   const visibleCanvases = filterClientCanvases(canvases ?? [], visibility);
   const renewalNotices = getActiveChargeNotices(charges ?? []);
   const proposalCopy = proposalCardCopy(visibleCanvases.map((c) => c.kind));

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import {
   createOpsSignedUrl,
   isOpsStoragePath,
+  organizationIdFromOpsPath,
   projectIdFromOpsPath,
 } from '@/lib/ops/storage';
 import { logActivity } from '@/lib/ops/activity';
@@ -20,8 +21,9 @@ export async function GET(request: Request) {
   }
 
   const projectId = projectIdFromOpsPath(path);
-  if (!projectId) {
-    return NextResponse.json({ error: 'Proyecto inválido en ruta' }, { status: 400 });
+  const organizationId = organizationIdFromOpsPath(path);
+  if (!projectId && !organizationId) {
+    return NextResponse.json({ error: 'Ruta de archivo inválida' }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -40,16 +42,40 @@ export async function GET(request: Request) {
     .eq('active', true)
     .maybeSingle();
 
-  if (!staff) {
-    const { data: membership } = await supabase
-      .from('project_members')
-      .select('id')
-      .eq('project_id', projectId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+  let logProjectId = projectId;
 
-    if (!membership) {
-      return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
+  if (!staff) {
+    if (projectId) {
+      const { data: membership } = await supabase
+        .from('project_members')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
+      }
+    } else if (organizationId) {
+      const { data: orgProjects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('organization_id', organizationId);
+      const ids = (orgProjects ?? []).map((p) => p.id);
+      if (!ids.length) {
+        return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
+      }
+      const { data: membership } = await supabase
+        .from('project_members')
+        .select('id, project_id')
+        .eq('user_id', user.id)
+        .in('project_id', ids)
+        .limit(1)
+        .maybeSingle();
+      if (!membership) {
+        return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
+      }
+      logProjectId = membership.project_id;
     }
   }
 
@@ -73,7 +99,7 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
 
     await admin.from('file_access_log').insert({
-      project_id: projectId,
+      project_id: logProjectId,
       document_id: documentId && /^[0-9a-f-]{36}$/i.test(documentId) ? documentId : null,
       file_path: path,
       action: 'download',
@@ -84,11 +110,12 @@ export async function GET(request: Request) {
 
     await logActivity({
       entityType: 'file',
-      entityId: projectId,
+      entityId: logProjectId ?? organizationId ?? 'unknown',
       action: 'download',
       actorId: user.id,
       metadata: {
-        project_id: projectId,
+        project_id: logProjectId,
+        organization_id: organizationId,
         file_path: path,
         document_id: documentId,
         via: 'api/ops/file',

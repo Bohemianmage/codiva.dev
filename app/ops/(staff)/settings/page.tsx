@@ -47,6 +47,13 @@ export default async function SettingsPage() {
               <dd>{ROLE_LABELS[staff.role] ?? staff.role}</dd>
             </div>
           </dl>
+          {staff.role === 'admin' && (
+            <p className="mt-4 text-sm">
+              <Link href="/team" className="text-codiva-primary hover:underline">
+                Gestionar equipo Ops →
+              </Link>
+            </p>
+          )}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">

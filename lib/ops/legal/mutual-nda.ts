@@ -56,8 +56,8 @@ export function buildMutualNdaHtml(input: MutualNdaInput): string {
   const email = CODIVA_BRAND.urls.email;
 
   const objectBody = scope
-    ? `Las Partes desean evaluar y, en su caso, desarrollar el proyecto <strong>${escapeHtml(projectName)}</strong> (${escapeHtml(scope)}), en adelante el “Proyecto”. Con ese fin compartirán Información Confidencial.`
-    : `Las Partes desean evaluar y, en su caso, desarrollar el proyecto <strong>${escapeHtml(projectName)}</strong> (el “Proyecto”). Con ese fin compartirán Información Confidencial.`;
+    ? `Las Partes desean evaluar y, en su caso, desarrollar una relación comercial en torno a <strong>${escapeHtml(projectName)}</strong> y proyectos relacionados (${escapeHtml(scope)}), en adelante el “Proyecto”. Con ese fin compartirán Información Confidencial.`
+    : `Las Partes desean evaluar y, en su caso, desarrollar una relación comercial en torno a <strong>${escapeHtml(projectName)}</strong> y proyectos relacionados de la misma organización cliente (el “Proyecto”). Con ese fin compartirán Información Confidencial.`;
 
   return `<!DOCTYPE html>
 <html lang="es">
