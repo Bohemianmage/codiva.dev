@@ -1753,8 +1753,9 @@ export async function createPersonnelOffer(formData: FormData) {
 
   if (error || !data) throw new Error(error?.message ?? 'No se pudo crear la carta oferta');
 
-  revalidatePath('/alta-personal');
-  redirect(`/alta-personal/${data.id}`);
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${data.id}`);
+  redirect(`/team/ofertas/${data.id}`);
 }
 
 export async function updatePersonnelOffer(offerId: string, formData: FormData) {
@@ -1810,8 +1811,8 @@ export async function updatePersonnelOffer(offerId: string, formData: FormData) 
 
   if (error) throw new Error(error.message);
 
-  revalidatePath('/alta-personal');
-  revalidatePath(`/alta-personal/${offerId}`);
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${offerId}`);
 }
 
 export async function updatePersonnelOfferStatus(offerId: string, formData: FormData) {
@@ -1828,6 +1829,6 @@ export async function updatePersonnelOfferStatus(offerId: string, formData: Form
 
   if (error) throw new Error(error.message);
 
-  revalidatePath('/alta-personal');
-  revalidatePath(`/alta-personal/${offerId}`);
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${offerId}`);
 }

@@ -13,7 +13,6 @@ import {
   Settings,
   ContactRound,
   UserCog,
-  UserPlus,
 } from 'lucide-react';
 
 const NAV = [
@@ -23,7 +22,6 @@ const NAV = [
   { href: '/projects', label: 'Proyectos', icon: FolderKanban },
   { href: '/users', label: 'Usuarios', icon: ContactRound },
   { href: '/tickets', label: 'Tickets', icon: Ticket },
-  { href: '/alta-personal', label: 'Alta personal', icon: UserPlus, adminOnly: true },
   { href: '/team', label: 'Equipo', icon: UserCog, adminOnly: true },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];

@@ -3,6 +3,12 @@ import { formatCurrency } from '@/lib/ops/labels';
 import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
 
 const BRAND = BRAND_EMAIL;
+const ACCENT_LIGHT = CODIVA_BRAND.colors.accentLight;
+const FONT_BODY = `'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
+const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, system-ui, sans-serif`;
+const SITE = CODIVA_BRAND.urls.site.replace(/\/$/, '');
+const LOGO_WHITE_URL = `${SITE}/logo-white.svg`;
+const LOGO_URL = `${SITE}/logo.svg`;
 
 export const WORK_MODALITY_LABELS: Record<string, string> = {
   remote: 'Remoto',
@@ -65,7 +71,7 @@ function paragraphs(text: string): string {
     .filter(Boolean)
     .map(
       (block) =>
-        `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:${BRAND.text};">${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`
+        `<p style="margin:0 0 14px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`
     )
     .join('');
 }
@@ -76,26 +82,32 @@ function bulletList(text: string): string {
     .map((l) => l.replace(/^[\s•\-–]+/, '').trim())
     .filter(Boolean);
   if (!items.length) return '';
-  return `<ul style="margin:0 0 16px;padding-left:20px;color:${BRAND.text};font-size:14px;line-height:1.7;">
-    ${items.map((item) => `<li style="margin-bottom:6px;">${escapeHtml(item)}</li>`).join('')}
+  return `<ul style="margin:0 0 16px;padding-left:20px;font-family:${FONT_BODY};color:${BRAND.text};font-size:15px;line-height:1.7;">
+    ${items.map((item) => `<li style="margin-bottom:8px;">${escapeHtml(item)}</li>`).join('')}
   </ul>`;
 }
 
 function section(title: string, body: string, asBullets = false): string {
   if (!body.trim()) return '';
   return `
-    <section style="margin-top:28px;">
-      <h2 style="margin:0 0 12px;font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(title)}</h2>
+    <section style="margin-top:32px;">
+      <h2 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(title)}</h2>
       ${asBullets ? bulletList(body) : paragraphs(body)}
     </section>`;
 }
 
 function metaRow(label: string, value: string): string {
   return `
-    <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid ${BRAND.border};">
-      <span style="min-width:170px;font-size:13px;font-weight:600;color:${BRAND.muted};">${escapeHtml(label)}</span>
-      <span style="font-size:13px;color:${BRAND.text};">${escapeHtml(value)}</span>
+    <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid ${BRAND.border};">
+      <span style="min-width:170px;font-family:${FONT_BODY};font-size:13px;font-weight:600;color:${BRAND.muted};">${escapeHtml(label)}</span>
+      <span style="font-family:${FONT_BODY};font-size:14px;font-weight:500;color:${BRAND.text};">${escapeHtml(value)}</span>
     </div>`;
+}
+
+function brandWordmark(onDark = false): string {
+  const nameColor = onDark ? '#FFFFFF' : BRAND.text;
+  const accent = onDark ? ACCENT_LIGHT : BRAND.primary;
+  return `<span style="font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${nameColor};">Codiva<span style="font-weight:500;color:${accent};">.dev</span></span>`;
 }
 
 export function offerLetterFilename(fullName: string) {
@@ -127,34 +139,45 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Carta oferta - ${escapeHtml(data.fullName)} · Codiva</title>
-  <style>@media print { body { background:#fff!important; } .page { box-shadow:none!important; margin:0!important; } }</style>
+  <title>Carta oferta - ${escapeHtml(data.fullName)} · Codiva.dev</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    @media print {
+      body { background:#fff!important; padding:0!important; }
+      .page { box-shadow:none!important; margin:0!important; border:none!important; border-radius:0!important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:Inter,Segoe UI,Arial,sans-serif;">
-  <article class="page" style="max-width:820px;margin:0 auto;background:#fff;border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.06);">
-    <header style="background:${BRAND.primary};padding:28px 32px;color:#fff;">
-      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0.9;">Codiva.dev</p>
-      <p style="margin:10px 0 0;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0.95;">Carta oferta</p>
-      <h1 style="margin:14px 0 0;font-size:28px;line-height:1.2;font-weight:700;">${escapeHtml(data.fullName)}</h1>
-      <p style="margin:8px 0 0;font-size:14px;opacity:0.9;">${escapeHtml(data.positionTitle)}</p>
+<body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:${FONT_BODY};color:${BRAND.text};">
+  <article class="page" style="max-width:820px;margin:0 auto;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(24,24,27,0.06);">
+    <header style="background:${BRAND.primary};padding:28px 36px 32px;color:#fff;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;">
+        <img src="${LOGO_WHITE_URL}" alt="Codiva" width="40" height="40" style="display:block;border:0;outline:none;"/>
+        ${brandWordmark(true)}
+      </div>
+      <p style="margin:0;font-family:${FONT_DISPLAY};font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${ACCENT_LIGHT};">Carta oferta</p>
+      <h1 style="margin:12px 0 0;font-family:${FONT_DISPLAY};font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:#fff;">${escapeHtml(data.fullName)}</h1>
+      <p style="margin:10px 0 0;font-family:${FONT_BODY};font-size:15px;font-weight:500;color:rgba(255,255,255,0.88);">${escapeHtml(data.positionTitle)}</p>
     </header>
-    <div style="padding:28px 32px;">
-      <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:${BRAND.text};">
+
+    <div style="padding:32px 36px 40px;">
+      <p style="margin:0 0 20px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.textMuted};">
         Ciudad de México, a ${escapeHtml(issuedAt)}.
       </p>
-      <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:${BRAND.text};">
-        Estimado/a <strong>${escapeHtml(data.fullName)}</strong>:
+      <p style="margin:0 0 16px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
+        Estimado/a <strong style="font-weight:600;">${escapeHtml(data.fullName)}</strong>:
       </p>
-      <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:${BRAND.text};">
-        En Codiva.dev nos da gusto ofrecerte incorporarte a nuestro equipo de operaciones
-        como <strong>${escapeHtml(data.positionTitle)}</strong>. Esta carta formaliza los términos
+      <p style="margin:0 0 24px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
+        En <span style="font-family:${FONT_DISPLAY};font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></span>
+        nos da gusto ofrecerte incorporarte a nuestro equipo de operaciones
+        como <strong style="font-weight:600;">${escapeHtml(data.positionTitle)}</strong>. Esta carta formaliza los términos
         principales de la oferta.
       </p>
 
-      <div style="margin-bottom:8px;">
+      <div style="margin:0 0 8px;padding:4px 18px;border-radius:12px;background:${BRAND.background};border:1px solid ${BRAND.border};">
         ${metaRow('Puesto', data.positionTitle)}
         ${emailRow}
-        ${metaRow('Compensación mensual', `${compensation}`)}
+        ${metaRow('Compensación mensual', compensation)}
         ${metaRow('Modalidad', modality)}
         ${metaRow('Fecha de inicio', startLabel)}
         ${metaRow('Fecha de emisión', issuedAt)}
@@ -164,39 +187,42 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
       ${section('Responsabilidades', responsibilities, true)}
       ${section('Condiciones', terms, false)}
 
-      <section style="margin-top:28px;">
-        <h2 style="margin:0 0 12px;font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${BRAND.primary};">Aceptación</h2>
-        <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:${BRAND.text};">
+      <section style="margin-top:32px;">
+        <h2 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">Aceptación</h2>
+        <p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
           Si estás de acuerdo con estos términos, responde por escrito a esta carta (correo o documento firmado)
           indicando tu aceptación. Con ello daremos inicio al alta operativa en Codiva Ops.
         </p>
       </section>
 
-      <div style="margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+      <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
         <div>
-          <p style="margin:0 0 48px;font-size:13px;color:${BRAND.muted};">Por Codiva.dev</p>
-          <div style="border-top:1px solid ${BRAND.border};padding-top:10px;">
-            <p style="margin:0;font-size:14px;font-weight:600;color:${BRAND.text};">${escapeHtml(signerName)}</p>
-            <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">${escapeHtml(signerTitle)}</p>
-            <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">${escapeHtml(signerEmail)}</p>
+          <p style="margin:0 0 52px;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Por Codiva.dev</p>
+          <div style="border-top:1px solid ${BRAND.border};padding-top:12px;">
+            <p style="margin:0;font-family:${FONT_DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text};">${escapeHtml(signerName)}</p>
+            <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(signerTitle)}</p>
+            <p style="margin:2px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(signerEmail)}</p>
           </div>
         </div>
         <div>
-          <p style="margin:0 0 48px;font-size:13px;color:${BRAND.muted};">Acepto la oferta</p>
-          <div style="border-top:1px solid ${BRAND.border};padding-top:10px;">
-            <p style="margin:0;font-size:14px;font-weight:600;color:${BRAND.text};">${escapeHtml(data.fullName)}</p>
-            <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">Nombre y firma</p>
-            <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">Fecha: _______________</p>
+          <p style="margin:0 0 52px;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Acepto la oferta</p>
+          <div style="border-top:1px solid ${BRAND.border};padding-top:12px;">
+            <p style="margin:0;font-family:${FONT_DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text};">${escapeHtml(data.fullName)}</p>
+            <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Nombre y firma</p>
+            <p style="margin:2px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Fecha: _______________</p>
           </div>
         </div>
       </div>
 
-      <footer style="margin-top:36px;padding-top:20px;border-top:1px solid ${BRAND.border};">
-        <p style="margin:0;font-size:13px;color:${BRAND.muted};">${escapeHtml(CODIVA_BRAND.tagline)}</p>
-        <p style="margin:4px 0 0;font-size:13px;">
-          <a href="mailto:${CODIVA_BRAND.urls.email}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.email}</a>
-          · <a href="${CODIVA_BRAND.urls.site}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.site.replace(/^https?:\/\//, '')}</a>
-        </p>
+      <footer style="margin-top:40px;padding-top:20px;border-top:1px solid ${BRAND.border};display:flex;align-items:center;gap:12px;">
+        <img src="${LOGO_URL}" alt="" width="28" height="28" style="display:block;border:0;outline:none;flex-shrink:0;"/>
+        <div>
+          <p style="margin:0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(CODIVA_BRAND.tagline)}</p>
+          <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;">
+            <a href="mailto:${CODIVA_BRAND.urls.email}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.email}</a>
+            · <a href="${CODIVA_BRAND.urls.site}" style="color:${BRAND.primary};text-decoration:none;">${SITE.replace(/^https?:\/\//, '')}</a>
+          </p>
+        </div>
       </footer>
     </div>
   </article>
