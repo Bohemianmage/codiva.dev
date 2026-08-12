@@ -77,8 +77,8 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
-      preferCSSPageSize: true,
-      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+      preferCSSPageSize: false,
+      margin: { top: '14mm', right: '12mm', bottom: '16mm', left: '12mm' },
     });
     return Buffer.from(pdf);
   } finally {
