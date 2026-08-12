@@ -6,13 +6,8 @@ import StatusBadge, { leadTone, projectTone, ticketTone } from '@/components/ops
 import { listVisibleProjectIds, requireStaff } from '@/lib/ops/auth';
 import { buildFinanceSummary, type FinanceFilters } from '@/lib/ops/finance';
 import { can } from '@/lib/ops/permissions';
-import {
-  LEAD_STATUS_LABELS,
-  PROJECT_STATUS_LABELS,
-  SPRINT_ITEM_STATUS_LABELS,
-  TICKET_STATUS_LABELS,
-  formatDate,
-} from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0] || undefined;
@@ -35,6 +30,14 @@ export default async function DashboardPage({
   const showCommercial = can(staff.role, 'leads');
   const showFinance = can(staff.role, 'dashboard_finance');
   const visibleIds = await listVisibleProjectIds(supabase, user.id, staff.role);
+  const t = await getT();
+  const {
+    LEAD_STATUS_LABELS,
+    PROJECT_STATUS_LABELS,
+    SPRINT_ITEM_STATUS_LABELS,
+    TICKET_STATUS_LABELS,
+    formatDate,
+  } = labelsFor(t.locale);
 
   const filters: FinanceFilters = {
     org: firstParam(params.org),
@@ -128,11 +131,9 @@ export default async function DashboardPage({
   return (
     <div>
       <OpsPageHeader
-        title="Dashboard"
+        title={t('ops.pages.dashboard')}
         description={
-          showCommercial
-            ? 'Resumen comercial y de proyectos'
-            : 'Tus proyectos e ítems de sprint asignados'
+          showCommercial ? t('ops.pages.dashboardCommercial') : t('ops.pages.dashboardAssigned')
         }
       />
 
@@ -142,9 +143,9 @@ export default async function DashboardPage({
         {!showCommercial && (
           <section className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">Mis ítems de sprint</h2>
+              <h2 className="font-semibold">{t('ops.pages.mySprintItems')}</h2>
               <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
-                Ver proyectos
+                {t('ops.pages.viewProjects')}
               </Link>
             </div>
             <ul className="space-y-3">
@@ -248,7 +249,7 @@ export default async function DashboardPage({
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Proyectos activos</h2>
             <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
-              Ver proyectos
+              {t('ops.pages.viewProjects')}
             </Link>
           </div>
           <ul className="space-y-3">

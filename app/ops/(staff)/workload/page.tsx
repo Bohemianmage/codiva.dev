@@ -2,12 +2,8 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
-import {
-  EMPTY_LABEL,
-  SPRINT_ITEM_STATUS_LABELS,
-  TICKET_STATUS_LABELS,
-  formatDate,
-} from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 type StaffLoad = {
   id: string;
@@ -28,6 +24,10 @@ type StaffLoad = {
 
 export default async function WorkloadPage() {
   const { supabase } = await requireCapability('workload');
+  const t = await getT();
+  const { EMPTY_LABEL, SPRINT_ITEM_STATUS_LABELS, TICKET_STATUS_LABELS, formatDate } = labelsFor(
+    t.locale
+  );
 
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
@@ -102,8 +102,8 @@ export default async function WorkloadPage() {
   return (
     <div>
       <OpsPageHeader
-        title="Carga del equipo"
-        description="Ítems de sprint abiertos, tickets asignados y horas de la semana."
+        title={t('ops.pages.workload')}
+        description={t('ops.pages.workloadDesc')}
       />
 
       <div className="space-y-6">

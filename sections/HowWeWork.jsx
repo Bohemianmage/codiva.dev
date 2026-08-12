@@ -6,7 +6,6 @@ import { Search, PenTool, Rocket, LifeBuoy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Heading from '../components/Heading';
 import Paragraph from '../components/Paragraph';
-import BrandPattern from '../components/BrandPattern';
 
 const STEP_ICONS = [Search, PenTool, Rocket, LifeBuoy];
 
@@ -27,9 +26,8 @@ export default function HowWeWork() {
     <section
       id="proceso"
       ref={sectionRef}
-      className="section-spacing relative scroll-mt-24 md:scroll-mt-28 w-full overflow-hidden px-6 md:px-12 flex justify-center bg-zinc-50"
+      className="section-spacing relative scroll-mt-24 md:scroll-mt-28 w-full px-6 md:px-12 flex justify-center bg-zinc-50"
     >
-      <BrandPattern />
       <div className="relative w-full max-w-6xl rounded-2xl bg-white px-6 py-12 shadow-md md:px-12">
         <motion.div
           initial="hidden"

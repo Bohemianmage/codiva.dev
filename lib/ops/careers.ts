@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import { careerBaseUrl } from '@/lib/ops/host';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { tSync } from '@/i18n/translate';
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
 
 export const CAREER_CV_BUCKET = 'job-application-cvs';
 export const CAREER_MAX_CV_BYTES = 10 * 1024 * 1024;
@@ -28,6 +30,14 @@ export const JOB_EMPLOYMENT_LABELS: Record<JobEmploymentType, string> = {
   contract: 'Por proyecto',
   internship: 'Prácticas',
 };
+
+export function jobEmploymentLabel(
+  type: string | null | undefined,
+  locale: Locale = DEFAULT_LOCALE
+): string | null {
+  if (!type || !isJobEmploymentType(type)) return null;
+  return tSync(locale, `career.employment.${type}`);
+}
 
 export const JOB_APPLICATION_STATUS_LABELS: Record<JobApplicationStatus, string> = {
   new: 'Nueva',
@@ -156,7 +166,21 @@ export const CAREER_RL_APPLY_EMAIL = {
   max: Number(process.env.CAREER_RL_APPLY_PER_EMAIL_DAY || 8),
 };
 
+export const CAREER_RL_ASSESSMENT = {
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.CAREER_RL_ASSESSMENT_PER_IP_HOUR || 40),
+};
+
 const BULLET_LINE_RE = /^[\u2022\u2023\u25E6\u2043\u2219•\-*]\s+(.*)$/;
+export {
+  CAREER_DISCIPLINES,
+  CAREER_DISCIPLINE_LABELS,
+  CAREER_DISCIPLINE_CATALOG,
+  isCareerDiscipline,
+  postingAsksDiscipline,
+  type CareerDiscipline,
+} from '@/lib/ops/career-disciplines';
+
 const SECTION_TITLES = new Set(
   [
     'descripción',
@@ -165,6 +189,7 @@ const SECTION_TITLES = new Set(
     'responsibilities',
     'sobre el rol',
     'about the role',
+    'perfiles que buscamos',
     'condiciones',
     'conditions',
     'perfil',

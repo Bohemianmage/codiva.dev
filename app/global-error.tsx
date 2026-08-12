@@ -2,6 +2,19 @@
 
 import { useEffect } from 'react';
 
+const COPY = {
+  es: {
+    title: 'Error crítico',
+    body: 'La aplicación no pudo cargar. Reintenta; si persiste, contacta a hello@codiva.dev.',
+    retry: 'Reintentar',
+  },
+  en: {
+    title: 'Critical error',
+    body: 'The app could not load. Retry; if it persists, contact hello@codiva.dev.',
+    retry: 'Try again',
+  },
+};
+
 export default function GlobalError({
   error,
   reset,
@@ -13,8 +26,14 @@ export default function GlobalError({
     console.error(error);
   }, [error]);
 
+  const lang =
+    typeof document !== 'undefined' && document.documentElement.lang?.startsWith('en')
+      ? 'en'
+      : 'es';
+  const copy = COPY[lang];
+
   return (
-    <html lang="es">
+    <html lang={lang}>
       <body
         style={{
           margin: 0,
@@ -30,13 +49,11 @@ export default function GlobalError({
         }}
       >
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', color: '#0d9488' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', color: '#104E4E' }}>
             CODIVA
           </p>
-          <h1 style={{ marginTop: 16, fontSize: 24, fontWeight: 700 }}>Error crítico</h1>
-          <p style={{ marginTop: 8, fontSize: 14, color: '#52525b', maxWidth: 360 }}>
-            La aplicación no pudo cargar. Reintenta; si persiste, contacta a hello@codiva.dev.
-          </p>
+          <h1 style={{ marginTop: 16, fontSize: 24, fontWeight: 700 }}>{copy.title}</h1>
+          <p style={{ marginTop: 8, fontSize: 14, color: '#52525b', maxWidth: 360 }}>{copy.body}</p>
           <button
             type="button"
             onClick={reset}
@@ -44,7 +61,7 @@ export default function GlobalError({
               marginTop: 24,
               border: 0,
               borderRadius: 8,
-              background: '#0d9488',
+              background: '#104E4E',
               color: '#fff',
               fontWeight: 600,
               fontSize: 14,
@@ -52,7 +69,7 @@ export default function GlobalError({
               cursor: 'pointer',
             }}
           >
-            Reintentar
+            {copy.retry}
           </button>
         </div>
       </body>

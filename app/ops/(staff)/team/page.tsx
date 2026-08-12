@@ -2,6 +2,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import OpsCareersPanel, {
   type OpsJobApplicationRow,
+  type OpsJobAttemptRow,
   type OpsJobPostingRow,
 } from '@/components/ops/OpsCareersPanel';
 import { requireAdminStaff } from '@/lib/ops/auth';
@@ -43,7 +44,7 @@ export default async function TeamPage({
   const { supabase } = await requireAdminStaff();
   const admin = createAdminClient();
 
-  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }] =
+  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }, { data: attempts }] =
     await Promise.all([
       supabase
         .from('staff_profiles')
@@ -62,9 +63,16 @@ export default async function TeamPage({
       supabase
         .from('ops_job_applications')
         .select(
-          'id, full_name, email, phone, status, created_at, personnel_offer_id, original_filename, ops_job_postings(title, slug)'
+          'id, full_name, email, phone, discipline, status, created_at, personnel_offer_id, original_filename, assessment_attempt_id, ops_job_postings(title, slug)'
         )
         .order('created_at', { ascending: false }),
+      supabase
+        .from('ops_job_assessment_attempts')
+        .select(
+          'id, job_posting_id, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number'
+        )
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
 
   const emails = new Map<string, string>();
@@ -207,6 +215,7 @@ export default async function TeamPage({
         <OpsCareersPanel
           postings={(postings ?? []) as OpsJobPostingRow[]}
           applications={(applications ?? []) as OpsJobApplicationRow[]}
+          attempts={(attempts ?? []) as OpsJobAttemptRow[]}
         />
       ) : (
         <div className="max-w-3xl space-y-8">

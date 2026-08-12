@@ -9,6 +9,35 @@ import {
   marketingBaseUrl,
   careerBaseUrl,
 } from '@/lib/ops/host';
+import {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE,
+  isLocale,
+  localeFromAcceptLanguage,
+} from '@/i18n/config';
+
+function localeCookieOptions() {
+  return {
+    path: '/',
+    maxAge: LOCALE_COOKIE_MAX_AGE,
+    sameSite: 'lax' as const,
+  };
+}
+
+function resolveRequestLocale(request: NextRequest) {
+  const fromCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(fromCookie)) return fromCookie;
+  return localeFromAcceptLanguage(request.headers.get('accept-language')) || DEFAULT_LOCALE;
+}
+
+function persistLocaleCookie(request: NextRequest, response: NextResponse) {
+  const locale = resolveRequestLocale(request);
+  if (!isLocale(request.cookies.get(LOCALE_COOKIE)?.value)) {
+    response.cookies.set(LOCALE_COOKIE, locale, localeCookieOptions());
+  }
+  return response;
+}
 
 function withSessionCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((c) => {
@@ -76,7 +105,7 @@ function careerFirstSegment(pathname: string) {
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host');
   const { pathname } = request.nextUrl;
-  const sessionResponse = await updateSession(request);
+  const sessionResponse = persistLocaleCookie(request, await updateSession(request));
 
   if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
     return sessionResponse;

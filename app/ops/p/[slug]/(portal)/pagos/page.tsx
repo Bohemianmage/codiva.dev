@@ -4,13 +4,8 @@ import PortalRenewalNotices from '@/components/ops/PortalRenewalNotices';
 import StatusBadge, { chargeTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { chargeAmountNumber, getActiveChargeNotices } from '@/lib/ops/charges';
-import {
-  CHARGE_KIND_LABELS,
-  CHARGE_STATUS_LABELS,
-  formatChargeAmount,
-  formatDate,
-  isClientBorneChargeKind,
-} from '@/lib/ops/labels';
+import { labelsFor, isClientBorneChargeKind } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalPaymentsPage({
@@ -20,6 +15,9 @@ export default async function PortalPaymentsPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const { CHARGE_KIND_LABELS, CHARGE_STATUS_LABELS, formatChargeAmount, formatDate } = labelsFor(
+    await getLocale()
+  );
   const visibility = getPortalVisibility(project);
 
   if (!visibility.showCosts) {

@@ -2,6 +2,8 @@ import { escapeHtml } from '@/utils/escapeHtml';
 import { formatCurrency, formatDate, EMPTY_LABEL, DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { serviceTypeHeading } from '@/lib/ops/quote-document/catalog';
 import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
+import { DEFAULT_LOCALE, dateLocale, type Locale } from '@/i18n/config';
+import { tSync } from '@/i18n/translate';
 
 export type QuoteLineItem = {
   title: string;
@@ -36,9 +38,9 @@ export type QuoteDocumentData = {
 
 const BRAND = BRAND_EMAIL;
 
-function formatIssuedDate(value: string | Date): string {
+function formatIssuedDate(value: string | Date, locale: Locale = DEFAULT_LOCALE): string {
   const d = typeof value === 'string' ? new Date(value) : value;
-  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(dateLocale(locale), { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function paragraphs(text: string): string {
@@ -137,21 +139,26 @@ function metaRow(label: string, value: string): string {
     </div>`;
 }
 
-export function renderQuoteDocumentHtml(data: QuoteDocumentData): string {
+export function renderQuoteDocumentHtml(
+  data: QuoteDocumentData,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   const currency = data.currency || 'MXN';
   const heading = serviceTypeHeading(data.serviceType, data.heading);
   const lineItems = Array.isArray(data.lineItems) ? data.lineItems : [];
   const validUntilBlock = data.validUntil
-    ? metaRow('Válida hasta', formatDate(data.validUntil))
+    ? metaRow(tSync(locale, 'quoteDoc.validUntil'), formatDate(data.validUntil, locale))
     : '';
-  const partnerBlock = data.partnerCompany ? metaRow('Intermediario', data.partnerCompany) : '';
+  const partnerBlock = data.partnerCompany
+    ? metaRow(tSync(locale, 'quoteDoc.intermediary'), data.partnerCompany)
+    : '';
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${locale}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${escapeHtml(data.projectName)} - Cotización Codiva</title>
+  <title>${escapeHtml(data.projectName)} - ${escapeHtml(tSync(locale, 'quoteDoc.titleSuffix'))}</title>
   <style>@media print { body { background:#fff!important; } .page { box-shadow:none!important; margin:0!important; } }</style>
 </head>
 <body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:Inter,Segoe UI,Arial,sans-serif;">
@@ -160,29 +167,29 @@ export function renderQuoteDocumentHtml(data: QuoteDocumentData): string {
       <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0.9;">Codiva.dev</p>
       <p style="margin:10px 0 0;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0.95;">${escapeHtml(heading)}</p>
       <h1 style="margin:14px 0 0;font-size:28px;line-height:1.2;font-weight:700;">${escapeHtml(data.clientLabel)}</h1>
-      ${data.version ? `<p style="margin:8px 0 0;font-size:12px;opacity:0.85;">Versión ${data.version}</p>` : ''}
+      ${data.version ? `<p style="margin:8px 0 0;font-size:12px;opacity:0.85;">${escapeHtml(tSync(locale, 'quoteDoc.version', { version: data.version }))}</p>` : ''}
     </header>
     <div style="padding:28px 32px;">
       <div style="margin-bottom:24px;">
-        ${metaRow('Proyecto', data.projectName)}
-        ${metaRow('Cliente', data.clientName)}
+        ${metaRow(tSync(locale, 'quoteDoc.project'), data.projectName)}
+        ${metaRow(tSync(locale, 'quoteDoc.client'), data.clientName)}
         ${partnerBlock}
-        ${data.endClientCompany ? metaRow('Cliente final', data.endClientCompany) : ''}
-        ${metaRow('Desarrollador', 'Codiva.dev')}
-        ${metaRow('Fecha de emisión', formatIssuedDate(data.issuedAt))}
-        ${metaRow('Servicio', data.serviceDescription)}
-        ${metaRow('Estado del proyecto', data.projectState)}
+        ${data.endClientCompany ? metaRow(tSync(locale, 'quoteDoc.endClient'), data.endClientCompany) : ''}
+        ${metaRow(tSync(locale, 'quoteDoc.developer'), 'Codiva.dev')}
+        ${metaRow(tSync(locale, 'quoteDoc.issued'), formatIssuedDate(data.issuedAt, locale))}
+        ${metaRow(tSync(locale, 'quoteDoc.service'), data.serviceDescription)}
+        ${metaRow(tSync(locale, 'quoteDoc.projectState'), data.projectState)}
         ${validUntilBlock}
       </div>
       <p style="margin:0;font-size:13px;color:${BRAND.muted};">${escapeHtml(CODIVA_BRAND.tagline)}</p>
       <p style="margin:4px 0 0;font-size:13px;"><a href="mailto:${CODIVA_BRAND.urls.email}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.email}</a></p>
-      ${section('Alcance del servicio', data.scope)}
-      ${data.deliverables ? section('Entregables', data.deliverables) : ''}
+      ${section(tSync(locale, 'quoteDoc.scope'), data.scope)}
+      ${data.deliverables ? section(tSync(locale, 'quoteDoc.deliverables'), data.deliverables) : ''}
       ${lineItemsBlock(lineItems, currency, data.totalAmount)}
-      ${data.considerations ? section('Consideraciones', data.considerations) : ''}
-      ${data.optionalExtras ? section('Extras opcionales (no incluidos)', data.optionalExtras) : ''}
+      ${data.considerations ? section(tSync(locale, 'quoteDoc.considerations'), data.considerations) : ''}
+      ${data.optionalExtras ? section(tSync(locale, 'quoteDoc.extras'), data.optionalExtras) : ''}
       <footer style="margin-top:36px;padding-top:20px;border-top:1px solid ${BRAND.border};">
-        <p style="margin:0;font-size:14px;color:${BRAND.text};">Atentamente,</p>
+        <p style="margin:0;font-size:14px;color:${BRAND.text};">${escapeHtml(tSync(locale, 'quoteDoc.sincerely'))}</p>
         <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:${BRAND.text};">Jean Claude Martell</p>
         <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">Codiva.dev · j.martell@codiva.dev</p>
       </footer>

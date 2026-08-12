@@ -21,7 +21,7 @@ Assets: `public/logo.svg`, `public/wordmark.svg`, `public/logo-white.svg`, `publ
 | `secondary` | `#6A757A` | Muted nav and body text |
 | `muted` | `#E5E7EB` | Borders, neutral surfaces |
 | `text` | `#18181B` | Body text (zinc-900) |
-| `accentLight` | `#5EEAD4` | Links on dark backgrounds (footer) |
+| `accentLight` | `#458585` | `.dev` and LinkedIn on dark footer (mid-tone of primary, not mint) |
 
 Source of truth: [`lib/brand.json`](../lib/brand.json) - import via [`lib/brand.ts`](../lib/brand.ts).
 

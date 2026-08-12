@@ -12,38 +12,10 @@ import FloatingQuoteButton from '../components/FloatingQuoteButton';
 import { Toaster } from 'react-hot-toast';
 
 export default function LayoutClient({ children, variant = 'marketing' }) {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const pathname = usePathname();
-  const currentLang = i18n.language || 'es';
   const isCareer = variant === 'career';
 
-  // ✅ Ajustes dinámicos de idioma, título y descripción
-  useEffect(() => {
-    document.documentElement.lang = currentLang;
-    const onCareers = isCareer || (pathname || '').startsWith('/empleos');
-    const onCareerDetail =
-      Boolean(pathname) &&
-      ((isCareer && pathname !== '/' && !pathname.startsWith('/empleos')) ||
-        (pathname.startsWith('/empleos/') && pathname !== '/empleos/'));
-    document.title = onCareers
-      ? onCareerDetail
-        ? t('career.doc_title_detail')
-        : t('career.doc_title_list')
-      : t('title');
-
-    const metaDesc = document.querySelector('meta[name="description"]');
-    const description = onCareers ? t('career.meta_description_list') : t('description');
-    if (metaDesc) {
-      metaDesc.setAttribute('content', description);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = description;
-      document.head.appendChild(meta);
-    }
-  }, [currentLang, t, pathname, isCareer]);
-
-  // Centra sección al navegar con hash (#services, etc.)
   useEffect(() => {
     if (isCareer || pathname !== '/') return;
 

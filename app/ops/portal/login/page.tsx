@@ -4,6 +4,8 @@ import ClientPortalLoginForm from '@/components/ops/ClientPortalLoginForm';
 import { createClient } from '@/lib/supabase/server';
 import { listPortalProjectsForUser } from '@/lib/ops/auth';
 
+import { getT } from '@/i18n/locale';
+
 export default async function ClientPortalLoginPage() {
   const supabase = await createClient();
   const {
@@ -20,8 +22,10 @@ export default async function ClientPortalLoginPage() {
     }
   }
 
+  const t = await getT();
+
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-zinc-500">Cargando…</div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-zinc-500">{t('portal.login.loading')}</div>}>
       <ClientPortalLoginForm />
     </Suspense>
   );

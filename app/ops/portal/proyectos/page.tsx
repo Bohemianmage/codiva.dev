@@ -8,12 +8,8 @@ import {
   listPortalProjectsForUser,
   requirePortalUser,
 } from '@/lib/ops/auth';
-import {
-  MILESTONE_STATUS_LABELS,
-  PROJECT_STATUS_LABELS,
-  formatCurrency,
-  formatDate,
-} from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -27,6 +23,9 @@ function milestoneTone(status: string) {
 
 export default async function PortalProyectosPage() {
   const { user, supabase } = await requirePortalUser();
+  const { MILESTONE_STATUS_LABELS, PROJECT_STATUS_LABELS, formatCurrency, formatDate } = labelsFor(
+    await getLocale()
+  );
   const base = await listPortalProjectsForUser(supabase, user.id);
 
   if (base.length === 1) {

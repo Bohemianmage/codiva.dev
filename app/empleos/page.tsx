@@ -1,16 +1,18 @@
 import Link from 'next/link';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import {
-  JOB_EMPLOYMENT_LABELS,
-  type JobEmploymentType,
-} from '@/lib/ops/careers';
+import { jobEmploymentLabel, postingAsksDiscipline } from '@/lib/ops/careers';
+import { catalogForPosting } from '@/lib/careers/assessments/engine';
+import { getLocale, getT } from '@/i18n/locale';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-  title: 'Empleos',
-  description: 'Vacantes abiertas en Codiva.dev. Únete al equipo y envía tu CV en minutos.',
-};
+export async function generateMetadata() {
+  const t = await getT();
+  return {
+    title: t('career.doc_title_list'),
+    description: t('career.meta_description_list'),
+  };
+}
 
 function MetaChip({ children }: { children: React.ReactNode }) {
   return (
@@ -21,11 +23,13 @@ function MetaChip({ children }: { children: React.ReactNode }) {
 }
 
 export default async function EmpleosPage() {
+  const t = await getT();
+  const locale = t.locale;
   const postings = isSupabaseConfigured()
     ? (
         await createAdminClient()
           .from('ops_job_postings')
-          .select('id, slug, title, location, employment_type, published_at')
+          .select('id, slug, title, location, employment_type, published_at, assessment_key')
           .eq('status', 'published')
           .order('sort_order', { ascending: true })
           .order('published_at', { ascending: false })
@@ -36,38 +40,32 @@ export default async function EmpleosPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 pb-24 pt-28 md:px-12">
-      <header className="mb-8 overflow-hidden rounded-2xl border border-codiva-primary/15 bg-gradient-to-br from-teal-50 via-white to-zinc-50 px-6 py-8 text-center sm:px-10">
+      <header className="mb-8 overflow-hidden rounded-2xl border border-codiva-primary/15 bg-gradient-to-br from-codiva-primary/5 via-white to-zinc-50 px-6 py-8 text-center sm:px-10">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-codiva-primary">
-          Únete al equipo
+          {t('career.eyebrow')}
         </p>
         <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-          Vacantes
+          {t('career.list_title')}
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-base">
-          Software a la medida, en producción. Revisa las posiciones abiertas y envía tu CV en unos
-          minutos.
+          {t('career.list_intro')}
         </p>
         {rows.length ? (
           <p className="mt-4 inline-flex rounded-full border border-codiva-primary/20 bg-white/90 px-4 py-1.5 text-xs font-semibold text-codiva-primary">
-            {rows.length === 1 ? '1 posición abierta' : `${rows.length} posiciones abiertas`}
+            {rows.length === 1 ? t('career.open_one') : t('career.open_many', { count: rows.length })}
           </p>
         ) : null}
       </header>
 
       {!rows.length ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center">
-          <h2 className="font-semibold text-zinc-900">Sin vacantes por ahora</h2>
-          <p className="mt-2 text-sm text-zinc-500">
-            Vuelve pronto o escríbenos si quieres colaborar con Codiva.dev.
-          </p>
+          <h2 className="font-semibold text-zinc-900">{t('career.empty_title')}</h2>
+          <p className="mt-2 text-sm text-zinc-500">{t('career.empty_body')}</p>
         </div>
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => {
-            const employment =
-              row.employment_type && row.employment_type in JOB_EMPLOYMENT_LABELS
-                ? JOB_EMPLOYMENT_LABELS[row.employment_type as JobEmploymentType]
-                : null;
+            const employment = jobEmploymentLabel(row.employment_type, locale);
             return (
               <li key={row.id}>
                 <Link
@@ -82,10 +80,13 @@ export default async function EmpleosPage() {
                       <div className="mt-3 flex flex-wrap gap-2">
                         {employment ? <MetaChip>{employment}</MetaChip> : null}
                         {row.location ? <MetaChip>{row.location}</MetaChip> : null}
+                        {catalogForPosting(row.assessment_key, row.slug) || postingAsksDiscipline(row.slug) ? (
+                          <MetaChip>{t('career.assessment_chip')}</MetaChip>
+                        ) : null}
                       </div>
                     </div>
                     <span className="mt-0.5 text-sm font-medium text-codiva-primary opacity-0 transition group-hover:opacity-100">
-                      Ver vacante
+                      {t('career.view_role')}
                     </span>
                   </div>
                 </Link>

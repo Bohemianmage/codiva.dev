@@ -65,6 +65,49 @@ Verificar correcciones y confirmar que el arreglo no rompe lo ya entregado.
 Apoyar la calidad operativa del estudio: checklists, ambientes de prueba y handoff a desarrollo.
 Otras actividades afines a testing y QA que Codiva asigne según las necesidades del estudio y de los proyectos.`;
 
+export const DEFAULT_FRONTEND_RESPONSIBILITIES = `Probar interfaces de productos web a la medida de Codiva.dev: estados, flujos, accesibilidad y lo que el usuario ve y toca.
+Reportar defectos de frontend con pasos, viewport, evidencia y resultado esperado vs. obtenido.
+Distinguir un defecto de una preferencia de diseño y no bloquear una entrega por gusto personal.
+Colaborar con desarrollo, diseño y PM en criterios de aceptación y regresiones de UI.
+Otras actividades afines a testing de frontend que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
+export const DEFAULT_BACKEND_RESPONSIBILITIES = `Probar APIs, autenticación, datos e integraciones de productos a la medida de Codiva.dev.
+Validar contratos, permisos y casos que el cliente HTTP puede disparar aunque el front los esconda.
+Reportar defectos de backend con request/response, ambiente y rol de prueba, sin filtrar secretos.
+Colaborar con desarrollo y PM en criterios de aceptación, staging y pases a producción.
+Otras actividades afines a testing de backend que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
+export const DEFAULT_FULLSTACK_RESPONSIBILITIES = `Probar flujos de punta a punta en productos a la medida de Codiva.dev: interfaz, API y operación.
+Perseguir huecos entre capas (éxito en UI con fallo de API, cache, flags, webhooks).
+Reportar con evidencia de las capas involucradas, no con tickets aislados que no se relacionan.
+Colaborar con PM, diseño y desarrollo; no comunicar «listo» si el camino real del cliente falla.
+Otras actividades afines a testing full stack que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
+export const DEFAULT_DESIGN_RESPONSIBILITIES = `Probar flujos, copy, usabilidad y handoff diseño↔build en productos a la medida de Codiva.dev.
+Detectar cuando la interfaz miente, traba o deja al usuario sin siguiente paso.
+Reportar problemas de UX/UI con tarea concreta, evidencia y severidad; no con preferencia personal.
+Colaborar con diseño, desarrollo y PM en estados vacíos, errores y acciones destructivas.
+Otras actividades afines a testing de UX/UI que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
+export function responsibilitiesForCareerDiscipline(
+  discipline: string | null | undefined
+): string | null {
+  switch (discipline) {
+    case 'frontend':
+      return DEFAULT_FRONTEND_RESPONSIBILITIES;
+    case 'backend':
+      return DEFAULT_BACKEND_RESPONSIBILITIES;
+    case 'fullstack':
+      return DEFAULT_FULLSTACK_RESPONSIBILITIES;
+    case 'ux-ui':
+      return DEFAULT_DESIGN_RESPONSIBILITIES;
+    case 'qa':
+      return DEFAULT_QA_RESPONSIBILITIES;
+    default:
+      return null;
+  }
+}
+
 export const DEFAULT_TERMS = `La compensación se paga de forma mensual en la moneda indicada, previo acuerdo de facturación o esquema de pago vigente.
 La colaboración inicia en la fecha acordada, sujeta a la aceptación escrita de esta carta oferta.
 Las responsabilidades listadas son enunciativas y no limitativas: describen el núcleo del rol, sin excluir tareas razonablemente relacionadas con la operación de proyectos de Codiva.dev.

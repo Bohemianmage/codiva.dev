@@ -1,20 +1,22 @@
 import { headers } from 'next/headers';
 import StatusScreen from '@/components/ops/StatusScreen';
 import { isPortalHost, marketingBaseUrl } from '@/lib/ops/host';
+import { getT } from '@/i18n/locale';
 
 export default async function OpsNotFound() {
   const host = (await headers()).get('host');
   const onPortal = isPortalHost(host);
+  const t = await getT();
 
   if (onPortal) {
     return (
       <StatusScreen
         eyebrow="Codiva Portal"
         code="404"
-        title="Página no encontrada"
-        description="Este enlace del portal no existe o el proyecto ya no está disponible. Si tienes acceso, usa el enlace de invitación que te enviamos."
+        title={t('errors.notFoundTitle')}
+        description={t('errors.portalNotFoundBody')}
         primaryHref={marketingBaseUrl()}
-        primaryLabel="Ir a Codiva"
+        primaryLabel={t('errors.goCodiva')}
       />
     );
   }
@@ -23,12 +25,12 @@ export default async function OpsNotFound() {
     <StatusScreen
       eyebrow="Codiva.dev"
       code="404"
-      title="Página no encontrada"
-      description="Esta ruta no existe en Ops. Vuelve al panel o revisa el enlace."
+      title={t('errors.notFoundTitle')}
+      description={t('errors.opsNotFoundBody')}
       primaryHref="/dashboard"
-      primaryLabel="Ir al dashboard"
+      primaryLabel={t('errors.opsDashboard')}
       secondaryHref="/login"
-      secondaryLabel="Iniciar sesión"
+      secondaryLabel={t('errors.opsLogin')}
     />
   );
 }

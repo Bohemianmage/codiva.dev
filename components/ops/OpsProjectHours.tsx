@@ -1,6 +1,7 @@
 import ToastForm from '@/components/ops/ToastForm';
 import { createTimeEntry, deleteTimeEntry } from '@/lib/ops/actions';
-import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { can } from '@/lib/ops/permissions';
 
 type Entry = {
@@ -15,7 +16,7 @@ type Entry = {
 type SprintItemOpt = { id: string; title: string };
 type StaffOpt = { id: string; full_name: string };
 
-export default function OpsProjectHours({
+export default async function OpsProjectHours({
   projectId,
   staffRole,
   currentUserId,
@@ -30,6 +31,7 @@ export default function OpsProjectHours({
   sprintItems: SprintItemOpt[];
   staffOptions: StaffOpt[];
 }) {
+  const { EMPTY_LABEL, formatDate } = labelsFor(await getLocale());
   const canPlan = can(staffRole, 'sprints_plan');
   const names = new Map(staffOptions.map((s) => [s.id, s.full_name || s.id.slice(0, 8)]));
   const itemTitles = new Map(sprintItems.map((i) => [i.id, i.title]));

@@ -2,13 +2,13 @@ import Link from 'next/link';
 import StatusBadge, { chargeTone, projectTone } from '@/components/ops/StatusBadge';
 import type { FinanceFilters, FinanceSummary } from '@/lib/ops/finance';
 import {
+  labelsFor,
   CHARGE_KIND_LABELS,
   CHARGE_STATUS_LABELS,
   PROJECT_STATUS_LABELS,
   formatChargeAmount,
-  formatCurrency,
-  formatDate,
 } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 
 const CHARGE_STATUS_FILTERS: { value: string; label: string }[] = [
   { value: '', label: 'Todos los cargos' },
@@ -40,13 +40,14 @@ function money(amount: number, tbdCount = 0) {
   );
 }
 
-export default function DashboardFinance({
+export default async function DashboardFinance({
   summary,
   filters,
 }: {
   summary: FinanceSummary;
   filters: FinanceFilters;
 }) {
+  const { formatCurrency, formatDate, formatChargeAmount: formatCharge } = labelsFor(await getLocale());
   const hasFilters = Boolean(
     filters.org || filters.chargeStatus || filters.kind || filters.projectStatus
   );

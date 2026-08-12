@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getPublicQuoteByToken } from '@/lib/ops/quote-tokens';
 import { buildQuoteDocumentHtml } from '@/lib/ops/quote-preview';
+import { getT } from '@/i18n/locale';
 
 export default async function PublicQuotePage({
   params,
@@ -10,19 +11,24 @@ export default async function PublicQuotePage({
   const { token } = await params;
   const payload = await getPublicQuoteByToken(token);
   if (!payload) notFound();
+  const t = await getT();
 
-  const html = buildQuoteDocumentHtml(payload.quote, {
-    lead: payload.lead,
-    project: payload.project,
-  });
+  const html = buildQuoteDocumentHtml(
+    payload.quote,
+    {
+      lead: payload.lead,
+      project: payload.project,
+    },
+    t.locale
+  );
 
   return (
     <div className="min-h-screen bg-zinc-100">
       <div className="border-b border-zinc-200 bg-white px-4 py-3 text-center text-xs text-zinc-500">
-        Propuesta comercial Codiva - solo consulta
+        {t('quotePublic.banner')}
       </div>
       <iframe
-        title="Cotización Codiva"
+        title={t('quotePublic.iframeTitle')}
         srcDoc={html}
         className="h-[calc(100vh-41px)] w-full border-0 bg-zinc-100"
         sandbox="allow-same-origin"

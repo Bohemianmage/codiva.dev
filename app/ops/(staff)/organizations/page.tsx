@@ -3,11 +3,14 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import { requireCapability } from '@/lib/ops/auth';
 import { createOrganization } from '@/lib/ops/actions';
-import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { redirect } from 'next/navigation';
 
 export default async function OrganizationsPage() {
   const { supabase } = await requireCapability('organizations');
+  const t = await getT();
+  const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
 
   const { data: orgs } = await supabase
     .from('organizations')

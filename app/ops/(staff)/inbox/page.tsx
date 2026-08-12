@@ -4,10 +4,13 @@ import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { updateInboxStatus, convertInboxToLead } from '@/lib/ops/actions';
-import { INBOX_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function InboxPage() {
   const { supabase } = await requireCapability('inbox');
+  const t = await getT();
+  const { INBOX_STATUS_LABELS, formatDate } = labelsFor(t.locale);
   const { data: messages } = await supabase
     .from('inbox_messages')
     .select('*')
@@ -15,7 +18,7 @@ export default async function InboxPage() {
 
   return (
     <div>
-      <OpsPageHeader title="Inbox" description="Mensajes del formulario de contacto" />
+      <OpsPageHeader title={t('ops.pages.inbox')} description={t('ops.pages.inboxDesc')} />
       <div className="space-y-4">
         {(messages ?? []).map((m) => {
           async function onStatus(formData: FormData) {

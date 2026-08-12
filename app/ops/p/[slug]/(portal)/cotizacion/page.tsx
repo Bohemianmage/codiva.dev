@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { clientAcceptQuote, clientRejectQuote } from '@/lib/ops/actions';
-import { QUOTE_STATUS_LABELS, formatCurrency, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { parseLineItemsJson } from '@/lib/ops/quote-document';
 import { getPortalVisibility } from '@/lib/ops/portal-visibility';
 
@@ -26,6 +27,7 @@ export default async function PortalQuotePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const { QUOTE_STATUS_LABELS, formatCurrency, formatDate } = labelsFor(await getLocale());
   const visibility = getPortalVisibility(project);
 
   if (!visibility.showQuote) {

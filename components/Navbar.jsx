@@ -160,7 +160,7 @@ export default function Navbar({ variant = 'marketing' }) {
           <LanguageSwitcher />
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menú"
+            aria-label={t('a11y.menu')}
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
           >

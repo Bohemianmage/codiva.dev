@@ -45,7 +45,7 @@ function Field({ formik, label, name, as = 'input', id, ...rest }) {
 }
 
 export default function TicketPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -80,6 +80,7 @@ export default function TicketPage() {
       try {
         const fd = new FormData();
         Object.entries(values).forEach(([k, v]) => fd.append(k, v));
+        fd.append('locale', i18n.language?.startsWith('en') ? 'en' : 'es');
         files.forEach((f) => fd.append('attachments', f));
 
         const res = await fetch('/api/ticket', { method: 'POST', body: fd });

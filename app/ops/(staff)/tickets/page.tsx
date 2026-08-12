@@ -2,10 +2,13 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
-import { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function TicketsPage() {
   const { supabase } = await requireCapability('tickets');
+  const t = await getT();
+  const { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
   const [{ data: tickets }, { data: staff }] = await Promise.all([
     supabase
       .from('tickets')
@@ -18,7 +21,7 @@ export default async function TicketsPage() {
 
   return (
     <div>
-      <OpsPageHeader title="Tickets" description="Soporte y solicitudes de clientes" />
+      <OpsPageHeader title={t('ops.pages.tickets')} description={t('ops.pages.ticketsDesc')} />
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-left text-zinc-600">

@@ -4,7 +4,8 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireStaff } from '@/lib/ops/auth';
 import { buildQuoteDocumentHtml } from '@/lib/ops/quote-preview';
-import { QUOTE_STATUS_LABELS } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function QuotePreviewPage({
   params,
@@ -13,6 +14,8 @@ export default async function QuotePreviewPage({
 }) {
   const { id } = await params;
   const { supabase } = await requireStaff();
+  const t = await getT();
+  const { QUOTE_STATUS_LABELS } = labelsFor(t.locale);
 
   const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).single();
   if (!quote) notFound();

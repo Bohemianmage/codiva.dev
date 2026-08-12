@@ -3,6 +3,7 @@ import StaffPortalPreviewBanner from '@/components/ops/StaffPortalPreviewBanner'
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { getPortalVisibility } from '@/lib/ops/portal-visibility';
 import Link from 'next/link';
+import { getT } from '@/i18n/locale';
 
 export default async function PortalLayout({
   children,
@@ -15,6 +16,7 @@ export default async function PortalLayout({
   const access = await requirePortalMemberWithAcceptances(slug);
   const { project, isStaffPreview } = access;
   const visibility = getPortalVisibility(project);
+  const t = await getT();
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -29,16 +31,16 @@ export default async function PortalLayout({
       />
       <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
       <footer className="border-t border-zinc-200 py-6 text-center text-xs text-zinc-500">
-        <p>Proyecto impulsado por Codiva</p>
+        <p>{t('portal.powered')}</p>
         <p className="mt-2 flex flex-wrap items-center justify-center gap-3">
           <Link href="/legal/terminos" className="hover:text-codiva-primary hover:underline">
-            Términos
+            {t('footer.terms')}
           </Link>
           <Link href="/legal/aviso-privacidad" className="hover:text-codiva-primary hover:underline">
-            Aviso de privacidad
+            {t('footer.privacy')}
           </Link>
           <Link href="/legal/nda" className="hover:text-codiva-primary hover:underline">
-            NDA
+            {t('legal.ndaTitle')}
           </Link>
         </p>
       </footer>

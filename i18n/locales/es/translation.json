@@ -149,7 +149,12 @@
         ]
       }
     ],
-    "extrasTitle": "Extras cotizables"
+    "extrasTitle": "Extras cotizables",
+    "prices": [
+      "Desde $28,000 MXN",
+      "Desde $60,000 MXN",
+      "Desde $2,000 MXN/h"
+    ]
   },
   "cases": {
     "title": "Casos de Éxito",
@@ -209,7 +214,8 @@
       "projectType": "Selecciona un tipo de proyecto",
       "messageShort": "El mensaje es muy corto"
     },
-    "submitWhatsApp": "Enviar por WhatsApp"
+    "submitWhatsApp": "Enviar por WhatsApp",
+    "whatsappMessage": "¡Hola! Me gustaría recibir una cotización.\n\n👤 *{{nameLabel}}:* {{name}}\n💼 *{{typeLabel}}:* {{projectType}}\n📝 *{{messageLabel}}:* {{message}}"
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
@@ -268,36 +274,36 @@
     "success": "¡Gracias por tu solicitud!",
     "error": "Hubo un error al enviar. Intenta nuevamente."
   },
-"ticket": {
-  "title": "Reportar ticket",
-  "subtitle": "Incluye pasos, URLs y adjunta capturas si aplica.",
-  "fields": {
-    "priority": "Prioridad",
-    "issueTitle": "Título del ticket",
-    "incidentTime": "Hora del incidente (opcional)",
-    "issueDescription": "Descripción del problema",
-    "attachments": "Adjuntos (opcional)"
+  "ticket": {
+    "title": "Reportar ticket",
+    "subtitle": "Incluye pasos, URLs y adjunta capturas si aplica.",
+    "fields": {
+      "priority": "Prioridad",
+      "issueTitle": "Título del ticket",
+      "incidentTime": "Hora del incidente (opcional)",
+      "issueDescription": "Descripción del problema",
+      "attachments": "Adjuntos (opcional)"
+    },
+    "priority": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    },
+    "buttons": {
+      "submit": "Enviar ticket",
+      "remove": "Quitar",
+      "removeAll": "Quitar todo",
+      "new": "Crear otro ticket"
+    },
+    "status": {
+      "submittedTitle": "Ticket registrado",
+      "submittedMsg": "Hemos recibido tu reporte."
+    },
+    "hints": {
+      "attachments": "Se aceptan imágenes y documentos. Máx. ~10MB por archivo.",
+      "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…"
+    }
   },
-  "priority": {
-    "high": "Alta",
-    "medium": "Media",
-    "low": "Baja"
-  },
-  "buttons": {
-    "submit": "Enviar ticket",
-    "remove": "Quitar",
-    "removeAll": "Quitar todo",
-    "new": "Crear otro ticket"
-  },
-  "status": {
-    "submittedTitle": "Ticket registrado",
-    "submittedMsg": "Hemos recibido tu reporte."
-  },
-  "hints": {
-    "attachments": "Se aceptan imágenes y documentos. Máx. ~10MB por archivo.",
-    "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…"
-  }
-},
   "career": {
     "doc_title_list": "Empleos · Codiva.dev",
     "doc_title_detail": "Vacante · Codiva.dev",
@@ -307,6 +313,15 @@
     "field_name": "Nombre completo",
     "field_email": "Correo electrónico",
     "field_phone": "Teléfono",
+    "field_discipline": "Oficio de testing",
+    "discipline_placeholder": "Elige tu oficio",
+    "discipline_frontend": "Tester frontend",
+    "discipline_backend": "Tester backend",
+    "discipline_fullstack": "Tester full stack",
+    "discipline_ux_ui": "Tester UX / UI",
+    "discipline_qa": "Tester QA",
+    "discipline_other": "Tester (otro oficio)",
+    "discipline_gate": "Elige tu oficio de testing. Cada uno tiene su propia prueba de criterio.",
     "field_cv": "CV en PDF",
     "cv_hint": "Máximo 10 MB. Solo PDF.",
     "field_letter": "Carta o mensaje",
@@ -318,6 +333,676 @@
     "apply_success": "¡Gracias! Hemos recibido tu postulación.",
     "apply_error": "No se pudo enviar la postulación. Revisa los datos e intenta de nuevo.",
     "error_duplicate": "Ya registramos una postulación tuya a esta vacante recientemente.",
-    "error_rate": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+    "error_rate": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+    "assessment_eyebrow": "Prueba de criterio",
+    "assessment_chip": "Prueba requerida",
+    "assessment_start_title": "Antes de postular",
+    "assessment_start_intro": "Para {{role}} pedimos una prueba corta de situaciones reales. No es un examen de jerga: es criterio operativo.",
+    "assessment_rule_time": "Ocho preguntas, 15 minutos. El tiempo corre al empezar.",
+    "assessment_rule_pass": "Hay que aprobar (70%) para habilitar el formulario de postulación.",
+    "assessment_rule_required": "Las respuestas y el avance quedan registrados para el equipo de reclutamiento.",
+    "assessment_start": "Empezar la prueba",
+    "assessment_starting": "Preparando…",
+    "assessment_start_cta": "Hacer la prueba",
+    "assessment_gate": "Primero hay que aprobar la prueba de criterio de esta vacante. Sin eso no se puede enviar el CV.",
+    "assessment_checking": "Comprobando tu prueba…",
+    "assessment_progress": "Pregunta {{current}} de {{total}}",
+    "assessment_answered": "{{count}} de {{total}} con respuesta",
+    "assessment_multi_hint": "Puedes marcar más de una.",
+    "assessment_rank_hint": "Ordena de primero a último con las flechas.",
+    "assessment_move_up": "Subir",
+    "assessment_move_down": "Bajar",
+    "assessment_back": "Anterior",
+    "assessment_next": "Siguiente",
+    "assessment_submit": "Enviar prueba",
+    "assessment_submitting": "Calificando…",
+    "assessment_pass_title": "Prueba aprobada",
+    "assessment_pass_body": "Ya puedes postular a esta vacante. El formulario tomará tu nombre y correo.",
+    "assessment_go_apply": "Ir a postular",
+    "assessment_fail_title": "No alcanzaste el mínimo",
+    "assessment_fail_body": "Gracias por el tiempo. Puedes reintentar más tarde; el equipo ve este intento igual.",
+    "assessment_fail_hint": "Hay un receso de 12 horas entre intentos, con un máximo de dos por semana.",
+    "assessment_timed_out": "Se acabó el tiempo. Calificamos lo que alcanzaste a responder.",
+    "assessment_error": "No se pudo cargar o enviar la prueba. Intenta de nuevo.",
+    "assessment_cooldown": "Ya usaste un intento reciente. Espera un poco antes de repetir.",
+    "assessment_max_attempts": "Llegaste al máximo de intentos de esta semana para esta vacante.",
+    "assessment_required_error": "Hay que aprobar la prueba con el mismo correo antes de postular.",
+    "eyebrow": "Únete al equipo",
+    "list_title": "Vacantes",
+    "list_intro": "Software a la medida, en producción. Revisa las posiciones abiertas y envía tu CV en unos minutos.",
+    "open_one": "1 posición abierta",
+    "open_many": "{{count}} posiciones abiertas",
+    "empty_title": "Sin vacantes por ahora",
+    "empty_body": "Vuelve pronto o escríbenos si quieres colaborar con Codiva.dev.",
+    "view_role": "Ver vacante",
+    "back_to_list": "Volver al listado",
+    "about_role": "Sobre el puesto",
+    "requirements": "Requisitos",
+    "unavailable": "Vacante no disponible",
+    "meta_description_detail": "Vacante {{title}} en Codiva.dev. Revisa el perfil y postula con tu CV.",
+    "employment": {
+      "full_time": "Tiempo completo",
+      "part_time": "Medio tiempo",
+      "contract": "Por proyecto",
+      "internship": "Prácticas"
+    }
+  },
+  "a11y": {
+    "changeLanguage": "Cambiar idioma",
+    "menu": "Menú"
+  },
+  "legal": {
+    "back": "Volver",
+    "version": "Versión {{code}} · Actualizado {{updated}}",
+    "foundation": "Fundamento: {{note}}",
+    "updated": "11 de agosto de 2026",
+    "termsTitle": "Términos y Condiciones",
+    "privacyTitle": "Aviso de Privacidad",
+    "ndaTitle": "NDA"
+  },
+  "errors": {
+    "notFoundTitle": "Página no encontrada",
+    "notFoundBody": "El enlace no existe o ya no está disponible. Revisa la URL o vuelve al inicio.",
+    "home": "Ir al inicio",
+    "quoteCta": "Cotizar un proyecto",
+    "serverTitle": "Algo salió mal",
+    "serverBody": "Ocurrió un error inesperado. Puedes reintentar o volver al inicio.",
+    "retry": "Reintentar",
+    "criticalTitle": "Error crítico",
+    "criticalBody": "La aplicación no pudo cargar. Reintenta; si persiste, contacta a hello@codiva.dev.",
+    "opsNotFoundBody": "Esta ruta no existe en Ops. Vuelve al panel o revisa el enlace.",
+    "opsDashboard": "Ir al dashboard",
+    "opsLogin": "Iniciar sesión",
+    "portalNotFoundBody": "Este enlace del portal no existe o el proyecto ya no está disponible. Si tienes acceso, usa el enlace de invitación que te enviamos.",
+    "goCodiva": "Ir a Codiva",
+    "opsServerBody": "Ocurrió un error inesperado. Reintenta o vuelve a una pantalla conocida."
+  },
+  "partner": {
+    "title": "Solicitar cotización comercial",
+    "subtitle": "Para agencias, consultores e intermediarios que necesitan una propuesta de Codiva para su cliente.",
+    "sending": "Enviando solicitud…",
+    "sendError": "No se pudo enviar la solicitud.",
+    "sent": "Solicitud enviada",
+    "connectionError": "Error de conexión. Intenta de nuevo.",
+    "terms": "Términos",
+    "privacy": "Aviso de privacidad",
+    "receivedTitle": "Solicitud recibida",
+    "receivedBody": "Revisaremos tu solicitud y te contactaremos con una propuesta comercial.",
+    "sendAnother": "Enviar otra solicitud",
+    "yourData": "Tus datos (intermediario)",
+    "name": "Nombre *",
+    "email": "Email *",
+    "company": "Empresa / agencia *",
+    "phone": "Teléfono",
+    "endClient": "Cliente final (opcional)",
+    "endClientName": "Nombre",
+    "endClientCompany": "Empresa",
+    "project": "Proyecto a cotizar",
+    "serviceType": "Tipo de solución",
+    "web": "Sitio web",
+    "pwa": "PWA / app web",
+    "app": "Aplicación móvil",
+    "eshop": "E-commerce",
+    "lms": "LMS / plataforma",
+    "other": "Otro",
+    "delivery": "Entrega deseada",
+    "need": "Alcance / necesidad *",
+    "needPlaceholder": "Describe qué necesita el cliente, funcionalidades clave, integraciones…",
+    "budget": "Presupuesto referencia (MXN)",
+    "reference": "Sitio de referencia",
+    "consent": "Al enviar aceptas que Codiva te contacte sobre esta solicitud.",
+    "submit": "Solicitar cotización",
+    "submitting": "Enviando…",
+    "directClient": "¿Eres cliente directo?",
+    "quoteOnSite": "Cotiza en codiva.dev"
+  },
+  "quotePublic": {
+    "banner": "Propuesta comercial Codiva — solo consulta",
+    "iframeTitle": "Cotización Codiva"
+  },
+  "portal": {
+    "projectPortal": "Portal del proyecto",
+    "myProjects": "Mis proyectos",
+    "signOut": "Cerrar sesión",
+    "powered": "Proyecto impulsado por Codiva",
+    "nav": {
+      "home": "Resumen",
+      "proposal": "Propuesta",
+      "quote": "Cotización",
+      "payments": "Pagos",
+      "site": "Tu sitio",
+      "docs": "Documentos",
+      "timeline": "Timeline",
+      "deliverables": "Entregables",
+      "tickets": "Tickets"
+    },
+    "login": {
+      "title": "Portal del cliente",
+      "subtitle": "Ingresa con las credenciales que te enviamos",
+      "email": "Email",
+      "password": "Contraseña",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "submit": "Entrar al portal",
+      "submitting": "Entrando…",
+      "loading": "Cargando…",
+      "welcome": "Bienvenido",
+      "invalid": "Email o contraseña incorrectos.",
+      "failed": "No se pudo iniciar sesión.",
+      "noProject": "No tienes acceso a ningún proyecto publicado.",
+      "noAccess": "No tienes acceso a este portal.",
+      "authExpired": "Enlace inválido o expirado.",
+      "projectUnavailable": "Proyecto no disponible.",
+      "notFound": "Proyecto no encontrado o no publicado.",
+      "enter": "Entrar"
+    },
+    "home": {
+      "projectStatus": "Estado del proyecto",
+      "progress": "Progreso",
+      "nextMilestone": "Próximo hito",
+      "proposal": "Propuesta",
+      "quote": "Cotización",
+      "payments": "Pagos",
+      "paymentsTitle": "Estado de pagos",
+      "paymentsHint": "Desarrollo, saldo y alojamiento",
+      "site": "Tu sitio",
+      "siteReady": "URL y accesos",
+      "sitePending": "En preparación",
+      "siteHint": "Preview, producción y credenciales",
+      "docs": "Documentos",
+      "ndaSigned": "NDA firmado",
+      "ndaAvailable": "NDA disponible",
+      "docsReady": "Bandeja lista",
+      "docsHint": "Contrato, NDA y solicitudes",
+      "recentMilestones": "Hitos recientes",
+      "noMilestones": "Aún no hay hitos publicados.",
+      "noQuote": "Sin cotización",
+      "quoteNone": "Aún no hay cotización publicada",
+      "quoteAccepted": "Aprobada · lista para consultar",
+      "quoteRejected": "Rechazada",
+      "quoteExpired": "Expirada",
+      "quoteValidUntil": "Válida hasta {{date}}",
+      "quotePending": "Pendiente de tu respuesta",
+      "quoteView": "Ver detalle",
+      "materials": "{{count}} material(es) publicado(s)",
+      "pendingPublish": "Pendiente de publicar",
+      "architectureMvp": "Arquitectura y MVP",
+      "architecture": "Arquitectura",
+      "mvp": "MVP / alcance",
+      "identity": "Identidad y propuesta"
+    },
+    "forgot": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te enviaremos un enlace si el email tiene acceso.",
+      "subtitlePortal": "Portal del proyecto",
+      "subtitleClient": "Portal del cliente",
+      "sending": "Enviando…",
+      "sendLink": "Enviar enlace",
+      "back": "Volver al login"
+    },
+    "reset": {
+      "title": "Nueva contraseña",
+      "hint": "Mínimo 8 caracteres.",
+      "mismatch": "Las contraseñas no coinciden.",
+      "saving": "Guardando…",
+      "save": "Guardar contraseña",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "back": "Volver al login"
+    },
+    "legalAccept": {
+      "eyebrow": "Portal del proyecto",
+      "intro": "Antes de entrar, acepta los documentos legales vigentes (versión {{version}} · {{updated}}). La aceptación aplica a",
+      "allProjects": "todos tus proyectos",
+      "introEnd": "en el portal.",
+      "accepted": "Aceptado",
+      "alreadyAccepted": " (ya aceptados)",
+      "termsPrefix": "He leído y acepto los",
+      "terms": "Términos y Condiciones",
+      "privacyPrefix": "He leído y acepto el",
+      "privacy": "Aviso de Privacidad",
+      "ndaPrefix": "He leído y acepto el",
+      "nda": "Acuerdo de Confidencialidad (NDA)",
+      "ndaSuffix": "aplicable a este proyecto",
+      "submit": "Aceptar y continuar al portal",
+      "representative": "Si representas a tu empresa, confirmas tener facultades para vincularla respecto de estos documentos en el alcance del Portal."
+    },
+    "docs": {
+      "materialsTitle": "Materiales de Codiva",
+      "materialsHint": "Contratos, NDA firmado (a nivel cliente) y archivos que compartimos contigo. La identidad y propuesta están en Propuesta.",
+      "signed": "firmado",
+      "download": "Descargar",
+      "empty": "Sin materiales todavía.",
+      "uploads": "Tus envíos",
+      "view": "Ver",
+      "liveNda": "NDA mutuo - borrador Codiva × {{client}}",
+      "requestsEmpty": "Codiva aún no ha solicitado documentos o accesos. Cuando lo haga, aparecerán aquí como casillas para completar.",
+      "requestsTitle": "Solicitudes de Codiva",
+      "requestsHint": "Cada ítem es un pedido concreto. Solo se habilita la carga cuando Codiva lo solicita.",
+      "progress": "{{done}} de {{total}} entregados",
+      "pending": " · {{count}} pendientes",
+      "required": "Requerido",
+      "instructions": "Instrucciones: ",
+      "due": "Fecha objetivo: {{date}}",
+      "draft": "Borrador",
+      "sent": "Respuesta enviada",
+      "sending": "Enviando…",
+      "ndaHint": "PDF firmado por el representante legal",
+      "fileHint": "PDF, imagen, Office o ZIP",
+      "textPlaceholder": "Escribe aquí la información solicitada",
+      "provider": "Proveedor (Vercel, Cloudflare, GoDaddy…)",
+      "domain": "Dominio (ej. nirc.mx)",
+      "panelUrl": "URL del panel",
+      "username": "Usuario / correo del panel",
+      "accessNotes": "Cómo acceder (invitar a hello@codiva.dev, share link de 1Password, DNS pendientes…). Evita pegar contraseñas en claro.",
+      "notes": "Notas opcionales para Codiva",
+      "submit": "Enviar respuesta",
+      "delivered": "Entregado",
+      "fileReceived": "Archivo recibido y registrado.",
+      "markedAs": "Esta solicitud fue marcada como {{status}}."
+    },
+    "deliverables": {
+      "title": "Entregables",
+      "hint": "Entregas de proyecto. Arquitectura y MVP viven en la pestaña Propuesta.",
+      "openLink": "Abrir enlace",
+      "download": "Descargar",
+      "empty": "Sin entregables operativos publicados aún."
+    },
+    "ticketsPage": {
+      "title": "Tickets de soporte",
+      "empty": "Sin tickets registrados.",
+      "new": "Nuevo ticket",
+      "hintPrefix": "Para reportar un incidente usa el",
+      "form": "formulario de soporte",
+      "hintSuffix": "indicando el mismo email de tu cuenta ({{email}})."
+    },
+    "payments": {
+      "intro": "Resumen de pagos de tu proyecto: lo ya cubierto del desarrollo, lo que falta por pagar y el alojamiento del sitio. El hosting lo pagas tú (nosotros te avisamos y te pasamos el monto cuando toque renovar). Para ver el alcance aprobado, entra a",
+      "quoteLink": "Cotización",
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "charges": "{{count}} cargo(s)",
+      "empty": "Aún no hay cargos publicados en este portal.",
+      "clientBorne": "A tu cargo",
+      "period": "Periodo: {{label}}",
+      "paidOn": "Pagado {{date}}",
+      "dueOn": "Vence {{date}}",
+      "noDue": "Sin fecha de vencimiento",
+      "noticeFrom": "Te avisamos en el portal desde {{date}}"
+    },
+    "quote": {
+      "empty": "No hay cotización disponible en este momento.",
+      "introPrefix": "Detalle de arquitectura en",
+      "proposalLink": "Propuesta / Canvas",
+      "introCosts": ". Estado de anticipos y saldo en",
+      "paymentsLink": "Pagos",
+      "devOnly": "Solo desarrollo · MXN sin IVA",
+      "validUntil": "Válida hasta {{date}}",
+      "type": "Tipo: {{type}}",
+      "scope": "Alcance",
+      "modules": "Módulos / alcance",
+      "concept": "Concepto",
+      "amount": "Monto",
+      "totalDev": "Total desarrollo",
+      "plan": "Plan de entregas",
+      "weeks": "Sem. {{weeks}}",
+      "deliverables": "Entregables",
+      "considerations": "Consideraciones",
+      "extras": "Alternativas / no incluido",
+      "accepted": "Aceptado",
+      "rejected": "Rechazado",
+      "accept": "Aceptar propuesta",
+      "acceptShort": "Aceptar",
+      "reject": "Rechazar",
+      "other": "Otras propuestas"
+    },
+    "site": {
+      "title": "Tu sitio",
+      "hint": "Aquí encuentras las URLs de tu desarrollo y, cuando aplique, los accesos que te compartimos (preview, producción o admin).",
+      "emptyTitle": "Aún no hay preview publicado",
+      "emptyBody": "Cuando tengamos una URL de desarrollo o accesos listos para ti, aparecerán en esta sección.",
+      "links": "Enlaces",
+      "preview": "Preview / staging",
+      "production": "Producción",
+      "access": "Accesos",
+      "url": "URL: ",
+      "user": "Usuario: "
+    },
+    "proposal": {
+      "title": "Propuesta",
+      "hint": "Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o descargar el PDF cuando exista.",
+      "quote": "Cotización",
+      "validUntil": "Válida hasta {{date}}",
+      "viewFull": "Ver cotización completa",
+      "emptyCanvas": "Aún no hay materiales de propuesta publicados.",
+      "interactive": "Canvas interactivo",
+      "document": "Documento",
+      "downloadPdf": "Descargar PDF",
+      "fullscreen": "Pantalla completa",
+      "cannotPreview": "Este recurso no se puede previsualizar aquí.",
+      "openIt": "Abrirlo",
+      "noFile": "Sin archivo o URL asociado."
+    },
+    "timeline": {
+      "title": "Timeline del proyecto",
+      "hint": "Hitos acordados y avances visibles para el equipo del cliente.",
+      "milestone": "Hito {{n}}",
+      "empty": "El timeline se publicará pronto."
+    },
+    "hub": {
+      "eyebrow": "Portal del cliente",
+      "title": "Mis proyectos",
+      "empty": "No tienes proyectos publicados todavía. Si acabas de recibir una invitación, revisa tu correo o contacta a Codiva.",
+      "backLogin": "Volver al login",
+      "progress": "Avance",
+      "pendingPay": "Pendiente de pago",
+      "nextMilestone": "Próximo hito",
+      "noMilestones": "Sin hitos pendientes",
+      "open": "Abrir proyecto →"
+    },
+    "secret": {
+      "label": "Contraseña / token",
+      "hide": "Ocultar",
+      "show": "Mostrar",
+      "copied": "Copiado",
+      "copy": "Copiar"
+    },
+    "notices": {
+      "aria": "Avisos de renovación y vencimiento",
+      "overdue": "Pago vencido",
+      "upcoming": "Renovación próxima",
+      "hostingHint": "El alojamiento del sitio lo pagas tú. Detalle en",
+      "payments": "Pagos",
+      "amountTbd": "monto por confirmar al renovar",
+      "overdueOn": "{{title}} venció el {{date}} · {{amount}}",
+      "dueToday": "{{title}} vence hoy · {{amount}}",
+      "dueIn": "{{title}} · vence el {{date}} (en {{days}} días) · {{amount}}"
+    }
+  },
+  "ops": {
+    "metaDescription": "Backoffice operativo Codiva",
+    "signOut": "Cerrar sesión",
+    "nav": {
+      "dashboard": "Dashboard",
+      "leads": "Leads",
+      "inbox": "Inbox",
+      "projects": "Proyectos",
+      "workload": "Carga",
+      "organizations": "Organizaciones",
+      "users": "Usuarios",
+      "tickets": "Tickets",
+      "team": "Equipo",
+      "settings": "Configuración"
+    },
+    "labels": {
+      "empty": "-",
+      "amountPending": "Por confirmar",
+      "defaultProjectState": "Por iniciar - pendiente de aprobación formal",
+      "leadStatus": {
+        "new": "Nuevo",
+        "contacted": "Contactado",
+        "qualified": "Calificado",
+        "converted": "Convertido",
+        "discarded": "Descartado"
+      },
+      "leadSource": {
+        "web_cotiza": "Web /cotiza",
+        "referral": "Referido / intermediario",
+        "manual": "Manual (Ops)",
+        "contact_form": "Formulario contacto"
+      },
+      "projectStatus": {
+        "draft": "Borrador",
+        "quoting": "Cotización",
+        "active": "En curso",
+        "paused": "Pausado",
+        "delivered": "Entregado",
+        "archived": "Archivado"
+      },
+      "ticketStatus": {
+        "new": "Nuevo",
+        "in_progress": "En progreso",
+        "waiting_client": "Esperando cliente",
+        "resolved": "Resuelto",
+        "closed": "Cerrado"
+      },
+      "ticketPriority": {
+        "alta": "Alta",
+        "media": "Media",
+        "baja": "Baja"
+      },
+      "quoteStatus": {
+        "draft": "Borrador",
+        "sent": "Enviada",
+        "accepted": "Aceptada",
+        "rejected": "Rechazada",
+        "expired": "Expirada"
+      },
+      "milestoneStatus": {
+        "pending": "Pendiente",
+        "in_progress": "En progreso",
+        "completed": "Completado",
+        "blocked": "Bloqueado"
+      },
+      "sprintStatus": {
+        "planned": "Planificado",
+        "active": "Activo",
+        "completed": "Completado"
+      },
+      "sprintItemStatus": {
+        "todo": "Por hacer",
+        "in_progress": "En progreso",
+        "done": "Hecho",
+        "blocked": "Bloqueado"
+      },
+      "deliverableKind": {
+        "architecture": "Arquitectura",
+        "mvp": "MVP / Propuesta",
+        "proposal": "Propuesta",
+        "other": "Otro"
+      },
+      "documentType": {
+        "contract": "Contrato",
+        "nda": "NDA",
+        "proposal_pdf": "Propuesta PDF",
+        "other": "Otro"
+      },
+      "documentSource": {
+        "staff": "Codiva",
+        "client": "Cliente"
+      },
+      "documentRequestStatus": {
+        "open": "Pendiente",
+        "fulfilled": "Entregado",
+        "waived": "Omitido",
+        "cancelled": "Cancelado"
+      },
+      "documentRequestInput": {
+        "file": "Archivo",
+        "text": "Texto",
+        "credentials": "Accesos"
+      },
+      "chargeKind": {
+        "development": "Desarrollo",
+        "hosting": "Alojamiento",
+        "domain": "Dominio",
+        "pass_through": "Gasto a cargo del cliente",
+        "other": "Otro"
+      },
+      "chargeStatus": {
+        "pending": "Pendiente",
+        "paid": "Pagado",
+        "overdue": "Vencido",
+        "waived": "Omitido"
+      },
+      "siteAccessKind": {
+        "preview": "Preview / staging",
+        "production": "Producción",
+        "cms": "Admin / CMS",
+        "other": "Otro acceso"
+      },
+      "inboxStatus": {
+        "unread": "Sin leer",
+        "read": "Leído",
+        "replied": "Respondido",
+        "archived": "Archivado"
+      }
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "subtitle": "Acceso para el equipo Codiva",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "notStaff": "Tu cuenta no tiene permisos de staff.",
+      "notStaffLong": "Tu cuenta no tiene permisos de staff. Usa el email registrado en el equipo.",
+      "authExpired": "Enlace de acceso inválido o expirado.",
+      "welcome": "Bienvenido"
+    },
+    "pages": {
+      "dashboard": "Dashboard",
+      "dashboardCommercial": "Resumen comercial y de proyectos",
+      "dashboardAssigned": "Tus proyectos e ítems de sprint asignados",
+      "mySprintItems": "Mis ítems de sprint",
+      "viewProjects": "Ver proyectos",
+      "leads": "Leads",
+      "leadsDesc": "Solicitudes de cotización y contacto comercial",
+      "inbox": "Inbox",
+      "inboxDesc": "Mensajes del formulario de contacto",
+      "projects": "Proyectos",
+      "projectsAll": "Gestión de proyectos y portales de cliente",
+      "projectsAssigned": "Proyectos en los que estás asignado",
+      "tickets": "Tickets",
+      "ticketsDesc": "Soporte y solicitudes de clientes",
+      "workload": "Carga del equipo",
+      "workloadDesc": "Ítems de sprint abiertos, tickets asignados y horas de la semana.",
+      "organizations": "Organizaciones",
+      "users": "Usuarios",
+      "team": "Equipo",
+      "settings": "Configuración",
+      "financeAllCharges": "Todos los cargos",
+      "financeOutstanding": "Adeudos (pendiente + vencido)",
+      "financeAllKinds": "Todos los tipos",
+      "financeAllProjects": "Todos los proyectos",
+      "financeQuoteHint": "Cotización aceptada o última con monto"
+    },
+    "roles": {
+      "admin": "Administrador",
+      "pm": "Project Manager",
+      "dev": "Desarrollador"
+    }
+  },
+  "email": {
+    "ctaFallback": "Si el botón no funciona, copia este enlace:",
+    "hello": "Hola",
+    "lead": {
+      "subject": "Hemos recibido tu solicitud en {{brand}}",
+      "preview": "Recibimos tu solicitud de cotización en {{brand}}",
+      "title": "Recibimos tu solicitud",
+      "body1": "Gracias por contactarnos. Hemos recibido tu solicitud de cotización y nuestro equipo la revisará pronto.",
+      "body2": "Te responderemos a la brevedad. Si necesitas escribirnos, usa",
+      "footer": "Mensaje automático de Codiva.dev. Las respuestas a noreply no se monitorean; escribe a hello@codiva.dev."
+    },
+    "ticket": {
+      "subject": "Ticket recibido: {{title}}",
+      "preview": "Ticket recibido: {{title}}",
+      "title": "Ticket de soporte recibido",
+      "body1": "Hemos registrado tu solicitud de soporte:",
+      "body2": "Te contactaremos pronto con novedades."
+    },
+    "recovery": {
+      "preview": "Restablece tu contraseña de Codiva.dev",
+      "title": "Restablecer contraseña",
+      "body1": "Recibimos una solicitud para restablecer tu contraseña.",
+      "body2": "Haz clic en el botón para crear una nueva. El enlace expira en breve por seguridad.",
+      "body3": "Si no solicitaste esto, puedes ignorar este correo.",
+      "cta": "Crear nueva contraseña"
+    },
+    "portalRecovery": {
+      "preview": "Restablece tu acceso al portal: {{project}}",
+      "title": "Restablecer acceso al portal",
+      "body1": "Recibimos una solicitud para restablecer tu contraseña del portal del proyecto {{project}}.",
+      "body2": "Si no solicitaste esto, ignora este correo.",
+      "cta": "Restablecer contraseña"
+    },
+    "portalInviteNew": {
+      "preview": "Tu acceso al portal: {{project}}",
+      "title": "Bienvenido a tu portal",
+      "accessOne": "Se creó tu acceso al portal de {{brand}} para el proyecto {{project}}.",
+      "accessMany": "Se creó tu acceso al portal de {{brand}} para estos proyectos:",
+      "client": "Cliente: {{name}}.",
+      "body": "Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas. Si tienes más de un proyecto, verás el listado al entrar.",
+      "email": "Email:",
+      "tempPassword": "Contraseña temporal:",
+      "changeHint": "Te recomendamos cambiar tu contraseña al ingresar.",
+      "cta": "Entrar al portal"
+    },
+    "portalInviteExisting": {
+      "preview": "Tienes acceso al portal: {{project}}",
+      "title": "Acceso al portal",
+      "accessOne": "Se te otorgó acceso al portal de {{brand}} para el proyecto {{project}}.",
+      "accessMany": "Se te otorgó acceso al portal de {{brand}} para estos proyectos:",
+      "body": "Usa tu correo y contraseña habituales. En el portal encontrarás propuesta, arquitectura y cotización.",
+      "help": "Si necesitas ayuda, escribe a",
+      "cta": "Entrar al portal"
+    },
+    "quoteSent": {
+      "preview": "Nueva cotización disponible: {{project}}",
+      "title": "Nueva propuesta comercial",
+      "body1": "Tienes una nueva propuesta comercial de {{brand}} para el proyecto {{project}}.",
+      "client": "Cliente de referencia: {{name}}.",
+      "body2": "Revisa alcance, arquitectura y montos en tu portal. Si estás de acuerdo, puedes aceptarla desde ahí.",
+      "doubts": "Dudas comerciales:",
+      "cta": "Ver cotización"
+    },
+    "leadQuote": {
+      "preview": "Propuesta comercial: {{subject}}",
+      "title": "Propuesta comercial disponible",
+      "body1": "Te compartimos una propuesta comercial de {{brand}} para {{subject}}.",
+      "body2": "Puedes consultar el detalle completo en el enlace. Si tienes dudas, escribe a",
+      "cta": "Ver propuesta",
+      "footer": "Documento informativo. Consulta únicamente."
+    },
+    "legalReaccept": {
+      "preview": "Actualización legal - {{project}}",
+      "title": "Debes aceptar los documentos legales actualizados",
+      "body1": "Actualizamos los términos, el aviso de privacidad y/o el NDA del portal del proyecto {{project}} (versión {{version}}).",
+      "body2": "Para seguir usando el portal, acepta los documentos vigentes en tu próximo acceso.",
+      "cta": "Revisar y aceptar",
+      "footer": "Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.dev."
+    }
+  },
+  "quoteDoc": {
+    "deliverables": "Entregables",
+    "considerations": "Consideraciones",
+    "extras": "Extras opcionales (no incluidos)",
+    "sincerely": "Atentamente,",
+    "project": "Proyecto",
+    "client": "Cliente",
+    "endClient": "Cliente final",
+    "developer": "Desarrollador",
+    "issued": "Fecha de emisión",
+    "service": "Servicio",
+    "projectState": "Estado del proyecto",
+    "scope": "Alcance del servicio",
+    "version": "Versión {{version}}",
+    "validUntil": "Válida hasta",
+    "intermediary": "Intermediario",
+    "titleSuffix": "Cotización Codiva"
+  },
+  "auth": {
+    "emailRequired": "Ingresa tu email.",
+    "incomplete": "Datos incompletos.",
+    "staffIfExists": "Si el email tiene acceso de staff, recibirás un enlace en breve.",
+    "portalIfExists": "Si tienes acceso a este portal, recibirás un enlace en breve.",
+    "hubIfExists": "Si tienes acceso al portal, recibirás un enlace en breve.",
+    "sent": "Te enviamos un enlace a tu correo. Revisa también spam.",
+    "sentSupabase": "Te enviamos un enlace a tu correo (vía Supabase). Revisa también spam.",
+    "noLink": "No se pudo generar el enlace de recuperación.",
+    "minLength": "La contraseña debe tener al menos 8 caracteres.",
+    "sessionExpired": "Sesión expirada. Solicita un nuevo enlace.",
+    "updated": "Contraseña actualizada. Ya puedes iniciar sesión.",
+    "sendFailed": "No se pudo enviar el correo: {{error}}.",
+    "redirectNotAllowed": "URL de redirección no permitida en Supabase. Agrega https://ops.codiva.dev/** y https://portal.codiva.dev/** en Authentication → URL Configuration.",
+    "generateFailed": "No pudimos generar el enlace: {{error}}",
+    "unknownError": "error desconocido"
   }
 }
