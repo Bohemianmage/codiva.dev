@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { requireStaff, requireAdminStaff, requirePortalAccess } from '@/lib/ops/auth';
+import { requireStaff, requireAdminStaff, requirePortalAccess, assertCapability, assertProjectAccessOrThrow } from '@/lib/ops/auth';
+import { can } from '@/lib/ops/permissions';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
@@ -53,7 +54,7 @@ function parseQuoteFormData(formData: FormData) {
 }
 
 export async function createLead(formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('leads');
 
   const name = String(formData.get('name') || '').trim();
   const email = String(formData.get('email') || '').trim();
@@ -113,7 +114,7 @@ export async function createLead(formData: FormData) {
 }
 
 export async function convertInboxToLead(messageId: string) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('inbox');
 
   const { data: message, error: msgError } = await supabase
     .from('inbox_messages')
@@ -158,7 +159,7 @@ export async function convertInboxToLead(messageId: string) {
 }
 
 export async function updateLeadStatus(leadId: string, status: string) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('leads');
   const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
   if (error) throw new Error(error.message);
   await logActivity({
@@ -173,7 +174,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
 }
 
 export async function updateLeadDetails(leadId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('leads');
 
   const assignedTo = String(formData.get('assignedTo') || '').trim();
 
@@ -206,7 +207,7 @@ export async function updateLeadDetails(leadId: string, formData: FormData) {
 }
 
 export async function createLeadQuote(leadId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('quotes');
   const parsed = parseQuoteFormData(formData);
 
   const { data: last } = await supabase
@@ -239,7 +240,7 @@ export async function createLeadQuote(leadId: string, formData: FormData) {
 }
 
 export async function sendLeadQuote(quoteId: string, leadId: string) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('quotes');
   const admin = createAdminClient();
 
   const { error } = await supabase
@@ -281,14 +282,14 @@ export async function sendLeadQuote(quoteId: string, leadId: string) {
 }
 
 export async function updateInboxStatus(messageId: string, status: string) {
-  const { supabase } = await requireStaff();
+  const { supabase } = await assertCapability('inbox');
   const { error } = await supabase.from('inbox_messages').update({ status }).eq('id', messageId);
   if (error) throw new Error(error.message);
   revalidatePath('/inbox');
 }
 
 export async function updateTicketStatus(ticketId: string, status: string) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user } = await assertCapability('tickets');
   const { error } = await supabase.from('tickets').update({ status }).eq('id', ticketId);
   if (error) throw new Error(error.message);
   await logActivity({
@@ -302,8 +303,35 @@ export async function updateTicketStatus(ticketId: string, status: string) {
   revalidatePath(`/tickets/${ticketId}`);
 }
 
+export async function updateTicketAssignment(ticketId: string, formData: FormData) {
+  const { supabase, user } = await assertCapability('tickets');
+  const status = String(formData.get('status') || '').trim();
+  const assignedTo = String(formData.get('assignedTo') || '').trim() || null;
+
+  if (!['new', 'in_progress', 'waiting_client', 'resolved', 'closed'].includes(status)) {
+    throw new Error('Estado inválido');
+  }
+
+  const { error } = await supabase
+    .from('tickets')
+    .update({ status, assigned_to: assignedTo })
+    .eq('id', ticketId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'ticket',
+    entityId: ticketId,
+    action: 'updated',
+    metadata: { status, assigned_to: assignedTo },
+    actorId: user.id,
+  });
+  revalidatePath('/tickets');
+  revalidatePath(`/tickets/${ticketId}`);
+  revalidatePath('/workload');
+}
+
 export async function convertLeadToProject(leadId: string) {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user, staff } = await assertCapability('leads');
   const admin = createAdminClient();
 
   const { data: lead, error: leadError } = await supabase
@@ -347,6 +375,12 @@ export async function convertLeadToProject(leadId: string) {
 
   await admin.from('quotes').update({ project_id: project.id, lead_id: null }).eq('lead_id', leadId);
 
+  await admin.from('project_staff').upsert({
+    project_id: project.id,
+    staff_id: user.id,
+    role_on_project: staff.role === 'dev' ? 'dev' : 'pm',
+  });
+
   await logActivity({
     entityType: 'project',
     entityId: project.id,
@@ -361,7 +395,7 @@ export async function convertLeadToProject(leadId: string) {
 }
 
 export async function createProject(formData: FormData) {
-  const { user } = await requireStaff();
+  const { user, staff } = await assertCapability('projects_create');
   const admin = createAdminClient();
 
   const name = String(formData.get('name') || '').trim();
@@ -391,6 +425,12 @@ export async function createProject(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
+  await admin.from('project_staff').upsert({
+    project_id: project.id,
+    staff_id: user.id,
+    role_on_project: staff.role === 'dev' ? 'dev' : 'pm',
+  });
+
   await logActivity({
     entityType: 'project',
     entityId: project.id,
@@ -403,7 +443,9 @@ export async function createProject(formData: FormData) {
 }
 
 export async function updateProject(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await requireStaff();
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const retentionRaw = parseInt(String(formData.get('documentRetentionDays') || ''), 10);
   const payload = {
@@ -435,7 +477,9 @@ export async function updateProject(projectId: string, formData: FormData) {
 }
 
 export async function createMilestone(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('milestones_write');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const { data: last } = await supabase
     .from('milestones')
@@ -467,7 +511,9 @@ export async function createMilestone(projectId: string, formData: FormData) {
 }
 
 export async function updateMilestone(milestoneId: string, projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('milestones_write');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const status = String(formData.get('status') || 'pending');
   const payload = {
@@ -493,7 +539,9 @@ export async function updateMilestone(milestoneId: string, projectId: string, fo
 }
 
 export async function addMilestoneUpdate(milestoneId: string, projectId: string, body: string) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('milestones_write');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
   const { error } = await supabase.from('milestone_updates').insert({
     milestone_id: milestoneId,
     body,
@@ -504,7 +552,9 @@ export async function addMilestoneUpdate(milestoneId: string, projectId: string,
 }
 
 export async function createQuote(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('quotes');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
   const parsed = parseQuoteFormData(formData);
 
   const { data: last } = await supabase
@@ -538,7 +588,9 @@ export async function createQuote(projectId: string, formData: FormData) {
 }
 
 export async function sendQuote(quoteId: string, projectId: string) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('quotes');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
   const admin = createAdminClient();
 
   const { error } = await supabase
@@ -605,7 +657,7 @@ export async function acceptQuote(quoteId: string, projectId: string) {
 }
 
 export async function invitePortalUser(formData: FormData) {
-  await requireStaff();
+  await assertCapability('portal_users');
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const role = String(formData.get('role') || 'viewer');
   const projectIds = formData
@@ -624,7 +676,8 @@ export async function invitePortalUser(formData: FormData) {
 }
 
 export async function inviteProjectMember(projectId: string, formData: FormData) {
-  await requireStaff();
+  const access = await assertCapability('portal_users');
+  await assertProjectAccessOrThrow(access, projectId);
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const role = String(formData.get('role') || 'viewer');
   const siblingIds = formData
@@ -643,7 +696,7 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
 }
 
 export async function resendPortalInvite(userId: string) {
-  await requireStaff();
+  await assertCapability('portal_users');
   const admin = createAdminClient();
 
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);
@@ -685,7 +738,7 @@ export async function resendPortalInvite(userId: string) {
 }
 
 export async function addPortalUserProjects(userId: string, formData: FormData) {
-  await requireStaff();
+  await assertCapability('portal_users');
   const role = String(formData.get('role') || 'viewer');
   const projectIds = formData
     .getAll('projectIds')
@@ -710,7 +763,7 @@ export async function addPortalUserProjects(userId: string, formData: FormData) 
 }
 
 export async function removePortalUserProject(userId: string, projectId: string) {
-  await requireStaff();
+  await assertCapability('portal_users');
   const admin = createAdminClient();
   const { error } = await admin
     .from('project_members')
@@ -815,7 +868,9 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
 }
 
 export async function uploadDocument(projectId: string, formData: FormData) {
-  const { user } = await requireStaff();
+  const access = await assertCapability('documents');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { user } = access;
   const file = formData.get('file') as File | null;
   if (!file?.size) throw new Error('Archivo requerido');
 
@@ -860,7 +915,9 @@ export async function uploadDocument(projectId: string, formData: FormData) {
 }
 
 export async function createDeliverable(projectId: string, formData: FormData) {
-  const { supabase } = await requireStaff();
+  const access = await assertCapability('deliverables');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase } = access;
 
   const file = formData.get('file') as File | null;
   let filePath: string | null = null;
@@ -1331,7 +1388,7 @@ export async function clientRejectQuote(quoteId: string, projectId: string) {
  * a miembros de proyectos visibles cuya aceptación esté desactualizada.
  */
 export async function publishLegalVersionAndNotify(formData: FormData) {
-  const { user } = await requireStaff();
+  const { user } = await assertCapability('legal_publish');
   const admin = createAdminClient();
   const versionCode = String(formData.get('versionCode') || LEGAL_DOCS_VERSION).trim();
   const changelog = String(formData.get('changelog') || '').trim();
@@ -1434,7 +1491,9 @@ function parseNoticeDays(raw: FormDataEntryValue | null): number {
 }
 
 export async function createProjectCharge(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('charges');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const status = String(formData.get('status') || 'pending');
   const kind = String(formData.get('kind') || 'development');
@@ -1485,7 +1544,9 @@ export async function updateProjectCharge(
   projectId: string,
   formData: FormData
 ) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('charges');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const status = String(formData.get('status') || 'pending');
   const existingPaidAt = String(formData.get('existingPaidAt') || '') || null;
@@ -1527,7 +1588,9 @@ export async function updateProjectCharge(
 }
 
 export async function deleteProjectCharge(chargeId: string, projectId: string) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('charges');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const { error } = await supabase
     .from('project_charges')
@@ -1548,7 +1611,9 @@ export async function deleteProjectCharge(chargeId: string, projectId: string) {
 }
 
 export async function updateProjectSiteUrls(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('site_access');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const preview = String(formData.get('sitePreviewUrl') || '').trim() || null;
   const production = String(formData.get('siteProductionUrl') || '').trim() || null;
@@ -1580,7 +1645,9 @@ export async function updateProjectSiteUrls(projectId: string, formData: FormDat
 }
 
 export async function createSiteAccess(projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('site_access');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const { data: last } = await supabase
     .from('project_site_access')
@@ -1623,7 +1690,9 @@ export async function createSiteAccess(projectId: string, formData: FormData) {
 }
 
 export async function updateSiteAccess(accessId: string, projectId: string, formData: FormData) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('site_access');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const label = String(formData.get('label') || '').trim() || 'Acceso';
   const kind = String(formData.get('kind') || 'other');
@@ -1670,7 +1739,9 @@ export async function updateSiteAccess(accessId: string, projectId: string, form
 }
 
 export async function deleteSiteAccess(accessId: string, projectId: string) {
-  const { supabase, user } = await requireStaff();
+  const access = await assertCapability('site_access');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase, user } = access;
 
   const { error } = await supabase
     .from('project_site_access')
@@ -1832,3 +1903,246 @@ export async function updatePersonnelOfferStatus(offerId: string, formData: Form
   revalidatePath('/team');
   revalidatePath(`/team/ofertas/${offerId}`);
 }
+
+export async function assignProjectStaff(projectId: string, formData: FormData) {
+  const access = await assertCapability('sprints_plan');
+  await assertProjectAccessOrThrow(access, projectId);
+  if (!can(access.staff.role, 'projects_all') && !can(access.staff.role, 'sprints_plan')) {
+    throw new Error('No tienes permiso');
+  }
+
+  const staffId = String(formData.get('staffId') || '').trim();
+  const roleOnProject = String(formData.get('roleOnProject') || 'member');
+  if (!staffId) throw new Error('Staff requerido');
+  if (!['pm', 'dev', 'member'].includes(roleOnProject)) throw new Error('Rol de proyecto inválido');
+
+  const { error } = await access.supabase.from('project_staff').upsert({
+    project_id: projectId,
+    staff_id: staffId,
+    role_on_project: roleOnProject,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function removeProjectStaff(projectId: string, staffId: string) {
+  const access = await assertCapability('sprints_plan');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const { error } = await access.supabase
+    .from('project_staff')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('staff_id', staffId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createProjectSprint(projectId: string, formData: FormData) {
+  const access = await assertCapability('sprints_plan');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const name = String(formData.get('name') || '').trim();
+  if (!name) throw new Error('Nombre del sprint requerido');
+
+  const { error } = await access.supabase.from('project_sprints').insert({
+    project_id: projectId,
+    name,
+    goal: String(formData.get('goal') || '').trim(),
+    starts_on: String(formData.get('startsOn') || '') || null,
+    ends_on: String(formData.get('endsOn') || '') || null,
+    status: String(formData.get('status') || 'planned'),
+    created_by: access.user.id,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateProjectSprint(sprintId: string, projectId: string, formData: FormData) {
+  const access = await assertCapability('sprints_plan');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const { error } = await access.supabase
+    .from('project_sprints')
+    .update({
+      name: String(formData.get('name') || '').trim(),
+      goal: String(formData.get('goal') || '').trim(),
+      starts_on: String(formData.get('startsOn') || '') || null,
+      ends_on: String(formData.get('endsOn') || '') || null,
+      status: String(formData.get('status') || 'planned'),
+    })
+    .eq('id', sprintId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createSprintItem(sprintId: string, projectId: string, formData: FormData) {
+  const access = await assertCapability('sprints_plan');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const title = String(formData.get('title') || '').trim();
+  if (!title) throw new Error('Título requerido');
+
+  const assigneeId = String(formData.get('assigneeId') || '').trim() || null;
+
+  const { error } = await access.supabase.from('sprint_items').insert({
+    sprint_id: sprintId,
+    title,
+    details: String(formData.get('details') || '').trim(),
+    status: String(formData.get('status') || 'todo'),
+    assignee_id: assigneeId,
+    sort_order: Number(formData.get('sortOrder') || 0) || 0,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+}
+
+export async function updateSprintItem(itemId: string, projectId: string, formData: FormData) {
+  const access = await requireStaff();
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const { data: item } = await access.supabase
+    .from('sprint_items')
+    .select('id, assignee_id, sprint_id')
+    .eq('id', itemId)
+    .maybeSingle();
+  if (!item) throw new Error('Ítem no encontrado');
+
+  const canPlan = can(access.staff.role, 'sprints_plan');
+  const isAssignee = item.assignee_id === access.user.id;
+  if (!canPlan && !(can(access.staff.role, 'sprints_update_own') && isAssignee)) {
+    throw new Error('No tienes permiso para actualizar este ítem');
+  }
+
+  const status = String(formData.get('status') || '').trim();
+  if (!['todo', 'in_progress', 'done', 'blocked'].includes(status)) {
+    throw new Error('Estado inválido');
+  }
+
+  const payload: Record<string, unknown> = { status };
+
+  if (canPlan) {
+    const title = String(formData.get('title') || '').trim();
+    if (title) payload.title = title;
+    if (formData.has('details')) payload.details = String(formData.get('details') || '').trim();
+    if (formData.has('assigneeId')) {
+      payload.assignee_id = String(formData.get('assigneeId') || '').trim() || null;
+    }
+  }
+
+  const { error } = await access.supabase.from('sprint_items').update(payload).eq('id', itemId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/workload');
+}
+
+export async function updateOrganization(orgId: string, formData: FormData) {
+  const { supabase, user } = await assertCapability('organizations');
+
+  const name = String(formData.get('name') || '').trim();
+  if (!name) throw new Error('Nombre requerido');
+
+  const { error } = await supabase
+    .from('organizations')
+    .update({
+      name,
+      contact_email: String(formData.get('contactEmail') || '').trim() || null,
+      contact_phone: String(formData.get('contactPhone') || '').trim() || null,
+      logo_url: String(formData.get('logoUrl') || '').trim() || null,
+    })
+    .eq('id', orgId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'organization',
+    entityId: orgId,
+    action: 'updated',
+    actorId: user.id,
+  });
+
+  revalidatePath('/organizations');
+  revalidatePath(`/organizations/${orgId}`);
+}
+
+export async function createOrganization(formData: FormData) {
+  const { supabase, user } = await assertCapability('organizations');
+
+  const name = String(formData.get('name') || '').trim();
+  if (!name) throw new Error('Nombre requerido');
+
+  const { data, error } = await supabase
+    .from('organizations')
+    .insert({
+      name,
+      contact_email: String(formData.get('contactEmail') || '').trim() || null,
+      contact_phone: String(formData.get('contactPhone') || '').trim() || null,
+      logo_url: String(formData.get('logoUrl') || '').trim() || null,
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo crear');
+
+  await logActivity({
+    entityType: 'organization',
+    entityId: data.id,
+    action: 'created',
+    actorId: user.id,
+  });
+
+  revalidatePath('/organizations');
+  return data.id;
+}
+
+export async function createTimeEntry(projectId: string, formData: FormData) {
+  const access = await assertCapability('time_entries');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  const hours = Number(String(formData.get('hours') || '').replace(/,/g, ''));
+  if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
+    throw new Error('Horas inválidas (1–24)');
+  }
+
+  const staffId = can(access.staff.role, 'sprints_plan')
+    ? String(formData.get('staffId') || '').trim() || access.user.id
+    : access.user.id;
+
+  const sprintItemId = String(formData.get('sprintItemId') || '').trim() || null;
+  const workedOn = String(formData.get('workedOn') || '').trim() || new Date().toISOString().slice(0, 10);
+
+  const { error } = await access.supabase.from('time_entries').insert({
+    project_id: projectId,
+    sprint_item_id: sprintItemId,
+    staff_id: staffId,
+    hours,
+    worked_on: workedOn,
+    notes: String(formData.get('notes') || '').trim(),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/workload');
+}
+
+export async function deleteTimeEntry(entryId: string, projectId: string) {
+  const access = await assertCapability('time_entries');
+  await assertProjectAccessOrThrow(access, projectId);
+
+  let query = access.supabase.from('time_entries').delete().eq('id', entryId).eq('project_id', projectId);
+  if (!can(access.staff.role, 'sprints_plan')) {
+    query = query.eq('staff_id', access.user.id);
+  }
+
+  const { error } = await query;
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/workload');
+}
+

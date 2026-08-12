@@ -1,0 +1,309 @@
+import ToastForm from '@/components/ops/ToastForm';
+import StatusBadge from '@/components/ops/StatusBadge';
+import {
+  assignProjectStaff,
+  createProjectSprint,
+  createSprintItem,
+  removeProjectStaff,
+  updateProjectSprint,
+  updateSprintItem,
+} from '@/lib/ops/actions';
+import {
+  EMPTY_LABEL,
+  formatDate,
+  SPRINT_ITEM_STATUS_LABELS,
+  SPRINT_STATUS_LABELS,
+} from '@/lib/ops/labels';
+import { can } from '@/lib/ops/permissions';
+
+type StaffOption = { id: string; full_name: string; role: string };
+type ProjectStaffRow = {
+  staff_id: string;
+  role_on_project: string;
+  staff_profiles: { full_name: string; role: string } | { full_name: string; role: string }[] | null;
+};
+type SprintRow = {
+  id: string;
+  name: string;
+  goal: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  status: string;
+};
+type SprintItemRow = {
+  id: string;
+  sprint_id: string;
+  title: string;
+  details: string;
+  status: string;
+  assignee_id: string | null;
+};
+
+function sprintTone(status: string) {
+  if (status === 'active') return 'success' as const;
+  if (status === 'completed') return 'info' as const;
+  return 'warning' as const;
+}
+
+function itemTone(status: string) {
+  if (status === 'done') return 'success' as const;
+  if (status === 'blocked') return 'danger' as const;
+  if (status === 'in_progress') return 'info' as const;
+  return 'warning' as const;
+}
+
+function profileName(row: ProjectStaffRow) {
+  const p = Array.isArray(row.staff_profiles) ? row.staff_profiles[0] : row.staff_profiles;
+  return p?.full_name || EMPTY_LABEL;
+}
+
+export default function OpsProjectSprints({
+  projectId,
+  staffRole,
+  currentUserId,
+  projectStaff,
+  allStaff,
+  sprints,
+  items,
+}: {
+  projectId: string;
+  staffRole: string;
+  currentUserId: string;
+  projectStaff: ProjectStaffRow[];
+  allStaff: StaffOption[];
+  sprints: SprintRow[];
+  items: SprintItemRow[];
+}) {
+  const canPlan = can(staffRole, 'sprints_plan');
+  const staffName = new Map(allStaff.map((s) => [s.id, s.full_name]));
+
+  return (
+    <div className="space-y-8">
+      {canPlan && (
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h2 className="mb-3 font-semibold">Equipo del proyecto</h2>
+          <ul className="mb-4 space-y-2">
+            {projectStaff.map((row) => (
+              <li
+                key={row.staff_id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 text-sm"
+              >
+                <span>
+                  {profileName(row)}{' '}
+                  <span className="text-zinc-500">· {row.role_on_project}</span>
+                </span>
+                <ToastForm
+                  success="Quitado"
+                  action={async () => {
+                    'use server';
+                    await removeProjectStaff(projectId, row.staff_id);
+                  }}
+                >
+                  <button type="submit" className="text-xs text-zinc-500 hover:text-red-600">
+                    Quitar
+                  </button>
+                </ToastForm>
+              </li>
+            ))}
+            {!projectStaff.length && (
+              <p className="text-sm text-zinc-500">Nadie asignado aún.</p>
+            )}
+          </ul>
+          <ToastForm
+            success="Asignado"
+            action={async (fd) => {
+              'use server';
+              await assignProjectStaff(projectId, fd);
+            }}
+            className="flex flex-wrap gap-2"
+          >
+            <select name="staffId" required className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+              <option value="">Seleccionar staff</option>
+              {allStaff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name || s.id.slice(0, 8)} ({s.role})
+                </option>
+              ))}
+            </select>
+            <select name="roleOnProject" defaultValue="dev" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+              <option value="pm">PM</option>
+              <option value="dev">Dev</option>
+              <option value="member">Member</option>
+            </select>
+            <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white">
+              Asignar
+            </button>
+          </ToastForm>
+        </section>
+      )}
+
+      {canPlan && (
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h2 className="mb-3 font-semibold">Nuevo sprint</h2>
+          <ToastForm
+            success="Sprint creado"
+            action={async (fd) => {
+              'use server';
+              await createProjectSprint(projectId, fd);
+            }}
+            className="grid gap-3 sm:grid-cols-2"
+          >
+            <input name="name" required placeholder="Nombre (ej. Sprint 1)" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <select name="status" defaultValue="planned" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+              {Object.entries(SPRINT_STATUS_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            <input name="startsOn" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="endsOn" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <textarea name="goal" placeholder="Objetivo" rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
+              Crear sprint
+            </button>
+          </ToastForm>
+        </section>
+      )}
+
+      {(sprints ?? []).map((sprint) => {
+        const sprintItems = items.filter((i) => i.sprint_id === sprint.id);
+        const visibleItems = canPlan
+          ? sprintItems
+          : sprintItems.filter((i) => i.assignee_id === currentUserId);
+
+        return (
+          <section key={sprint.id} className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h2 className="font-semibold">{sprint.name}</h2>
+                {sprint.goal && <p className="mt-1 text-sm text-zinc-600">{sprint.goal}</p>}
+                <p className="mt-1 text-xs text-zinc-400">
+                  {sprint.starts_on ? formatDate(sprint.starts_on) : '—'} →{' '}
+                  {sprint.ends_on ? formatDate(sprint.ends_on) : '—'}
+                </p>
+              </div>
+              <StatusBadge label={SPRINT_STATUS_LABELS[sprint.status] ?? sprint.status} tone={sprintTone(sprint.status)} />
+            </div>
+
+            {canPlan && (
+              <ToastForm
+                success="Sprint actualizado"
+                action={async (fd) => {
+                  'use server';
+                  await updateProjectSprint(sprint.id, projectId, fd);
+                }}
+                className="mb-4 grid gap-2 sm:grid-cols-4"
+              >
+                <input name="name" defaultValue={sprint.name} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <select name="status" defaultValue={sprint.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                  {Object.entries(SPRINT_STATUS_LABELS).map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+                <input name="startsOn" type="date" defaultValue={sprint.starts_on ?? ''} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="endsOn" type="date" defaultValue={sprint.ends_on ?? ''} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <textarea name="goal" defaultValue={sprint.goal} rows={2} className="sm:col-span-4 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50">
+                  Guardar sprint
+                </button>
+              </ToastForm>
+            )}
+
+            <ul className="space-y-3">
+              {visibleItems.map((item) => (
+                <li key={item.id} className="rounded-lg border border-zinc-100 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium text-sm">{item.title}</p>
+                    <StatusBadge
+                      label={SPRINT_ITEM_STATUS_LABELS[item.status] ?? item.status}
+                      tone={itemTone(item.status)}
+                    />
+                  </div>
+                  {item.details && <p className="mb-2 text-sm text-zinc-600">{item.details}</p>}
+                  <p className="mb-2 text-xs text-zinc-400">
+                    Asignado: {item.assignee_id ? staffName.get(item.assignee_id) || item.assignee_id.slice(0, 8) : 'Sin asignar'}
+                  </p>
+                  <ToastForm
+                    success="Ítem actualizado"
+                    action={async (fd) => {
+                      'use server';
+                      await updateSprintItem(item.id, projectId, fd);
+                    }}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {canPlan && (
+                      <>
+                        <input name="title" defaultValue={item.title} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm" />
+                        <select
+                          name="assigneeId"
+                          defaultValue={item.assignee_id ?? ''}
+                          className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+                        >
+                          <option value="">Sin asignar</option>
+                          {projectStaff.map((ps) => (
+                            <option key={ps.staff_id} value={ps.staff_id}>
+                              {profileName(ps)}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                    <select name="status" defaultValue={item.status} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+                      {Object.entries(SPRINT_ITEM_STATUS_LABELS).map(([v, l]) => (
+                        <option key={v} value={v}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                      Actualizar
+                    </button>
+                  </ToastForm>
+                </li>
+              ))}
+              {!visibleItems.length && (
+                <p className="text-sm text-zinc-500">
+                  {canPlan ? 'Sin ítems en este sprint.' : 'No tienes ítems asignados en este sprint.'}
+                </p>
+              )}
+            </ul>
+
+            {canPlan && (
+              <ToastForm
+                success="Ítem creado"
+                action={async (fd) => {
+                  'use server';
+                  await createSprintItem(sprint.id, projectId, fd);
+                }}
+                className="mt-4 grid gap-2 sm:grid-cols-2"
+              >
+                <input name="title" required placeholder="Nuevo ítem" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <select name="assigneeId" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                  <option value="">Sin asignar</option>
+                  {projectStaff.map((ps) => (
+                    <option key={ps.staff_id} value={ps.staff_id}>
+                      {profileName(ps)}
+                    </option>
+                  ))}
+                </select>
+                <textarea name="details" placeholder="Detalle" rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white">
+                  Agregar ítem
+                </button>
+              </ToastForm>
+            )}
+          </section>
+        );
+      })}
+
+      {!(sprints ?? []).length && (
+        <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+          Aún no hay sprints en este proyecto.
+        </p>
+      )}
+    </div>
+  );
+}

@@ -4,7 +4,7 @@ import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { chargeTone, projectTone } from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
+import { assertProjectAccess, requireStaff } from '@/lib/ops/auth';
 import {
   updateProject,
   createMilestone,
@@ -26,7 +26,10 @@ import {
   deleteProjectCharge,
 } from '@/lib/ops/actions';
 import OpsProjectSiteAccess from '@/components/ops/OpsProjectSiteAccess';
+import OpsProjectSprints from '@/components/ops/OpsProjectSprints';
+import OpsProjectHours from '@/components/ops/OpsProjectHours';
 import ToastForm from '@/components/ops/ToastForm';
+import { can } from '@/lib/ops/permissions';
 import {
   PROJECT_STATUS_LABELS,
   QUOTE_STATUS_LABELS,
@@ -59,7 +62,9 @@ export default async function ProjectDetailPage({
 }) {
   const { id } = await params;
   const { tab = 'resumen' } = await searchParams;
-  const { supabase } = await requireStaff();
+  const access = await requireStaff();
+  await assertProjectAccess(access, id);
+  const { supabase, user, staff } = access;
 
   const { data: project } = await supabase
     .from('projects')
@@ -80,6 +85,10 @@ export default async function ProjectDetailPage({
     { data: charges },
     { data: siteAccess },
     { data: siblingProjects },
+    { data: projectStaffRows },
+    { data: sprints },
+    { data: allStaffRows },
+    { data: timeEntries },
   ] = await Promise.all([
     supabase.from('milestones').select('*, milestone_updates(*)').eq('project_id', id).order('sort_order'),
     supabase.from('quotes').select('*').eq('project_id', id).order('version', { ascending: false }),
@@ -115,7 +124,36 @@ export default async function ProjectDetailPage({
           .neq('id', id)
           .order('name')
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    supabase
+      .from('project_staff')
+      .select('staff_id, role_on_project, staff_profiles(full_name, role)')
+      .eq('project_id', id),
+    supabase
+      .from('project_sprints')
+      .select('id, name, goal, starts_on, ends_on, status')
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('staff_profiles')
+      .select('id, full_name, role')
+      .eq('active', true)
+      .order('full_name'),
+    supabase
+      .from('time_entries')
+      .select('id, hours, worked_on, notes, staff_id, sprint_item_id')
+      .eq('project_id', id)
+      .order('worked_on', { ascending: false })
+      .limit(100),
   ]);
+
+  const sprintIds = (sprints ?? []).map((s) => s.id);
+  const { data: sprintItems } = sprintIds.length
+    ? await supabase
+        .from('sprint_items')
+        .select('id, sprint_id, title, details, status, assignee_id')
+        .in('sprint_id', sprintIds)
+        .order('sort_order', { ascending: true })
+    : { data: [] as never[] };
 
   const { data: orgNdaDocs } = project.organization_id
     ? await supabase
@@ -167,14 +205,16 @@ export default async function ProjectDetailPage({
 
   const tabs = [
     { key: 'resumen', label: 'Resumen' },
+    { key: 'sprints', label: 'Sprints' },
+    { key: 'horas', label: 'Horas', capability: 'time_entries' as const },
     { key: 'timeline', label: 'Timeline' },
-    { key: 'cotizaciones', label: 'Cotizaciones' },
-    { key: 'pagos', label: 'Pagos' },
+    { key: 'cotizaciones', label: 'Cotizaciones', capability: 'quotes' as const },
+    { key: 'pagos', label: 'Pagos', capability: 'charges' as const },
     { key: 'documentos', label: 'Documentos' },
     { key: 'entregables', label: 'Entregables' },
     { key: 'accesos', label: 'Accesos' },
     { key: 'tickets', label: 'Tickets' },
-  ];
+  ].filter((t) => !('capability' in t && t.capability) || can(staff.role, t.capability!));
 
   async function onUpdateProject(formData: FormData) {
     'use server';
@@ -308,23 +348,71 @@ export default async function ProjectDetailPage({
         </ToastForm>
       )}
 
+      {tab === 'sprints' && (
+        <OpsProjectSprints
+          projectId={id}
+          staffRole={staff.role}
+          currentUserId={user.id}
+          projectStaff={(projectStaffRows ?? []) as never[]}
+          allStaff={(allStaffRows ?? []).map((s) => ({
+            id: s.id,
+            full_name: s.full_name || '',
+            role: s.role,
+          }))}
+          sprints={sprints ?? []}
+          items={sprintItems ?? []}
+        />
+      )}
+
+      {tab === 'horas' && can(staff.role, 'time_entries') && (
+        <OpsProjectHours
+          projectId={id}
+          staffRole={staff.role}
+          currentUserId={user.id}
+          entries={(timeEntries ?? []) as never[]}
+          sprintItems={(sprintItems ?? []).map((i) => ({ id: i.id, title: i.title }))}
+          staffOptions={(allStaffRows ?? []).map((s) => ({
+            id: s.id,
+            full_name: s.full_name || '',
+          }))}
+        />
+      )}
+
       {tab === 'timeline' && (
         <div className="space-y-6">
-          <MilestoneForm projectId={id} createMilestone={createMilestone} />
-          {(milestones ?? []).map((m) => (
-            <MilestoneCard
-              key={m.id}
-              milestone={m}
-              projectId={id}
-              updateMilestone={updateMilestone}
-              addMilestoneUpdate={addMilestoneUpdate}
-            />
-          ))}
-          {!milestones?.length && <p className="text-sm text-zinc-500">Sin hitos. Agrega el primero arriba.</p>}
+          {can(staff.role, 'milestones_write') && (
+            <MilestoneForm projectId={id} createMilestone={createMilestone} />
+          )}
+          {(milestones ?? []).map((m) =>
+            can(staff.role, 'milestones_write') ? (
+              <MilestoneCard
+                key={m.id}
+                milestone={m}
+                projectId={id}
+                updateMilestone={updateMilestone}
+                addMilestoneUpdate={addMilestoneUpdate}
+              />
+            ) : (
+              <div key={m.id} className="rounded-xl border border-zinc-200 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">{m.title}</p>
+                  <StatusBadge
+                    label={MILESTONE_STATUS_LABELS[m.status] ?? m.status}
+                    tone={m.status === 'completed' ? 'success' : m.status === 'blocked' ? 'danger' : 'info'}
+                  />
+                </div>
+                {m.description && <p className="mt-2 text-sm text-zinc-600">{m.description}</p>}
+                <p className="mt-2 text-xs text-zinc-400">
+                  Entrega: {formatDate(m.due_date)}
+                </p>
+              </div>
+            )
+          )}
+          {!milestones?.length && <p className="text-sm text-zinc-500">Sin hitos.</p>}
         </div>
       )}
 
-      {tab === 'cotizaciones' && (
+      {tab === 'cotizaciones' && can(staff.role, 'quotes') && (
         <div className="space-y-6">
           <OpsQuoteForm
             title="Nueva cotización"
@@ -378,7 +466,7 @@ export default async function ProjectDetailPage({
         </div>
       )}
 
-      {tab === 'pagos' && (
+      {tab === 'pagos' && can(staff.role, 'charges') && (
         <div className="space-y-6">
           <section className="rounded-xl border border-zinc-200 bg-white p-5">
             <h3 className="font-semibold">Nuevo cargo</h3>

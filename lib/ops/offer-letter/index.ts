@@ -3,11 +3,9 @@ import { formatCurrency } from '@/lib/ops/labels';
 import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
 
 const BRAND = BRAND_EMAIL;
-const ACCENT_LIGHT = CODIVA_BRAND.colors.accentLight;
 const FONT_BODY = `'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
 const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, system-ui, sans-serif`;
 const SITE = CODIVA_BRAND.urls.site.replace(/\/$/, '');
-const LOGO_WHITE_URL = `${SITE}/logo-white.svg`;
 const LOGO_URL = `${SITE}/logo.svg`;
 
 export const WORK_MODALITY_LABELS: Record<string, string> = {
@@ -48,14 +46,21 @@ export type OfferLetterData = {
   signerEmail?: string;
 };
 
-const DEFAULT_RESPONSIBILITIES = `Coordinar el avance de proyectos de software a la medida y productos digitales.
-Ser el punto de contacto operativo entre cliente, diseño y desarrollo.
-Dar seguimiento a alcance, tiempos, riesgos y entregables en Codiva Ops.
-Mantener claridad de prioridades y comunicar bloqueos a tiempo.
-Apoyar la documentación operativa del proyecto (hitos, tickets, entregables).`;
+export const DEFAULT_RESPONSIBILITIES = `Coordinar el avance de proyectos de software a la medida y productos digitales asignados.
+Ser el punto de contacto operativo entre cliente, diseño, desarrollo y dirección de Codiva.
+Dar seguimiento a alcance, tiempos, riesgos, dependencias y entregables en las herramientas del equipo Codiva.dev.
+Facilitar alineaciones, revisiones y demos con el cliente o stakeholders del proyecto.
+Mantener claridad de prioridades, comunicar bloqueos a tiempo y proponer siguientes pasos.
+Gestionar expectativas y cambios de alcance, escalando a dirección cuando afecten tiempos o costo.
+Apoyar la documentación operativa del proyecto (hitos, tickets, entregables y estatus).
+Participar en estimación, priorización y planeación de entregas cuando se requiera.
+Colaborar en la mejora de procesos operativos del estudio (rituales, plantillas, handoffs).
+Otras actividades afines al rol de Project Manager que Codiva asigne según las necesidades del estudio y de los proyectos.`;
 
-const DEFAULT_TERMS = `La compensación se paga de forma mensual en la moneda indicada, previo acuerdo de facturación o esquema de pago vigente.
+export const DEFAULT_TERMS = `La compensación se paga de forma mensual en la moneda indicada, previo acuerdo de facturación o esquema de pago vigente.
 La colaboración inicia en la fecha acordada, sujeta a la aceptación escrita de esta carta oferta.
+Las responsabilidades listadas son enunciativas y no limitativas: describen el núcleo del rol, sin excluir tareas razonablemente relacionadas con la operación de proyectos de Codiva.dev.
+El alcance concreto de proyectos, carga y prioridades puede variar conforme a la operación del estudio; cambios materiales de rol o compensación se acordarán por escrito.
 Cualquiera de las partes podrá dar por terminada la relación con aviso razonable, conforme a lo que se pacte por escrito.
 Esta carta no constituye por sí sola un contrato laboral definitivo; formaliza la intención de incorporar a la persona al equipo de operaciones de Codiva.dev bajo los términos aquí descritos.`;
 
@@ -104,10 +109,9 @@ function metaRow(label: string, value: string): string {
     </div>`;
 }
 
-function brandWordmark(onDark = false): string {
-  const nameColor = onDark ? '#FFFFFF' : BRAND.text;
-  const accent = onDark ? ACCENT_LIGHT : BRAND.primary;
-  return `<span style="font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${nameColor};">Codiva<span style="font-weight:500;color:${accent};">.dev</span></span>`;
+/** Wordmark oficial: Codiva (#18181B) + .dev (primary #104E4E). */
+function brandWordmarkHtml(): string {
+  return `<span style="font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></span>`;
 }
 
 export function offerLetterFilename(fullName: string) {
@@ -150,14 +154,14 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
 </head>
 <body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:${FONT_BODY};color:${BRAND.text};">
   <article class="page" style="max-width:820px;margin:0 auto;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(24,24,27,0.06);">
-    <header style="background:${BRAND.primary};padding:28px 36px 32px;color:#fff;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;">
-        <img src="${LOGO_WHITE_URL}" alt="Codiva" width="40" height="40" style="display:block;border:0;outline:none;"/>
-        ${brandWordmark(true)}
+    <header style="background:${BRAND.card};padding:28px 36px 28px;border-bottom:1px solid ${BRAND.border};">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+        <img src="${LOGO_URL}" alt="Codiva" width="40" height="40" style="display:block;border:0;outline:none;"/>
+        ${brandWordmarkHtml()}
       </div>
-      <p style="margin:0;font-family:${FONT_DISPLAY};font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${ACCENT_LIGHT};">Carta oferta</p>
-      <h1 style="margin:12px 0 0;font-family:${FONT_DISPLAY};font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:#fff;">${escapeHtml(data.fullName)}</h1>
-      <p style="margin:10px 0 0;font-family:${FONT_BODY};font-size:15px;font-weight:500;color:rgba(255,255,255,0.88);">${escapeHtml(data.positionTitle)}</p>
+      <p style="margin:0;font-family:${FONT_DISPLAY};font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND.primary};">Carta oferta</p>
+      <h1 style="margin:12px 0 0;font-family:${FONT_DISPLAY};font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">${escapeHtml(data.fullName)}</h1>
+      <p style="margin:10px 0 0;font-family:${FONT_BODY};font-size:15px;font-weight:500;color:${BRAND.textMuted};">${escapeHtml(data.positionTitle)}</p>
     </header>
 
     <div style="padding:32px 36px 40px;">
@@ -185,13 +189,16 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
       </div>
 
       ${section('Responsabilidades', responsibilities, true)}
+      <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:13px;line-height:1.6;color:${BRAND.muted};">
+        Lista enunciativa del núcleo del rol; no es exhaustiva ni limita actividades afines que Codiva asigne.
+      </p>
       ${section('Condiciones', terms, false)}
 
       <section style="margin-top:32px;">
         <h2 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">Aceptación</h2>
         <p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
           Si estás de acuerdo con estos términos, responde por escrito a esta carta (correo o documento firmado)
-          indicando tu aceptación. Con ello daremos inicio al alta operativa en Codiva Ops.
+          indicando tu aceptación. Con ello daremos inicio a tu alta en el equipo de operaciones de Codiva.dev.
         </p>
       </section>
 

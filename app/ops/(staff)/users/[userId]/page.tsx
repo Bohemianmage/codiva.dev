@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireCapability } from '@/lib/ops/auth';
 import {
   addPortalUserProjects,
   removePortalUserProject,
@@ -18,7 +18,7 @@ export default async function PortalUserDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId } = await params;
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('portal_users');
   const admin = createAdminClient();
 
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);

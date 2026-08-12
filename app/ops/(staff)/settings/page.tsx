@@ -4,6 +4,7 @@ import { requireStaff } from '@/lib/ops/auth';
 import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
 import { publishLegalVersionAndNotify } from '@/lib/ops/actions';
 import { LEGAL_DOCS_VERSION, LEGAL_UPDATED_LABEL } from '@/lib/ops/legal/version';
+import { can } from '@/lib/ops/permissions';
 import Link from 'next/link';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -14,6 +15,8 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function SettingsPage() {
   const { user, staff, supabase } = await requireStaff();
+  const canPublishLegal = can(staff.role, 'legal_publish');
+  const canManageTeam = can(staff.role, 'team');
 
   const { data: versions } = await supabase
     .from('legal_document_versions')
@@ -47,7 +50,7 @@ export default async function SettingsPage() {
               <dd>{ROLE_LABELS[staff.role] ?? staff.role}</dd>
             </div>
           </dl>
-          {staff.role === 'admin' && (
+          {canManageTeam && (
             <p className="mt-4 text-sm">
               <Link href="/team" className="text-codiva-primary hover:underline">
                 Gestionar equipo y altas →
@@ -60,8 +63,9 @@ export default async function SettingsPage() {
           <h2 className="mb-1 font-semibold">Legales del portal</h2>
           <p className="mb-4 text-sm text-zinc-600">
             Versión en código: <strong>{LEGAL_DOCS_VERSION}</strong> ({LEGAL_UPDATED_LABEL}).
-            Al publicar con notificación, los usuarios con aceptación desactualizada reciben correo
-            y deben re-aceptar en su próximo acceso.
+            {canPublishLegal
+              ? ' Al publicar con notificación, los usuarios con aceptación desactualizada reciben correo y deben re-aceptar en su próximo acceso.'
+              : ' Solo administradores pueden publicar nuevas versiones.'}
           </p>
           <p className="mb-4 text-sm">
             <Link href="/legal/terminos" className="text-codiva-primary hover:underline">
@@ -77,6 +81,7 @@ export default async function SettingsPage() {
             </Link>
           </p>
 
+          {canPublishLegal && (
           <ToastForm success="Versión publicada" action={onPublish} className="space-y-3 rounded-lg bg-zinc-50 p-4">
             <input
               name="versionCode"
@@ -98,6 +103,7 @@ export default async function SettingsPage() {
               Publicar versión en bitácora
             </button>
           </ToastForm>
+          )}
 
           <ul className="mt-4 space-y-2 text-sm">
             {(versions ?? []).map((v) => (

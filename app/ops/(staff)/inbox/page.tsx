@@ -2,12 +2,12 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireCapability } from '@/lib/ops/auth';
 import { updateInboxStatus, convertInboxToLead } from '@/lib/ops/actions';
 import { INBOX_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
 
 export default async function InboxPage() {
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('inbox');
   const { data: messages } = await supabase
     .from('inbox_messages')
     .select('*')

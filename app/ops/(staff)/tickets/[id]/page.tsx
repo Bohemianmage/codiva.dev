@@ -3,25 +3,27 @@ import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
-import { updateTicketStatus } from '@/lib/ops/actions';
-import { TICKET_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { requireCapability } from '@/lib/ops/auth';
+import { updateTicketAssignment } from '@/lib/ops/actions';
+import { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('tickets');
 
-  const { data: ticket } = await supabase
-    .from('tickets')
-    .select('*, ticket_attachments(*)')
-    .eq('id', id)
-    .single();
+  const [{ data: ticket }, { data: staff }] = await Promise.all([
+    supabase.from('tickets').select('*, ticket_attachments(*)').eq('id', id).single(),
+    supabase.from('staff_profiles').select('id, full_name').eq('active', true).order('full_name'),
+  ]);
 
   if (!ticket) redirect('/tickets');
 
-  async function onStatus(formData: FormData) {
+  const assigneeName =
+    staff?.find((s) => s.id === ticket.assigned_to)?.full_name || null;
+
+  async function onUpdate(formData: FormData) {
     'use server';
-    await updateTicketStatus(id, String(formData.get('status')));
+    await updateTicketAssignment(id, formData);
   }
 
   return (
@@ -31,22 +33,43 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         <StatusBadge label={TICKET_STATUS_LABELS[ticket.status]} tone={ticketTone(ticket.status)} />
         <span className="text-sm capitalize text-zinc-500">Prioridad {ticket.priority}</span>
         <span className="text-sm text-zinc-500">{formatDate(ticket.created_at)}</span>
+        <span className="text-sm text-zinc-500">Asignado: {assigneeName || EMPTY_LABEL}</span>
       </div>
 
-      <ToastForm success="Guardado" action={onStatus} className="mb-8 flex items-end gap-3">
-        <select name="status" defaultValue={ticket.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-          {Object.entries(TICKET_STATUS_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
+      <ToastForm success="Guardado" action={onUpdate} className="mb-8 flex flex-wrap items-end gap-3">
+        <label className="text-sm text-zinc-600">
+          Estado
+          <select name="status" defaultValue={ticket.status} className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+            {Object.entries(TICKET_STATUS_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm text-zinc-600">
+          Asignado a
+          <select
+            name="assignedTo"
+            defaultValue={ticket.assigned_to ?? ''}
+            className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          >
+            <option value="">Sin asignar</option>
+            {(staff ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.full_name || s.id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+        </label>
         <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
-          Actualizar estado
+          Guardar
         </button>
       </ToastForm>
 
       <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-3 font-semibold">Descripción</h2>
-        <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+        <p className="whitespace-pre-wrap text-sm">{ticket.description}</p>
       </section>
 
       {ticket.ticket_attachments?.length > 0 && (

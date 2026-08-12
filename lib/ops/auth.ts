@@ -2,12 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { chargeAmountNumber } from '@/lib/ops/charges';
 import { getAcceptanceStatus, type MemberAcceptanceFields } from '@/lib/ops/legal/acceptances';
+import { can, type Capability, type StaffRole } from '@/lib/ops/permissions';
 
 const PROJECT_SELECT =
   'id, name, slug, status, client_visible, organization_id, progress_percent, description, target_delivery_date, portal_show_quote, portal_show_costs, site_preview_url, site_production_url';
 
 const MEMBER_SELECT =
   'id, role, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version';
+
+export type StaffAccess = Awaited<ReturnType<typeof requireStaff>>;
 
 export async function requireStaff() {
   const supabase = await createClient();
@@ -35,11 +38,82 @@ export async function requireStaff() {
 
 /** Solo administradores (gestión de equipo). */
 export async function requireAdminStaff() {
+  return requireCapability('team');
+}
+
+/** Staff con una capability concreta; si no, redirige a dashboard. */
+export async function requireCapability(capability: Capability) {
   const access = await requireStaff();
-  if (access.staff.role !== 'admin') {
-    redirect('/settings?error=admin_required');
+  if (!can(access.staff.role, capability)) {
+    redirect('/dashboard?error=forbidden');
   }
   return access;
+}
+
+/** Para server actions: lanza error en lugar de redirect. */
+export async function assertCapability(capability: Capability) {
+  const access = await requireStaff();
+  if (!can(access.staff.role, capability)) {
+    throw new Error('No tienes permiso para esta acción');
+  }
+  return access;
+}
+
+export function staffRole(access: StaffAccess): StaffRole {
+  return access.staff.role as StaffRole;
+}
+
+/** IDs de proyectos visibles para el staff (null = todos). */
+export async function listVisibleProjectIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  staffId: string,
+  role: string
+): Promise<string[] | null> {
+  if (can(role, 'projects_all')) return null;
+
+  const { data } = await supabase
+    .from('project_staff')
+    .select('project_id')
+    .eq('staff_id', staffId);
+
+  return (data ?? []).map((r) => r.project_id);
+}
+
+export async function assertProjectAccess(
+  access: StaffAccess,
+  projectId: string
+): Promise<void> {
+  if (can(access.staff.role, 'projects_all')) return;
+
+  const { data } = await access.supabase
+    .from('project_staff')
+    .select('project_id')
+    .eq('project_id', projectId)
+    .eq('staff_id', access.user.id)
+    .maybeSingle();
+
+  if (!data) {
+    redirect('/projects?error=forbidden');
+  }
+}
+
+/** Para server actions. */
+export async function assertProjectAccessOrThrow(
+  access: StaffAccess,
+  projectId: string
+): Promise<void> {
+  if (can(access.staff.role, 'projects_all')) return;
+
+  const { data } = await access.supabase
+    .from('project_staff')
+    .select('project_id')
+    .eq('project_id', projectId)
+    .eq('staff_id', access.user.id)
+    .maybeSingle();
+
+  if (!data) {
+    throw new Error('No tienes acceso a este proyecto');
+  }
 }
 
 async function getActiveStaff(

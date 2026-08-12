@@ -1,0 +1,179 @@
+import Link from 'next/link';
+import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
+import { requireCapability } from '@/lib/ops/auth';
+import {
+  EMPTY_LABEL,
+  SPRINT_ITEM_STATUS_LABELS,
+  TICKET_STATUS_LABELS,
+  formatDate,
+} from '@/lib/ops/labels';
+
+type StaffLoad = {
+  id: string;
+  name: string;
+  role: string;
+  sprintItems: {
+    id: string;
+    title: string;
+    status: string;
+    projectId: string;
+    projectName: string;
+    sprintName: string;
+  }[];
+  tickets: { id: string; title: string; status: string; priority: string }[];
+  hoursThisWeek: number;
+  projectCount: number;
+};
+
+export default async function WorkloadPage() {
+  const { supabase } = await requireCapability('workload');
+
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+  const [{ data: staff }, { data: projectStaff }, { data: items }, { data: tickets }, { data: entries }] =
+    await Promise.all([
+      supabase.from('staff_profiles').select('id, full_name, role').eq('active', true).order('full_name'),
+      supabase.from('project_staff').select('staff_id, project_id'),
+      supabase
+        .from('sprint_items')
+        .select(
+          'id, title, status, assignee_id, project_sprints!inner(id, name, project_id, projects(id, name))'
+        )
+        .not('assignee_id', 'is', null)
+        .neq('status', 'done'),
+      supabase
+        .from('tickets')
+        .select('id, title, status, priority, assigned_to')
+        .not('assigned_to', 'is', null)
+        .in('status', ['new', 'in_progress', 'waiting_client']),
+      supabase
+        .from('time_entries')
+        .select('staff_id, hours, worked_on')
+        .gte('worked_on', weekStartStr),
+    ]);
+
+  const projectsByStaff = new Map<string, Set<string>>();
+  for (const row of projectStaff ?? []) {
+    if (!projectsByStaff.has(row.staff_id)) projectsByStaff.set(row.staff_id, new Set());
+    projectsByStaff.get(row.staff_id)!.add(row.project_id);
+  }
+
+  const hoursByStaff = new Map<string, number>();
+  for (const e of entries ?? []) {
+    hoursByStaff.set(e.staff_id, (hoursByStaff.get(e.staff_id) || 0) + Number(e.hours));
+  }
+
+  const loads: StaffLoad[] = (staff ?? []).map((s) => {
+    const sprintItems = (items ?? [])
+      .filter((i) => i.assignee_id === s.id)
+      .map((i) => {
+        const sprint = i.project_sprints as {
+          name?: string;
+          project_id?: string;
+          projects?: { name?: string } | { name?: string }[] | null;
+        } | null;
+        const project = Array.isArray(sprint?.projects) ? sprint?.projects[0] : sprint?.projects;
+        return {
+          id: i.id,
+          title: i.title,
+          status: i.status,
+          projectId: sprint?.project_id || '',
+          projectName: project?.name || EMPTY_LABEL,
+          sprintName: sprint?.name || 'Sprint',
+        };
+      });
+
+    return {
+      id: s.id,
+      name: s.full_name || s.id.slice(0, 8),
+      role: s.role,
+      sprintItems,
+      tickets: (tickets ?? [])
+        .filter((t) => t.assigned_to === s.id)
+        .map((t) => ({ id: t.id, title: t.title, status: t.status, priority: t.priority })),
+      hoursThisWeek: hoursByStaff.get(s.id) || 0,
+      projectCount: projectsByStaff.get(s.id)?.size || 0,
+    };
+  });
+
+  return (
+    <div>
+      <OpsPageHeader
+        title="Carga del equipo"
+        description="Ítems de sprint abiertos, tickets asignados y horas de la semana."
+      />
+
+      <div className="space-y-6">
+        {loads.map((person) => (
+          <section key={person.id} className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <h2 className="font-semibold">{person.name}</h2>
+                <p className="text-xs uppercase tracking-wide text-zinc-400">{person.role}</p>
+              </div>
+              <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
+                <span>{person.projectCount} proyectos</span>
+                <span>{person.sprintItems.length} ítems abiertos</span>
+                <span>{person.tickets.length} tickets</span>
+                <span className="font-medium text-codiva-primary">{person.hoursThisWeek.toFixed(1)} h esta semana</span>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-zinc-700">Sprint</h3>
+                <ul className="space-y-2">
+                  {person.sprintItems.map((item) => (
+                    <li key={item.id} className="flex items-start justify-between gap-2 text-sm">
+                      <div>
+                        <Link
+                          href={`/projects/${item.projectId}?tab=sprints`}
+                          className="font-medium hover:text-codiva-primary"
+                        >
+                          {item.title}
+                        </Link>
+                        <p className="text-xs text-zinc-400">
+                          {item.projectName} · {item.sprintName}
+                        </p>
+                      </div>
+                      <StatusBadge
+                        label={SPRINT_ITEM_STATUS_LABELS[item.status] ?? item.status}
+                        tone={item.status === 'blocked' ? 'danger' : 'info'}
+                      />
+                    </li>
+                  ))}
+                  {!person.sprintItems.length && (
+                    <p className="text-sm text-zinc-400">Sin ítems abiertos</p>
+                  )}
+                </ul>
+              </div>
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-zinc-700">Tickets</h3>
+                <ul className="space-y-2">
+                  {person.tickets.map((t) => (
+                    <li key={t.id} className="flex items-start justify-between gap-2 text-sm">
+                      <Link href={`/tickets/${t.id}`} className="font-medium hover:text-codiva-primary">
+                        {t.title}
+                      </Link>
+                      <StatusBadge label={TICKET_STATUS_LABELS[t.status] ?? t.status} tone={ticketTone(t.status)} />
+                    </li>
+                  ))}
+                  {!person.tickets.length && <p className="text-sm text-zinc-400">Sin tickets</p>}
+                </ul>
+              </div>
+            </div>
+          </section>
+        ))}
+        {!loads.length && (
+          <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500">
+            No hay staff activo.
+          </p>
+        )}
+      </div>
+      <p className="mt-4 text-xs text-zinc-400">Semana desde {formatDate(weekStartStr)}</p>
+    </div>
+  );
+}

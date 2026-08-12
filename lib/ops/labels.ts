@@ -45,6 +45,19 @@ export const MILESTONE_STATUS_LABELS: Record<string, string> = {
   blocked: 'Bloqueado',
 };
 
+export const SPRINT_STATUS_LABELS: Record<string, string> = {
+  planned: 'Planificado',
+  active: 'Activo',
+  completed: 'Completado',
+};
+
+export const SPRINT_ITEM_STATUS_LABELS: Record<string, string> = {
+  todo: 'Por hacer',
+  in_progress: 'En progreso',
+  done: 'Hecho',
+  blocked: 'Bloqueado',
+};
+
 export const DELIVERABLE_KIND_LABELS: Record<string, string> = {
   architecture: 'Arquitectura',
   mvp: 'MVP / Propuesta',

@@ -13,31 +13,44 @@ import {
   Settings,
   ContactRound,
   UserCog,
+  Building2,
+  Gauge,
 } from 'lucide-react';
+import { can, type Capability, type StaffRole } from '@/lib/ops/permissions';
 
-const NAV = [
+const NAV: {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  capability?: Capability | null;
+}[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Users },
-  { href: '/inbox', label: 'Inbox', icon: Inbox },
+  { href: '/leads', label: 'Leads', icon: Users, capability: 'leads' },
+  { href: '/inbox', label: 'Inbox', icon: Inbox, capability: 'inbox' },
   { href: '/projects', label: 'Proyectos', icon: FolderKanban },
-  { href: '/users', label: 'Usuarios', icon: ContactRound },
-  { href: '/tickets', label: 'Tickets', icon: Ticket },
-  { href: '/team', label: 'Equipo', icon: UserCog, adminOnly: true },
-  { href: '/settings', label: 'Configuración', icon: Settings },
+  { href: '/workload', label: 'Carga', icon: Gauge, capability: 'workload' },
+  { href: '/organizations', label: 'Organizaciones', icon: Building2, capability: 'organizations' },
+  { href: '/users', label: 'Usuarios', icon: ContactRound, capability: 'portal_users' },
+  { href: '/tickets', label: 'Tickets', icon: Ticket, capability: 'tickets' },
+  { href: '/team', label: 'Equipo', icon: UserCog, capability: 'team' },
+  { href: '/settings', label: 'Configuración', icon: Settings, capability: 'settings_profile' },
 ];
 
 export default function OpsSidebar({
   staffName,
-  isAdmin = false,
+  staffRole = 'dev',
 }: {
   staffName: string;
-  isAdmin?: boolean;
+  staffRole?: StaffRole | string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const normalized = pathname.replace(/^\/ops/, '') || '/dashboard';
-  const items = NAV.filter((item) => !item.adminOnly || isAdmin);
+  const items = NAV.filter((item) => {
+    if (!item.capability) return true;
+    return can(staffRole, item.capability);
+  });
 
   async function signOut() {
     const supabase = createClient();

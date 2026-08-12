@@ -7,6 +7,7 @@ import {
   updateStaffProfile,
 } from '@/lib/ops/actions';
 import {
+  DEFAULT_RESPONSIBILITIES,
   OFFER_STATUS_LABELS,
   OPS_ROLE_LABELS,
   WORK_MODALITY_LABELS,
@@ -20,12 +21,6 @@ const ROLE_LABELS: Record<string, string> = {
   pm: 'Project Manager',
   dev: 'Desarrollador',
 };
-
-const DEFAULT_RESPONSIBILITIES = `Coordinar el avance de proyectos de software a la medida y productos digitales.
-Ser el punto de contacto operativo entre cliente, diseño y desarrollo.
-Dar seguimiento a alcance, tiempos, riesgos y entregables en Codiva Ops.
-Mantener claridad de prioridades y comunicar bloqueos a tiempo.
-Apoyar la documentación operativa del proyecto (hitos, tickets, entregables).`;
 
 function tabClass(active: boolean) {
   return active
@@ -79,12 +74,12 @@ export default async function TeamPage({
     <div>
       <OpsPageHeader
         title="Equipo"
-        description="Acceso a Ops, altas y cartas oferta del personal de operaciones. Solo administradores."
+        description="Miembros del equipo, altas y cartas oferta. Solo administradores."
       />
 
       <div className="mb-8 flex gap-6 border-b border-zinc-200">
         <Link href="/team?tab=miembros" className={tabClass(tab === 'miembros')}>
-          Miembros Ops
+          Miembros
         </Link>
         <Link href="/team?tab=ofertas" className={tabClass(tab === 'ofertas')}>
           Cartas oferta
@@ -103,9 +98,9 @@ export default async function TeamPage({
             action={onInvite}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
           >
-            <h2 className="font-semibold">Invitar staff</h2>
+            <h2 className="font-semibold">Invitar al equipo</h2>
             <p className="text-sm text-zinc-500">
-              Crea o reactiva acceso a Codiva Ops. Para formalizar una oferta económica, usa la pestaña Cartas oferta.
+              Crea o reactiva acceso al espacio de trabajo de Codiva.dev. Para formalizar una oferta económica, usa la pestaña Cartas oferta.
             </p>
             <input
               name="email"
@@ -126,7 +121,7 @@ export default async function TeamPage({
               <option value="dev">Desarrollador</option>
             </select>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Enviar acceso a Ops
+              Enviar acceso
             </button>
           </ToastForm>
 
@@ -195,7 +190,7 @@ export default async function TeamPage({
           >
             <h2 className="font-semibold">Nueva carta oferta</h2>
             <p className="text-sm text-zinc-500">
-              Formaliza compensación y condiciones. El acceso a Ops se gestiona en Miembros Ops.
+              Formaliza compensación y condiciones. El acceso al espacio de trabajo se gestiona en Miembros.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <input
