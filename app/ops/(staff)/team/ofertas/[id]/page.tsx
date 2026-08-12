@@ -46,12 +46,18 @@ export default async function TeamOfferDetailPage({
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <a
+              href={`/api/ops/alta-personal/${id}/carta?format=pdf`}
+              className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-medium text-white hover:bg-codiva-primary-dark"
+            >
+              Descargar PDF
+            </a>
+            <a
               href={`/api/ops/alta-personal/${id}/carta`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-medium text-white hover:bg-codiva-primary-dark"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Abrir carta oferta
+              Abrir HTML
             </a>
             <Link
               href="/team?tab=ofertas"
