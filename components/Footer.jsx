@@ -7,7 +7,7 @@ import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { CODIVA_BRAND } from '@/lib/brand';
 import CodivaWordmark from './CodivaWordmark';
-import { careerBaseUrl } from '@/lib/ops/host';
+import { careerBaseUrl, ticketBaseUrl } from '@/lib/ops/host';
 
 export default function Footer({ variant = 'marketing' }) {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ export default function Footer({ variant = 'marketing' }) {
             {t('footer.careers')}
           </Link>
           <Link
-            href={isCareer ? '/hallazgos' : '/ticket'}
+            href={isCareer ? '/hallazgos' : ticketBaseUrl()}
             className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
             {isCareer ? t('footer.huntLink') : t('footer.ticketLink')}

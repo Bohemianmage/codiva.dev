@@ -15,9 +15,11 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
   const { t } = useTranslation();
   const pathname = usePathname();
   const isCareer = variant === 'career';
+  const isTicket = variant === 'ticket';
+  const isSatellite = isCareer || isTicket;
 
   useEffect(() => {
-    if (isCareer || pathname !== '/') return;
+    if (isSatellite || pathname !== '/') return;
 
     const scrollFromHash = () => {
       const id = window.location.hash.replace('#', '');
@@ -28,7 +30,7 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
     scrollFromHash();
     window.addEventListener('hashchange', scrollFromHash);
     return () => window.removeEventListener('hashchange', scrollFromHash);
-  }, [pathname, isCareer]);
+  }, [pathname, isSatellite]);
 
   // ✅ Microdatos para SEO (Organization)
   const schemaOrgJsonLd = {
@@ -41,10 +43,7 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
     "description": t('description')
   };
 
-  // --- Ocultar FloatingQuoteButton en /ticket
-  const segments = (pathname || '').split('/').filter(Boolean);
-  const onTicket = segments[segments.length - 1] === 'ticket';
-  const showQuote = !isCareer && !onTicket;
+  const showQuote = !isSatellite;
 
   return (
     <div className="bg-neutral-50 text-zinc-900 font-sans antialiased">

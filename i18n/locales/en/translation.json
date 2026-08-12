@@ -279,14 +279,31 @@
     "error": "There was an error sending. Please try again."
   },
   "ticket": {
-    "title": "Report a ticket",
-    "subtitle": "Include steps, URLs, and attach screenshots if relevant.",
+    "eyebrow": "Support",
+    "title": "Report an incident",
+    "subtitle": "Tell us what broke, with steps, URLs, and screenshots if you have them. The team gets it right away.",
+    "sections": {
+      "contact": "Your details",
+      "incident": "What happened",
+      "evidence": "Evidence"
+    },
+    "next": {
+      "title": "What happens next",
+      "ack": "We confirm by email as soon as it is filed.",
+      "queue": "The ticket is queued as pending and the team gets an alert.",
+      "follow": "We write back if we need more context to fix it."
+    },
+    "dropzone": {
+      "select": "Choose files",
+      "or": "or drop them here"
+    },
     "fields": {
       "priority": "Priority",
       "issueTitle": "Ticket title",
-      "incidentTime": "Incident time (optional)",
+      "incidentTime": "Incident time",
+      "incidentTimeOptional": "optional",
       "issueDescription": "Problem description",
-      "attachments": "Attachments (optional)"
+      "attachments": "Attachments"
     },
     "priority": {
       "high": "High",
@@ -295,17 +312,21 @@
     },
     "buttons": {
       "submit": "Send ticket",
+      "submitting": "Sending ticket…",
       "remove": "Remove",
       "removeAll": "Remove all",
       "new": "Create another ticket"
     },
     "status": {
       "submittedTitle": "Ticket received",
-      "submittedMsg": "We have received your report."
+      "submittedMsg": "We have received your report. The team already has it as a pending item.",
+      "submittedHint": "Check your inbox. If it does not arrive in a few minutes, look in spam."
     },
     "hints": {
-      "attachments": "Images and documents accepted. Max ~10MB per file.",
-      "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…"
+      "attachments": "Images or documents. Up to 5 files, 10 MB each.",
+      "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…",
+      "maxFiles": "Maximum {{count}} files.",
+      "fileTooLarge": "{{name}} exceeds 10 MB."
     }
   },
   "career": {
@@ -684,6 +705,8 @@
       "title": "Support tickets",
       "empty": "No tickets yet.",
       "new": "New ticket",
+      "hint": "Describe the incident. It is linked to this project and the team gets an alert.",
+      "linkedProject": "It will be filed under {{name}}.",
       "hintPrefix": "To report an incident use the",
       "form": "support form",
       "hintSuffix": "with the same email as your account ({{email}})."

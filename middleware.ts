@@ -4,10 +4,12 @@ import {
   isOpsHost,
   isPortalHost,
   isCareerHost,
+  isTicketHost,
   opsBaseUrl,
   portalBaseUrl,
   marketingBaseUrl,
   careerBaseUrl,
+  ticketBaseUrl,
 } from '@/lib/ops/host';
 import {
   DEFAULT_LOCALE,
@@ -103,6 +105,10 @@ function careerFirstSegment(pathname: string) {
   return (pathname.split('/').filter(Boolean)[0] || '').toLowerCase();
 }
 
+function isPublicTicketPath(pathname: string) {
+  return pathname === '/ticket' || pathname.startsWith('/ticket/');
+}
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host');
   const { pathname } = request.nextUrl;
@@ -115,13 +121,12 @@ export async function middleware(request: NextRequest) {
   const onOps = isOpsHost(host);
   const onPortal = isPortalHost(host);
   const onCareer = isCareerHost(host);
+  const onTicket = isTicketHost(host);
 
-  // --- CAREER (bolsa pública) ---
-  if (onCareer) {
+  // --- TICKET (formulario público) ---
+  if (onTicket) {
     if (
       pathname.startsWith('/legal') ||
-      pathname === '/ticket' ||
-      pathname.startsWith('/ticket/') ||
       pathname === '/cotiza' ||
       pathname.startsWith('/cotiza/')
     ) {
@@ -129,6 +134,61 @@ export async function middleware(request: NextRequest) {
         sessionResponse,
         absoluteRedirect(request, marketingBaseUrl(), pathname)
       );
+    }
+
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/projects') ||
+      pathname.startsWith('/leads') ||
+      pathname.startsWith('/partner') ||
+      pathname.startsWith('/q/') ||
+      pathname.startsWith('/ops') ||
+      pathname === '/tickets' ||
+      pathname.startsWith('/tickets/')
+    ) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
+    }
+
+    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/')) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, portalBaseUrl(), pathname));
+    }
+
+    if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {
+      const rest =
+        pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+    }
+
+    if (isPublicTicketPath(pathname)) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/ticket';
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    const missing = request.nextUrl.clone();
+    missing.pathname = '/ops/__missing';
+    return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
+  }
+
+  // --- CAREER (bolsa pública) ---
+  if (onCareer) {
+    if (
+      pathname.startsWith('/legal') ||
+      pathname === '/cotiza' ||
+      pathname.startsWith('/cotiza/')
+    ) {
+      return withSessionCookies(
+        sessionResponse,
+        absoluteRedirect(request, marketingBaseUrl(), pathname)
+      );
+    }
+
+    if (isPublicTicketPath(pathname)) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
     }
 
     if (
@@ -243,6 +303,10 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
     }
 
+    if (isPublicTicketPath(pathname)) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
+    }
+
     const missing = request.nextUrl.clone();
     missing.pathname = '/ops/__missing';
     return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
@@ -258,6 +322,10 @@ export async function middleware(request: NextRequest) {
       const rest =
         pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
       return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+    }
+
+    if (isPublicTicketPath(pathname)) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
     }
 
     if (!pathname.startsWith('/ops')) {
@@ -303,6 +371,11 @@ export async function middleware(request: NextRequest) {
     const rest =
       pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
     return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+  }
+
+  if (isPublicTicketPath(pathname)) {
+    if (isLocalApex(host)) return sessionResponse;
+    return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
   }
 
   return sessionResponse;

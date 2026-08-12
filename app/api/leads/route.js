@@ -1,7 +1,8 @@
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { notifyStaff, sendLeadConfirmationEmail } from '@/lib/ops/email';
+import { notifyStaffSafe, sendLeadConfirmationEmail } from '@/lib/ops/email';
 import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
+import { opsBaseUrl } from '@/lib/ops/host';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -44,22 +45,28 @@ export async function POST(request) {
       metadata: { source: 'web_cotiza' },
     });
 
-    await sendLeadConfirmationEmail({
-      to: body.email,
-      name: body.name || 'Cliente',
-      locale: body.locale === 'en' ? 'en' : 'es',
-    }).catch(() => {});
-
-    await notifyStaff({
-      subject: `[Lead] ${body.company || body.name}`,
-      html: templateStaffAlert(`Nuevo lead - ${body.company || body.name}`, [
-        `Nombre: ${body.name}`,
-        body.company ? `Empresa: ${body.company}` : null,
-        `Email: ${body.email}`,
-        body.phone ? `Tel: ${body.phone}` : null,
-        body.need ? `Necesidad: ${body.need}` : null,
-      ].filter(Boolean)),
-    });
+    await Promise.allSettled([
+      sendLeadConfirmationEmail({
+        to: body.email,
+        name: body.name || 'Cliente',
+        locale: body.locale === 'en' ? 'en' : 'es',
+      }),
+      notifyStaffSafe({
+        subject: `[Lead] ${body.company || body.name}`,
+        html: templateStaffAlert(
+          `Nuevo lead - ${body.company || body.name}`,
+          [
+            `Nombre: ${body.name}`,
+            body.company ? `Empresa: ${body.company}` : null,
+            `Email: ${body.email}`,
+            body.phone ? `Tel: ${body.phone}` : null,
+            body.need ? `Necesidad: ${body.need}` : null,
+          ].filter(Boolean),
+          { ctaLabel: 'Ver lead', ctaHref: `${opsBaseUrl()}/leads/${lead.id}` }
+        ),
+        replyTo: body.email || undefined,
+      }),
+    ]);
 
     return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
   } catch (err) {

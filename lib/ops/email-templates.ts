@@ -434,7 +434,11 @@ export function templateLegalReacceptance(
   });
 }
 
-export function templateStaffAlert(title: string, lines: string[]): string {
+export function templateStaffAlert(
+  title: string,
+  lines: string[],
+  options?: { ctaLabel?: string; ctaHref?: string }
+): string {
   const rows = lines
     .map(
       (line) =>
@@ -446,7 +450,10 @@ export function templateStaffAlert(title: string, lines: string[]): string {
     preview: title,
     title,
     bodyHtml: rows,
-    cta: { label: 'Abrir Codiva.dev', href: `${opsBaseUrl()}/dashboard` },
+    cta: {
+      label: options?.ctaLabel ?? 'Abrir Codiva.dev',
+      href: options?.ctaHref ?? `${opsBaseUrl()}/dashboard`,
+    },
     footerNote: 'Notificación interna · Codiva.dev',
   });
 }

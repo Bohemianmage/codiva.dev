@@ -1,7 +1,8 @@
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { notifyStaff } from '@/lib/ops/email';
+import { notifyStaffSafe } from '@/lib/ops/email';
 import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
+import { opsBaseUrl } from '@/lib/ops/host';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -55,17 +56,22 @@ export async function POST(request) {
       metadata: { source: 'referral', channel: 'partner_form' },
     });
 
-    await notifyStaff({
+    await notifyStaffSafe({
       subject: `[Partner] ${partnerCompany}${body.endClientCompany ? ` → ${body.endClientCompany}` : ''}`,
-      html: templateStaffAlert(`Nueva solicitud de partner - ${partnerCompany}`, [
-        `Intermediario: ${partnerName}`,
-        `Email: ${partnerEmail}`,
-        body.endClientCompany ? `Cliente final: ${body.endClientCompany}` : null,
-        body.endClientName ? `Contacto cliente: ${body.endClientName}` : null,
-        `Tipo: ${serviceType}`,
-        `Alcance: ${need}`,
-        body.budget ? `Presupuesto ref.: ${body.budget}` : null,
-      ].filter(Boolean)),
+      html: templateStaffAlert(
+        `Nueva solicitud de partner - ${partnerCompany}`,
+        [
+          `Intermediario: ${partnerName}`,
+          `Email: ${partnerEmail}`,
+          body.endClientCompany ? `Cliente final: ${body.endClientCompany}` : null,
+          body.endClientName ? `Contacto cliente: ${body.endClientName}` : null,
+          `Tipo: ${serviceType}`,
+          `Alcance: ${need}`,
+          body.budget ? `Presupuesto ref.: ${body.budget}` : null,
+        ].filter(Boolean),
+        { ctaLabel: 'Ver lead', ctaHref: `${opsBaseUrl()}/leads/${lead.id}` }
+      ),
+      replyTo: partnerEmail,
     });
 
     return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
