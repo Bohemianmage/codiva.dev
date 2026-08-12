@@ -15,6 +15,7 @@ import {
   UserCog,
   Building2,
   Gauge,
+  PanelLeftClose,
 } from 'lucide-react';
 import { can, type Capability, type StaffRole } from '@/lib/ops/permissions';
 import { useTranslation } from 'react-i18next';
@@ -42,9 +43,13 @@ const NAV: {
 export default function OpsSidebar({
   staffName,
   staffRole = 'dev',
+  onHide,
+  onNavigate,
 }: {
   staffName: string;
   staffRole?: StaffRole | string;
+  onHide?: () => void;
+  onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
   const pathname = usePathname();
@@ -64,10 +69,24 @@ export default function OpsSidebar({
   }
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200 bg-white">
-      <div className="border-b border-zinc-200 px-5 py-5">
-        <CodivaWordmarkMark size="sm" />
-        <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
+    <aside className="flex h-full w-full min-w-0 flex-col lg:w-64 lg:min-w-64">
+      <div className="flex items-start justify-between gap-2 border-b border-zinc-200 px-5 py-5">
+        <div className="min-w-0">
+          <CodivaWordmarkMark size="sm" />
+          <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
+        </div>
+        {onHide ? (
+          <button
+            type="button"
+            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-800 shadow-sm transition hover:bg-zinc-50 lg:flex"
+            onClick={onHide}
+            aria-expanded
+            aria-controls="ops-sidebar-panel"
+            aria-label={t('ops.layout.hideSidebar')}
+          >
+            <PanelLeftClose className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </button>
+        ) : null}
       </div>
       <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {items.map(({ href, labelKey, icon: Icon }) => {
@@ -76,6 +95,7 @@ export default function OpsSidebar({
             <Link
               key={href}
               href={href}
+              onClick={onNavigate}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                 active
                   ? 'bg-codiva-primary text-white'
@@ -88,7 +108,7 @@ export default function OpsSidebar({
           );
         })}
       </nav>
-      <div className="border-t border-zinc-200 p-3 space-y-2">
+      <div className="space-y-2 border-t border-zinc-200 p-3">
         <div className="flex justify-center py-1">
           <LanguageSwitcher />
         </div>

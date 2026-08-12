@@ -51,6 +51,7 @@ const STAFF_ONLY_CLIENT_PACKS = [
   '/client-packs/nirc/mvp-fase1.html',
   '/client-packs/nirc/nirc-arquitectura-completa.html',
   '/client-packs/nirc/mvp-propuesta-fase1.md',
+  '/client-packs/inquilia/arquitectura-completa.html',
 ];
 
 function isStaffOnlyClientPack(pathname: string) {

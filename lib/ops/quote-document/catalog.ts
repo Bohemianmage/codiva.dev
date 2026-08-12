@@ -25,7 +25,7 @@ export const QUOTE_DOCUMENT_PATTERNS = {
   enterprise: {
     label: 'Enterprise / estratégica',
     description: 'Resumen ejecutivo, objetivos, diferenciador, múltiples secciones narrativas.',
-    examples: ['Grupo IAMSA'],
+    examples: ['Grupo IAMSA', 'Inquilia', 'NIRC'],
   },
 } as const;
 
@@ -37,6 +37,7 @@ export const QUOTE_CATALOG: QuoteCatalogEntry[] = [
   { client: 'CD648', file: 'Cotizacion_CD648_Red.docx', serviceType: 'Red/API', pattern: 'standard' },
   { client: 'Grupo IAMSA', file: 'Cotizacion_IAMSA.docx', serviceType: 'Web', pattern: 'enterprise' },
   { client: 'Inquilia', file: 'Cotizacion_Inquilia_App.docx', serviceType: 'App', pattern: 'standard' },
+  { client: 'Inquilia', file: 'arquitectura-completa.html', serviceType: 'Platform', pattern: 'enterprise' },
   { client: 'Jesus Mendez', file: 'Cotizacion_JM_Web.docx', serviceType: 'Web', pattern: 'standard' },
   { client: 'Kaucho Quimico', file: 'Cotizacion_EShop_KQ.docx', serviceType: 'E-Shop', pattern: 'table' },
   { client: 'Kaucho Quimico', file: 'Cotizacion_WEB_KQ.docx', serviceType: 'Web', pattern: 'standard' },

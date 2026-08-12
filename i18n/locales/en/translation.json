@@ -794,6 +794,13 @@
   "ops": {
     "metaDescription": "Codiva operations backoffice",
     "signOut": "Sign out",
+    "layout": {
+      "hideSidebar": "Hide sidebar",
+      "showSidebar": "Show sidebar",
+      "openNavigation": "Open navigation menu",
+      "closeNavigation": "Close menu",
+      "mobileNavigationTitle": "Navigation"
+    },
     "nav": {
       "dashboard": "Dashboard",
       "leads": "Leads",

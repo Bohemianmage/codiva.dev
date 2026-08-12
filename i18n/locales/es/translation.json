@@ -794,6 +794,13 @@
   "ops": {
     "metaDescription": "Backoffice operativo Codiva",
     "signOut": "Cerrar sesión",
+    "layout": {
+      "hideSidebar": "Ocultar menú lateral",
+      "showSidebar": "Mostrar menú lateral",
+      "openNavigation": "Abrir menú de navegación",
+      "closeNavigation": "Cerrar menú",
+      "mobileNavigationTitle": "Navegación"
+    },
     "nav": {
       "dashboard": "Dashboard",
       "leads": "Leads",
