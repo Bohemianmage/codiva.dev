@@ -829,7 +829,7 @@ export async function inviteStaff(formData: FormData) {
 
   const mail = await sendClientEmail({
     to: email,
-    subject: `Acceso a Codiva Ops - ${roleLabel}`,
+    subject: `Acceso a Codiva.dev - ${roleLabel}`,
     html,
   });
   if (!mail.ok && !mail.skipped) {

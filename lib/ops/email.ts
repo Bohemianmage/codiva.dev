@@ -36,7 +36,7 @@ const CONTACT_EMAIL = CODIVA_BRAND.urls.email;
  */
 function fromAddress(kind: EmailFromKind = 'noreply'): string {
   if (kind === 'ops') {
-    return process.env.RESEND_FROM_OPS ?? `Codiva Ops <${CONTACT_EMAIL}>`;
+    return process.env.RESEND_FROM_OPS ?? `Codiva.dev <${CONTACT_EMAIL}>`;
   }
   if (kind === 'hello') {
     return process.env.RESEND_FROM_HELLO ?? `Codiva.dev <${CONTACT_EMAIL}>`;

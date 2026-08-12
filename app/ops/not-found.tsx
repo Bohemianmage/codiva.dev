@@ -21,7 +21,7 @@ export default async function OpsNotFound() {
 
   return (
     <StatusScreen
-      eyebrow="Codiva Ops"
+      eyebrow="Codiva.dev"
       code="404"
       title="Página no encontrada"
       description="Esta ruta no existe en Ops. Vuelve al panel o revisa el enlace."

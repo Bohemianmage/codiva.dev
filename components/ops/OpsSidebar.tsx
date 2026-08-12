@@ -62,8 +62,8 @@ export default function OpsSidebar({
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-zinc-200 bg-white">
       <div className="border-b border-zinc-200 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">
-          Codiva Ops
+        <p className="text-sm font-semibold tracking-tight text-zinc-900">
+          Codiva<span className="font-medium text-codiva-primary">.dev</span>
         </p>
         <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
       </div>

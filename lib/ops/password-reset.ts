@@ -73,7 +73,7 @@ async function sendRecoveryEmail(
     to: email,
     subject: options?.projectName
       ? `Restablecer acceso - ${options.projectName}`
-      : 'Restablecer contraseña - Codiva Ops',
+      : 'Restablecer contraseña - Codiva.dev',
     html,
   });
 

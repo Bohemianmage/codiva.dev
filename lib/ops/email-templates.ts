@@ -149,7 +149,7 @@ export function templateTicketConfirmation(name: string, ticketTitle: string): s
 
 export function templatePasswordRecovery(): string {
   return emailLayout({
-    preview: 'Restablece tu contraseña de Codiva Ops',
+    preview: 'Restablece tu contraseña de Codiva.dev',
     title: 'Restablecer contraseña',
     bodyHtml: `
       <p style="margin:0 0 12px;">Recibimos una solicitud para restablecer tu contraseña.</p>
@@ -265,11 +265,11 @@ export function templateStaffInviteNewUser(
 ): string {
   const hello = fullName ? greeting(fullName) : '';
   return emailLayout({
-    preview: `Acceso a Codiva Ops`,
+    preview: `Acceso a Codiva.dev`,
     title: 'Bienvenido al equipo',
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Se creó tu acceso a <strong>${escapeHtml(BRAND_NAME)} Ops</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
+      <p style="margin:0 0 12px;">Se creó tu acceso a <strong>${escapeHtml(BRAND_NAME)}</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
         <tr>
           <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
@@ -280,7 +280,7 @@ export function templateStaffInviteNewUser(
       </table>
       <p style="margin:0;color:${BRAND.muted};font-size:14px;">Cambia tu contraseña al ingresar.</p>
     `,
-    cta: { label: 'Entrar a Ops', href: loginUrl },
+    cta: { label: 'Entrar a Codiva.dev', href: loginUrl },
   });
 }
 
@@ -291,14 +291,14 @@ export function templateStaffInviteExistingUser(
 ): string {
   const hello = fullName ? greeting(fullName) : '';
   return emailLayout({
-    preview: `Acceso a Codiva Ops`,
-    title: 'Acceso a Ops',
+    preview: `Acceso a Codiva.dev`,
+    title: 'Acceso a Codiva.dev',
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Se te otorgó acceso a <strong>${escapeHtml(BRAND_NAME)} Ops</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
+      <p style="margin:0 0 12px;">Se te otorgó acceso a <strong>${escapeHtml(BRAND_NAME)}</strong> con rol <strong>${escapeHtml(roleLabel)}</strong>.</p>
       <p style="margin:0;">Usa tu correo y contraseña habituales.</p>
     `,
-    cta: { label: 'Entrar a Ops', href: loginUrl },
+    cta: { label: 'Entrar a Codiva.dev', href: loginUrl },
   });
 }
 
@@ -387,8 +387,8 @@ export function templateStaffAlert(title: string, lines: string[]): string {
     preview: title,
     title,
     bodyHtml: rows,
-    cta: { label: 'Abrir Codiva Ops', href: `${opsBaseUrl()}/dashboard` },
-    footerNote: 'Notificación interna — Codiva Ops',
+    cta: { label: 'Abrir Codiva.dev', href: `${opsBaseUrl()}/dashboard` },
+    footerNote: 'Notificación interna — Codiva.dev',
   });
 }
 
@@ -402,7 +402,7 @@ export function templateContactInboxStaff(name: string, email: string, message: 
       <p style="margin:0 0 8px;"><strong>Mensaje:</strong></p>
       <p style="margin:0;padding:16px;background:${BRAND.background};border-radius:8px;white-space:pre-line;">${escapeHtml(message)}</p>
     `,
-    cta: { label: 'Ver inbox en Ops', href: `${opsBaseUrl()}/inbox` },
+    cta: { label: 'Ver inbox', href: `${opsBaseUrl()}/inbox` },
     footerNote: 'Responde directamente a este correo para contactar al remitente.',
   });
 }

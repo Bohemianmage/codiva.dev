@@ -77,7 +77,9 @@ export default function OpsLoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Codiva Ops</p>
+        <p className="text-sm font-semibold tracking-tight text-zinc-900">
+          Codiva<span className="font-medium text-codiva-primary">.dev</span>
+        </p>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">Iniciar sesión</h1>
         <p className="mt-1 text-sm text-zinc-600">Acceso para el equipo Codiva</p>
 

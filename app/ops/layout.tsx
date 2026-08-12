@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import OpsToaster from '@/components/ops/OpsToaster';
 
 export const metadata: Metadata = {
-  title: 'Codiva Ops',
+  title: 'Codiva.dev',
   description: 'Backoffice operativo Codiva',
   robots: { index: false, follow: false },
 };
