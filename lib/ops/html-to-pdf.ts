@@ -44,8 +44,9 @@ async function launchBrowser(): Promise<Browser> {
   }
 
   const chromium = (await import('@sparticuz/chromium')).default;
+  const args = await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' });
   return puppeteer.launch({
-    args: puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
+    args,
     executablePath: await chromium.executablePath(),
     headless: 'shell',
   });
@@ -56,12 +57,14 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
   try {
     const page = await browser.newPage();
     await page.setContent(withInlineLogo(html), {
-      waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+      waitUntil: 'load',
       timeout: 45_000,
     });
+    // Give webfonts / late resources a moment after DOM load.
     await page.evaluate(async () => {
       if (document.fonts?.ready) await document.fonts.ready;
     });
+    await new Promise((r) => setTimeout(r, 250));
     await page.emulateMediaType('print');
     const pdf = await page.pdf({
       format: 'A4',
