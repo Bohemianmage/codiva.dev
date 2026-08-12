@@ -1,4 +1,4 @@
--- Codiva Ops: seed mínimo para local (solo NIRC).
+-- Codiva Ops: seed mínimo para local (NIRC + Inquilia).
 -- Clientes vivos adicionales (p. ej. BYD) se crean por Ops, no por seed.
 --
 -- Ejecutar después de migraciones y de tener al menos un usuario staff en staff_profiles.
@@ -203,6 +203,115 @@ INSERT INTO document_requests (
     'Puedes describir el acceso aquí o adjuntar un documento en una solicitud aparte si lo prefieres.',
     'other', 'text', 'open', false, 60, true
   )
+ON CONFLICT (id) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- Inquilia (plataforma LegalTech en producción)
+-- ---------------------------------------------------------------------------
+
+INSERT INTO organizations (id, name, logo_url, contact_email, contact_phone) VALUES
+  ('a0000001-0001-4000-8000-00000000000c', 'Inquilia', '/logos/inquilia.svg', NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE organizations SET
+  name = 'Inquilia',
+  logo_url = '/logos/inquilia.svg'
+WHERE id = 'a0000001-0001-4000-8000-00000000000c';
+
+INSERT INTO projects (
+  id, organization_id, name, slug, status, description,
+  start_date, target_delivery_date, progress_percent, client_visible,
+  portal_show_quote, portal_show_costs,
+  site_production_url
+) VALUES
+  (
+    'b0000001-0001-4000-8000-00000000000c',
+    'a0000001-0001-4000-8000-00000000000c',
+    'Inquilia Plataforma LegalTech',
+    'inquilia',
+    'active',
+    'LegalTech de arrendamiento en México: dictamen, contratos digitales, CRM multi-departamento, portales de partes, Stripe y Facturama. En producción; evolución continua.',
+    '2025-06-11', NULL, 90, true,
+    false, false,
+    'https://inquilia.com'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE projects SET
+  portal_show_quote = false,
+  portal_show_costs = false,
+  name = 'Inquilia Plataforma LegalTech',
+  description = 'LegalTech de arrendamiento en México: dictamen, contratos digitales, CRM multi-departamento, portales de partes, Stripe y Facturama. En producción; evolución continua.',
+  status = 'active',
+  progress_percent = 90,
+  client_visible = true,
+  start_date = '2025-06-11',
+  site_production_url = 'https://inquilia.com'
+WHERE id = 'b0000001-0001-4000-8000-00000000000c';
+
+INSERT INTO leads (
+  id, status, source, name, company, email, phone, need,
+  partner_name, partner_company, end_client_name, end_client_company,
+  budget, reference_site, converted_project_id
+) VALUES
+  (
+    'c0000001-0001-4000-8000-00000000000c',
+    'converted', 'manual',
+    'Equipo Inquilia', 'Inquilia', '', NULL,
+    'Plataforma LegalTech de arrendamiento: expediente (Ekatena, dictamen, CPS, firma, Stripe), CRM, red de asesores, finanzas, RRHH y portales. En producción desde 2025.',
+    NULL, NULL, 'Inquilia', 'Inquilia',
+    NULL, 'https://inquilia.com', 'b0000001-0001-4000-8000-00000000000c'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE leads SET
+  need = E'Plataforma LegalTech de arrendamiento: expediente (Ekatena, dictamen, CPS, firma, Stripe), CRM, red de asesores, finanzas, RRHH y portales. En producción desde 2025.',
+  status = 'converted',
+  converted_project_id = 'b0000001-0001-4000-8000-00000000000c',
+  reference_site = 'https://inquilia.com'
+WHERE id = 'c0000001-0001-4000-8000-00000000000c';
+
+UPDATE projects SET lead_id = 'c0000001-0001-4000-8000-00000000000c'
+WHERE id = 'b0000001-0001-4000-8000-00000000000c';
+
+INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date) VALUES
+  ('f0000002-0001-4000-8000-000000000001', 'b0000001-0001-4000-8000-00000000000c', 'Marketing, cotizador e intake', 'Sitio público, cotizador, portales landlord/tenant/guarantor.', 'completed', 1, '2025-08-31'),
+  ('f0000002-0001-4000-8000-000000000002', 'b0000001-0001-4000-8000-00000000000c', 'CRM y red de asesores', 'Leads, clientes, BDM, calendario, analítica y portal asesores.', 'completed', 2, '2025-11-30'),
+  ('f0000002-0001-4000-8000-000000000003', 'b0000001-0001-4000-8000-00000000000c', 'Expediente legal + Ekatena', 'Documentos, screening, riesgo, dictamen y plantillas.', 'completed', 3, '2026-03-31'),
+  ('f0000002-0001-4000-8000-000000000004', 'b0000001-0001-4000-8000-00000000000c', 'Contratos, firma y cobro', 'CPS, arrendamiento, pagarés, acompañamiento de firma y Stripe.', 'completed', 4, '2026-05-31'),
+  ('f0000002-0001-4000-8000-000000000005', 'b0000001-0001-4000-8000-00000000000c', 'Workspace multi-departamento', 'Finanzas/Facturama, RRHH, checador, TI, contenido, empleos.', 'completed', 5, '2026-07-21'),
+  ('f0000002-0001-4000-8000-000000000006', 'b0000001-0001-4000-8000-00000000000c', 'Evolución continua', 'Estabilización del expediente, integraciones y operación.', 'in_progress', 6, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO deliverables (
+  id, project_id, title, description, url, kind, sort_order, visible_to_client
+) VALUES
+  (
+    '92000002-0001-4000-8000-000000000001',
+    'b0000001-0001-4000-8000-00000000000c',
+    'Arquitectura',
+    'Hosts, expediente legal, CRM, portales, integraciones, datos y crons.',
+    '/client-packs/inquilia/arquitectura-portal.html',
+    'architecture', 1, true
+  ),
+  (
+    '92000002-0001-4000-8000-000000000002',
+    'b0000001-0001-4000-8000-00000000000c',
+    'Arquitectura completa',
+    'Inventario, avalúo de reemplazo, CI/deploy y deuda técnica. Solo staff.',
+    '/client-packs/inquilia/arquitectura-completa.html',
+    'architecture', 2, false
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO project_site_access (
+  id, project_id, label, kind, url, notes, visible_to_client, sort_order
+) VALUES
+  ('95000002-0001-4000-8000-000000000001', 'b0000001-0001-4000-8000-00000000000c', 'Marketing / www', 'production', 'https://inquilia.com', 'Sitio público, cotizador e intake.', true, 10),
+  ('95000002-0001-4000-8000-000000000002', 'b0000001-0001-4000-8000-00000000000c', 'Workspace CRM', 'cms', 'https://workspace.inquilia.com', 'Backoffice interno. No compartir sesión con portal asesores.', true, 20),
+  ('95000002-0001-4000-8000-000000000003', 'b0000001-0001-4000-8000-00000000000c', 'Portal asesores', 'other', 'https://asesores.inquilia.com', 'Expediente y lealtad de la red comercial.', true, 30),
+  ('95000002-0001-4000-8000-000000000004', 'b0000001-0001-4000-8000-00000000000c', 'Bolsa de empleo', 'other', 'https://career.inquilia.com', 'Vacantes públicas.', true, 40),
+  ('95000002-0001-4000-8000-000000000005', 'b0000001-0001-4000-8000-00000000000c', 'Facturación', 'other', 'https://facturacion.inquilia.com', 'Portal de facturación / CSF.', true, 50)
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
