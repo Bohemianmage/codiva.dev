@@ -2,6 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Browser } from 'puppeteer-core';
 
+/** Remote pack for Vercel / serverless — binaries are not bundled in the deploy. */
+const DEFAULT_CHROMIUM_PACK =
+  'https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar';
+
 const LOCAL_CHROME_CANDIDATES = [
   process.env.CHROME_PATH,
   process.env.PUPPETEER_EXECUTABLE_PATH,
@@ -43,11 +47,16 @@ async function launchBrowser(): Promise<Browser> {
     });
   }
 
-  const chromium = (await import('@sparticuz/chromium')).default;
+  const chromium = (await import('@sparticuz/chromium-min')).default;
+  chromium.setGraphicsMode = false;
+
+  const packUrl = process.env.CHROMIUM_PACK_URL || DEFAULT_CHROMIUM_PACK;
   const args = await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' });
+
   return puppeteer.launch({
     args,
-    executablePath: await chromium.executablePath(),
+    defaultViewport: { width: 1280, height: 720, deviceScaleFactor: 1 },
+    executablePath: await chromium.executablePath(packUrl),
     headless: 'shell',
   });
 }
@@ -60,7 +69,6 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
       waitUntil: 'load',
       timeout: 45_000,
     });
-    // Give webfonts / late resources a moment after DOM load.
     await page.evaluate(async () => {
       if (document.fonts?.ready) await document.fonts.ready;
     });
