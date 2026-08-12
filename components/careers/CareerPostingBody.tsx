@@ -1,11 +1,15 @@
 import type { CareerPostingSection } from '@/lib/ops/careers';
+import { careerSectionTitle } from '@/lib/ops/careers';
+import type { Locale } from '@/i18n/config';
 
 export default function CareerPostingBody({
   sections,
   fallbackTitle,
+  locale,
 }: {
   sections: CareerPostingSection[];
   fallbackTitle: string;
+  locale: Locale;
 }) {
   if (!sections.length) return null;
 
@@ -13,7 +17,7 @@ export default function CareerPostingBody({
     sections.length === 1 && !sections[0].title
       ? [{ title: fallbackTitle, blocks: sections[0].blocks }]
       : sections.map((section) => ({
-          title: section.title || fallbackTitle,
+          title: careerSectionTitle(section.title || fallbackTitle, locale),
           blocks: section.blocks,
         }));
 

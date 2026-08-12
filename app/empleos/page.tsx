@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { jobEmploymentLabel, postingAsksDiscipline } from '@/lib/ops/careers';
+import { jobEmploymentLabel, localizedJobPostingCopy, postingAsksDiscipline } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
 import { getT } from '@/i18n/locale';
 import CodivaBrandText from '@/components/CodivaBrandText';
@@ -30,7 +30,7 @@ export default async function EmpleosPage() {
     ? (
         await createAdminClient()
           .from('ops_job_postings')
-          .select('id, slug, title, location, employment_type, published_at, assessment_key')
+          .select('id, slug, title, title_en, location, location_en, employment_type, published_at, assessment_key')
           .eq('status', 'published')
           .order('sort_order', { ascending: true })
           .order('published_at', { ascending: false })
@@ -50,9 +50,6 @@ export default async function EmpleosPage() {
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-base">
           {t('career.list_intro')}
-        </p>
-        <p lang="en" className="mx-auto mt-2 max-w-xl text-xs text-zinc-500">
-          Open positions. Join the team.
         </p>
         <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
           <Link href="/empleos/hallazgos" className="font-medium text-codiva-primary hover:underline">
@@ -76,6 +73,7 @@ export default async function EmpleosPage() {
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => {
+            const copy = localizedJobPostingCopy(row, locale);
             const employment = jobEmploymentLabel(row.employment_type, locale);
             return (
               <li key={row.id}>
@@ -86,11 +84,11 @@ export default async function EmpleosPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="font-semibold text-zinc-900 transition group-hover:text-codiva-primary">
-                        {row.title}
+                        {copy.title}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {employment ? <MetaChip>{employment}</MetaChip> : null}
-                        {row.location ? <MetaChip>{row.location}</MetaChip> : null}
+                        {copy.location ? <MetaChip>{copy.location}</MetaChip> : null}
                         {catalogForPosting(row.assessment_key, row.slug) || postingAsksDiscipline(row.slug) ? (
                           <MetaChip>{t('career.assessment_chip')}</MetaChip>
                         ) : null}

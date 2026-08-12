@@ -14,9 +14,7 @@ import {
 } from '@/lib/ops/actions';
 import {
   DEFAULT_RESPONSIBILITIES,
-  OFFER_STATUS_LABELS,
-  OPS_ROLE_LABELS,
-  WORK_MODALITY_LABELS,
+  offerLabelsFor,
 } from '@/lib/ops/offer-letter';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
@@ -41,7 +39,8 @@ export default async function TeamPage({
   const { supabase } = await requireAdminStaff();
   const t = await getT();
   const { EMPTY_LABEL, formatCurrency, formatDate } = labelsFor(t.locale);
-  const ROLE_LABELS = { admin: t('ops.roles.admin'), pm: t('ops.roles.pm'), dev: t('ops.roles.dev') };
+  const { OPS_ROLE_LABELS, WORK_MODALITY_LABELS, OFFER_STATUS_LABELS } = offerLabelsFor(t.locale);
+  const ROLE_LABELS = OPS_ROLE_LABELS;
   const admin = createAdminClient();
 
   const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }, { data: attempts }, { data: huntReports }] =
@@ -69,13 +68,15 @@ export default async function TeamPage({
       supabase
         .from('ops_job_assessment_attempts')
         .select(
-          'id, job_posting_id, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number'
+          'id, job_posting_id, catalog_key, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number'
         )
         .order('created_at', { ascending: false })
         .limit(200),
       supabase
         .from('ops_hunt_reports')
-        .select('id, full_name, email, page_url, title, matched_seed_id, discipline, created_at')
+        .select(
+          'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, created_at'
+        )
         .order('created_at', { ascending: false })
         .limit(80),
     ]);
@@ -101,16 +102,16 @@ export default async function TeamPage({
   return (
     <div>
       <OpsPageHeader
-        title="Equipo"
-        description="Miembros, cartas oferta y bolsa de trabajo. Solo administradores."
+        title={t('ops.team.title')}
+        description={t('ops.team.description')}
       />
 
       <div className="mb-8 flex gap-6 border-b border-zinc-200">
         <Link href="/team?tab=miembros" className={tabClass(tab === 'miembros')}>
-          Miembros
+          {t('ops.team.tabMembers')}
         </Link>
         <Link href="/team?tab=ofertas" className={tabClass(tab === 'ofertas')}>
-          Cartas oferta
+          {t('ops.team.tabOffers')}
           {(offers ?? []).length > 0 ? (
             <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
               {(offers ?? []).length}
@@ -118,7 +119,7 @@ export default async function TeamPage({
           ) : null}
         </Link>
         <Link href="/team?tab=bolsa" className={tabClass(tab === 'bolsa')}>
-          Bolsa de trabajo
+          {t('ops.team.tabJobs')}
           {(applications ?? []).filter((row) => row.status === 'new').length > 0 ? (
             <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
               {(applications ?? []).filter((row) => row.status === 'new').length}
@@ -130,15 +131,13 @@ export default async function TeamPage({
       {tab === 'miembros' ? (
         <div className="max-w-2xl space-y-8">
           <ToastForm
-            success="Invitación enviada"
+            success={t('ops.team.inviteSent')}
             action={onInvite}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
           >
-            <h2 className="font-semibold">Invitar al equipo</h2>
+            <h2 className="font-semibold">{t('ops.team.inviteTitle')}</h2>
             <p className="text-sm text-zinc-500">
-              <CodivaBrandText>
-                Crea o reactiva acceso al espacio de trabajo de Codiva.dev. Para formalizar una oferta económica, usa la pestaña Cartas oferta.
-              </CodivaBrandText>
+              <CodivaBrandText>{t('ops.team.inviteHint')}</CodivaBrandText>
             </p>
             <input
               name="email"
@@ -150,21 +149,21 @@ export default async function TeamPage({
             <input
               name="fullName"
               type="text"
-              placeholder="Nombre completo"
+              placeholder={t('ops.team.fullName')}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
             <select name="role" defaultValue="pm" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="admin">Administrador</option>
-              <option value="pm">Project Manager</option>
-              <option value="dev">Desarrollador</option>
+              <option value="admin">{ROLE_LABELS.admin}</option>
+              <option value="pm">{ROLE_LABELS.pm}</option>
+              <option value="dev">{ROLE_LABELS.dev}</option>
             </select>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Enviar acceso
+              {t('ops.team.inviteSend')}
             </button>
           </ToastForm>
 
           <section className="space-y-3">
-            <h2 className="font-semibold">Miembros</h2>
+            <h2 className="font-semibold">{t('ops.team.membersTitle')}</h2>
             <ul className="space-y-3">
               {(staffRows ?? []).map((row) => (
                 <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -173,7 +172,10 @@ export default async function TeamPage({
                       <p className="font-medium">{row.full_name || EMPTY_LABEL}</p>
                       <p className="text-sm text-zinc-500">{emails.get(row.id) ?? row.id.slice(0, 8)}</p>
                       <p className="mt-1 text-xs text-zinc-400">
-                        Desde {formatDate(row.created_at)} · {row.active ? 'Activo' : 'Inactivo'}
+                        {t('ops.team.since', {
+                          date: formatDate(row.created_at),
+                          status: row.active ? t('ops.team.active') : t('ops.team.inactive'),
+                        })}
                       </p>
                     </div>
                     <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700">
@@ -181,7 +183,7 @@ export default async function TeamPage({
                     </span>
                   </div>
                   <ToastForm
-                    success="Perfil actualizado"
+                    success={t('ops.team.profileUpdated')}
                     action={async (fd) => {
                       'use server';
                       await updateStaffProfile(row.id, fd);
@@ -198,19 +200,19 @@ export default async function TeamPage({
                       defaultValue={row.role}
                       className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                     >
-                      <option value="admin">Administrador</option>
-                      <option value="pm">Project Manager</option>
-                      <option value="dev">Desarrollador</option>
+                      <option value="admin">{ROLE_LABELS.admin}</option>
+                      <option value="pm">{ROLE_LABELS.pm}</option>
+                      <option value="dev">{ROLE_LABELS.dev}</option>
                     </select>
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" name="active" defaultChecked={row.active} />
-                      Activo
+                      {t('ops.team.active')}
                     </label>
                     <button
                       type="submit"
                       className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 sm:col-span-3"
                     >
-                      Guardar
+                      {t('ops.team.save')}
                     </button>
                   </ToastForm>
                 </li>
@@ -228,20 +230,18 @@ export default async function TeamPage({
       ) : (
         <div className="max-w-3xl space-y-8">
           <ToastForm
-            success="Carta oferta creada"
-            loading="Creando…"
+            success={t('ops.team.offerCreated')}
+            loading={t('ops.toast.saving')}
             action={onCreateOffer}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
           >
-            <h2 className="font-semibold">Nueva carta oferta</h2>
-            <p className="text-sm text-zinc-500">
-              Formaliza compensación y condiciones. El acceso al espacio de trabajo se gestiona en Miembros.
-            </p>
+            <h2 className="font-semibold">{t('ops.team.offerCreateTitle')}</h2>
+            <p className="text-sm text-zinc-500">{t('ops.team.offerHint')}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 name="fullName"
                 required
-                placeholder="Nombre completo"
+                placeholder={t('ops.team.fullName')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2"
               />
               <input
@@ -253,14 +253,14 @@ export default async function TeamPage({
               <input
                 name="positionTitle"
                 required
-                defaultValue="Project Manager"
-                placeholder="Puesto"
+                defaultValue={ROLE_LABELS.pm}
+                placeholder={t('ops.team.position')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <select name="opsRole" defaultValue="pm" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                <option value="pm">Project Manager</option>
-                <option value="dev">Desarrollador</option>
-                <option value="admin">Administrador</option>
+                <option value="pm">{ROLE_LABELS.pm}</option>
+                <option value="dev">{ROLE_LABELS.dev}</option>
+                <option value="admin">{ROLE_LABELS.admin}</option>
               </select>
               <input
                 name="monthlyCompensation"
@@ -269,7 +269,7 @@ export default async function TeamPage({
                 min={1}
                 step="0.01"
                 defaultValue={1200}
-                placeholder="Compensación mensual"
+                placeholder={t('ops.team.compensation')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <select name="currency" defaultValue="USD" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -277,17 +277,21 @@ export default async function TeamPage({
                 <option value="MXN">MXN</option>
               </select>
               <select name="workModality" defaultValue="remote" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                <option value="remote">Remoto</option>
-                <option value="hybrid">Híbrido</option>
-                <option value="onsite">Presencial</option>
+                {Object.entries(WORK_MODALITY_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
               <select name="status" defaultValue="draft" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                <option value="draft">Borrador</option>
-                <option value="sent">Enviada</option>
-                <option value="accepted">Aceptada</option>
+                {['draft', 'sent', 'accepted'].map((value) => (
+                  <option key={value} value={value}>
+                    {OFFER_STATUS_LABELS[value]}
+                  </option>
+                ))}
               </select>
               <label className="text-sm text-zinc-600">
-                Inicio
+                {t('ops.team.start')}
                 <input
                   name="startDate"
                   type="date"
@@ -295,7 +299,7 @@ export default async function TeamPage({
                 />
               </label>
               <label className="text-sm text-zinc-600">
-                Vigencia de la oferta
+                {t('ops.team.validUntil')}
                 <input
                   name="validUntil"
                   type="date"
@@ -303,7 +307,7 @@ export default async function TeamPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Fecha de emisión
+                {t('ops.team.issuedAt')}
                 <input
                   name="issuedAt"
                   type="date"
@@ -312,7 +316,7 @@ export default async function TeamPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Responsabilidades (una por línea)
+                {t('ops.team.responsibilities')}
                 <textarea
                   name="responsibilities"
                   rows={5}
@@ -321,16 +325,16 @@ export default async function TeamPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Condiciones (opcional; si vacío usa el texto estándar)
+                {t('ops.team.terms')}
                 <textarea
                   name="terms"
                   rows={4}
-                  placeholder="Dejar vacío para usar condiciones estándar"
+                  placeholder={t('ops.team.termsPlaceholder')}
                   className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Notas internas (no aparecen en la carta)
+                {t('ops.team.notesInternal')}
                 <textarea
                   name="notesInternal"
                   rows={2}
@@ -339,15 +343,15 @@ export default async function TeamPage({
               </label>
             </div>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Crear carta oferta
+              {t('ops.team.createOffer')}
             </button>
           </ToastForm>
 
           <section className="space-y-3">
-            <h2 className="font-semibold">Ofertas</h2>
+            <h2 className="font-semibold">{t('ops.team.offersTitle')}</h2>
             {!(offers ?? []).length ? (
               <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-                Aún no hay cartas oferta. Crea la primera arriba.
+                {t('ops.team.offersEmpty')}
               </p>
             ) : (
               <ul className="space-y-3">
@@ -364,12 +368,12 @@ export default async function TeamPage({
                             {row.position_title} · {OPS_ROLE_LABELS[row.ops_role] ?? row.ops_role}
                           </p>
                           <p className="mt-1 text-xs text-zinc-400">
-                            {formatCurrency(Number(row.monthly_compensation), row.currency || 'USD')} / mes ·{' '}
+                            {formatCurrency(Number(row.monthly_compensation), row.currency || 'USD')} {t('ops.team.perMonth')} ·{' '}
                             {WORK_MODALITY_LABELS[row.work_modality] ?? row.work_modality}
                             {row.email ? ` · ${row.email}` : ''}
                           </p>
                           <p className="mt-1 text-xs text-zinc-400">
-                            Emitida {row.issued_at ? formatDate(row.issued_at) : EMPTY_LABEL} ·{' '}
+                            {t('ops.team.issued', { date: row.issued_at ? formatDate(row.issued_at) : EMPTY_LABEL })} ·{' '}
                             {formatDate(row.created_at)}
                           </p>
                         </div>

@@ -5,10 +5,11 @@ import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import CareerApplyForm from '@/components/careers/CareerApplyForm';
 import CareerPostingBody from '@/components/careers/CareerPostingBody';
 import {
-  CAREER_DISCIPLINE_LABELS,
   CAREER_DISCIPLINES,
+  careerDisciplineLabels,
   isCareerDiscipline,
   jobEmploymentLabel,
+  localizedJobPostingCopy,
   parseCareerPostingSections,
   postingAsksDiscipline,
   publicCareerUrl,
@@ -25,7 +26,7 @@ async function loadPublishedPosting(slug: string) {
   if (!isSupabaseConfigured()) return null;
   const { data } = await createAdminClient()
     .from('ops_job_postings')
-    .select('id, slug, title, description, requirements, location, employment_type, published_at, assessment_key')
+    .select('id, slug, title, title_en, description, description_en, requirements, requirements_en, location, location_en, employment_type, published_at, assessment_key')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle();
@@ -39,11 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!posting) {
     return { title: t('career.unavailable') };
   }
+  const copy = localizedJobPostingCopy(posting, t.locale);
   return {
-    title: posting.title,
-    description: t('career.meta_description_detail', { title: posting.title }),
+    title: copy.title,
+    description: t('career.meta_description_detail', { title: copy.title }),
     openGraph: {
-      title: `${posting.title} · Codiva.dev`,
+      title: `${copy.title} · Codiva.dev`,
       url: publicCareerUrl(posting.slug),
     },
   };
@@ -63,8 +65,10 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
   const posting = await loadPublishedPosting(slug);
   if (!posting) notFound();
   const t = await getT();
+  const copy = localizedJobPostingCopy(posting, t.locale);
 
   const employment = jobEmploymentLabel(posting.employment_type, t.locale);
+  const DISCIPLINE_LABELS = careerDisciplineLabels(t.locale);
   const asksDiscipline = postingAsksDiscipline(posting.slug);
   const initialDiscipline = isCareerDiscipline(disciplineRaw ?? '')
     ? (disciplineRaw as typeof CAREER_DISCIPLINES[number])
@@ -76,8 +80,8 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
-    title: posting.title,
-    description: [posting.description, posting.requirements].filter(Boolean).join('\n\n'),
+    title: copy.title,
+    description: [copy.description, copy.requirements].filter(Boolean).join('\n\n'),
     datePosted: posting.published_at,
     hiringOrganization: {
       '@type': 'Organization',
@@ -87,7 +91,9 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
     employmentType: posting.employment_type
       ? posting.employment_type.toUpperCase()
       : undefined,
-    jobLocationType: /remoto/i.test(posting.location || '') ? 'TELECOMMUTE' : undefined,
+    jobLocationType: /remoto|remote/i.test(copy.location || posting.location || '')
+      ? 'TELECOMMUTE'
+      : undefined,
     url: publicCareerUrl(posting.slug),
   };
 
@@ -108,30 +114,32 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
               {t('career.eyebrow')}
             </p>
             <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              {posting.title}
+              {copy.title}
             </h1>
             <div className="mt-4 flex flex-wrap gap-2">
               {employment ? <MetaChip>{employment}</MetaChip> : null}
-              {posting.location ? <MetaChip>{posting.location}</MetaChip> : null}
+              {copy.location ? <MetaChip>{copy.location}</MetaChip> : null}
               {asksDiscipline
                 ? CAREER_DISCIPLINES.map((key) => (
-                    <MetaChip key={key}>{CAREER_DISCIPLINE_LABELS[key]}</MetaChip>
+                    <MetaChip key={key}>{DISCIPLINE_LABELS[key]}</MetaChip>
                   ))
                 : null}
             </div>
           </header>
 
           <div className="space-y-4">
-            {posting.description ? (
+            {copy.description ? (
               <CareerPostingBody
-                sections={parseCareerPostingSections(posting.description)}
+                sections={parseCareerPostingSections(copy.description)}
                 fallbackTitle={t('career.about_role')}
+                locale={t.locale}
               />
             ) : null}
-            {posting.requirements ? (
+            {copy.requirements ? (
               <CareerPostingBody
-                sections={parseCareerPostingSections(posting.requirements)}
+                sections={parseCareerPostingSections(copy.requirements)}
                 fallbackTitle={t('career.requirements')}
+                locale={t.locale}
               />
             ) : null}
           </div>

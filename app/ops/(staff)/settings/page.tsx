@@ -30,40 +30,38 @@ export default async function SettingsPage() {
 
   return (
     <div>
-      <OpsPageHeader title="Configuración" description="Tu perfil y legales del portal" />
+      <OpsPageHeader title={t('ops.settings.title')} description={t('ops.settings.description')} />
       <div className="max-w-2xl space-y-6">
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold">Tu cuenta</h2>
+          <h2 className="mb-3 font-semibold">{t('ops.settings.account')}</h2>
           <dl className="space-y-2 text-sm">
             <div>
-              <dt className="text-zinc-500">Email</dt>
+              <dt className="text-zinc-500">{t('ops.settings.email')}</dt>
               <dd>{user.email}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Nombre</dt>
+              <dt className="text-zinc-500">{t('ops.settings.name')}</dt>
               <dd>{staff.full_name || EMPTY_LABEL}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Rol</dt>
+              <dt className="text-zinc-500">{t('ops.settings.role')}</dt>
               <dd>{ROLE_LABELS[staff.role as keyof typeof ROLE_LABELS] ?? staff.role}</dd>
             </div>
           </dl>
           {canManageTeam && (
             <p className="mt-4 text-sm">
               <Link href="/team" className="text-codiva-primary hover:underline">
-                Gestionar equipo y altas →
+                {t('ops.settings.manageTeam')}
               </Link>
             </p>
           )}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-1 font-semibold">Legales del portal</h2>
+          <h2 className="mb-1 font-semibold">{t('ops.settings.legalTitle')}</h2>
           <p className="mb-4 text-sm text-zinc-600">
-            Versión en código: <strong>{LEGAL_DOCS_VERSION}</strong> ({LEGAL_UPDATED_LABEL}).
-            {canPublishLegal
-              ? ' Al publicar con notificación, los usuarios con aceptación desactualizada reciben correo y deben re-aceptar en su próximo acceso.'
-              : ' Solo administradores pueden publicar nuevas versiones.'}
+            {t('ops.settings.codeVersion')} <strong>{LEGAL_DOCS_VERSION}</strong> ({LEGAL_UPDATED_LABEL}).
+            {canPublishLegal ? t('ops.settings.publishNotifyHint') : t('ops.settings.adminOnlyHint')}
           </p>
           <p className="mb-4 text-sm">
             <Link href="/legal/terminos" className="text-codiva-primary hover:underline">
@@ -80,25 +78,25 @@ export default async function SettingsPage() {
           </p>
 
           {canPublishLegal && (
-          <ToastForm success="Versión publicada" action={onPublish} className="space-y-3 rounded-lg bg-zinc-50 p-4">
+          <ToastForm success={t('ops.settings.published')} action={onPublish} className="space-y-3 rounded-lg bg-zinc-50 p-4">
             <input
               name="versionCode"
               defaultValue={LEGAL_DOCS_VERSION}
               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              placeholder="Versión (ej. 2026.08.06)"
+              placeholder={t('ops.settings.versionPlaceholder')}
             />
             <textarea
               name="changelog"
               rows={2}
-              placeholder="Changelog (qué cambió)"
+              placeholder={t('ops.settings.changelogPlaceholder')}
               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
             />
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="sendEmails" />
-              Enviar correo de re-aceptación a miembros desactualizados
+              {t('ops.settings.sendEmails')}
             </label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-              Publicar versión en bitácora
+              {t('ops.settings.publish')}
             </button>
           </ToastForm>
           )}
@@ -112,7 +110,7 @@ export default async function SettingsPage() {
               </li>
             ))}
             {!versions?.length && (
-              <p className="text-zinc-500">Sin versiones registradas aún (se crean al publicar).</p>
+              <p className="text-zinc-500">{t('ops.settings.noVersions')}</p>
             )}
           </ul>
         </section>
