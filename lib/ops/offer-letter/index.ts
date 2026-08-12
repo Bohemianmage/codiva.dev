@@ -114,14 +114,14 @@ function brandWordmarkHtml(): string {
   return `<span style="font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></span>`;
 }
 
-export function offerLetterFilename(fullName: string) {
+export function offerLetterFilename(fullName: string, ext: 'html' | 'pdf' = 'html') {
   const safe = fullName
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 48);
-  return `Carta-Oferta-Codiva-${safe || 'Candidato'}.html`;
+  return `Carta-Oferta-Codiva-${safe || 'Candidato'}.${ext}`;
 }
 
 export function renderOfferLetterHtml(data: OfferLetterData): string {

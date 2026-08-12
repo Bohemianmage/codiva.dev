@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { htmlToPdf } from '@/lib/ops/html-to-pdf';
 import {
   offerLetterFilename,
   renderOfferLetterHtml,
   rowToOfferLetterData,
 } from '@/lib/ops/offer-letter';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params;
+  const format = new URL(request.url).searchParams.get('format');
+  const asPdf = format === 'pdf';
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,14 +48,35 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const html = renderOfferLetterHtml(rowToOfferLetterData(offer));
-  const filename = offerLetterFilename(offer.full_name);
 
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Content-Disposition': `inline; filename="${filename}"`,
-      'Cache-Control': 'no-store',
-    },
-  });
+  if (!asPdf) {
+    const filename = offerLetterFilename(offer.full_name, 'html');
+    return new NextResponse(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="${filename}"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+
+  try {
+    const pdf = await htmlToPdf(html);
+    const filename = offerLetterFilename(offer.full_name, 'pdf');
+    return new NextResponse(new Uint8Array(pdf), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (err) {
+    console.error('[carta] PDF generation failed', err);
+    return NextResponse.json(
+      { error: 'No se pudo generar el PDF. Verifica Chrome/Chromium en el entorno.' },
+      { status: 500 }
+    );
+  }
 }
