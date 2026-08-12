@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Browser } from 'puppeteer-core';
 
-/** Remote pack for Vercel / serverless — binaries are not bundled in the deploy. */
+/** Remote pack for Vercel / serverless: binaries are not bundled in the deploy. */
 const DEFAULT_CHROMIUM_PACK =
   'https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar';
 

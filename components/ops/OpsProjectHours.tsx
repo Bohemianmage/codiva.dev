@@ -115,9 +115,9 @@ export default function OpsProjectHours({
                 <td className="px-4 py-3">{names.get(e.staff_id) || EMPTY_LABEL}</td>
                 <td className="px-4 py-3 font-medium">{Number(e.hours).toFixed(2)}</td>
                 <td className="px-4 py-3 text-zinc-500">
-                  {e.sprint_item_id ? itemTitles.get(e.sprint_item_id) || 'Ítem' : '—'}
+                  {e.sprint_item_id ? itemTitles.get(e.sprint_item_id) || 'Ítem' : '-'}
                 </td>
-                <td className="px-4 py-3 text-zinc-500">{e.notes || '—'}</td>
+                <td className="px-4 py-3 text-zinc-500">{e.notes || '-'}</td>
                 <td className="px-4 py-3 text-right">
                   {(canPlan || e.staff_id === currentUserId) && (
                     <ToastForm

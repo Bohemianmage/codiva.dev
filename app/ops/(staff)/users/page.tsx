@@ -94,8 +94,8 @@ export default async function PortalUsersPage() {
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
           <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-            <option value="viewer">Viewer — solo lectura</option>
-            <option value="approver">Approver — puede aceptar cotización</option>
+            <option value="viewer">Viewer: solo lectura</option>
+            <option value="approver">Approver: puede aceptar cotización</option>
           </select>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-zinc-700">Proyectos</legend>

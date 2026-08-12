@@ -91,7 +91,7 @@ async function sendRecoveryEmail(
 
   return {
     ok: false,
-    message: `No se pudo enviar el correo: ${mail.error ?? 'error desconocido'}. Verifica RESEND_API_KEY y RESEND_FROM_NOREPLY (o RESEND_FROM) en Vercel — dominio y noreply@ verificados.`,
+    message: `No se pudo enviar el correo: ${mail.error ?? 'error desconocido'}. Verifica RESEND_API_KEY y RESEND_FROM_NOREPLY (o RESEND_FROM) en Vercel (dominio y noreply@ verificados).`,
   };
 }
 
