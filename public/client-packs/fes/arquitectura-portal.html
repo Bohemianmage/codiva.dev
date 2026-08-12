@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FES â€” Arquitectura ecosistema e-shop</title>
+  <title>FES — Arquitectura ecosistema e-shop</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
     :root {
@@ -70,16 +70,16 @@
   </style>
 </head>
 <body>
-  <h1>FES â€” Arquitectura ecosistema e-shop</h1>
-  <p class="meta">Plataforma principal Â· micrositios por lÃ­nea de producto Â· tienda central Â· SEO por vertical</p>
+  <h1>FES — Arquitectura ecosistema e-shop</h1>
+  <p class="meta">Plataforma principal · micrositios por línea de producto · tienda central · SEO por vertical</p>
 
   <div class="cover-box">
     <strong>Objetivo</strong>
     <ul>
       <li>Reestructurar el sitio principal como hub comercial del ecosistema.</li>
-      <li>Implementar micrositios especializados por lÃ­nea de producto para segmentar audiencias.</li>
-      <li>Centralizar la operaciÃ³n de compra bajo una Ãºnica tienda / catÃ¡logo.</li>
-      <li>Fortalecer descubrimiento, cross-selling y posicionamiento orgÃ¡nico por vertical.</li>
+      <li>Implementar micrositios especializados por línea de producto para segmentar audiencias.</li>
+      <li>Centralizar la operación de compra bajo una única tienda / catálogo.</li>
+      <li>Fortalecer descubrimiento, cross-selling y posicionamiento orgánico por vertical.</li>
     </ul>
   </div>
 
@@ -87,10 +87,10 @@
   <pre class="mermaid">
 flowchart TB
   Hub[Sitio principal]
-  Cat[CatÃ¡logo / tienda central]
-  M1[Micrositio lÃ­nea A]
-  M2[Micrositio lÃ­nea B]
-  Mn[Micrositio lÃ­nea N]
+  Cat[Catálogo / tienda central]
+  M1[Micrositio línea A]
+  M2[Micrositio línea B]
+  Mn[Micrositio línea N]
   Blog[Blog SEO]
   Dist[Distribuidores]
   Contacto[Contacto]
@@ -111,44 +111,44 @@ flowchart TB
   <table>
     <thead>
       <tr>
-        <th>Ãrea</th>
-        <th>QuÃ© incluye</th>
+        <th>Área</th>
+        <th>Qué incluye</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Home comercial</td>
-        <td>Entrada al ecosistema, lÃ­neas destacadas y rutas a micrositios.</td>
+        <td>Entrada al ecosistema, líneas destacadas y rutas a micrositios.</td>
       </tr>
       <tr>
-        <td>CategorÃ­as / soluciones</td>
-        <td>NavegaciÃ³n comercial hacia verticales y aplicaciones.</td>
+        <td>Categorías / soluciones</td>
+        <td>Navegación comercial hacia verticales y aplicaciones.</td>
       </tr>
       <tr>
         <td>Centro de recursos + blog</td>
-        <td>Contenido SEO y materiales de apoyo a la decisiÃ³n de compra.</td>
+        <td>Contenido SEO y materiales de apoyo a la decisión de compra.</td>
       </tr>
       <tr>
         <td>Distribuidores + contacto</td>
         <td>Canales comerciales y captura de prospectos.</td>
       </tr>
       <tr>
-        <td>ConexiÃ³n comercial</td>
-        <td>IntegraciÃ³n con catÃ¡logo central, trÃ¡fico hacia micrositios y arquitectura extensible.</td>
+        <td>Conexión comercial</td>
+        <td>Integración con catálogo central, tráfico hacia micrositios y arquitectura extensible.</td>
       </tr>
       <tr>
-        <td>OptimizaciÃ³n</td>
-        <td>SEO tÃ©cnico, Core Web Vitals y conversiÃ³n.</td>
+        <td>Optimización</td>
+        <td>SEO técnico, Core Web Vitals y conversión.</td>
       </tr>
     </tbody>
   </table>
 
-  <h2>3. Micrositio por lÃ­nea de producto</h2>
+  <h2>3. Micrositio por línea de producto</h2>
   <table>
     <thead>
       <tr>
         <th>Bloque</th>
-        <th>QuÃ© incluye</th>
+        <th>Qué incluye</th>
       </tr>
     </thead>
     <tbody>
@@ -157,8 +157,8 @@ flowchart TB
         <td>Landing, soluciones, casos de uso y beneficios.</td>
       </tr>
       <tr>
-        <td>ConversiÃ³n</td>
-        <td>IntegraciÃ³n con productos, CTAs, formularios y redirecciÃ³n a compra.</td>
+        <td>Conversión</td>
+        <td>Integración con productos, CTAs, formularios y redirección a compra.</td>
       </tr>
       <tr>
         <td>SEO propio</td>
@@ -167,52 +167,52 @@ flowchart TB
     </tbody>
   </table>
 
-  <h2>4. IntegraciÃ³n del ecosistema</h2>
+  <h2>4. Integración del ecosistema</h2>
   <pre class="mermaid">
 sequenceDiagram
   participant U as Visitante
   participant H as Hub FES
   participant M as Micrositio
-  participant T as Tienda / catÃ¡logo
-  participant A as AnalÃ­tica
+  participant T as Tienda / catálogo
+  participant A as Analítica
 
   U->>H: Entra por marca o SEO
-  H->>M: Navega a lÃ­nea de producto
+  H->>M: Navega a línea de producto
   M->>T: CTA de compra / ficha
-  T->>T: Conserva sesiÃ³n y carrito
+  T->>T: Conserva sesión y carrito
   H->>A: Origen + embudo
   M->>A: Rendimiento por micrositio
-  T->>A: ConversiÃ³n final
+  T->>A: Conversión final
   </pre>
 
-  <h2>5. MÃ³dulos de la propuesta</h2>
+  <h2>5. Módulos de la propuesta</h2>
   <table>
     <thead>
       <tr>
-        <th>MÃ³dulo</th>
+        <th>Módulo</th>
         <th>Enfoque</th>
         <th>Costo (MXN)</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>1 Â· Arquitectura + UX/UI</td>
-        <td>NavegaciÃ³n comercial, journey, discovery, cross-selling, SEO por lÃ­nea, embudos.</td>
+        <td>1 · Arquitectura + UX/UI</td>
+        <td>Navegación comercial, journey, discovery, cross-selling, SEO por línea, embudos.</td>
         <td>$20,000</td>
       </tr>
       <tr>
-        <td>2 Â· Desarrollo principal</td>
-        <td>Hub comercial, catÃ¡logo central, SEO tÃ©cnico y conversiÃ³n.</td>
+        <td>2 · Desarrollo principal</td>
+        <td>Hub comercial, catálogo central, SEO técnico y conversión.</td>
         <td>$45,000</td>
       </tr>
       <tr>
-        <td>3 Â· Micrositio (unitario)</td>
-        <td>Landing especializada + conversiÃ³n + SEO propio por lÃ­nea.</td>
+        <td>3 · Micrositio (unitario)</td>
+        <td>Landing especializada + conversión + SEO propio por línea.</td>
         <td>$12,500</td>
       </tr>
       <tr>
-        <td>4 Â· IntegraciÃ³n ecosistema</td>
-        <td>CatÃ¡logo unificado, sesiÃ³n, multi-categorÃ­a, analÃ­tica y QA comercial.</td>
+        <td>4 · Integración ecosistema</td>
+        <td>Catálogo unificado, sesión, multi-categoría, analítica y QA comercial.</td>
         <td>$10,000</td>
       </tr>
     </tbody>
@@ -222,19 +222,19 @@ sequenceDiagram
   <ul>
     <li>Sitio principal: ~4 semanas.</li>
     <li>Cada micrositio: ~2 semanas.</li>
-    <li>IntegraciÃ³n y validaciÃ³n final: ~2 semanas.</li>
+    <li>Integración y validación final: ~2 semanas.</li>
   </ul>
 
   <h2>7. Contenido que aporta el cliente</h2>
   <ul>
-    <li>Textos, imÃ¡genes y fichas tÃ©cnicas por lÃ­nea de producto.</li>
-    <li>DefiniciÃ³n de verticales / micrositios a contratar.</li>
+    <li>Textos, imágenes y fichas técnicas por línea de producto.</li>
+    <li>Definición de verticales / micrositios a contratar.</li>
     <li>Brand guidelines y assets comerciales.</li>
   </ul>
 
   <div class="note">
-    Esta vista es la arquitectura de producto del ecosistema. El detalle comercial (mÃ³dulos, montos y vigencia) estÃ¡ en la pestaÃ±a <strong>CotizaciÃ³n</strong> del portal.
-    TambiÃ©n puedes descargar el PDF: <a href="./cotizacion-eshop.pdf">CotizaciÃ³n e-shop</a>.
+    Esta vista es la arquitectura de producto del ecosistema. El detalle comercial (módulos, montos y vigencia) está en la pestaña <strong>Cotización</strong> del portal.
+    También puedes descargar el PDF: <a href="./cotizacion-eshop.pdf">Cotización e-shop</a>.
   </div>
 
   <script>
