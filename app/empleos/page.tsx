@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { jobEmploymentLabel, postingAsksDiscipline } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
-import { getLocale, getT } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import CodivaBrandText from '@/components/CodivaBrandText';
 
 export const dynamic = 'force-dynamic';

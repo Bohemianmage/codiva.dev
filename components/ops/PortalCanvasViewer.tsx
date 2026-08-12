@@ -125,7 +125,7 @@ function buildTabs(items: PortalCanvasItem[], kindLabel: Record<string, string>)
 }
 
 export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[] }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const kindLabel = useMemo(
     (): Record<string, string> => ({
       architecture: t('ops.labels.deliverableKind.architecture'),
@@ -133,7 +133,7 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
       proposal: t('ops.labels.deliverableKind.proposal'),
       other: t('ops.labels.deliverableKind.other'),
     }),
-    [t, i18n.language]
+    [t]
   );
   const tabs = useMemo(() => buildTabs(items, kindLabel), [items, kindLabel]);
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? '');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -106,7 +107,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         submittingRef.current = false;
       }
     },
-    [answers, session?.token, t]
+    [answers, session?.catalog_key, session?.token, t]
   );
 
   useEffect(() => {
@@ -300,9 +301,9 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         {showHunt && session ? (
           <>
             <p className="text-sm text-zinc-600">
-              <a href="/empleos" className="font-medium text-codiva-primary hover:underline">
+              <Link href="/empleos" className="font-medium text-codiva-primary hover:underline">
                 {t('career.hunt_browse')}
-              </a>
+              </Link>
             </p>
             <HuntReportForm
               defaultUrl={typeof window !== 'undefined' ? window.location.origin : ''}
