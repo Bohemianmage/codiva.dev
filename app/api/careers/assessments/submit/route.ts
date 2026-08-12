@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
   const found = await loadAttemptByToken(token);
   if (!found) return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 });
-  let row = await expireIfNeeded(found);
+  const row = await expireIfNeeded(found);
 
   if (row.status === 'completed') {
     return NextResponse.json({
