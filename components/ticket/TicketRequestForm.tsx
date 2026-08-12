@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState, type FormEvent } from 'react';
+import { useId, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Bell, CheckCircle2, MailCheck, MessageSquare, Paperclip, X } from 'lucide-react';
@@ -302,7 +302,7 @@ export default function TicketRequestForm({
               placeholder={t('ticket.hints.textarea')}
               value={values.issueDescription}
               onBlur={() => setTouched((p) => ({ ...p, issueDescription: true }))}
-              onChange={(e) => setField('issueDescription', e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setField('issueDescription', e.target.value)}
             />
             {touched.issueDescription && errors.issueDescription && (
               <p className="mt-1 text-xs text-red-600">{errors.issueDescription}</p>
@@ -515,7 +515,7 @@ function Field({
         readOnly={readOnly}
         className={readOnly ? 'bg-zinc-50' : ''}
         onBlur={onBlur}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
       />
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

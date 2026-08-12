@@ -3,6 +3,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
+import { asProject } from '@/lib/ops/tickets';
 import { getT } from '@/i18n/locale';
 
 export default async function TicketsPage() {
@@ -44,7 +45,7 @@ export default async function TicketsPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-zinc-600">
-                  {(Array.isArray(t.projects) ? t.projects[0]?.name : t.projects?.name) || EMPTY_LABEL}
+                  {asProject(t.projects)?.name || EMPTY_LABEL}
                 </td>
                 <td className="px-4 py-3">
                   <div>{t.reporter_name}</div>

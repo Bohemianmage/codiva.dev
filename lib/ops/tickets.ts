@@ -10,7 +10,7 @@ function exactIlike(value: string) {
   return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
-function asProject(
+export function asProject(
   value: unknown
 ): { id?: string; name?: string; organization_id?: string | null } | null {
   if (!value) return null;
