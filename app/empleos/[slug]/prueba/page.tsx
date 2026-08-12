@@ -10,7 +10,9 @@ import {
   isCareerDiscipline,
   postingAsksDiscipline,
   publicCareerUrl,
+  type CareerDiscipline,
 } from '@/lib/ops/careers';
+import { getT } from '@/i18n/locale';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -46,9 +48,12 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
   const { discipline: disciplineRaw } = await searchParams;
   const posting = await loadPublishedPosting(slug);
   if (!posting) notFound();
+  const t = await getT();
 
   const asksDiscipline = postingAsksDiscipline(posting.slug);
-  const discipline = isCareerDiscipline(disciplineRaw || '') ? disciplineRaw : null;
+  const discipline: CareerDiscipline | null = isCareerDiscipline(disciplineRaw ?? '')
+    ? (disciplineRaw as CareerDiscipline)
+    : null;
 
   if (asksDiscipline && !discipline) {
     return (
@@ -61,10 +66,10 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
         </Link>
         <header className="mb-6">
           <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            Elige el oficio de la prueba
+            {t('career.assessment_pick_title')}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-            Son testers con especialidad. Cada oficio tiene su propia prueba de criterio.
+            {t('career.assessment_pick_body')}
           </p>
         </header>
         <ul className="space-y-2">

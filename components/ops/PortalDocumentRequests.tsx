@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import ToastForm from '@/components/ops/ToastForm';
 import { useLabels } from '@/lib/ops/use-labels';
@@ -45,6 +46,7 @@ export default function PortalDocumentRequests({
   templates = [],
   fulfillAction,
 }: Props) {
+  const { t } = useTranslation();
   const { DOCUMENT_REQUEST_INPUT_LABELS, DOCUMENT_REQUEST_STATUS_LABELS, formatDate } = useLabels();
   const sorted = useMemo(
     () => [...requests].sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title)),
@@ -52,8 +54,8 @@ export default function PortalDocumentRequests({
   );
   const templatesByType = useMemo(() => {
     const map = new Map<string, PortalDocTemplate>();
-    for (const t of templates) {
-      if (!map.has(t.type)) map.set(t.type, t);
+    for (const tmpl of templates) {
+      if (!map.has(tmpl.type)) map.set(tmpl.type, tmpl);
     }
     return map;
   }, [templates]);
@@ -67,8 +69,7 @@ export default function PortalDocumentRequests({
   if (!sorted.length) {
     return (
       <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm text-zinc-500">
-        Codiva aún no ha solicitado documentos o accesos. Cuando lo haga, aparecerán aquí como
-        casillas para completar.
+        {t('portal.docs.requestsEmpty')}
       </p>
     );
   }
@@ -77,14 +78,12 @@ export default function PortalDocumentRequests({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Solicitudes de Codiva</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Cada ítem es un pedido concreto. Solo se habilita la carga cuando Codiva lo solicita.
-          </p>
+          <h2 className="text-lg font-semibold">{t('portal.docs.requestsTitle')}</h2>
+          <p className="mt-1 text-sm text-zinc-600">{t('portal.docs.requestsHint')}</p>
         </div>
         <p className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600">
-          {doneCount} de {sorted.length} entregados
-          {openCount ? ` · ${openCount} pendientes` : ''}
+          {t('portal.docs.progress', { done: doneCount, total: sorted.length })}
+          {openCount ? t('portal.docs.pending', { count: openCount }) : ''}
         </p>
       </div>
 
@@ -128,7 +127,7 @@ export default function PortalDocumentRequests({
                     <p className="font-medium text-zinc-900">{req.title}</p>
                     {req.required && open && (
                       <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                        Requerido
+                        {t('portal.docs.required')}
                       </span>
                     )}
                   </div>
@@ -151,19 +150,21 @@ export default function PortalDocumentRequests({
                 <div className="border-t border-zinc-100 px-4 py-4">
                   {req.instructions && (
                     <p className="mb-3 text-sm text-zinc-600">
-                      <span className="font-medium text-zinc-800">Instrucciones: </span>
+                      <span className="font-medium text-zinc-800">{t('portal.docs.instructions')}</span>
                       {req.instructions}
                     </p>
                   )}
                   {req.due_date && open && (
-                    <p className="mb-3 text-xs text-zinc-500">Fecha objetivo: {formatDate(req.due_date)}</p>
+                    <p className="mb-3 text-xs text-zinc-500">
+                      {t('portal.docs.due', { date: formatDate(req.due_date) })}
+                    </p>
                   )}
 
                   {template && (
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-codiva-primary/20 bg-codiva-primary/5 px-4 py-3">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-codiva-primary">
-                          Borrador
+                          {t('portal.docs.draft')}
                         </p>
                         <p className="truncate text-sm font-medium text-zinc-900">{template.title}</p>
                       </div>
@@ -173,7 +174,7 @@ export default function PortalDocumentRequests({
                         rel="noreferrer"
                         className="shrink-0 rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-codiva-primary-dark"
                       >
-                        Descargar
+                        {t('portal.docs.download')}
                       </a>
                     </div>
                   )}
@@ -181,8 +182,8 @@ export default function PortalDocumentRequests({
                   {open ? (
                     <ToastForm
                       action={fulfillAction}
-                      success="Respuesta enviada"
-                      loading="Enviando…"
+                      success={t('portal.docs.sent')}
+                      loading={t('portal.docs.sending')}
                       className="space-y-3 rounded-xl bg-zinc-50 p-4"
                     >
                       <input type="hidden" name="requestId" value={req.id} />
@@ -193,8 +194,8 @@ export default function PortalDocumentRequests({
                           accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
                           hint={
                             req.expected_type === 'nda'
-                              ? 'PDF firmado por el representante legal'
-                              : 'PDF, imagen, Office o ZIP'
+                              ? t('portal.docs.ndaHint')
+                              : t('portal.docs.fileHint')
                           }
                         />
                       )}
@@ -204,7 +205,7 @@ export default function PortalDocumentRequests({
                           name="responseText"
                           required
                           rows={4}
-                          placeholder="Escribe aquí la información solicitada"
+                          placeholder={t('portal.docs.textPlaceholder')}
                           className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
                         />
                       )}
@@ -213,28 +214,28 @@ export default function PortalDocumentRequests({
                         <div className="grid gap-3 sm:grid-cols-2">
                           <input
                             name="provider"
-                            placeholder="Proveedor (Vercel, Cloudflare, GoDaddy…)"
+                            placeholder={t('portal.docs.provider')}
                             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
                           />
                           <input
                             name="domain"
-                            placeholder="Dominio (ej. nirc.mx)"
+                            placeholder={t('portal.docs.domain')}
                             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
                           />
                           <input
                             name="panelUrl"
-                            placeholder="URL del panel"
+                            placeholder={t('portal.docs.panelUrl')}
                             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
                           />
                           <input
                             name="username"
-                            placeholder="Usuario / correo del panel"
+                            placeholder={t('portal.docs.username')}
                             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
                           />
                           <textarea
                             name="accessNotes"
                             rows={3}
-                            placeholder="Cómo acceder (invitar a hello@codiva.dev, share link de 1Password, DNS pendientes…). Evita pegar contraseñas en claro."
+                            placeholder={t('portal.docs.accessNotes')}
                             className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
                           />
                         </div>
@@ -243,20 +244,21 @@ export default function PortalDocumentRequests({
                       <textarea
                         name="notes"
                         rows={2}
-                        placeholder="Notas opcionales para Codiva"
+                        placeholder={t('portal.docs.notes')}
                         className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
                       />
                       <button
                         type="submit"
                         className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white hover:bg-codiva-primary-dark"
                       >
-                        Enviar respuesta
+                        {t('portal.docs.submit')}
                       </button>
                     </ToastForm>
                   ) : req.status === 'fulfilled' ? (
                     <div className="rounded-xl bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
                       <p className="font-medium">
-                        Entregado{req.fulfilled_at ? ` · ${formatDate(req.fulfilled_at)}` : ''}
+                        {t('portal.docs.delivered')}
+                        {req.fulfilled_at ? ` · ${formatDate(req.fulfilled_at)}` : ''}
                       </p>
                       {req.response_text && (
                         <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-xs text-zinc-700">
@@ -264,13 +266,14 @@ export default function PortalDocumentRequests({
                         </pre>
                       )}
                       {req.fulfilled_document_id && (
-                        <p className="mt-2 text-xs text-emerald-800">Archivo recibido y registrado.</p>
+                        <p className="mt-2 text-xs text-emerald-800">{t('portal.docs.fileReceived')}</p>
                       )}
                     </div>
                   ) : (
                     <p className="text-sm text-zinc-500">
-                      Esta solicitud fue marcada como{' '}
-                      {(DOCUMENT_REQUEST_STATUS_LABELS[req.status] ?? req.status).toLowerCase()}.
+                      {t('portal.docs.markedAs', {
+                        status: (DOCUMENT_REQUEST_STATUS_LABELS[req.status] ?? req.status).toLowerCase(),
+                      })}
                     </p>
                   )}
                 </div>

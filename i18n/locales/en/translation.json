@@ -29,7 +29,8 @@
     "status": {
       "loading": "Sending message...",
       "success": "Message sent successfully!",
-      "error": "Something went wrong. Please try again later."
+      "error": "Something went wrong. Please try again later.",
+      "actionFailed": "Could not complete the action."
     }
   },
   "hero": {
@@ -220,6 +221,9 @@
   "footer": {
     "rights": "All rights reserved.",
     "ticketLink": "Tickets",
+    "huntLink": "Findings",
+    "sitemap": "Site map",
+    "feed": "JSON feed",
     "careers": "Careers",
     "terms": "Terms and conditions",
     "privacy": "Privacy notice"
@@ -339,12 +343,13 @@
     "assessment_start_title": "Before you apply",
     "assessment_start_intro": "For {{role}} we ask a short situational test. It is not jargon trivia — it is operating judgment.",
     "assessment_rule_time": "Eight questions, 15 minutes. The timer starts when you begin.",
-    "assessment_rule_pass": "You need 70% to unlock the application form.",
-    "assessment_rule_required": "Answers and progress are recorded for the recruiting team.",
+    "assessment_rule_pass": "You need 70% on the criteria test.",
+    "assessment_rule_hunt": "Then report one finding in your craft on the site. That unlocks the CV form.",
+    "assessment_rule_required": "Answers, progress, and findings are recorded for the recruiting team.",
     "assessment_start": "Start the test",
     "assessment_starting": "Preparing…",
     "assessment_start_cta": "Take the test",
-    "assessment_gate": "You need to pass this role’s criteria test before you can send a CV.",
+    "assessment_gate": "You need to pass this role’s criteria test and report a finding in your craft before you can send a CV.",
     "assessment_checking": "Checking your test…",
     "assessment_progress": "Question {{current}} of {{total}}",
     "assessment_answered": "{{count}} of {{total}} answered",
@@ -356,8 +361,10 @@
     "assessment_next": "Next",
     "assessment_submit": "Submit test",
     "assessment_submitting": "Scoring…",
-    "assessment_pass_title": "You passed",
+    "assessment_pass_title": "Criteria test passed",
     "assessment_pass_body": "You can apply to this role now. The form will use your name and email.",
+    "assessment_pass_hunt_title": "Next: a finding in your craft",
+    "assessment_pass_hunt_body": "The criteria test is done. Now walk the site, find a defect in your craft, and report it with evidence. That closes the same test.",
     "assessment_go_apply": "Continue to apply",
     "assessment_fail_title": "Below the pass mark",
     "assessment_fail_body": "Thanks for the time. You can retry later; the team still sees this attempt.",
@@ -366,6 +373,8 @@
     "assessment_error": "We could not load or submit the test. Try again.",
     "assessment_cooldown": "You already used a recent attempt. Wait a bit before retrying.",
     "assessment_max_attempts": "You reached this week’s attempt limit for this role.",
+    "assessment_pick_title": "Choose the craft for this test",
+    "assessment_pick_body": "These are specialist testers. Each craft has its own judgment test and planted findings on the site.",
     "assessment_required_error": "You must pass the test with the same email before applying.",
     "eyebrow": "Join the team",
     "list_title": "Open roles",
@@ -380,6 +389,40 @@
     "requirements": "Requirements",
     "unavailable": "Role unavailable",
     "meta_description_detail": "{{title}} opening at Codiva.dev. Review the role and apply with your CV.",
+    "skip_to_content": "Skip to content",
+    "hunt_cta": "Found something? It’s part of the test — report it with evidence.",
+    "hunt_doc_title": "Findings · Codiva.dev",
+    "hunt_meta": "Report a finding on Codiva.dev. Steps, expected vs. actual, and URL.",
+    "hunt_eyebrow": "Test · Findings",
+    "hunt_title": "Report a finding",
+    "hunt_intro": "For testers this is the second part of the same test: situational judgment, then a real finding in your craft. Some issues are planted; some may be real. Don’t guess — report URL, steps, and evidence.",
+    "hunt_rule_1": "Say where you saw it (URL) and how to reproduce it.",
+    "hunt_rule_2": "Separate a defect from a preference. The finding must match your craft.",
+    "hunt_rule_3": "You don’t need to inspect the code: if it isn’t visible or usable, it counts less.",
+    "hunt_form_title": "Your report",
+    "hunt_form_intro": "One finding per submission. If you find several, send several reports.",
+    "hunt_field_url": "Page URL",
+    "hunt_field_title": "Short title",
+    "hunt_field_description": "What you saw and how to reproduce it",
+    "hunt_field_description_hint": "Steps, actual result, and viewport, keyboard, or network if relevant.",
+    "hunt_field_expected": "What you expected (optional)",
+    "hunt_submit": "Submit finding",
+    "hunt_submitting": "Sending…",
+    "hunt_success": "We received your finding.",
+    "hunt_success_body": "If it was in your craft, you can continue to apply. The team matches it to your email.",
+    "hunt_keep_going": "Received, but this report does not close the test for your craft. Keep looking for a finding in that specialty.",
+    "hunt_gate": "You passed the criteria test. Report a finding in your craft to unlock the CV form.",
+    "hunt_required_error": "You need to report a finding in your craft before applying.",
+    "hunt_browse": "Browse the site and come back here to report",
+    "hunt_craft_hint_frontend": "Frontend craft: keyboard, HTML semantics, and what is visible or usable on screen.",
+    "hunt_craft_hint_backend": "Backend craft: network, APIs, headers, status codes, and the JSON contract.",
+    "hunt_craft_hint_fullstack": "Full-stack craft: it may be in the UI or an API — it counts if the contract does not match what you see.",
+    "hunt_craft_hint_ux_ui": "UX/UI craft: language, accessible names, visual consistency, and click targets.",
+    "hunt_craft_hint_qa": "QA craft: regressions, broken links, and stale data that never got updated.",
+    "hunt_craft_hint_other": "Any finding with evidence counts for this craft.",
+    "hunt_error": "We could not send it. Check the details and try again.",
+    "hunt_error_rate": "Too many reports. Wait a moment.",
+    "hunt_error_duplicate": "We already received a very similar report from you recently.",
     "employment": {
       "full_time": "Full time",
       "part_time": "Part time",
@@ -884,11 +927,21 @@
       "financeAllProjects": "All projects",
       "financeQuoteHint": "Accepted quote or latest with amount"
     },
-    "roles": {
-      "admin": "Administrator",
-      "pm": "Project Manager",
-      "dev": "Developer"
-    }
+      "roles": {
+        "admin": "Administrator",
+        "pm": "Project Manager",
+        "dev": "Developer"
+      },
+      "toast": {
+        "ready": "Done",
+        "saving": "Saving…"
+      },
+      "preview": {
+        "staff": "Staff preview",
+        "body": "This is how the client sees the portal for",
+        "noLegal": "Legal acceptances are not recorded in this mode.",
+        "back": "Back to project"
+      }
   },
   "email": {
     "ctaFallback": "If the button does not work, copy this link:",

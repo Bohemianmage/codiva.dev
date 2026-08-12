@@ -66,7 +66,9 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
 
   const employment = jobEmploymentLabel(posting.employment_type, t.locale);
   const asksDiscipline = postingAsksDiscipline(posting.slug);
-  const initialDiscipline = isCareerDiscipline(disciplineRaw || '') ? disciplineRaw : undefined;
+  const initialDiscipline = isCareerDiscipline(disciplineRaw ?? '')
+    ? (disciplineRaw as typeof CAREER_DISCIPLINES[number])
+    : undefined;
 
   const catalog = catalogForPosting(posting.assessment_key, posting.slug);
   const assessmentHref = asksDiscipline || catalog ? `/empleos/${posting.slug}/prueba` : undefined;

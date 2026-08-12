@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type PortalCanvasItem = {
   id: string;
@@ -21,13 +22,6 @@ type CanvasTab = {
   label: string;
 };
 
-const KIND_LABEL: Record<string, string> = {
-  architecture: 'Arquitectura',
-  mvp: 'MVP',
-  proposal: 'Propuesta',
-  other: 'Documento',
-};
-
 function resolveSrc(item: PortalCanvasItem): string | null {
   return item.url || item.file_url || null;
 }
@@ -45,7 +39,7 @@ function isEmbeddable(src: string): boolean {
 }
 
 /** Agrupa HTML (canvas) + PDF del mismo kind; prioriza vista interactiva. */
-function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
+function buildTabs(items: PortalCanvasItem[], kindLabel: Record<string, string>): CanvasTab[] {
   const byKind = new Map<string, PortalCanvasItem[]>();
   for (const item of items) {
     const list = byKind.get(item.kind) ?? [];
@@ -73,6 +67,7 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
       const src = resolveSrc(i);
       return src && !isHtml(src) && !isPdf(src);
     });
+    const kindName = kindLabel[kind] ?? kind;
 
     if (htmlItems.length) {
       const primary = htmlItems[0];
@@ -84,7 +79,7 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
         description: primary.description,
         canvasSrc: resolveSrc(primary),
         pdfSrc,
-        label: `${KIND_LABEL[kind] ?? kind}: Canvas`,
+        label: `${kindName}: Canvas`,
       });
       // PDFs sueltos del mismo kind ya van como descarga del canvas
     } else if (pdfItems.length) {
@@ -96,7 +91,7 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
         description: primary.description,
         canvasSrc: resolveSrc(primary),
         pdfSrc: null,
-        label: `${KIND_LABEL[kind] ?? kind}: PDF`,
+        label: `${kindName}: PDF`,
       });
     }
 
@@ -108,7 +103,7 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
         description: item.description,
         canvasSrc: resolveSrc(item),
         pdfSrc: null,
-        label: `${KIND_LABEL[kind] ?? kind}: ${item.title}`,
+        label: `${kindName}: ${item.title}`,
       });
     }
 
@@ -121,7 +116,7 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
         description: extra.description,
         canvasSrc: resolveSrc(extra),
         pdfSrc: null,
-        label: `${KIND_LABEL[kind] ?? kind}: ${extra.title}`,
+        label: `${kindName}: ${extra.title}`,
       });
     }
   }
@@ -130,17 +125,27 @@ function buildTabs(items: PortalCanvasItem[]): CanvasTab[] {
 }
 
 export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[] }) {
-  const tabs = useMemo(() => buildTabs(items), [items]);
+  const { t, i18n } = useTranslation();
+  const kindLabel = useMemo(
+    (): Record<string, string> => ({
+      architecture: t('ops.labels.deliverableKind.architecture'),
+      mvp: t('ops.labels.deliverableKind.mvp'),
+      proposal: t('ops.labels.deliverableKind.proposal'),
+      other: t('ops.labels.deliverableKind.other'),
+    }),
+    [t, i18n.language]
+  );
+  const tabs = useMemo(() => buildTabs(items, kindLabel), [items, kindLabel]);
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? '');
   const active = useMemo(
-    () => tabs.find((t) => t.id === activeId) ?? tabs[0],
+    () => tabs.find((tab) => tab.id === activeId) ?? tabs[0],
     [activeId, tabs]
   );
   const src = active?.canvasSrc ?? null;
   const preferHtml = src ? isHtml(src) : false;
 
   if (!tabs.length) {
-    return <p className="text-sm text-zinc-500">Aún no hay materiales de propuesta publicados.</p>;
+    return <p className="text-sm text-zinc-500">{t('portal.proposal.emptyCanvas')}</p>;
   }
 
   return (
@@ -168,7 +173,9 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                {preferHtml ? 'Canvas interactivo' : KIND_LABEL[active.kind] ?? 'Documento'}
+                {preferHtml
+                  ? t('portal.proposal.interactive')
+                  : kindLabel[active.kind] ?? t('portal.proposal.document')}
               </p>
               <h3 className="font-semibold text-zinc-900">{active.title}</h3>
               {active.description && (
@@ -183,7 +190,7 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
                   rel="noreferrer"
                   className="shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 >
-                  Descargar PDF
+                  {t('portal.proposal.downloadPdf')}
                 </a>
               )}
               {src && (
@@ -193,7 +200,7 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
                   rel="noreferrer"
                   className="shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 >
-                  Pantalla completa
+                  {t('portal.proposal.fullscreen')}
                 </a>
               )}
             </div>
@@ -214,13 +221,13 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
             />
           ) : src ? (
             <div className="p-6 text-sm text-zinc-600">
-              Este recurso no se puede previsualizar aquí.{' '}
+              {t('portal.proposal.cannotPreview')}{' '}
               <a href={src} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">
-                Abrirlo
+                {t('portal.proposal.openIt')}
               </a>
             </div>
           ) : (
-            <div className="p-6 text-sm text-zinc-500">Sin archivo o URL asociado.</div>
+            <div className="p-6 text-sm text-zinc-500">{t('portal.proposal.noFile')}</div>
           )}
         </div>
       )}

@@ -19,6 +19,7 @@ import {
 } from '@/lib/ops/careers';
 import { catalogForApplication } from '@/lib/careers/assessments/engine';
 import { loadAttemptByToken } from '@/lib/careers/assessments/server';
+import { huntProgressForAttempt } from '@/lib/careers/hunt/progress';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export const runtime = 'nodejs';
@@ -133,6 +134,13 @@ export async function POST(request: Request) {
     }
     assessmentAttemptId = attempt.id;
     assessmentScorePct = attempt.score_pct;
+    const hunt = await huntProgressForAttempt({
+      email: attempt.email,
+      catalogKey: attempt.catalog_key,
+    });
+    if (hunt.required && !hunt.ready) {
+      return NextResponse.json({ ok: false, error: 'hunt_required' }, { status: 400 });
+    }
   }
 
   const cutoff = new Date(Date.now() - CAREER_DEDUPE_HOURS * 3600 * 1000).toISOString();

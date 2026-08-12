@@ -1,6 +1,6 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { opsBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
-import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
+import { BRAND_EMAIL, CODIVA_BRAND, brandWordmarkHtml, paintBrandNameHtml } from '@/lib/brand';
 import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
 import { tSync } from '@/i18n/translate';
 
@@ -12,13 +12,6 @@ const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, Arial, Helvetica, sans-serif`;
 const CTA_RADIUS = '12px';
 /** Mark oficial: primary teal sobre fondo transparente. */
 const LOGO_URL = `${CODIVA_BRAND.urls.site.replace(/\/$/, '')}/logo.svg`;
-
-/** Wordmark Codiva.dev: tipografía display + colores de marca (no uppercase genérico). */
-function brandWordmarkHtml(): string {
-  return `<p style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">
-    Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span>
-  </p>`;
-}
 
 type LayoutOptions = {
   preview?: string;
@@ -77,17 +70,17 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta, locale = DEFAU
                     <img src="${LOGO_URL}" alt="" width="36" height="36" style="display:block;border:0;outline:none;"/>
                   </td>
                   <td style="vertical-align:middle;">
-                    ${brandWordmarkHtml()}
+                    ${brandWordmarkHtml({ as: 'p' })}
                   </td>
                 </tr>
               </table>
-              <h1 style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${escapeHtml(title)}</h1>
+              <h1 style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.text};">${paintBrandNameHtml(escapeHtml(title), 22)}</h1>
             </td>
           </tr>
           <tr>
             <td style="padding:32px;">
               <div style="font-family:${FONT_BODY};font-size:15px;line-height:1.65;color:${BRAND.text};">
-                ${bodyHtml}
+                ${paintBrandNameHtml(bodyHtml)}
               </div>
               ${ctaBlock}
             </td>
@@ -95,7 +88,7 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta, locale = DEFAU
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid ${BRAND.border};">
               <p style="margin:0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};">
-                ${footerNote ? escapeHtml(footerNote) : escapeHtml(defaultFooter)}
+                ${footerNote ? paintBrandNameHtml(escapeHtml(footerNote), 12) : escapeHtml(defaultFooter)}
               </p>
               <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;">
                 <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};text-decoration:none;">${CONTACT_EMAIL}</a>
@@ -515,6 +508,51 @@ export function templateCareerApplicationStaff({
     `,
     cta: { label: 'Ver postulaciones', href: opsHref },
     footerNote: 'Notificaci\u00f3n interna \u00b7 Bolsa de trabajo Codiva.dev',
+  });
+}
+
+export function templateHuntReportStaff({
+  name,
+  email,
+  pageUrl,
+  title,
+  description,
+  expected,
+  matchedTitle,
+  discipline,
+  opsHref,
+}: {
+  name: string;
+  email: string;
+  pageUrl: string;
+  title: string;
+  description: string;
+  expected?: string;
+  matchedTitle?: string;
+  discipline?: string;
+  opsHref: string;
+}): string {
+  return emailLayout({
+    preview: `${name} report\u00f3 un hallazgo`,
+    title: 'Nuevo hallazgo',
+    bodyHtml: `
+      ${matchedTitle ? `<p style="margin:0 0 8px;"><strong>Coincidencia:</strong> ${escapeHtml(matchedTitle)}</p>` : '<p style="margin:0 0 8px;"><strong>Coincidencia:</strong> ninguna semilla conocida (puede ser un defecto real)</p>'}
+      ${discipline ? `<p style="margin:0 0 8px;"><strong>Oficio:</strong> ${escapeHtml(discipline)}</p>` : ''}
+      <p style="margin:0 0 8px;"><strong>T\u00edtulo:</strong> ${escapeHtml(title)}</p>
+      <p style="margin:0 0 8px;"><strong>URL:</strong> ${escapeHtml(pageUrl)}</p>
+      <p style="margin:0 0 8px;"><strong>Nombre:</strong> ${escapeHtml(name)}</p>
+      <p style="margin:0 0 8px;"><strong>Correo:</strong> <a href="mailto:${escapeHtml(email)}" style="color:${BRAND.primary};">${escapeHtml(email)}</a></p>
+      <p style="margin:16px 0 8px;"><strong>Qu\u00e9 vio:</strong></p>
+      <p style="margin:0;padding:16px;background:${BRAND.background};border-radius:8px;white-space:pre-line;">${escapeHtml(description)}</p>
+      ${
+        expected
+          ? `<p style="margin:16px 0 8px;"><strong>Esperado:</strong></p>
+      <p style="margin:0;padding:16px;background:${BRAND.background};border-radius:8px;white-space:pre-line;">${escapeHtml(expected)}</p>`
+          : ''
+      }
+    `,
+    cta: { label: 'Ver bolsa', href: opsHref },
+    footerNote: 'Notificaci\u00f3n interna \u00b7 Cacer\u00eda de hallazgos Codiva.dev',
   });
 }
 

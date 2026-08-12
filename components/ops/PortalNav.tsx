@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { createClient } from '@/lib/supabase/client';
 import type { PortalVisibility } from '@/lib/ops/portal-visibility';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 function linkDefs(slug: string) {
   return [
@@ -55,11 +56,12 @@ export default function PortalNav({
     <header className="border-b border-zinc-200 bg-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3 sm:items-center">
-          <Link href={`/p/${slug}`} className="mt-0.5 shrink-0 sm:mt-0">
+          <Link href={`/p/${slug}`} className="mt-0.5 flex shrink-0 items-center gap-2 sm:mt-0">
             <Image src="/logo.svg" alt="Codiva" width={32} height={32} />
+            <CodivaWordmarkMark size="sm" />
           </Link>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">
+            <p className="text-xs font-medium text-zinc-500">
               {t('portal.projectPortal')}
             </p>
             <h1 className="text-xl font-bold text-zinc-900">{projectName}</h1>

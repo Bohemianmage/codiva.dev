@@ -9,7 +9,8 @@ import {
   resendPortalInvite,
 } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
-import { formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export default async function PortalUserDetailPage({
@@ -19,6 +20,8 @@ export default async function PortalUserDetailPage({
 }) {
   const { userId } = await params;
   const { supabase } = await requireCapability('portal_users');
+  const t = await getT();
+  const { formatDate } = labelsFor(t.locale);
   const admin = createAdminClient();
 
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);

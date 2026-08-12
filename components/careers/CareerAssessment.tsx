@@ -4,22 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import HuntReportForm from '@/components/careers/HuntReportForm';
+import { readAttemptToken, writeAttemptToken } from '@/components/careers/hunt-context';
 import type { PublicAssessmentQuestion } from '@/lib/careers/assessments/types';
 
-const TOKEN_KEY = (jobPostingId: string, discipline?: string) =>
-  discipline
-    ? `codiva.career.attempt.${jobPostingId}.${discipline}`
-    : `codiva.career.attempt.${jobPostingId}`;
-
-export function readAttemptToken(jobPostingId: string, discipline?: string): string {
-  if (typeof window === 'undefined') return '';
-  return sessionStorage.getItem(TOKEN_KEY(jobPostingId, discipline)) || localStorage.getItem(TOKEN_KEY(jobPostingId, discipline)) || '';
-}
-
-export function writeAttemptToken(jobPostingId: string, token: string, discipline?: string) {
-  sessionStorage.setItem(TOKEN_KEY(jobPostingId, discipline), token);
-  localStorage.setItem(TOKEN_KEY(jobPostingId, discipline), token);
-}
+export { readAttemptToken, writeAttemptToken } from '@/components/careers/hunt-context';
 
 type Session = {
   token: string;
@@ -35,6 +24,8 @@ type Session = {
   title: string;
   questions: PublicAssessmentQuestion[];
   answers: Record<string, string[]>;
+  hunt_required?: boolean;
+  hunt_ready?: boolean;
 };
 
 type Props = {
@@ -63,6 +54,8 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ passed: boolean; score_pct: number | null } | null>(null);
+  const [huntReady, setHuntReady] = useState(true);
+  const [huntRequired, setHuntRequired] = useState(false);
   const endsAtRef = useRef<number>(0);
   const submittingRef = useRef(false);
 
@@ -100,6 +93,11 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         if (!res.ok) throw new Error(data?.error || 'submit_failed');
         setResult({ passed: Boolean(data.passed), score_pct: data.score_pct ?? null });
         setSession((prev) => (prev ? { ...prev, status: 'completed', passed: Boolean(data.passed) } : prev));
+        if (data.passed) {
+          const required = String(session?.catalog_key || '').startsWith('tester-');
+          setHuntRequired(required);
+          setHuntReady(!required);
+        }
         if (fromTimer && !data.passed) setError(t('career.assessment_timed_out'));
       } catch {
         setError(t('career.assessment_error'));
@@ -131,6 +129,8 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
       setEmail(s.email);
       if (s.status === 'completed') {
         setResult({ passed: Boolean(s.passed), score_pct: s.score_pct });
+        setHuntRequired(Boolean(s.hunt_required));
+        setHuntReady(s.hunt_required ? Boolean(s.hunt_ready) : true);
       } else if (s.status === 'started') {
         endsAtRef.current = Date.now() + (s.remaining_ms || 0);
         setRemainingMs(s.remaining_ms || 0);
@@ -216,6 +216,8 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
       if (data.already_passed) {
         setSession(s);
         setResult({ passed: true, score_pct: s.score_pct });
+        setHuntRequired(Boolean(s.hunt_required));
+        setHuntReady(s.hunt_required ? Boolean(s.hunt_ready) : true);
         return;
       }
       setSession(s);
@@ -259,24 +261,62 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
   }
 
   if (result) {
+    const showHunt = result.passed && huntRequired && !huntReady;
+    const craftHintKey = discipline
+      ? `career.hunt_craft_hint_${discipline.replaceAll('-', '_')}`
+      : 'career.hunt_craft_hint_other';
     return (
-      <div className="rounded-2xl border border-codiva-primary/15 bg-white px-5 py-8 shadow-sm sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-codiva-primary">
-          {t('career.assessment_eyebrow')}
-        </p>
-        <h2 className="mt-2 font-display text-2xl font-bold text-zinc-900">
-          {result.passed ? t('career.assessment_pass_title') : t('career.assessment_fail_title')}
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          {result.passed ? t('career.assessment_pass_body') : t('career.assessment_fail_body')}
-        </p>
-        {result.passed ? (
-          <Button as="a" href={applyHref} className="mt-6">
-            {t('career.assessment_go_apply')}
-          </Button>
-        ) : (
-          <p className="mt-4 text-xs text-zinc-500">{t('career.assessment_fail_hint')}</p>
-        )}
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-codiva-primary/15 bg-white px-5 py-8 shadow-sm sm:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-codiva-primary">
+            {t('career.assessment_eyebrow')}
+          </p>
+          <h2 className="mt-2 font-display text-2xl font-bold text-zinc-900">
+            {result.passed
+              ? showHunt
+                ? t('career.assessment_pass_hunt_title')
+                : t('career.assessment_pass_title')
+              : t('career.assessment_fail_title')}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+            {result.passed
+              ? showHunt
+                ? t('career.assessment_pass_hunt_body')
+                : t('career.assessment_pass_body')
+              : t('career.assessment_fail_body')}
+          </p>
+          {showHunt ? (
+            <p className="mt-3 text-sm leading-relaxed text-zinc-600">{t(craftHintKey)}</p>
+          ) : null}
+          {result.passed && !showHunt ? (
+            <Button as="a" href={applyHref} className="mt-6">
+              {t('career.assessment_go_apply')}
+            </Button>
+          ) : null}
+          {!result.passed ? (
+            <p className="mt-4 text-xs text-zinc-500">{t('career.assessment_fail_hint')}</p>
+          ) : null}
+        </div>
+        {showHunt && session ? (
+          <>
+            <p className="text-sm text-zinc-600">
+              <a href="/empleos" className="font-medium text-codiva-primary hover:underline">
+                {t('career.hunt_browse')}
+              </a>
+            </p>
+            <HuntReportForm
+              defaultUrl={typeof window !== 'undefined' ? window.location.origin : ''}
+              defaultName={session.full_name}
+              defaultEmail={session.email}
+              assessmentToken={session.token}
+              discipline={discipline}
+              lockIdentity
+              onReported={(ready) => {
+                if (ready) setHuntReady(true);
+              }}
+            />
+          </>
+        ) : null}
       </div>
     );
   }
@@ -300,6 +340,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-600">
             <li>{t('career.assessment_rule_time')}</li>
             <li>{t('career.assessment_rule_pass')}</li>
+            {discipline ? <li>{t('career.assessment_rule_hunt')}</li> : null}
             <li>{t('career.assessment_rule_required')}</li>
           </ul>
         </div>

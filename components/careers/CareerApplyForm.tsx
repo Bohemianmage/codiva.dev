@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input, { Select, Textarea } from '@/components/ui/Input';
 import { marketingBaseUrl } from '@/lib/ops/host';
-import { readAttemptToken } from '@/components/careers/CareerAssessment';
+import { readAttemptToken } from '@/components/careers/hunt-context';
+import HuntReportForm from '@/components/careers/HuntReportForm';
 import {
   CAREER_DISCIPLINES,
   CAREER_DISCIPLINE_CATALOG,
@@ -55,6 +56,7 @@ export default function CareerApplyForm({
   const [assessmentToken, setAssessmentToken] = useState('');
   const [assessmentReady, setAssessmentReady] = useState(!assessmentRequired);
   const [checkingAssessment, setCheckingAssessment] = useState(assessmentRequired);
+  const [huntPending, setHuntPending] = useState(false);
 
   const needsAssessment = assessmentRequired || (asksDiscipline && Boolean(discipline));
   const pruebaHref =
@@ -72,6 +74,7 @@ export default function CareerApplyForm({
       setCheckingAssessment(false);
       setAssessmentReady(false);
       setAssessmentToken('');
+      setHuntPending(false);
       return;
     }
     let cancelled = false;
@@ -91,10 +94,19 @@ export default function CareerApplyForm({
           data?.session?.catalog_key === CAREER_DISCIPLINE_CATALOG[discipline];
         if (passed && catalogOk) {
           setAssessmentToken(token);
-          setAssessmentReady(true);
-          if (data.session.full_name) setFullName(data.session.full_name);
-          if (data.session.email) setEmail(data.session.email);
+          if (data.session.hunt_required && !data.session.hunt_ready) {
+            setHuntPending(true);
+            setAssessmentReady(false);
+            if (data.session.full_name) setFullName(data.session.full_name);
+            if (data.session.email) setEmail(data.session.email);
+          } else {
+            setHuntPending(false);
+            setAssessmentReady(true);
+            if (data.session.full_name) setFullName(data.session.full_name);
+            if (data.session.email) setEmail(data.session.email);
+          }
         } else {
+          setHuntPending(false);
           setAssessmentReady(false);
         }
       } catch {
@@ -188,6 +200,10 @@ export default function CareerApplyForm({
       else if (code === 'assessment_required' || code === 'assessment_not_passed') {
         setError(t('career.assessment_required_error'));
         setAssessmentReady(false);
+      } else if (code === 'hunt_required') {
+        setError(t('career.hunt_required_error'));
+        setHuntPending(true);
+        setAssessmentReady(false);
       } else setError(t('career.apply_error'));
     } finally {
       setSubmitting(false);
@@ -237,6 +253,35 @@ export default function CareerApplyForm({
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t('career.discipline_gate')}</p>
         </div>
         <DisciplineField />
+      </div>
+    );
+  }
+
+  if (needsAssessment && huntPending && !assessmentReady) {
+    const craftHintKey = discipline
+      ? `career.hunt_craft_hint_${String(discipline).replaceAll('-', '_')}`
+      : 'career.hunt_craft_hint_other';
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-semibold text-zinc-900">{t('career.apply_title')}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t('career.hunt_gate')}</p>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t(craftHintKey)}</p>
+          <DisciplineField />
+        </div>
+        <HuntReportForm
+          defaultName={fullName}
+          defaultEmail={email}
+          assessmentToken={assessmentToken}
+          discipline={discipline || undefined}
+          lockIdentity={Boolean(fullName && email)}
+          onReported={(ready) => {
+            if (ready) {
+              setHuntPending(false);
+              setAssessmentReady(true);
+            }
+          }}
+        />
       </div>
     );
   }

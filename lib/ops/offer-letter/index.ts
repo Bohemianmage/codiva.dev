@@ -127,7 +127,7 @@ function paragraphs(text: string): string {
     .filter(Boolean)
     .map(
       (block) =>
-        `<p class="body">${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`
+        `<p class="body">${paintEscaped(escapeHtml(block).replace(/\n/g, '<br/>'))}</p>`
     )
     .join('');
 }
@@ -139,7 +139,7 @@ function bulletList(text: string): string {
     .filter(Boolean);
   if (!items.length) return '';
   return `<ul class="bullets">
-    ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+    ${items.map((item) => `<li>${paintEscaped(escapeHtml(item))}</li>`).join('')}
   </ul>`;
 }
 
@@ -151,7 +151,7 @@ function termList(text: string): string {
   if (!items.length) return '';
   if (items.length === 1) return paragraphs(items[0]);
   return `<ol class="terms">
-    ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+    ${items.map((item) => `<li>${paintEscaped(escapeHtml(item))}</li>`).join('')}
   </ol>`;
 }
 
@@ -177,6 +177,10 @@ function metaItem(label: string, value: string, emphasize = false): string {
 /** Wordmark oficial: Codiva (#18181B) + .dev (primary #104E4E). */
 function brandWordmarkHtml(sizePx = 22): string {
   return `<span class="wordmark" style="font-size:${sizePx}px;">Codiva<span class="wordmark-dot">.dev</span></span>`;
+}
+
+function paintEscaped(escaped: string): string {
+  return escaped.replaceAll('Codiva.dev', brandWordmarkHtml(13));
 }
 
 export function offerLetterFilename(fullName: string, ext: 'html' | 'pdf' = 'html') {
@@ -482,6 +486,10 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
       text-transform: uppercase;
       color: var(--muted);
     }
+    .sig-label .wordmark {
+      text-transform: none;
+      letter-spacing: -0.02em;
+    }
     .sig-line {
       border-top: 1px solid var(--ink);
       padding-top: 12px;
@@ -590,17 +598,17 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
         <div class="accept">
           <p>
             Si estás de acuerdo con estos términos, responde por escrito a esta carta (correo o documento firmado)
-            indicando tu aceptación. Con ello daremos inicio a tu alta en el equipo de operaciones de Codiva.dev.
+            indicando tu aceptación. Con ello daremos inicio a tu alta en el equipo de operaciones de ${brandWordmarkHtml(15)}.
           </p>
         </div>
       </section>
 
       <div class="signatures">
         <div>
-          <p class="sig-label">Por Codiva.dev</p>
+          <p class="sig-label">Por ${brandWordmarkHtml(13)}</p>
           <div class="sig-line">
             <p class="sig-name">${escapeHtml(signerName)}</p>
-            <p class="sig-meta">${escapeHtml(signerTitle)}</p>
+            <p class="sig-meta">${signerTitle === 'Codiva.dev' ? brandWordmarkHtml(13) : escapeHtml(signerTitle)}</p>
             <p class="sig-meta">${escapeHtml(signerEmail)}</p>
           </div>
         </div>

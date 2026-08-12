@@ -16,6 +16,7 @@ import {
   loadAttemptByToken,
   parseOptionOrders,
 } from '@/lib/careers/assessments/server';
+import { huntProgressForAttempt } from '@/lib/careers/hunt/progress';
 
 export const runtime = 'nodejs';
 
@@ -57,6 +58,10 @@ export async function POST(request: Request) {
     row.status === 'started' && catalog
       ? publicQuestionsForAttempt(catalog, row.question_ids, parseOptionOrders(row.option_orders))
       : [];
+  const hunt =
+    row.status === 'completed' && row.passed
+      ? await huntProgressForAttempt({ email: row.email, catalogKey: row.catalog_key })
+      : { required: false, ready: true, matched: 0, needed: 0, discipline: null };
 
   return NextResponse.json({
     ok: true,
@@ -75,6 +80,8 @@ export async function POST(request: Request) {
       title: catalog?.title ?? 'Prueba',
       questions,
       answers: row.answers ?? {},
+      hunt_required: hunt.required,
+      hunt_ready: hunt.ready,
     },
   });
 }

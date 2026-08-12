@@ -1,7 +1,7 @@
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -30,7 +30,8 @@ export default async function PortalTimelinePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
-  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor(await getLocale());
+  const t = await getT();
+  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
   const { data: milestones } = await supabase
     .from('milestones')
@@ -44,10 +45,8 @@ export default async function PortalTimelinePage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Timeline del proyecto</h2>
-        <p className="mt-1 text-sm text-zinc-600">
-          Hitos acordados y avances visibles para el equipo del cliente.
-        </p>
+        <h2 className="text-lg font-semibold">{t('portal.timeline.title')}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t('portal.timeline.hint')}</p>
       </div>
 
       {items.length > 0 ? (
@@ -76,7 +75,7 @@ export default async function PortalTimelinePage({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                        Hito {i + 1}
+                        {t('portal.timeline.milestone', { n: i + 1 })}
                         {m.due_date ? ` · ${formatDate(m.due_date)}` : ''}
                       </p>
                       <h3 className="mt-1 text-base font-semibold text-zinc-900">{m.title}</h3>
@@ -112,7 +111,7 @@ export default async function PortalTimelinePage({
         </ol>
       ) : (
         <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-          El timeline se publicará pronto.
+          {t('portal.timeline.empty')}
         </p>
       )}
     </div>

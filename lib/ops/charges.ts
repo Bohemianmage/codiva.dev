@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+import { tSync } from '@/i18n/translate';
 import { formatChargeAmount, formatDate } from '@/lib/ops/labels';
 
 export type ChargeNoticeInput = {
@@ -70,15 +72,32 @@ export function getActiveChargeNotices(
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 }
 
-export function chargeNoticeSummary(notice: ActiveChargeNotice): string {
+export function chargeNoticeSummary(
+  notice: ActiveChargeNotice,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   const amountNum = chargeAmountNumber(notice.amount);
   const amountBit =
-    amountNum == null ? 'monto por confirmar al renovar' : formatChargeAmount(amountNum, notice.currency);
+    amountNum == null
+      ? tSync(locale, 'portal.notices.amountTbd')
+      : formatChargeAmount(amountNum, notice.currency, locale);
   if (notice.isOverdue) {
-    return `${notice.title} venció el ${formatDate(notice.dueDate)} · ${amountBit}`;
+    return tSync(locale, 'portal.notices.overdueOn', {
+      title: notice.title,
+      date: formatDate(notice.dueDate, locale),
+      amount: amountBit,
+    });
   }
   if (notice.daysUntilDue === 0) {
-    return `${notice.title} vence hoy · ${amountBit}`;
+    return tSync(locale, 'portal.notices.dueToday', {
+      title: notice.title,
+      amount: amountBit,
+    });
   }
-  return `${notice.title} · vence el ${formatDate(notice.dueDate)} (en ${notice.daysUntilDue} días) · ${amountBit}`;
+  return tSync(locale, 'portal.notices.dueIn', {
+    title: notice.title,
+    date: formatDate(notice.dueDate, locale),
+    days: notice.daysUntilDue,
+    amount: amountBit,
+  });
 }

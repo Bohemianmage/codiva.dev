@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -10,7 +9,7 @@ import { Sling as Hamburger } from 'hamburger-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import CodivaWordmark from './CodivaWordmark';
-import { careerBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
+import { marketingBaseUrl } from '@/lib/ops/host';
 
 // Menú de navegación (ya sin 'Home')
 const navItems = [
@@ -44,12 +43,6 @@ export default function Navbar({ variant = 'marketing' }) {
   const { t } = useTranslation();
   const isCareer = variant === 'career';
   const marketingUrl = marketingBaseUrl();
-  const careerUrl = careerBaseUrl();
-  const careersHref = isCareer
-    ? pathname?.startsWith('/empleos')
-      ? '/empleos'
-      : '/'
-    : careerUrl;
 
   /**
    * Navega a la sección correspondiente.
@@ -98,12 +91,31 @@ export default function Navbar({ variant = 'marketing' }) {
   }, []);
 
   return (
-    <div className="fixed top-0 z-50 w-full px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:px-6 pointer-events-none">
+    <div
+      className={`pointer-events-none fixed top-0 z-50 px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:px-6 ${
+        menuOpen ? 'inset-0' : 'w-full'
+      }`}
+    >
+      {/* Backdrop fuera del nav: su transform impide que fixed cubra el viewport */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            key="mobile-menu-backdrop"
+            onClick={() => setMenuOpen(false)}
+            className="pointer-events-auto fixed inset-0 z-40 bg-zinc-900/45"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       <motion.nav
         initial={{ y: 0 }}
         animate={{ y: showNavbar ? 0 : -96 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="glass-panel pointer-events-auto relative mx-auto max-w-7xl rounded-2xl font-inter px-5 py-3 md:px-8 md:py-3.5"
+        className="glass-panel pointer-events-auto relative z-50 mx-auto max-w-7xl rounded-2xl font-inter px-5 py-3 md:px-8 md:py-3.5"
       >
       <div className="flex items-center justify-between">
         {/* Logo principal (click lleva al inicio) */}
@@ -136,18 +148,6 @@ export default function Navbar({ variant = 'marketing' }) {
                 {t(labelKey)}
               </motion.button>
             ))}
-            <motion.div variants={itemVariants}>
-              <Link
-                href={careersHref}
-                className={`relative font-medium transition-colors after:absolute after:left-0 after:bottom-[-2px] after:h-[2px] after:bg-codiva-primary after:transition-all ${
-                  isCareer
-                    ? 'text-zinc-900 after:w-full'
-                    : 'text-codiva-secondary hover:text-zinc-900 after:w-0 hover:after:w-full'
-                }`}
-              >
-                {t('nav.careers')}
-              </Link>
-            </motion.div>
           </motion.div>
 
           <div className="pl-4">
@@ -169,57 +169,36 @@ export default function Navbar({ variant = 'marketing' }) {
         </div>
       </div>
 
-      {/* Menú mobile + backdrop */}
+      {/* Menú mobile */}
       <AnimatePresence>
         {menuOpen && (
-          <>
-            {/* Fondo clickeable para cerrar */}
+          <motion.div
+            id="mobile-menu"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="glass-panel-solid absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 rounded-2xl px-6 pb-6 pt-2 md:hidden"
+          >
             <motion.div
-              onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-[2px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-
-            {/* Menú móvil: debajo del header, sin altura fija mágica */}
-            <motion.div
-              id="mobile-menu"
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="glass-panel absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 rounded-2xl px-6 pb-6 pt-2 md:hidden"
+              variants={navVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="space-y-4"
             >
-              <motion.div
-                variants={navVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                className="space-y-4"
-              >
-                {navItems.map(({ labelKey, id }) => (
-                  <motion.button
-                    key={id}
-                    variants={itemVariants}
-                    onClick={() => scrollTo(id)}
-                    className="block w-full text-left text-codiva-secondary hover:text-zinc-900 transition font-medium"
-                  >
-                    {t(labelKey)}
-                  </motion.button>
-                ))}
-                <motion.div variants={itemVariants}>
-                  <Link
-                    href={careersHref}
-                    onClick={() => setMenuOpen(false)}
-                    className="block w-full text-left text-codiva-secondary hover:text-zinc-900 transition font-medium"
-                  >
-                    {t('nav.careers')}
-                  </Link>
-                </motion.div>
-              </motion.div>
+              {navItems.map(({ labelKey, id }) => (
+                <motion.button
+                  key={id}
+                  variants={itemVariants}
+                  onClick={() => scrollTo(id)}
+                  className="block w-full text-left text-codiva-secondary hover:text-zinc-900 transition font-medium"
+                >
+                  {t(labelKey)}
+                </motion.button>
+              ))}
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
       </motion.nav>

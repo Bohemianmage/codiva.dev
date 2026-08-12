@@ -3,7 +3,7 @@ import PortalCanvasViewer from '@/components/ops/PortalCanvasViewer';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalProposalPage({
@@ -13,7 +13,8 @@ export default async function PortalProposalPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
-  const { formatCurrency, formatDate, QUOTE_STATUS_LABELS } = labelsFor(await getLocale());
+  const t = await getT();
+  const { formatCurrency, formatDate, QUOTE_STATUS_LABELS } = labelsFor(t.locale);
   const visibility = getPortalVisibility(project);
 
   const [{ data: canvases }, { data: quotes }] = await Promise.all([
@@ -53,11 +54,8 @@ export default async function PortalProposalPage({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-1 text-lg font-semibold">Propuesta</h2>
-        <p className="mb-5 text-sm text-zinc-600">
-          Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o
-          descargar el PDF cuando exista.
-        </p>
+        <h2 className="mb-1 text-lg font-semibold">{t('portal.proposal.title')}</h2>
+        <p className="mb-5 text-sm text-zinc-600">{t('portal.proposal.hint')}</p>
         <PortalCanvasViewer items={visibleCanvases} />
       </section>
 
@@ -65,7 +63,9 @@ export default async function PortalProposalPage({
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Cotización</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {t('portal.proposal.quote')}
+              </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold text-zinc-900">{quote.title}</h3>
                 <StatusBadge
@@ -77,14 +77,16 @@ export default async function PortalProposalPage({
                 {formatCurrency(quote.total_amount, quote.currency)}
               </p>
               {showValidity && (
-                <p className="text-sm text-zinc-500">Válida hasta {formatDate(quote.valid_until)}</p>
+                <p className="text-sm text-zinc-500">
+                  {t('portal.proposal.validUntil', { date: formatDate(quote.valid_until) })}
+                </p>
               )}
             </div>
             <Link
               href={`/p/${slug}/cotizacion`}
               className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white"
             >
-              Ver cotización completa
+              {t('portal.proposal.viewFull')}
             </Link>
           </div>
         </section>

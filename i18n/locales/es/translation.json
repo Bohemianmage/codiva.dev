@@ -29,7 +29,8 @@
     "status": {
       "loading": "Enviando mensaje...",
       "success": "¡Mensaje enviado correctamente!",
-      "error": "Ocurrió un error. Intenta de nuevo más tarde."
+      "error": "Ocurrió un error. Intenta de nuevo más tarde.",
+      "actionFailed": "No se pudo completar la acción."
     }
   },
   "hero": {
@@ -220,6 +221,9 @@
   "footer": {
     "rights": "Todos los derechos reservados.",
     "ticketLink": "Tickets",
+    "huntLink": "Hallazgos",
+    "sitemap": "Mapa del sitio",
+    "feed": "Feed JSON",
     "careers": "Empleos",
     "terms": "Términos y condiciones",
     "privacy": "Aviso de privacidad"
@@ -339,12 +343,13 @@
     "assessment_start_title": "Antes de postular",
     "assessment_start_intro": "Para {{role}} pedimos una prueba corta de situaciones reales. No es un examen de jerga: es criterio operativo.",
     "assessment_rule_time": "Ocho preguntas, 15 minutos. El tiempo corre al empezar.",
-    "assessment_rule_pass": "Hay que aprobar (70%) para habilitar el formulario de postulación.",
-    "assessment_rule_required": "Las respuestas y el avance quedan registrados para el equipo de reclutamiento.",
+    "assessment_rule_pass": "Hay que aprobar (70%) la prueba de criterio.",
+    "assessment_rule_hunt": "Después, reporta un hallazgo de tu oficio en el sitio. Sin eso no se habilita el CV.",
+    "assessment_rule_required": "Las respuestas, el avance y los hallazgos quedan registrados para el equipo de reclutamiento.",
     "assessment_start": "Empezar la prueba",
     "assessment_starting": "Preparando…",
     "assessment_start_cta": "Hacer la prueba",
-    "assessment_gate": "Primero hay que aprobar la prueba de criterio de esta vacante. Sin eso no se puede enviar el CV.",
+    "assessment_gate": "Primero hay que aprobar la prueba de criterio y reportar un hallazgo de tu oficio. Sin eso no se puede enviar el CV.",
     "assessment_checking": "Comprobando tu prueba…",
     "assessment_progress": "Pregunta {{current}} de {{total}}",
     "assessment_answered": "{{count}} de {{total}} con respuesta",
@@ -356,8 +361,10 @@
     "assessment_next": "Siguiente",
     "assessment_submit": "Enviar prueba",
     "assessment_submitting": "Calificando…",
-    "assessment_pass_title": "Prueba aprobada",
+    "assessment_pass_title": "Prueba de criterio aprobada",
     "assessment_pass_body": "Ya puedes postular a esta vacante. El formulario tomará tu nombre y correo.",
+    "assessment_pass_hunt_title": "Siguiente: un hallazgo de tu oficio",
+    "assessment_pass_hunt_body": "La prueba de criterio ya está. Ahora recorre el sitio, encuentra un defecto de tu oficio y repórtalo con evidencia. Eso cierra la misma prueba.",
     "assessment_go_apply": "Ir a postular",
     "assessment_fail_title": "No alcanzaste el mínimo",
     "assessment_fail_body": "Gracias por el tiempo. Puedes reintentar más tarde; el equipo ve este intento igual.",
@@ -366,6 +373,8 @@
     "assessment_error": "No se pudo cargar o enviar la prueba. Intenta de nuevo.",
     "assessment_cooldown": "Ya usaste un intento reciente. Espera un poco antes de repetir.",
     "assessment_max_attempts": "Llegaste al máximo de intentos de esta semana para esta vacante.",
+    "assessment_pick_title": "Elige el oficio de la prueba",
+    "assessment_pick_body": "Son testers con especialidad. Cada oficio tiene su prueba de criterio y hallazgos plantados en el sitio.",
     "assessment_required_error": "Hay que aprobar la prueba con el mismo correo antes de postular.",
     "eyebrow": "Únete al equipo",
     "list_title": "Vacantes",
@@ -380,6 +389,40 @@
     "requirements": "Requisitos",
     "unavailable": "Vacante no disponible",
     "meta_description_detail": "Vacante {{title}} en Codiva.dev. Revisa el perfil y postula con tu CV.",
+    "skip_to_content": "Saltar al contenido",
+    "hunt_cta": "¿Encontraste algo? Forma parte de la prueba: repórtalo con evidencia.",
+    "hunt_doc_title": "Hallazgos · Codiva.dev",
+    "hunt_meta": "Reporta un hallazgo en el sitio de Codiva.dev. Pasos, esperado vs. obtenido y URL.",
+    "hunt_eyebrow": "Prueba · Hallazgos",
+    "hunt_title": "Reportar un hallazgo",
+    "hunt_intro": "Para testers, esto es la segunda parte de la misma prueba: criterio en situaciones y luego un hallazgo real de tu oficio. Hay cosas plantadas y también puede haber defectos reales. No adivines: reporta con URL, pasos y evidencia.",
+    "hunt_rule_1": "Di dónde lo viste (URL) y cómo reproducirlo.",
+    "hunt_rule_2": "Separa un defecto de una preferencia. El hallazgo debe ser de tu oficio.",
+    "hunt_rule_3": "No hace falta inspeccionar el código: si no se ve o no se usa, no cuenta igual.",
+    "hunt_form_title": "Tu reporte",
+    "hunt_form_intro": "Un hallazgo por envío. Si encuentras varios, manda varios reportes.",
+    "hunt_field_url": "URL de la página",
+    "hunt_field_title": "Título corto",
+    "hunt_field_description": "Qué viste y cómo se reproduce",
+    "hunt_field_description_hint": "Pasos, resultado obtenido y, si puedes, viewport, teclado o red.",
+    "hunt_field_expected": "Qué esperabas (opcional)",
+    "hunt_submit": "Enviar hallazgo",
+    "hunt_submitting": "Enviando…",
+    "hunt_success": "Recibimos tu hallazgo.",
+    "hunt_success_body": "Si era de tu oficio, ya puedes seguir a postular. El equipo lo cruza con tu correo.",
+    "hunt_keep_going": "Recibido, pero este reporte no cierra la prueba de tu oficio. Sigue buscando un hallazgo de esa especialidad.",
+    "hunt_gate": "Ya aprobaste el criterio. Falta reportar un hallazgo de tu oficio para habilitar el CV.",
+    "hunt_required_error": "Hay que reportar un hallazgo de tu oficio antes de postular.",
+    "hunt_browse": "Explorar el sitio y volver aquí a reportar",
+    "hunt_craft_hint_frontend": "Oficio frontend: teclado, semántica HTML y lo que se ve o se usa en pantalla.",
+    "hunt_craft_hint_backend": "Oficio backend: red, APIs, cabeceras, status y el contrato JSON.",
+    "hunt_craft_hint_fullstack": "Oficio full stack: puede estar en la interfaz o en una API; cuenta si el contrato no cuadra con lo que se ve.",
+    "hunt_craft_hint_ux_ui": "Oficio UX/UI: idioma, nombres accesibles, consistencia visual y destinos de clic.",
+    "hunt_craft_hint_qa": "Oficio QA: regresiones, enlaces rotos y datos que se quedaron viejos.",
+    "hunt_craft_hint_other": "Cualquier hallazgo con evidencia cuenta para este oficio.",
+    "hunt_error": "No se pudo enviar. Revisa los datos e intenta de nuevo.",
+    "hunt_error_rate": "Demasiados reportes. Espera un momento.",
+    "hunt_error_duplicate": "Ya registramos un reporte muy parecido tuyo hace poco.",
     "employment": {
       "full_time": "Tiempo completo",
       "part_time": "Medio tiempo",
@@ -884,11 +927,21 @@
       "financeAllProjects": "Todos los proyectos",
       "financeQuoteHint": "Cotización aceptada o última con monto"
     },
-    "roles": {
-      "admin": "Administrador",
-      "pm": "Project Manager",
-      "dev": "Desarrollador"
-    }
+      "roles": {
+        "admin": "Administrador",
+        "pm": "Project Manager",
+        "dev": "Desarrollador"
+      },
+      "toast": {
+        "ready": "Listo",
+        "saving": "Guardando…"
+      },
+      "preview": {
+        "staff": "Vista previa staff",
+        "body": "Así ve el cliente el portal de",
+        "noLegal": "No se registran aceptaciones legales en este modo.",
+        "back": "Volver al proyecto"
+      }
   },
   "email": {
     "ctaFallback": "Si el botón no funciona, copia este enlace:",

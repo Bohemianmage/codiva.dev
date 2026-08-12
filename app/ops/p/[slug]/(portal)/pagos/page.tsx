@@ -5,7 +5,7 @@ import StatusBadge, { chargeTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { chargeAmountNumber, getActiveChargeNotices } from '@/lib/ops/charges';
 import { labelsFor, isClientBorneChargeKind } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalPaymentsPage({
@@ -15,8 +15,9 @@ export default async function PortalPaymentsPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const t = await getT();
   const { CHARGE_KIND_LABELS, CHARGE_STATUS_LABELS, formatChargeAmount, formatDate } = labelsFor(
-    await getLocale()
+    t.locale
   );
   const visibility = getPortalVisibility(project);
 
@@ -45,11 +46,9 @@ export default async function PortalPaymentsPage({
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-600">
-        Resumen de pagos de tu proyecto: lo ya cubierto del desarrollo, lo que falta por pagar y el
-        alojamiento del sitio. El hosting lo pagas tú (nosotros te avisamos y te pasamos el monto
-        cuando toque renovar). Para ver el alcance aprobado, entra a{' '}
+        {t('portal.payments.intro')}{' '}
         <Link href={`/p/${slug}/cotizacion`} className="text-codiva-primary hover:underline">
-          Cotización
+          {t('portal.payments.quoteLink')}
         </Link>
         .
       </p>
@@ -58,24 +57,24 @@ export default async function PortalPaymentsPage({
 
       <section className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Pagado</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{t('portal.payments.paid')}</p>
           <p className="mt-2 text-2xl font-bold text-emerald-700">
             {formatChargeAmount(paidTotal, 'MXN')}
           </p>
-          <p className="mt-1 text-sm text-zinc-500">{paid.length} cargo(s)</p>
+          <p className="mt-1 text-sm text-zinc-500">{t('portal.payments.charges', { count: paid.length })}</p>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Pendiente</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{t('portal.payments.pending')}</p>
           <p className="mt-2 text-2xl font-bold text-amber-700">
             {formatChargeAmount(pendingTotal, 'MXN')}
             {hasTbd ? <span className="ml-2 text-sm font-medium">(+ TBD)</span> : null}
           </p>
-          <p className="mt-1 text-sm text-zinc-500">{pending.length} cargo(s)</p>
+          <p className="mt-1 text-sm text-zinc-500">{t('portal.payments.charges', { count: pending.length })}</p>
         </div>
       </section>
 
       {!rows.length ? (
-        <p className="text-sm text-zinc-500">Aún no hay cargos publicados en este portal.</p>
+        <p className="text-sm text-zinc-500">{t('portal.payments.empty')}</p>
       ) : (
         <ul className="space-y-3">
           {rows.map((c) => {
@@ -100,27 +99,27 @@ export default async function PortalPaymentsPage({
                       </span>
                     {isClientBorneChargeKind(c.kind) && (
                       <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                        A tu cargo
+                        {t('portal.payments.clientBorne')}
                       </span>
                     )}
                     </div>
                     <h3 className="font-semibold text-zinc-900">{c.title}</h3>
                     {c.period_label && (
-                      <p className="mt-0.5 text-xs text-zinc-500">Periodo: {c.period_label}</p>
+                      <p className="mt-0.5 text-xs text-zinc-500">{t('portal.payments.period', { label: c.period_label })}</p>
                     )}
                     {c.description && (
                       <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-600">{c.description}</p>
                     )}
                     <p className="mt-2 text-xs text-zinc-500">
                       {c.status === 'paid'
-                        ? `Pagado ${formatDate(c.paid_at)}`
+                        ? t('portal.payments.paidOn', { date: formatDate(c.paid_at) })
                         : c.due_date
-                          ? `Vence ${formatDate(c.due_date)}`
-                          : 'Sin fecha de vencimiento'}
+                          ? t('portal.payments.dueOn', { date: formatDate(c.due_date) })
+                          : t('portal.payments.noDue')}
                     </p>
                     {noticeStart && (
                       <p className="mt-1 text-xs text-zinc-500">
-                        Te avisamos en el portal desde {formatDate(noticeStart)}
+                        {t('portal.payments.noticeFrom', { date: formatDate(noticeStart) })}
                       </p>
                     )}
                   </div>

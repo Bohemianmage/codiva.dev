@@ -1,7 +1,7 @@
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 
 export default async function PortalTicketsPage({
   params,
@@ -10,7 +10,8 @@ export default async function PortalTicketsPage({
 }) {
   const { slug } = await params;
   const { project, supabase, user } = await requireProjectMember(slug);
-  const { TICKET_STATUS_LABELS } = labelsFor(await getLocale());
+  const t = await getT();
+  const { TICKET_STATUS_LABELS } = labelsFor(t.locale);
 
   const { data: tickets } = await supabase
     .from('tickets')
@@ -21,26 +22,31 @@ export default async function PortalTicketsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="mb-4 text-lg font-semibold">Tickets de soporte</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('portal.ticketsPage.title')}</h2>
         <ul className="space-y-2">
-          {(tickets ?? []).map((t) => (
-            <li key={t.id} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm">
-              <span>{t.title}</span>
-              <StatusBadge label={TICKET_STATUS_LABELS[t.status]} tone={ticketTone(t.status)} />
+          {(tickets ?? []).map((ticket) => (
+            <li
+              key={ticket.id}
+              className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm"
+            >
+              <span>{ticket.title}</span>
+              <StatusBadge label={TICKET_STATUS_LABELS[ticket.status]} tone={ticketTone(ticket.status)} />
             </li>
           ))}
-          {!tickets?.length && <p className="text-sm text-zinc-500">Sin tickets registrados.</p>}
+          {!tickets?.length && (
+            <p className="text-sm text-zinc-500">{t('portal.ticketsPage.empty')}</p>
+          )}
         </ul>
       </div>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h3 className="mb-3 font-semibold">Nuevo ticket</h3>
+        <h3 className="mb-3 font-semibold">{t('portal.ticketsPage.new')}</h3>
         <p className="text-sm text-zinc-600">
-          Para reportar un incidente usa el{' '}
+          {t('portal.ticketsPage.hintPrefix')}{' '}
           <a href="https://codiva.dev/ticket" className="text-codiva-primary hover:underline">
-            formulario de soporte
+            {t('portal.ticketsPage.form')}
           </a>{' '}
-          indicando el mismo email de tu cuenta ({user.email}).
+          {t('portal.ticketsPage.hintSuffix', { email: user.email })}
         </p>
         <form
           action={`/api/ticket`}

@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 type StatusScreenProps = {
-  eyebrow: string;
+  eyebrow: ReactNode;
   code?: string;
   title: string;
   description: string;
@@ -24,7 +25,7 @@ export default function StatusScreen({
 }: StatusScreenProps) {
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-16 text-center">
-      <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">{eyebrow}</p>
+      <div className="flex justify-center">{eyebrow}</div>
       {code ? (
         <p className="mt-4 font-display text-6xl font-bold tracking-tight text-zinc-200 sm:text-7xl">
           {code}

@@ -178,6 +178,7 @@ export {
   CAREER_DISCIPLINE_CATALOG,
   isCareerDiscipline,
   postingAsksDiscipline,
+  disciplineFromCatalogKey,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
 

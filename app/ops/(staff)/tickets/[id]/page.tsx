@@ -5,11 +5,14 @@ import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { updateTicketAssignment } from '@/lib/ops/actions';
-import { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase } = await requireCapability('tickets');
+  const t = await getT();
+  const { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
   const [{ data: ticket }, { data: staff }] = await Promise.all([
     supabase.from('tickets').select('*, ticket_attachments(*)').eq('id', id).single(),

@@ -9,10 +9,12 @@ import { CODIVA_BRAND } from '@/lib/brand';
 import CodivaWordmark from './CodivaWordmark';
 import { careerBaseUrl } from '@/lib/ops/host';
 
-export default function Footer() {
+export default function Footer({ variant = 'marketing' }) {
   const { t } = useTranslation();
   const footerRef = useRef(null);
   const inView = useInView(footerRef, { triggerOnce: false, threshold: 0.4 });
+  const isCareer = variant === 'career';
+  const year = isCareer ? 2024 : new Date().getFullYear();
 
   return (
     <motion.footer
@@ -24,7 +26,7 @@ export default function Footer() {
     >
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <span className="text-zinc-400 text-center md:text-left">
-          © {new Date().getFullYear()}{' '}
+          © {year}{' '}
           <CodivaWordmark size="sm" variant="footer" animate active={inView} />
           {' '}
           {t('footer.rights')}
@@ -38,11 +40,27 @@ export default function Footer() {
             {t('footer.careers')}
           </Link>
           <Link
-            href="/ticket"
+            href={isCareer ? '/hallazgos' : '/ticket'}
             className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
-            {t('footer.ticketLink')}
+            {isCareer ? t('footer.huntLink') : t('footer.ticketLink')}
           </Link>
+          {isCareer ? (
+            <Link
+              href="/mapa"
+              className="text-zinc-300 hover:text-white font-medium transition-colors"
+            >
+              {t('footer.sitemap')}
+            </Link>
+          ) : null}
+          {isCareer ? (
+            <a
+              href="/api/careers/feed"
+              className="text-zinc-300 hover:text-white font-medium transition-colors"
+            >
+              {t('footer.feed')}
+            </a>
+          ) : null}
           <Link
             href="/legal/terminos"
             className="text-zinc-300 hover:text-white font-medium transition-colors"
@@ -64,6 +82,14 @@ export default function Footer() {
           </a>
 
           <div className="flex items-center space-x-3">
+            {isCareer ? (
+              <button
+                type="button"
+                className="text-zinc-500 hover:text-white transition-all duration-200 p-1"
+              >
+                ?
+              </button>
+            ) : null}
             <a
               href={CODIVA_BRAND.urls.linkedin}
               target="_blank"

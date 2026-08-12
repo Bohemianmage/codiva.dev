@@ -54,8 +54,16 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
       </script>
 
       <Navbar variant={variant} />
+      {isCareer ? (
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-codiva-primary"
+        >
+          {t('career.skip_to_content')}
+        </a>
+      ) : null}
       {children}
-      <Footer />
+      <Footer variant={variant} />
 
       {showQuote && <FloatingQuoteButton />}{/* ← Condicional */}
 

@@ -150,8 +150,20 @@ a {
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
+/* Menú móvil: más opaco para que el texto no se mezcle con el contenido de detrás */
+.glass-panel-solid {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 12px 40px -10px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
 @supports not (backdrop-filter: blur(1px)) {
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.94);
+  .glass-panel,
+  .glass-panel-solid {
+    background: rgba(255, 255, 255, 0.96);
   }
 }

@@ -20,10 +20,14 @@ const FONT_DISPLAY = `'Plus Jakarta Sans', Inter, Arial, Helvetica, sans-serif`;
 const CTA_RADIUS = '12px';
 const CONFIRMATION_URL = '{{ .ConfirmationURL }}';
 
-function brandWordmarkHtml() {
-  return `<p style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">
-    Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span>
-  </p>`;
+function brandWordmarkHtml(sizePx = 22, as = 'p') {
+  const display = as === 'p' ? 'block' : 'inline';
+  return `<${as} style="display:${display};margin:0;font-family:${FONT_DISPLAY};font-size:${sizePx}px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};white-space:nowrap;">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></${as}>`;
+}
+
+function paintBrandName(html, sizePx = 15) {
+  const mark = brandWordmarkHtml(sizePx, 'span');
+  return html.replaceAll(`<strong>${BRAND_NAME}</strong>`, mark).replaceAll(BRAND_NAME, mark);
 }
 
 export function buildCodivaEmail({
@@ -42,7 +46,7 @@ export function buildCodivaEmail({
   const body = paragraphs
     .map(
       (p) =>
-        `<p style="margin:0 0 12px;font-family:${FONT_BODY};font-size:15px;line-height:1.65;color:${BRAND.text};">${p}</p>`
+        `<p style="margin:0 0 12px;font-family:${FONT_BODY};font-size:15px;line-height:1.65;color:${BRAND.text};">${paintBrandName(p)}</p>`
     )
     .join('');
 

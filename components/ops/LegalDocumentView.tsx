@@ -2,13 +2,14 @@
 
 import type { LegalDocument } from '@/lib/ops/legal/content';
 import { useTranslation } from 'react-i18next';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
   const { t } = useTranslation();
   return (
     <article className="mx-auto max-w-3xl space-y-8">
       <header className="space-y-3 border-b border-zinc-200 pb-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Codiva.dev</p>
+        <CodivaWordmarkMark size="sm" />
         <h1 className="text-2xl font-bold text-zinc-900">{doc.title}</h1>
         <p className="text-sm text-zinc-500">
           {t('legal.version', { code: doc.versionCode, updated: doc.updated })}
