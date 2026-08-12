@@ -64,12 +64,12 @@ export default function OpsSidebar({
   }
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-zinc-200 bg-white">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200 bg-white">
       <div className="border-b border-zinc-200 px-5 py-5">
         <CodivaWordmarkMark size="sm" />
         <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {items.map(({ href, labelKey, icon: Icon }) => {
           const active = normalized === href || normalized.startsWith(`${href}/`);
           return (

@@ -1,6 +1,7 @@
 import type { CareerPostingSection } from '@/lib/ops/careers';
 import { careerSectionTitle } from '@/lib/ops/careers';
 import type { Locale } from '@/i18n/config';
+import CodivaBrandText from '@/components/CodivaBrandText';
 
 export default function CareerPostingBody({
   sections,
@@ -46,7 +47,9 @@ export default function CareerPostingBody({
                         className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-codiva-primary"
                         aria-hidden
                       />
-                      <span>{item}</span>
+                      <span>
+                        <CodivaBrandText className="align-baseline">{item}</CodivaBrandText>
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -55,7 +58,7 @@ export default function CareerPostingBody({
                   key={j}
                   className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 sm:text-[15px]"
                 >
-                  {block.text}
+                  <CodivaBrandText className="align-baseline">{block.text}</CodivaBrandText>
                 </p>
               )
             )}

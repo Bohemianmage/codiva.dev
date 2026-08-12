@@ -6,12 +6,12 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   const { staff } = await requireStaff();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <OpsSidebar
         staffName={staff.full_name || 'Staff'}
         staffRole={(staff.role as StaffRole) || 'dev'}
       />
-      <main className="flex-1 overflow-auto p-8">{children}</main>
+      <main className="min-h-0 flex-1 overflow-y-auto p-8">{children}</main>
     </div>
   );
 }
