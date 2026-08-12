@@ -72,13 +72,13 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
     await page.evaluate(async () => {
       if (document.fonts?.ready) await document.fonts.ready;
     });
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 400));
     await page.emulateMediaType('print');
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
-      preferCSSPageSize: false,
-      margin: { top: '12mm', right: '12mm', bottom: '12mm', left: '12mm' },
+      preferCSSPageSize: true,
+      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
     });
     return Buffer.from(pdf);
   } finally {
