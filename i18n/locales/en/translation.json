@@ -5,7 +5,8 @@
     "about": "About us",
     "services": "Services",
     "cases": "Success Stories",
-    "contact": "Contact"
+    "contact": "Contact",
+    "careers": "Careers"
   },
   "common": {
     "fields": {
@@ -213,6 +214,7 @@
   "footer": {
     "rights": "All rights reserved.",
     "ticketLink": "Tickets",
+    "careers": "Careers",
     "terms": "Terms and conditions",
     "privacy": "Privacy notice"
   },
@@ -295,5 +297,27 @@
       "attachments": "Images and documents accepted. Max ~10MB per file.",
       "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…"
     }
+  },
+  "career": {
+    "doc_title_list": "Careers · Codiva.dev",
+    "doc_title_detail": "Open role · Codiva.dev",
+    "meta_description_list": "Open roles at Codiva.dev. Join the team and send your CV in minutes.",
+    "apply_intro": "Fill in the form and attach your CV as a PDF.",
+    "apply_title": "Apply",
+    "field_name": "Full name",
+    "field_email": "Email",
+    "field_phone": "Phone",
+    "field_cv": "CV as PDF",
+    "cv_hint": "Maximum 10 MB. PDF only.",
+    "field_letter": "Cover note",
+    "consent_data": "I agree to the processing of my personal data and CV for recruiting.",
+    "consent_terms_prefix": "I have read and accept the",
+    "consent_terms_and": "and the",
+    "submit": "Submit application",
+    "submitting": "Sending…",
+    "apply_success": "Thank you. We received your application.",
+    "apply_error": "We could not send the application. Check the details and try again.",
+    "error_duplicate": "We already received an application from you for this role recently.",
+    "error_rate": "Too many attempts. Wait a moment and try again."
   }
 }

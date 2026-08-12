@@ -8,7 +8,12 @@ const PORTAL_HOSTS = new Set([
   'portal.localhost',
 ]);
 
-export type CodivaSurface = 'marketing' | 'ops' | 'portal';
+const CAREER_HOSTS = new Set([
+  'career.codiva.dev',
+  'career.localhost',
+]);
+
+export type CodivaSurface = 'marketing' | 'ops' | 'portal' | 'career';
 
 export function getHostname(host: string | null): string {
   return (host ?? '').split(':')[0].toLowerCase();
@@ -32,9 +37,17 @@ export function isPortalHost(host: string | null): boolean {
   return hostname === envHost('PORTAL_HOST', 'portal.codiva.dev');
 }
 
+export function isCareerHost(host: string | null): boolean {
+  const hostname = getHostname(host);
+  if (CAREER_HOSTS.has(hostname)) return true;
+  if (hostname.startsWith('career.')) return true;
+  return hostname === envHost('CAREER_HOST', 'career.codiva.dev');
+}
+
 export function resolveSurface(host: string | null): CodivaSurface {
   if (isPortalHost(host)) return 'portal';
   if (isOpsHost(host)) return 'ops';
+  if (isCareerHost(host)) return 'career';
   return 'marketing';
 }
 
@@ -54,6 +67,11 @@ export function portalBaseUrl(): string {
 
 export function marketingBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL ?? 'https://codiva.dev').replace(/\/$/, '');
+}
+
+/** Bolsa de trabajo pública (host career). */
+export function careerBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_CAREER_URL ?? 'https://career.codiva.dev').replace(/\/$/, '');
 }
 
 /** Login del cliente (host portal, multi-proyecto). */

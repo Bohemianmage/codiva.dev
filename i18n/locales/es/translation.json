@@ -5,7 +5,8 @@
     "about": "Nosotros",
     "services": "Servicios",
     "cases": "Casos de Éxito",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "careers": "Empleos"
   },
   "common": {
     "fields": {
@@ -213,6 +214,7 @@
   "footer": {
     "rights": "Todos los derechos reservados.",
     "ticketLink": "Tickets",
+    "careers": "Empleos",
     "terms": "Términos y condiciones",
     "privacy": "Aviso de privacidad"
   },
@@ -295,5 +297,27 @@
     "attachments": "Se aceptan imágenes y documentos. Máx. ~10MB por archivo.",
     "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…"
   }
-}
+},
+  "career": {
+    "doc_title_list": "Empleos · Codiva.dev",
+    "doc_title_detail": "Vacante · Codiva.dev",
+    "meta_description_list": "Vacantes abiertas en Codiva.dev. Únete al equipo y envía tu CV en minutos.",
+    "apply_intro": "Completa el formulario y adjunta tu CV en PDF.",
+    "apply_title": "Postular",
+    "field_name": "Nombre completo",
+    "field_email": "Correo electrónico",
+    "field_phone": "Teléfono",
+    "field_cv": "CV en PDF",
+    "cv_hint": "Máximo 10 MB. Solo PDF.",
+    "field_letter": "Carta o mensaje",
+    "consent_data": "Acepto el tratamiento de mis datos personales y del CV para fines de reclutamiento.",
+    "consent_terms_prefix": "He leído y acepto los",
+    "consent_terms_and": "y el",
+    "submit": "Enviar postulación",
+    "submitting": "Enviando…",
+    "apply_success": "¡Gracias! Hemos recibido tu postulación.",
+    "apply_error": "No se pudo enviar la postulación. Revisa los datos e intenta de nuevo.",
+    "error_duplicate": "Ya registramos una postulación tuya a esta vacante recientemente.",
+    "error_rate": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+  }
 }

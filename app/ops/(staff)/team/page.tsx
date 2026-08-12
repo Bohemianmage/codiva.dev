@@ -1,5 +1,9 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
+import OpsCareersPanel, {
+  type OpsJobApplicationRow,
+  type OpsJobPostingRow,
+} from '@/components/ops/OpsCareersPanel';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import {
   createPersonnelOffer,
@@ -34,23 +38,34 @@ export default async function TeamPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab: tabParam } = await searchParams;
-  const tab = tabParam === 'ofertas' ? 'ofertas' : 'miembros';
+  const tab = tabParam === 'ofertas' ? 'ofertas' : tabParam === 'bolsa' ? 'bolsa' : 'miembros';
 
   const { supabase } = await requireAdminStaff();
   const admin = createAdminClient();
 
-  const [{ data: staffRows }, { data: offers }] = await Promise.all([
-    supabase
-      .from('staff_profiles')
-      .select('id, full_name, role, active, created_at')
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('ops_personnel_offers')
-      .select(
-        'id, full_name, email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at'
-      )
-      .order('created_at', { ascending: false }),
-  ]);
+  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }] =
+    await Promise.all([
+      supabase
+        .from('staff_profiles')
+        .select('id, full_name, role, active, created_at')
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('ops_personnel_offers')
+        .select(
+          'id, full_name, email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at'
+        )
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('ops_job_postings')
+        .select('id, slug, title, location, employment_type, status, updated_at')
+        .order('updated_at', { ascending: false }),
+      supabase
+        .from('ops_job_applications')
+        .select(
+          'id, full_name, email, phone, status, created_at, personnel_offer_id, original_filename, ops_job_postings(title, slug)'
+        )
+        .order('created_at', { ascending: false }),
+    ]);
 
   const emails = new Map<string, string>();
   await Promise.all(
@@ -74,7 +89,7 @@ export default async function TeamPage({
     <div>
       <OpsPageHeader
         title="Equipo"
-        description="Miembros del equipo, altas y cartas oferta. Solo administradores."
+        description="Miembros, cartas oferta y bolsa de trabajo. Solo administradores."
       />
 
       <div className="mb-8 flex gap-6 border-b border-zinc-200">
@@ -86,6 +101,14 @@ export default async function TeamPage({
           {(offers ?? []).length > 0 ? (
             <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
               {(offers ?? []).length}
+            </span>
+          ) : null}
+        </Link>
+        <Link href="/team?tab=bolsa" className={tabClass(tab === 'bolsa')}>
+          Bolsa de trabajo
+          {(applications ?? []).filter((row) => row.status === 'new').length > 0 ? (
+            <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+              {(applications ?? []).filter((row) => row.status === 'new').length}
             </span>
           ) : null}
         </Link>
@@ -180,6 +203,11 @@ export default async function TeamPage({
             </ul>
           </section>
         </div>
+      ) : tab === 'bolsa' ? (
+        <OpsCareersPanel
+          postings={(postings ?? []) as OpsJobPostingRow[]}
+          applications={(applications ?? []) as OpsJobApplicationRow[]}
+        />
       ) : (
         <div className="max-w-3xl space-y-8">
           <ToastForm

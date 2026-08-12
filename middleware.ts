@@ -3,9 +3,11 @@ import { updateSession } from '@/lib/supabase/middleware';
 import {
   isOpsHost,
   isPortalHost,
+  isCareerHost,
   opsBaseUrl,
   portalBaseUrl,
   marketingBaseUrl,
+  careerBaseUrl,
 } from '@/lib/ops/host';
 
 function withSessionCookies(from: NextResponse, to: NextResponse) {
@@ -28,11 +30,47 @@ function isStaffOnlyClientPack(pathname: string) {
 
 function absoluteRedirect(request: NextRequest, base: string, path: string) {
   const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
-  // Preserve query string
   request.nextUrl.searchParams.forEach((value, key) => {
     if (!url.searchParams.has(key)) url.searchParams.set(key, value);
   });
   return NextResponse.redirect(url);
+}
+
+const CAREER_RESERVED = new Set([
+  'empleos',
+  'legal',
+  'ops',
+  'login',
+  'dashboard',
+  'ticket',
+  'cotiza',
+  'proyectos',
+  'partner',
+  'client-packs',
+  'auth',
+  'api',
+  'inbox',
+  'leads',
+  'projects',
+  'users',
+  'team',
+  'settings',
+  'tickets',
+  'organizations',
+  'workload',
+  'q',
+  'p',
+  'robots.txt',
+  'sitemap.xml',
+]);
+
+function isLocalApex(host: string | null) {
+  const hostname = (host ?? '').split(':')[0].toLowerCase();
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+function careerFirstSegment(pathname: string) {
+  return (pathname.split('/').filter(Boolean)[0] || '').toLowerCase();
 }
 
 export async function middleware(request: NextRequest) {
@@ -46,10 +84,67 @@ export async function middleware(request: NextRequest) {
 
   const onOps = isOpsHost(host);
   const onPortal = isPortalHost(host);
+  const onCareer = isCareerHost(host);
+
+  // --- CAREER (bolsa pública) ---
+  if (onCareer) {
+    if (
+      pathname.startsWith('/legal') ||
+      pathname === '/ticket' ||
+      pathname.startsWith('/ticket/') ||
+      pathname === '/cotiza' ||
+      pathname.startsWith('/cotiza/')
+    ) {
+      return withSessionCookies(
+        sessionResponse,
+        absoluteRedirect(request, marketingBaseUrl(), pathname)
+      );
+    }
+
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/projects') ||
+      pathname.startsWith('/leads') ||
+      pathname.startsWith('/partner') ||
+      pathname.startsWith('/q/') ||
+      pathname.startsWith('/ops')
+    ) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
+    }
+
+    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/')) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, portalBaseUrl(), pathname));
+    }
+
+    if (pathname === '/empleos' || pathname === '/empleos/') {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), '/'));
+    }
+
+    if (pathname.startsWith('/empleos/')) {
+      const rest = pathname.slice('/empleos'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/empleos';
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    const first = careerFirstSegment(pathname);
+    if (!CAREER_RESERVED.has(first)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/empleos${pathname}`;
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    const missing = request.nextUrl.clone();
+    missing.pathname = '/ops/__missing';
+    return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
+  }
 
   // --- PORTAL (clientes) ---
   if (onPortal) {
-    // Estáticos / legales / auth callback
     if (
       pathname.startsWith('/client-packs') ||
       pathname.startsWith('/legal') ||
@@ -68,7 +163,6 @@ export async function middleware(request: NextRequest) {
       return sessionResponse;
     }
 
-    // Raíz → hub de proyectos (la página redirige a /login si no hay sesión)
     if (pathname === '/' || pathname === '') {
       return withSessionCookies(
         sessionResponse,
@@ -76,7 +170,6 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Login / hub / reset del cliente (no confundir con staff /login en ops)
     if (
       pathname === '/login' ||
       pathname.startsWith('/login/') ||
@@ -90,7 +183,6 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
     }
 
-    // Rutas de portal de proyecto
     if (pathname.startsWith('/p/')) {
       const url = request.nextUrl.clone();
       url.pathname = `/ops${pathname}`;
@@ -102,7 +194,6 @@ export async function middleware(request: NextRequest) {
       return rewritten;
     }
 
-    // Staff / partners no viven aquí
     if (
       pathname.startsWith('/dashboard') ||
       pathname.startsWith('/projects') ||
@@ -116,7 +207,12 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Rutas desconocidas en portal → 404 (bajo árbol /ops)
+    if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {
+      const rest =
+        pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+    }
+
     const missing = request.nextUrl.clone();
     missing.pathname = '/ops/__missing';
     return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
@@ -124,13 +220,14 @@ export async function middleware(request: NextRequest) {
 
   // --- OPS (staff) ---
   if (onOps) {
-    // Cliente debe usar portal.*; redirigir /p/* hacia portal
-    // Excepción: ?preview=1 o header interno - usamos cookie/session en ops
-    // Mantenemos /p/* en ops SOLO como vista previa staff (misma sesión).
-    // Los emails de cliente apuntan a portal.*.
-
     if (pathname.startsWith('/client-packs') || pathname.startsWith('/legal')) {
       return sessionResponse;
+    }
+
+    if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {
+      const rest =
+        pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
     }
 
     if (!pathname.startsWith('/ops')) {
@@ -164,12 +261,18 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Atajos legacy: /p/* en apex → portal
   if (pathname.startsWith('/p/')) {
     return withSessionCookies(
       sessionResponse,
       absoluteRedirect(request, portalBaseUrl(), pathname)
     );
+  }
+
+  if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {
+    if (isLocalApex(host)) return sessionResponse;
+    const rest =
+      pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
+    return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
   }
 
   return sessionResponse;

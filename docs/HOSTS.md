@@ -3,8 +3,11 @@
 | Host | Superficie | Quién |
 |------|------------|--------|
 | `codiva.dev` | Marketing, cotiza, tickets, `/legal/*` | Público |
+| `career.codiva.dev` | Bolsa de trabajo (`/` listado, `/{slug}` vacante) | Candidatos |
 | `ops.codiva.dev` | Staff Ops + vista previa `/p/*` + cotizaciones `/q/*` + partners | Equipo Codiva |
 | `portal.codiva.dev` | Portal cliente `/login`, `/proyectos`, `/p/{slug}` | Clientes invitados |
+
+`codiva.dev/empleos` redirige a `career.codiva.dev`.
 
 Sesiones **no se comparten** entre `ops` y `portal` (cookies por host). Por eso:
 
@@ -14,16 +17,17 @@ Sesiones **no se comparten** entre `ops` y `portal` (cookies por host). Por eso:
 ## Checklist - tu lado (infra)
 
 ### 1. DNS
-Crear registro para el portal (mismo proyecto Vercel que codiva.dev):
+Crear registro para el portal y la bolsa (mismo proyecto Vercel que codiva.dev):
 
 - `portal.codiva.dev` → CNAME a Vercel (`cname.vercel-dns.com` o el que indique el dashboard)
+- `career.codiva.dev` → CNAME a Vercel
 
 `ops.codiva.dev` ya debería existir.
 
 ### 2. Vercel
 En el proyecto de Codiva:
 
-1. **Settings → Domains** → Add `portal.codiva.dev`
+1. **Settings → Domains** → Add `portal.codiva.dev` y `career.codiva.dev`
 2. Esperar SSL / verificación
 3. **Environment variables** (Production + Preview si aplica):
 
@@ -33,6 +37,8 @@ NEXT_PUBLIC_OPS_URL=https://ops.codiva.dev
 OPS_HOST=ops.codiva.dev
 NEXT_PUBLIC_PORTAL_URL=https://portal.codiva.dev
 PORTAL_HOST=portal.codiva.dev
+NEXT_PUBLIC_CAREER_URL=https://career.codiva.dev
+CAREER_HOST=career.codiva.dev
 ```
 
 4. Redeploy tras guardar env.
@@ -48,12 +54,15 @@ Redirect URLs (agregar):
 
 Site URL puede seguir siendo `https://ops.codiva.dev` o `https://codiva.dev`.
 
+La bolsa (`career.codiva.dev`) no usa Auth de candidatos.
+
 ### 4. Local (opcional)
 En `C:\Windows\System32\drivers\etc\hosts` (o equivalente):
 
 ```text
 127.0.0.1 ops.localhost
 127.0.0.1 portal.localhost
+127.0.0.1 career.localhost
 ```
 
 Vars locales:
@@ -63,6 +72,8 @@ NEXT_PUBLIC_OPS_URL=http://ops.localhost:3000
 OPS_HOST=ops.localhost
 NEXT_PUBLIC_PORTAL_URL=http://portal.localhost:3000
 PORTAL_HOST=portal.localhost
+NEXT_PUBLIC_CAREER_URL=http://career.localhost:3000
+CAREER_HOST=career.localhost
 ```
 
 ### 5. Smoke test
@@ -71,6 +82,7 @@ PORTAL_HOST=portal.localhost
 3. Invitar un email de prueba → el mail apunta a `portal.codiva.dev/.../login`
 4. Login cliente en `portal.codiva.dev/login` → `/proyectos` (o directo al proyecto si solo hay uno) → aceptar legales → ver propuesta
 5. Recovery password desde portal login (`/login/forgot-password`)
+6. Bolsa: `career.codiva.dev` lista vacantes; `codiva.dev/empleos` redirige ahí; postular con un PDF de prueba
 
 ### 6. No olvidar
 - Cron retención sigue en el mismo deploy (`/api/ops/cron/...`); no requiere subdominio nuevo

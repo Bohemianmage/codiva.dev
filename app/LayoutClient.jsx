@@ -11,30 +11,41 @@ import Footer from '../components/Footer';
 import FloatingQuoteButton from '../components/FloatingQuoteButton';
 import { Toaster } from 'react-hot-toast';
 
-export default function LayoutClient({ children }) {
+export default function LayoutClient({ children, variant = 'marketing' }) {
   const { i18n, t } = useTranslation();
   const pathname = usePathname();
   const currentLang = i18n.language || 'es';
+  const isCareer = variant === 'career';
 
   // ✅ Ajustes dinámicos de idioma, título y descripción
   useEffect(() => {
     document.documentElement.lang = currentLang;
-    document.title = t('title');
+    const onCareers = isCareer || (pathname || '').startsWith('/empleos');
+    const onCareerDetail =
+      Boolean(pathname) &&
+      ((isCareer && pathname !== '/' && !pathname.startsWith('/empleos')) ||
+        (pathname.startsWith('/empleos/') && pathname !== '/empleos/'));
+    document.title = onCareers
+      ? onCareerDetail
+        ? t('career.doc_title_detail')
+        : t('career.doc_title_list')
+      : t('title');
 
     const metaDesc = document.querySelector('meta[name="description"]');
+    const description = onCareers ? t('career.meta_description_list') : t('description');
     if (metaDesc) {
-      metaDesc.setAttribute('content', t('description'));
+      metaDesc.setAttribute('content', description);
     } else {
       const meta = document.createElement('meta');
       meta.name = 'description';
-      meta.content = t('description');
+      meta.content = description;
       document.head.appendChild(meta);
     }
-  }, [currentLang, t]);
+  }, [currentLang, t, pathname, isCareer]);
 
   // Centra sección al navegar con hash (#services, etc.)
   useEffect(() => {
-    if (pathname !== '/') return;
+    if (isCareer || pathname !== '/') return;
 
     const scrollFromHash = () => {
       const id = window.location.hash.replace('#', '');
@@ -45,7 +56,7 @@ export default function LayoutClient({ children }) {
     scrollFromHash();
     window.addEventListener('hashchange', scrollFromHash);
     return () => window.removeEventListener('hashchange', scrollFromHash);
-  }, [pathname]);
+  }, [pathname, isCareer]);
 
   // ✅ Microdatos para SEO (Organization)
   const schemaOrgJsonLd = {
@@ -61,7 +72,7 @@ export default function LayoutClient({ children }) {
   // --- Ocultar FloatingQuoteButton en /ticket
   const segments = (pathname || '').split('/').filter(Boolean);
   const onTicket = segments[segments.length - 1] === 'ticket';
-  const showQuote = !onTicket;
+  const showQuote = !isCareer && !onTicket;
 
   return (
     <div className="bg-neutral-50 text-zinc-900 font-sans antialiased">
@@ -70,7 +81,7 @@ export default function LayoutClient({ children }) {
         {JSON.stringify(schemaOrgJsonLd)}
       </script>
 
-      <Navbar />
+      <Navbar variant={variant} />
       {children}
       <Footer />
 
