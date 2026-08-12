@@ -5,7 +5,7 @@ import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { clientAcceptQuote, clientRejectQuote } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { parseLineItemsJson } from '@/lib/ops/quote-document';
 import { getPortalVisibility } from '@/lib/ops/portal-visibility';
 
@@ -27,7 +27,8 @@ export default async function PortalQuotePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
-  const { QUOTE_STATUS_LABELS, formatCurrency, formatDate } = labelsFor(await getLocale());
+  const t = await getT();
+  const { QUOTE_STATUS_LABELS, formatCurrency, formatDate } = labelsFor(t.locale);
   const visibility = getPortalVisibility(project);
 
   if (!visibility.showQuote) {
@@ -63,7 +64,7 @@ export default async function PortalQuotePage({
   }
 
   if (!active) {
-    return <p className="text-sm text-zinc-500">No hay cotización disponible en este momento.</p>;
+    return <p className="text-sm text-zinc-500">{t('portal.quote.empty')}</p>;
   }
 
   const lineItems = parseLineItemsJson(active.line_items);
@@ -72,15 +73,15 @@ export default async function PortalQuotePage({
   return (
     <div className="space-y-4">
       <p className="text-sm text-zinc-600">
-        Detalle de arquitectura en{' '}
+        {t('portal.quote.introPrefix')}{' '}
         <Link href={`/p/${slug}/propuesta`} className="text-codiva-primary hover:underline">
-          Propuesta / Canvas
+          {t('portal.quote.proposalLink')}
         </Link>
         {visibility.showCosts ? (
           <>
-            . Estado de anticipos y saldo en{' '}
+            {t('portal.quote.introCosts')}{' '}
             <Link href={`/p/${slug}/pagos`} className="text-codiva-primary hover:underline">
-              Pagos
+              {t('portal.quote.paymentsLink')}
             </Link>
           </>
         ) : null}
@@ -103,32 +104,34 @@ export default async function PortalQuotePage({
         <p className="text-2xl font-bold text-codiva-primary">
           {formatCurrency(active.total_amount, active.currency)}
         </p>
-        <p className="mt-1 text-sm text-zinc-500">Solo desarrollo · MXN sin IVA</p>
+        <p className="mt-1 text-sm text-zinc-500">{t('portal.quote.devOnly')}</p>
         {active.valid_until && active.status !== 'accepted' && (
-          <p className="mt-1 text-sm text-zinc-500">Válida hasta {formatDate(active.valid_until)}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {t('portal.quote.validUntil', { date: formatDate(active.valid_until) })}
+          </p>
         )}
         {active.service_type && (
-          <p className="mt-2 text-sm text-zinc-500">Tipo: {active.service_type}</p>
+          <p className="mt-2 text-sm text-zinc-500">{t('portal.quote.type', { type: active.service_type })}</p>
         )}
 
         <div className="mt-6 space-y-6 text-sm text-zinc-700">
           {active.scope && (
             <div>
-              <h3 className="mb-1 font-semibold text-zinc-900">Alcance</h3>
+              <h3 className="mb-1 font-semibold text-zinc-900">{t('portal.quote.scope')}</h3>
               <div className="whitespace-pre-wrap">{active.scope}</div>
             </div>
           )}
 
           {lineItems.length > 0 && (
             <div>
-              <h3 className="mb-2 font-semibold text-zinc-900">Módulos / alcance</h3>
+              <h3 className="mb-2 font-semibold text-zinc-900">{t('portal.quote.modules')}</h3>
               <div className="overflow-x-auto rounded-xl border border-zinc-200">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Concepto</th>
+                      <th className="px-3 py-2 font-medium">{t('portal.quote.concept')}</th>
                       <th className="px-3 py-2 font-medium">%</th>
-                      <th className="px-3 py-2 font-medium text-right">Monto</th>
+                      <th className="px-3 py-2 font-medium text-right">{t('portal.quote.amount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -148,7 +151,7 @@ export default async function PortalQuotePage({
                   <tfoot>
                     <tr className="border-t border-zinc-200 bg-zinc-50">
                       <td className="px-3 py-3 font-semibold" colSpan={2}>
-                        Total desarrollo
+                        {t('portal.quote.totalDev')}
                       </td>
                       <td className="px-3 py-3 text-right font-bold text-codiva-primary">
                         {formatCurrency(active.total_amount, active.currency)}
@@ -162,7 +165,7 @@ export default async function PortalQuotePage({
 
           {phases.length > 0 && (
             <div>
-              <h3 className="mb-2 font-semibold text-zinc-900">Plan de entregas</h3>
+              <h3 className="mb-2 font-semibold text-zinc-900">{t('portal.quote.plan')}</h3>
               <ul className="space-y-2">
                 {phases.map((phase, idx) => (
                   <li
@@ -173,7 +176,7 @@ export default async function PortalQuotePage({
                       {phase.name}
                       {phase.weeks ? (
                         <span className="ml-2 text-xs font-normal text-zinc-500">
-                          Sem. {phase.weeks}
+                          {t('portal.quote.weeks', { weeks: phase.weeks })}
                         </span>
                       ) : null}
                     </p>
@@ -188,19 +191,19 @@ export default async function PortalQuotePage({
 
           {active.deliverables && (
             <div>
-              <h3 className="mb-1 font-semibold text-zinc-900">Entregables</h3>
+              <h3 className="mb-1 font-semibold text-zinc-900">{t('portal.quote.deliverables')}</h3>
               <div className="whitespace-pre-wrap">{active.deliverables}</div>
             </div>
           )}
           {active.considerations && (
             <div>
-              <h3 className="mb-1 font-semibold text-zinc-900">Consideraciones</h3>
+              <h3 className="mb-1 font-semibold text-zinc-900">{t('portal.quote.considerations')}</h3>
               <div className="whitespace-pre-wrap">{active.considerations}</div>
             </div>
           )}
           {active.optional_extras && (
             <div>
-              <h3 className="mb-1 font-semibold text-zinc-900">Alternativas / no incluido</h3>
+              <h3 className="mb-1 font-semibold text-zinc-900">{t('portal.quote.extras')}</h3>
               <div className="whitespace-pre-wrap">{active.optional_extras}</div>
             </div>
           )}
@@ -208,22 +211,22 @@ export default async function PortalQuotePage({
 
         {active.status === 'sent' && (
           <div className="mt-8 flex flex-wrap gap-3">
-            <ToastForm success="Aceptado" action={onAccept}>
+            <ToastForm success={t('portal.quote.accepted')} action={onAccept}>
               <input type="hidden" name="quoteId" value={active.id} />
               <button
                 type="submit"
                 className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white"
               >
-                Aceptar propuesta
+                {t('portal.quote.accept')}
               </button>
             </ToastForm>
-            <ToastForm success="Rechazado" action={onReject}>
+            <ToastForm success={t('portal.quote.rejected')} action={onReject}>
               <input type="hidden" name="quoteId" value={active.id} />
               <button
                 type="submit"
                 className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium"
               >
-                Rechazar
+                {t('portal.quote.reject')}
               </button>
             </ToastForm>
           </div>
@@ -232,7 +235,7 @@ export default async function PortalQuotePage({
 
       {otherQuotes.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-zinc-900">Otras propuestas</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">{t('portal.quote.other')}</h3>
           {otherQuotes.map((q) => (
             <article key={q.id} className="rounded-2xl border border-zinc-200 bg-white p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -267,22 +270,22 @@ export default async function PortalQuotePage({
               </div>
               {q.status === 'sent' && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <ToastForm success="Aceptado" action={onAccept}>
+                  <ToastForm success={t('portal.quote.accepted')} action={onAccept}>
                     <input type="hidden" name="quoteId" value={q.id} />
                     <button
                       type="submit"
                       className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white"
                     >
-                      Aceptar
+                      {t('portal.quote.acceptShort')}
                     </button>
                   </ToastForm>
-                  <ToastForm success="Rechazado" action={onReject}>
+                  <ToastForm success={t('portal.quote.rejected')} action={onReject}>
                     <input type="hidden" name="quoteId" value={q.id} />
                     <button
                       type="submit"
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium"
                     >
-                      Rechazar
+                      {t('portal.quote.reject')}
                     </button>
                   </ToastForm>
                 </div>

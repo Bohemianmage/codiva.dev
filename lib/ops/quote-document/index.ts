@@ -1,7 +1,7 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { formatCurrency, formatDate, EMPTY_LABEL, DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { serviceTypeHeading } from '@/lib/ops/quote-document/catalog';
-import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
+import { BRAND_EMAIL, CODIVA_BRAND, brandWordmarkHtml } from '@/lib/brand';
 import { DEFAULT_LOCALE, dateLocale, type Locale } from '@/i18n/config';
 import { tSync } from '@/i18n/translate';
 
@@ -131,11 +131,11 @@ function lineItemsBlock(items: QuoteLineItem[], currency: string, totalAmount?: 
     </section>`;
 }
 
-function metaRow(label: string, value: string): string {
+function metaRow(label: string, value: string, valueHtml?: string): string {
   return `
     <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid ${BRAND.border};">
       <span style="min-width:150px;font-size:13px;font-weight:600;color:${BRAND.muted};">${escapeHtml(label)}</span>
-      <span style="font-size:13px;color:${BRAND.text};">${escapeHtml(value)}</span>
+      <span style="font-size:13px;color:${BRAND.text};">${valueHtml ?? escapeHtml(value)}</span>
     </div>`;
 }
 
@@ -159,12 +159,13 @@ export function renderQuoteDocumentHtml(
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>${escapeHtml(data.projectName)} - ${escapeHtml(tSync(locale, 'quoteDoc.titleSuffix'))}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
   <style>@media print { body { background:#fff!important; } .page { box-shadow:none!important; margin:0!important; } }</style>
 </head>
 <body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:Inter,Segoe UI,Arial,sans-serif;">
   <article class="page" style="max-width:820px;margin:0 auto;background:#fff;border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.06);">
     <header style="background:${BRAND.primary};padding:28px 32px;color:#fff;">
-      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0.9;">Codiva.dev</p>
+      ${brandWordmarkHtml({ sizePx: 18, as: 'p', onDark: true })}
       <p style="margin:10px 0 0;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0.95;">${escapeHtml(heading)}</p>
       <h1 style="margin:14px 0 0;font-size:28px;line-height:1.2;font-weight:700;">${escapeHtml(data.clientLabel)}</h1>
       ${data.version ? `<p style="margin:8px 0 0;font-size:12px;opacity:0.85;">${escapeHtml(tSync(locale, 'quoteDoc.version', { version: data.version }))}</p>` : ''}
@@ -175,7 +176,7 @@ export function renderQuoteDocumentHtml(
         ${metaRow(tSync(locale, 'quoteDoc.client'), data.clientName)}
         ${partnerBlock}
         ${data.endClientCompany ? metaRow(tSync(locale, 'quoteDoc.endClient'), data.endClientCompany) : ''}
-        ${metaRow(tSync(locale, 'quoteDoc.developer'), 'Codiva.dev')}
+        ${metaRow(tSync(locale, 'quoteDoc.developer'), 'Codiva.dev', brandWordmarkHtml({ sizePx: 13 }))}
         ${metaRow(tSync(locale, 'quoteDoc.issued'), formatIssuedDate(data.issuedAt, locale))}
         ${metaRow(tSync(locale, 'quoteDoc.service'), data.serviceDescription)}
         ${metaRow(tSync(locale, 'quoteDoc.projectState'), data.projectState)}
@@ -191,7 +192,7 @@ export function renderQuoteDocumentHtml(
       <footer style="margin-top:36px;padding-top:20px;border-top:1px solid ${BRAND.border};">
         <p style="margin:0;font-size:14px;color:${BRAND.text};">${escapeHtml(tSync(locale, 'quoteDoc.sincerely'))}</p>
         <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:${BRAND.text};">Jean Claude Martell</p>
-        <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">Codiva.dev · j.martell@codiva.dev</p>
+        <p style="margin:2px 0 0;font-size:13px;color:${BRAND.muted};">${brandWordmarkHtml({ sizePx: 13 })} · j.martell@codiva.dev</p>
       </footer>
     </div>
   </article>

@@ -45,7 +45,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <dt className="text-zinc-500">Rol</dt>
-              <dd>{ROLE_LABELS[staff.role] ?? staff.role}</dd>
+              <dd>{ROLE_LABELS[staff.role as keyof typeof ROLE_LABELS] ?? staff.role}</dd>
             </div>
           </dl>
           {canManageTeam && (

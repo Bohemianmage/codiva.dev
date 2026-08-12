@@ -20,6 +20,7 @@ import {
   deleteDraftJobPosting,
   updateJobApplicationStatus,
 } from '@/lib/ops/career-actions';
+import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
 import { getLocale } from '@/i18n/locale';
 
@@ -45,6 +46,17 @@ export type OpsJobApplicationRow = {
   original_filename: string | null;
   assessment_attempt_id?: string | null;
   ops_job_postings: { title: string; slug: string } | { title: string; slug: string }[] | null;
+};
+
+export type OpsHuntReportRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  page_url: string;
+  title: string;
+  matched_seed_id: string | null;
+  discipline?: string | null;
+  created_at: string;
 };
 
 export type OpsJobAttemptRow = {
@@ -106,10 +118,12 @@ export default async function OpsCareersPanel({
   postings,
   applications,
   attempts = [],
+  huntReports = [],
 }: {
   postings: OpsJobPostingRow[];
   applications: OpsJobApplicationRow[];
   attempts?: OpsJobAttemptRow[];
+  huntReports?: OpsHuntReportRow[];
 }) {
   const { formatDate } = labelsFor(await getLocale());
   async function onCreate(formData: FormData) {
@@ -408,6 +422,51 @@ export default async function OpsCareersPanel({
                 </div>
               </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold">Hallazgos reportados</h2>
+        <p className="text-sm text-zinc-500">
+          Segunda parte de la prueba de testers. Si coincide con una semilla del oficio, se marca; si no, puede ser un
+          defecto real u otro oficio.
+        </p>
+        {!huntReports.length ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+            Todavía no hay hallazgos.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {huntReports.slice(0, 40).map((row) => {
+              const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
+              const craftLabel =
+                row.discipline && isCareerDiscipline(row.discipline)
+                  ? CAREER_DISCIPLINE_LABELS[row.discipline]
+                  : seed
+                    ? CAREER_DISCIPLINE_LABELS[seed.craft]
+                    : null;
+              return (
+                <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{row.full_name}</p>
+                      <p className="text-sm text-zinc-500">{row.email}</p>
+                      <p className="mt-1 text-sm text-zinc-800">{row.title}</p>
+                      <p className="mt-1 text-xs text-zinc-400">
+                        {row.page_url} · {formatDate(row.created_at)}
+                        {craftLabel ? ` · ${craftLabel}` : ''}
+                      </p>
+                    </div>
+                    <StatusBadge
+                      label={seed ? `Semilla · ${CAREER_DISCIPLINE_LABELS[seed.craft]}` : 'Sin coincidencia'}
+                      tone={seed ? 'success' : 'warning'}
+                    />
+                  </div>
+                  {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

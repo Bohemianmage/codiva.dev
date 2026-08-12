@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 export default function Error({
   error,
@@ -18,7 +19,7 @@ export default function Error({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-16 text-center font-sans antialiased">
-      <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Codiva</p>
+      <CodivaWordmarkMark size="sm" />
       <p className="mt-4 font-display text-6xl font-bold tracking-tight text-zinc-200 sm:text-7xl">
         500
       </p>

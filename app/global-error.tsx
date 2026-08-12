@@ -49,8 +49,8 @@ export default function GlobalError({
         }}
       >
         <div>
-          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', color: '#104E4E' }}>
-            CODIVA
+          <p style={{ fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif", fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: '#18181B' }}>
+            Codiva<span style={{ fontWeight: 500, color: '#104E4E' }}>.dev</span>
           </p>
           <h1 style={{ marginTop: 16, fontSize: 24, fontWeight: 700 }}>{copy.title}</h1>
           <p style={{ marginTop: 8, fontSize: 14, color: '#52525b', maxWidth: 360 }}>{copy.body}</p>

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Heading from '../components/Heading';
 import Paragraph from '../components/Paragraph';
 import TypewriterCycle from '../components/TypewriterCycle';
-import CodivaWordmark from '../components/CodivaWordmark';
+import CodivaBrandText from '../components/CodivaBrandText';
 
 export default function About() {
   const { t } = useTranslation();
@@ -73,9 +73,9 @@ export default function About() {
           key={inView ? 'visible-text' : 'hidden-text'}
         >
           <Paragraph className="max-w-2xl mx-auto text-codiva-secondary text-base md:text-lg mb-4">
-            {t('about.paragraph1Intro').split('Codiva.dev')[0]}
-            <CodivaWordmark size="inline" variant="inline" active={inView} className="align-baseline" />
-            {t('about.paragraph1Intro').split('Codiva.dev')[1]}
+            <CodivaBrandText className="align-baseline">
+              {t('about.paragraph1Intro')}
+            </CodivaBrandText>
             <TypewriterCycle
               phrases={typedPhrases}
               className="font-medium text-codiva-primary"
@@ -93,9 +93,9 @@ export default function About() {
               active={inView}
               trailingComma
             />
-            {t('about.paragraph2Outro').split('Codiva.dev')[0]}
-            <CodivaWordmark size="inline" variant="inline" active={inView} className="align-baseline" />
-            {t('about.paragraph2Outro').split('Codiva.dev')[1]}
+            <CodivaBrandText className="align-baseline">
+              {t('about.paragraph2Outro')}
+            </CodivaBrandText>
           </Paragraph>
         </motion.div>
       </div>

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 import { updatePassword } from '@/lib/ops/password-reset';
 
 export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?: string }) {
@@ -42,9 +43,7 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-semibold tracking-tight text-zinc-900">
-            Codiva<span className="font-medium text-codiva-primary">.dev</span>
-          </p>
+          <CodivaWordmarkMark size="sm" />
           <LanguageSwitcher />
         </div>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">{t('portal.reset.title')}</h1>

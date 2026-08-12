@@ -1,5 +1,5 @@
 import { randomBytes, randomInt } from 'crypto';
-import { CAREER_DISCIPLINE_CATALOG, isCareerDiscipline, postingAsksDiscipline } from '@/lib/ops/career-disciplines';
+import { CAREER_DISCIPLINE_CATALOG, isCareerDiscipline, postingAsksDiscipline, type CareerDiscipline } from '@/lib/ops/career-disciplines';
 import { getAssessmentCatalog } from './catalog';
 import type {
   AssessmentAnswers,
@@ -176,8 +176,8 @@ export function catalogForApplication(
   discipline?: string | null
 ) {
   if (postingAsksDiscipline(slug)) {
-    if (!isCareerDiscipline(discipline || '')) return null;
-    return getAssessmentCatalog(CAREER_DISCIPLINE_CATALOG[discipline]);
+    if (!isCareerDiscipline(discipline ?? '')) return null;
+    return getAssessmentCatalog(CAREER_DISCIPLINE_CATALOG[discipline as CareerDiscipline]);
   }
   return catalogForPosting(assessmentKey, slug);
 }

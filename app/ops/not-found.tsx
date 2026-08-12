@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import StatusScreen from '@/components/ops/StatusScreen';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 import { isPortalHost, marketingBaseUrl } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
 
@@ -11,7 +12,7 @@ export default async function OpsNotFound() {
   if (onPortal) {
     return (
       <StatusScreen
-        eyebrow="Codiva Portal"
+        eyebrow={<CodivaWordmarkMark size="sm" />}
         code="404"
         title={t('errors.notFoundTitle')}
         description={t('errors.portalNotFoundBody')}
@@ -23,7 +24,7 @@ export default async function OpsNotFound() {
 
   return (
     <StatusScreen
-      eyebrow="Codiva.dev"
+      eyebrow={<CodivaWordmarkMark size="sm" />}
       code="404"
       title={t('errors.notFoundTitle')}
       description={t('errors.opsNotFoundBody')}

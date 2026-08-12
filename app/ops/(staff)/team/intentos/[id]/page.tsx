@@ -3,7 +3,8 @@ import { requireAdminStaff } from '@/lib/ops/auth';
 import { getAssessmentCatalog } from '@/lib/careers/assessments/catalog';
 import { parseAnswers } from '@/lib/careers/assessments/server';
 import { reviewRowsForAttempt, scoreAnswers } from '@/lib/careers/assessments/engine';
-import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -43,6 +44,8 @@ export default async function AssessmentAttemptPage({
 }) {
   const { id } = await params;
   const { supabase } = await requireAdminStaff();
+  const t = await getT();
+  const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
 
   const { data: attempt } = await supabase
     .from('ops_job_assessment_attempts')

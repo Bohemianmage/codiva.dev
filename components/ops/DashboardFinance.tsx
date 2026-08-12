@@ -1,44 +1,8 @@
 import Link from 'next/link';
 import StatusBadge, { chargeTone, projectTone } from '@/components/ops/StatusBadge';
 import type { FinanceFilters, FinanceSummary } from '@/lib/ops/finance';
-import {
-  labelsFor,
-  CHARGE_KIND_LABELS,
-  CHARGE_STATUS_LABELS,
-  PROJECT_STATUS_LABELS,
-  formatChargeAmount,
-} from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
-
-const CHARGE_STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: '', label: 'Todos los cargos' },
-  { value: 'outstanding', label: 'Adeudos (pendiente + vencido)' },
-  { value: 'pending', label: CHARGE_STATUS_LABELS.pending },
-  { value: 'overdue', label: CHARGE_STATUS_LABELS.overdue },
-  { value: 'paid', label: CHARGE_STATUS_LABELS.paid },
-  { value: 'waived', label: CHARGE_STATUS_LABELS.waived },
-];
-
-const KIND_FILTERS: { value: string; label: string }[] = [
-  { value: '', label: 'Todos los tipos' },
-  ...Object.entries(CHARGE_KIND_LABELS).map(([value, label]) => ({ value, label })),
-];
-
-const PROJECT_STATUS_FILTERS: { value: string; label: string }[] = [
-  { value: '', label: 'Todos los proyectos' },
-  ...Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => ({ value, label })),
-];
-
-function money(amount: number, tbdCount = 0) {
-  return (
-    <>
-      {formatChargeAmount(amount, 'MXN')}
-      {tbdCount > 0 ? (
-        <span className="ml-1 text-xs font-medium text-amber-700">(+{tbdCount} TBD)</span>
-      ) : null}
-    </>
-  );
-}
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function DashboardFinance({
   summary,
@@ -47,7 +11,45 @@ export default async function DashboardFinance({
   summary: FinanceSummary;
   filters: FinanceFilters;
 }) {
-  const { formatCurrency, formatDate, formatChargeAmount: formatCharge } = labelsFor(await getLocale());
+  const t = await getT();
+  const {
+    formatCurrency,
+    formatDate,
+    formatChargeAmount,
+    CHARGE_KIND_LABELS,
+    CHARGE_STATUS_LABELS,
+    PROJECT_STATUS_LABELS,
+  } = labelsFor(t.locale);
+
+  const CHARGE_STATUS_FILTERS: { value: string; label: string }[] = [
+    { value: '', label: t('ops.pages.financeAllCharges') },
+    { value: 'outstanding', label: t('ops.pages.financeOutstanding') },
+    { value: 'pending', label: CHARGE_STATUS_LABELS.pending },
+    { value: 'overdue', label: CHARGE_STATUS_LABELS.overdue },
+    { value: 'paid', label: CHARGE_STATUS_LABELS.paid },
+    { value: 'waived', label: CHARGE_STATUS_LABELS.waived },
+  ];
+
+  const KIND_FILTERS: { value: string; label: string }[] = [
+    { value: '', label: t('ops.pages.financeAllKinds') },
+    ...Object.entries(CHARGE_KIND_LABELS).map(([value, label]) => ({ value, label })),
+  ];
+
+  const PROJECT_STATUS_FILTERS: { value: string; label: string }[] = [
+    { value: '', label: t('ops.pages.financeAllProjects') },
+    ...Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+  ];
+
+  function money(amount: number, tbdCount = 0) {
+    return (
+      <>
+        {formatChargeAmount(amount, 'MXN')}
+        {tbdCount > 0 ? (
+          <span className="ml-1 text-xs font-medium text-amber-700">(+{tbdCount} TBD)</span>
+        ) : null}
+      </>
+    );
+  }
   const hasFilters = Boolean(
     filters.org || filters.chargeStatus || filters.kind || filters.projectStatus
   );
@@ -166,7 +168,7 @@ export default async function DashboardFinance({
           <p className="mt-2 text-xl font-bold text-sky-900">
             {formatCurrency(summary.quoteTotal, 'MXN')}
           </p>
-          <p className="mt-1 text-xs text-sky-800/70">Cotización aceptada o última con monto</p>
+          <p className="mt-1 text-xs text-sky-800/70">{t('ops.pages.financeQuoteHint')}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">

@@ -3,6 +3,7 @@ import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { jobEmploymentLabel, postingAsksDiscipline } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
 import { getLocale, getT } from '@/i18n/locale';
+import CodivaBrandText from '@/components/CodivaBrandText';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,14 @@ export default async function EmpleosPage() {
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-600 sm:text-base">
           {t('career.list_intro')}
         </p>
+        <p lang="en" className="mx-auto mt-2 max-w-xl text-xs text-zinc-500">
+          Open positions. Join the team.
+        </p>
+        <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
+          <Link href="/empleos/hallazgos" className="font-medium text-codiva-primary hover:underline">
+            {t('career.hunt_cta')}
+          </Link>
+        </p>
         {rows.length ? (
           <p className="mt-4 inline-flex rounded-full border border-codiva-primary/20 bg-white/90 px-4 py-1.5 text-xs font-semibold text-codiva-primary">
             {rows.length === 1 ? t('career.open_one') : t('career.open_many', { count: rows.length })}
@@ -60,7 +69,9 @@ export default async function EmpleosPage() {
       {!rows.length ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center">
           <h2 className="font-semibold text-zinc-900">{t('career.empty_title')}</h2>
-          <p className="mt-2 text-sm text-zinc-500">{t('career.empty_body')}</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            <CodivaBrandText>{t('career.empty_body')}</CodivaBrandText>
+          </p>
         </div>
       ) : (
         <ul className="space-y-3">

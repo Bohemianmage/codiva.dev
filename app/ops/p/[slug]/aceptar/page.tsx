@@ -7,6 +7,7 @@ import { acceptPortalLegalDocuments } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { LEGAL_DOCS_VERSION, LEGAL_UPDATED_LABEL } from '@/lib/ops/legal/version';
 import { getT } from '@/i18n/locale';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 export default async function PortalAcceptLegalPage({
   params,
@@ -36,9 +37,7 @@ export default async function PortalAcceptLegalPage({
     <div className="min-h-screen bg-zinc-50 px-4 py-10">
       <div className="mx-auto max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">
-            {t('portal.legalAccept.eyebrow')}
-          </p>
+          <CodivaWordmarkMark size="sm" />
           <LanguageSwitcher />
         </div>
         <h1 className="mt-2 text-2xl font-bold text-zinc-900">{access.project.name}</h1>

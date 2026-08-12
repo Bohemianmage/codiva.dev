@@ -2,31 +2,11 @@
 
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
-
-const SIZE = {
-  sm: { codiva: 'text-base', dev: 'text-sm' },
-  md: { codiva: 'text-xl', dev: 'text-base' },
-  lg: { codiva: 'text-2xl', dev: 'text-lg' },
-  inline: { codiva: 'text-[1em]', dev: 'text-[1em]' },
-};
-
-const VARIANT = {
-  default: {
-    codiva: 'text-zinc-900',
-    dev: 'text-codiva-primary',
-    weight: 'font-bold',
-  },
-  footer: {
-    codiva: 'text-white',
-    dev: 'text-codiva-accent-light',
-    weight: 'font-medium',
-  },
-  inline: {
-    codiva: 'text-zinc-900',
-    dev: 'text-codiva-primary',
-    weight: 'font-semibold',
-  },
-};
+import {
+  WORDMARK_SIZE,
+  WORDMARK_VARIANT,
+  wordmarkClassName,
+} from './CodivaWordmarkMark';
 
 /**
  * Wordmark unificado: Codiva + .dev con animación en cascada.
@@ -38,19 +18,12 @@ export default function CodivaWordmark({
   active = true,
   className = '',
 }) {
-  const sizes = SIZE[size] ?? SIZE.md;
-  const colors = VARIANT[variant] ?? VARIANT.default;
+  const sizes = WORDMARK_SIZE[size] ?? WORDMARK_SIZE.md;
+  const colors = WORDMARK_VARIANT[variant] ?? WORDMARK_VARIANT.default;
   const shouldAnimate = animate && active;
 
   return (
-    <span
-      className={clsx(
-        'inline-flex tracking-tight',
-        size === 'inline' ? 'items-baseline' : 'items-end font-display',
-        colors.weight,
-        className
-      )}
-    >
+    <span className={wordmarkClassName(size, variant, className)}>
       <motion.span
         initial={animate ? { opacity: 0, y: 10 } : false}
         animate={shouldAnimate ? { opacity: 1, y: 0 } : animate ? { opacity: 0, y: 10 } : undefined}

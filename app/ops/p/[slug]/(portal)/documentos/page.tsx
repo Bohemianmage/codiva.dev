@@ -2,7 +2,7 @@ import PortalDocumentRequests from '@/components/ops/PortalDocumentRequests';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { clientFulfillDocumentRequest } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { mutualNdaPath } from '@/lib/ops/legal/mutual-nda';
 import { opsFileHref } from '@/lib/ops/storage';
 
@@ -13,7 +13,8 @@ export default async function PortalDocumentsPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requirePortalMemberWithAcceptances(slug);
-  const { DOCUMENT_SOURCE_LABELS, DOCUMENT_TYPE_LABELS, formatDate } = labelsFor(await getLocale());
+  const t = await getT();
+  const { DOCUMENT_SOURCE_LABELS, DOCUMENT_TYPE_LABELS, formatDate } = labelsFor(t.locale);
 
   const [{ data: documents }, { data: orgDocuments }, { data: requests }, { data: organization }] =
     await Promise.all([
@@ -67,7 +68,7 @@ export default async function PortalDocumentsPage({
   const inbound = mergedDocs.filter((d) => d.source === 'client');
   const clientName = organization?.name?.trim() || project.name;
   const liveNdaHref = mutualNdaPath(slug);
-  const liveNdaTitle = `NDA mutuo - borrador Codiva × ${clientName}`;
+  const liveNdaTitle = t('portal.docs.liveNda', { client: clientName });
   const orgHasSignedNda = Boolean(organization?.mutual_nda_document_id || signedNdas.length);
   const hasOpenNdaRequest =
     !orgHasSignedNda &&
@@ -117,11 +118,8 @@ export default async function PortalDocumentsPage({
       />
 
       <section>
-        <h2 className="mb-1 text-lg font-semibold">Materiales de Codiva</h2>
-        <p className="mb-4 text-sm text-zinc-600">
-          Contratos, NDA firmado (a nivel cliente) y archivos que compartimos contigo. La identidad y
-          propuesta están en Propuesta.
-        </p>
+        <h2 className="mb-1 text-lg font-semibold">{t('portal.docs.materialsTitle')}</h2>
+        <p className="mb-4 text-sm text-zinc-600">{t('portal.docs.materialsHint')}</p>
         <ul className="space-y-3">
           {materials.map((d) => {
             const href = hrefFor(d);
@@ -134,7 +132,7 @@ export default async function PortalDocumentsPage({
                   <p className="font-medium">{d.title}</p>
                   <p className="text-zinc-500">
                     {DOCUMENT_TYPE_LABELS[d.type] ?? d.type}
-                    {d.signed ? ' · firmado' : ''}
+                    {d.signed ? ` · ${t('portal.docs.signed')}` : ''}
                     {' · '}
                     {DOCUMENT_SOURCE_LABELS[d.source] ?? d.source}
                     {' · '}
@@ -143,19 +141,19 @@ export default async function PortalDocumentsPage({
                 </div>
                 {href ? (
                   <a href={href} className="text-codiva-primary hover:underline" target="_blank" rel="noreferrer">
-                    Descargar
+                    {t('portal.docs.download')}
                   </a>
                 ) : null}
               </li>
             );
           })}
-          {!materials.length && <p className="text-sm text-zinc-500">Sin materiales todavía.</p>}
+          {!materials.length && <p className="text-sm text-zinc-500">{t('portal.docs.empty')}</p>}
         </ul>
       </section>
 
       {inbound.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-semibold">Tus envíos</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t('portal.docs.uploads')}</h2>
           <ul className="space-y-3">
             {inbound.map((d) => {
               const href = hrefFor(d);
@@ -170,7 +168,7 @@ export default async function PortalDocumentsPage({
                   </div>
                   {href ? (
                     <a href={href} className="text-codiva-primary hover:underline" target="_blank" rel="noreferrer">
-                      Ver
+                      {t('portal.docs.view')}
                     </a>
                   ) : null}
                 </li>

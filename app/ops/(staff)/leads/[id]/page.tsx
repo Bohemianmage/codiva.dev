@@ -11,7 +11,8 @@ import {
   createLeadQuote,
   sendLeadQuote,
 } from '@/lib/ops/actions';
-import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency, EMPTY_LABEL } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { publicQuoteUrl } from '@/lib/ops/quote-tokens';
 import { createAdminClient } from '@/lib/supabase/admin';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
@@ -26,6 +27,9 @@ export default async function LeadDetailPage({
   const { id } = await params;
   const { tab = 'resumen' } = await searchParams;
   const { supabase } = await requireCapability('leads');
+  const t = await getT();
+  const { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency, EMPTY_LABEL } =
+    labelsFor(t.locale);
 
   const { data: lead } = await supabase.from('leads').select('*').eq('id', id).single();
   if (!lead) redirect('/leads');

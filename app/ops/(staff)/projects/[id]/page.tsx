@@ -30,22 +30,8 @@ import OpsProjectSprints from '@/components/ops/OpsProjectSprints';
 import OpsProjectHours from '@/components/ops/OpsProjectHours';
 import ToastForm from '@/components/ops/ToastForm';
 import { can } from '@/lib/ops/permissions';
-import {
-  PROJECT_STATUS_LABELS,
-  QUOTE_STATUS_LABELS,
-  MILESTONE_STATUS_LABELS,
-  DELIVERABLE_KIND_LABELS,
-  DOCUMENT_TYPE_LABELS,
-  DOCUMENT_SOURCE_LABELS,
-  DOCUMENT_REQUEST_STATUS_LABELS,
-  DOCUMENT_REQUEST_INPUT_LABELS,
-  CHARGE_KIND_LABELS,
-  CHARGE_STATUS_LABELS,
-  formatDate,
-  formatCurrency,
-  formatChargeAmount,
-  isClientBorneChargeKind,
-} from '@/lib/ops/labels';
+import { labelsFor, isClientBorneChargeKind } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -65,6 +51,22 @@ export default async function ProjectDetailPage({
   const access = await requireStaff();
   await assertProjectAccess(access, id);
   const { supabase, user, staff } = access;
+  const t = await getT();
+  const {
+    PROJECT_STATUS_LABELS,
+    QUOTE_STATUS_LABELS,
+    MILESTONE_STATUS_LABELS,
+    DELIVERABLE_KIND_LABELS,
+    DOCUMENT_TYPE_LABELS,
+    DOCUMENT_SOURCE_LABELS,
+    DOCUMENT_REQUEST_STATUS_LABELS,
+    DOCUMENT_REQUEST_INPUT_LABELS,
+    CHARGE_KIND_LABELS,
+    CHARGE_STATUS_LABELS,
+    formatDate,
+    formatCurrency,
+    formatChargeAmount,
+  } = labelsFor(t.locale);
 
   const { data: project } = await supabase
     .from('projects')
@@ -1099,13 +1101,14 @@ export default async function ProjectDetailPage({
   );
 }
 
-function MilestoneForm({
+async function MilestoneForm({
   projectId,
   createMilestone,
 }: {
   projectId: string;
   createMilestone: typeof import('@/lib/ops/actions').createMilestone;
 }) {
+  const { MILESTONE_STATUS_LABELS } = labelsFor((await getT()).locale);
   async function action(formData: FormData) {
     'use server';
     await createMilestone(projectId, formData);
@@ -1128,7 +1131,7 @@ function MilestoneForm({
   );
 }
 
-function MilestoneCard({
+async function MilestoneCard({
   milestone,
   projectId,
   updateMilestone,
@@ -1147,6 +1150,7 @@ function MilestoneCard({
   updateMilestone: typeof import('@/lib/ops/actions').updateMilestone;
   addMilestoneUpdate: typeof import('@/lib/ops/actions').addMilestoneUpdate;
 }) {
+  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor((await getT()).locale);
   async function onUpdate(formData: FormData) {
     'use server';
     await updateMilestone(milestone.id, projectId, formData);

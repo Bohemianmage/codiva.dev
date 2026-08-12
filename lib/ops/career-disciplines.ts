@@ -31,6 +31,14 @@ export function isCareerDiscipline(value: string): value is CareerDiscipline {
   return (CAREER_DISCIPLINES as readonly string[]).includes(value);
 }
 
+export function disciplineFromCatalogKey(key: string | null | undefined): CareerDiscipline | null {
+  const catalogKey = String(key || '').trim();
+  const found = (Object.entries(CAREER_DISCIPLINE_CATALOG) as [CareerDiscipline, string][]).find(
+    ([, value]) => value === catalogKey
+  );
+  return found?.[0] ?? null;
+}
+
 /** PM no declara oficio; el resto de vacantes de entrega sí. */
 export function postingAsksDiscipline(slug: string | null | undefined): boolean {
   return String(slug || '').trim().toLowerCase() !== 'project-manager';

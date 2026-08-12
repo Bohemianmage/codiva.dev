@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { getT } from '@/i18n/locale';
-import CodivaWordmark from '@/components/CodivaWordmark';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 export default async function LegalLayout({ children }: { children: React.ReactNode }) {
   const t = await getT();
@@ -12,7 +12,7 @@ export default async function LegalLayout({ children }: { children: React.ReactN
           <Link href="/" className="text-sm font-medium text-codiva-primary hover:underline">
             ← {t('legal.back')}
           </Link>
-          <CodivaWordmark size="sm" />
+          <CodivaWordmarkMark size="sm" />
           <LanguageSwitcher />
         </div>
       </header>

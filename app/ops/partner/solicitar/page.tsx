@@ -1,5 +1,6 @@
 import PartnerRequestForm from '@/components/ops/PartnerRequestForm';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 import { marketingBaseUrl } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
 
@@ -20,7 +21,10 @@ export default async function PartnerRequestPage() {
           <LanguageSwitcher />
         </div>
         <header className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-codiva-primary">Codiva Partners</p>
+          <div className="flex items-baseline justify-center gap-1.5">
+            <CodivaWordmarkMark size="sm" />
+            <span className="text-sm font-medium text-zinc-500">Partners</span>
+          </div>
           <h1 className="mt-2 text-2xl font-bold text-zinc-900">{t('partner.title')}</h1>
           <p className="mt-2 text-sm text-zinc-600">{t('partner.subtitle')}</p>
         </header>

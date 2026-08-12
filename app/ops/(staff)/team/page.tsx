@@ -1,6 +1,7 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import OpsCareersPanel, {
+  type OpsHuntReportRow,
   type OpsJobApplicationRow,
   type OpsJobAttemptRow,
   type OpsJobPostingRow,
@@ -17,15 +18,11 @@ import {
   OPS_ROLE_LABELS,
   WORK_MODALITY_LABELS,
 } from '@/lib/ops/offer-letter';
-import { EMPTY_LABEL, formatCurrency, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  pm: 'Project Manager',
-  dev: 'Desarrollador',
-};
+import CodivaBrandText from '@/components/CodivaBrandText';
 
 function tabClass(active: boolean) {
   return active
@@ -42,9 +39,12 @@ export default async function TeamPage({
   const tab = tabParam === 'ofertas' ? 'ofertas' : tabParam === 'bolsa' ? 'bolsa' : 'miembros';
 
   const { supabase } = await requireAdminStaff();
+  const t = await getT();
+  const { EMPTY_LABEL, formatCurrency, formatDate } = labelsFor(t.locale);
+  const ROLE_LABELS = { admin: t('ops.roles.admin'), pm: t('ops.roles.pm'), dev: t('ops.roles.dev') };
   const admin = createAdminClient();
 
-  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }, { data: attempts }] =
+  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }, { data: attempts }, { data: huntReports }] =
     await Promise.all([
       supabase
         .from('staff_profiles')
@@ -73,6 +73,11 @@ export default async function TeamPage({
         )
         .order('created_at', { ascending: false })
         .limit(200),
+      supabase
+        .from('ops_hunt_reports')
+        .select('id, full_name, email, page_url, title, matched_seed_id, discipline, created_at')
+        .order('created_at', { ascending: false })
+        .limit(80),
     ]);
 
   const emails = new Map<string, string>();
@@ -131,7 +136,9 @@ export default async function TeamPage({
           >
             <h2 className="font-semibold">Invitar al equipo</h2>
             <p className="text-sm text-zinc-500">
-              Crea o reactiva acceso al espacio de trabajo de Codiva.dev. Para formalizar una oferta económica, usa la pestaña Cartas oferta.
+              <CodivaBrandText>
+                Crea o reactiva acceso al espacio de trabajo de Codiva.dev. Para formalizar una oferta económica, usa la pestaña Cartas oferta.
+              </CodivaBrandText>
             </p>
             <input
               name="email"
@@ -170,7 +177,7 @@ export default async function TeamPage({
                       </p>
                     </div>
                     <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700">
-                      {ROLE_LABELS[row.role] ?? row.role}
+                      {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] ?? row.role}
                     </span>
                   </div>
                   <ToastForm
@@ -216,6 +223,7 @@ export default async function TeamPage({
           postings={(postings ?? []) as OpsJobPostingRow[]}
           applications={(applications ?? []) as OpsJobApplicationRow[]}
           attempts={(attempts ?? []) as OpsJobAttemptRow[]}
+          huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
         />
       ) : (
         <div className="max-w-3xl space-y-8">

@@ -5,7 +5,8 @@ import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { updateOrganization } from '@/lib/ops/actions';
-import { EMPTY_LABEL, PROJECT_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 
 export default async function OrganizationDetailPage({
   params,
@@ -14,6 +15,8 @@ export default async function OrganizationDetailPage({
 }) {
   const { id } = await params;
   const { supabase } = await requireCapability('organizations');
+  const t = await getT();
+  const { EMPTY_LABEL, PROJECT_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
   const { data: org } = await supabase.from('organizations').select('*').eq('id', id).maybeSingle();
   if (!org) notFound();

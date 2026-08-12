@@ -1,5 +1,6 @@
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { opsFileHref } from '@/lib/ops/storage';
+import { getT } from '@/i18n/locale';
 
 export default async function PortalDeliverablesPage({
   params,
@@ -8,6 +9,7 @@ export default async function PortalDeliverablesPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requirePortalMemberWithAcceptances(slug);
+  const t = await getT();
 
   const { data: deliverables } = await supabase
     .from('deliverables')
@@ -22,10 +24,8 @@ export default async function PortalDeliverablesPage({
 
   return (
     <div>
-      <h2 className="mb-1 text-lg font-semibold">Entregables</h2>
-      <p className="mb-4 text-sm text-zinc-600">
-        Entregas de proyecto. Arquitectura y MVP viven en la pestaña Propuesta.
-      </p>
+      <h2 className="mb-1 text-lg font-semibold">{t('portal.deliverables.title')}</h2>
+      <p className="mb-4 text-sm text-zinc-600">{t('portal.deliverables.hint')}</p>
       <ul className="space-y-3">
         {operational.map((d) => (
           <li key={d.id} className="rounded-xl border border-zinc-200 bg-white p-4 text-sm">
@@ -33,7 +33,7 @@ export default async function PortalDeliverablesPage({
             {d.description && <p className="mt-1 text-zinc-600">{d.description}</p>}
             {d.url && (
               <a href={d.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-codiva-primary hover:underline">
-                Abrir enlace
+                {t('portal.deliverables.openLink')}
               </a>
             )}
             {opsFileHref(d.file_path, d.file_url) && (
@@ -43,12 +43,14 @@ export default async function PortalDeliverablesPage({
                 rel="noreferrer"
                 className="mt-2 ml-3 inline-block text-codiva-primary hover:underline"
               >
-                Descargar
+                {t('portal.deliverables.download')}
               </a>
             )}
           </li>
         ))}
-        {!operational.length && <p className="text-sm text-zinc-500">Sin entregables operativos publicados aún.</p>}
+        {!operational.length && (
+          <p className="text-sm text-zinc-500">{t('portal.deliverables.empty')}</p>
+        )}
       </ul>
     </div>
   );

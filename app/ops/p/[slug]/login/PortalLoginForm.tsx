@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 import { createClient } from '@/lib/supabase/client';
 
 export default function PortalLoginForm({ slug }: { slug: string }) {
@@ -113,7 +114,7 @@ export default function PortalLoginForm({ slug }: { slug: string }) {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Codiva</p>
+          <CodivaWordmarkMark size="sm" />
           <LanguageSwitcher />
         </div>
         <h1 className="mt-2 text-2xl font-bold">{t('portal.login.title')}</h1>

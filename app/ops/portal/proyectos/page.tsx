@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PortalProjectsSignOut from '@/components/ops/PortalProjectsSignOut';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import {
@@ -9,7 +10,8 @@ import {
   requirePortalUser,
 } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
+import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -23,8 +25,9 @@ function milestoneTone(status: string) {
 
 export default async function PortalProyectosPage() {
   const { user, supabase } = await requirePortalUser();
+  const t = await getT();
   const { MILESTONE_STATUS_LABELS, PROJECT_STATUS_LABELS, formatCurrency, formatDate } = labelsFor(
-    await getLocale()
+    t.locale
   );
   const base = await listPortalProjectsForUser(supabase, user.id);
 
@@ -41,25 +44,23 @@ export default async function PortalProyectosPage() {
           <div className="flex items-center gap-3">
             <Image src="/logo.svg" alt="Codiva" width={32} height={32} />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">
-                Portal del cliente
-              </p>
-              <h1 className="text-xl font-bold text-zinc-900">Mis proyectos</h1>
+              <CodivaWordmarkMark size="sm" />
+              <h1 className="text-xl font-bold text-zinc-900">{t('portal.hub.title')}</h1>
             </div>
           </div>
-          <PortalProjectsSignOut />
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <PortalProjectsSignOut />
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
         {projects.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center">
-            <p className="text-sm text-zinc-600">
-              No tienes proyectos publicados todavía. Si acabas de recibir una invitación, revisa tu
-              correo o contacta a Codiva.
-            </p>
+            <p className="text-sm text-zinc-600">{t('portal.hub.empty')}</p>
             <Link href="/login" className="mt-4 inline-block text-sm text-codiva-primary hover:underline">
-              Volver al login
+              {t('portal.hub.backLogin')}
             </Link>
           </div>
         ) : (
@@ -83,7 +84,7 @@ export default async function PortalProyectosPage() {
 
                   <div className="mt-4">
                     <div className="mb-1 flex items-center justify-between text-xs text-zinc-500">
-                      <span>Avance</span>
+                      <span>{t('portal.hub.progress')}</span>
                       <span>{p.progress_percent}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
@@ -97,7 +98,7 @@ export default async function PortalProyectosPage() {
                   <dl className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
                     {p.portal_show_costs ? (
                       <div className="flex items-baseline justify-between gap-3">
-                        <dt className="text-zinc-500">Pendiente de pago</dt>
+                        <dt className="text-zinc-500">{t('portal.hub.pendingPay')}</dt>
                         <dd
                           className={
                             (p.pendingAmount ?? 0) > 0
@@ -110,7 +111,7 @@ export default async function PortalProyectosPage() {
                       </div>
                     ) : null}
                     <div className="flex items-start justify-between gap-3">
-                      <dt className="shrink-0 text-zinc-500">Próximo hito</dt>
+                      <dt className="shrink-0 text-zinc-500">{t('portal.hub.nextMilestone')}</dt>
                       <dd className="min-w-0 text-right">
                         {p.nextMilestone ? (
                           <div className="space-y-1">
@@ -131,13 +132,13 @@ export default async function PortalProyectosPage() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-zinc-500">Sin hitos pendientes</span>
+                          <span className="text-zinc-500">{t('portal.hub.noMilestones')}</span>
                         )}
                       </dd>
                     </div>
                   </dl>
 
-                  <p className="mt-4 text-sm font-medium text-codiva-primary">Abrir proyecto →</p>
+                  <p className="mt-4 text-sm font-medium text-codiva-primary">{t('portal.hub.open')}</p>
                 </Link>
               </li>
             ))}
