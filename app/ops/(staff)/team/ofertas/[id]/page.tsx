@@ -3,10 +3,11 @@ import ToastForm from '@/components/ops/ToastForm';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { updatePersonnelOffer, updatePersonnelOfferStatus } from '@/lib/ops/actions';
 import {
-  OFFER_STATUS_LABELS,
+  offerLabelsFor,
   renderOfferLetterHtml,
   rowToOfferLetterData,
 } from '@/lib/ops/offer-letter';
+import { getT } from '@/i18n/locale';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -25,6 +26,8 @@ export default async function TeamOfferDetailPage({
     .maybeSingle();
 
   if (!offer) notFound();
+  const t = await getT();
+  const { OFFER_STATUS_LABELS, OPS_ROLE_LABELS, WORK_MODALITY_LABELS } = offerLabelsFor(t.locale);
 
   const html = renderOfferLetterHtml(rowToOfferLetterData(offer));
 
@@ -49,7 +52,7 @@ export default async function TeamOfferDetailPage({
               href={`/api/ops/alta-personal/${id}/carta?format=pdf`}
               className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-medium text-white hover:bg-codiva-primary-dark"
             >
-              Descargar PDF
+              {t('ops.offer.downloadPdf')}
             </a>
             <a
               href={`/api/ops/alta-personal/${id}/carta`}
@@ -57,13 +60,13 @@ export default async function TeamOfferDetailPage({
               rel="noreferrer"
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Abrir HTML
+              {t('ops.offer.openHtml')}
             </a>
             <Link
               href="/team?tab=ofertas"
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Volver a Equipo
+              {t('ops.offer.backTeam')}
             </Link>
           </div>
         }
@@ -72,11 +75,11 @@ export default async function TeamOfferDetailPage({
       <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-4">
           <ToastForm
-            success="Oferta actualizada"
+            success={t('ops.offer.updated')}
             action={onUpdate}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
           >
-            <h2 className="font-semibold">Datos de la oferta</h2>
+            <h2 className="font-semibold">{t('ops.offer.dataTitle')}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 name="fullName"
@@ -102,9 +105,9 @@ export default async function TeamOfferDetailPage({
                 defaultValue={offer.ops_role}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               >
-                <option value="pm">Project Manager</option>
-                <option value="dev">Desarrollador</option>
-                <option value="admin">Administrador</option>
+                <option value="pm">{OPS_ROLE_LABELS.pm}</option>
+                <option value="dev">{OPS_ROLE_LABELS.dev}</option>
+                <option value="admin">{OPS_ROLE_LABELS.admin}</option>
               </select>
               <input
                 name="monthlyCompensation"
@@ -128,9 +131,11 @@ export default async function TeamOfferDetailPage({
                 defaultValue={offer.work_modality}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               >
-                <option value="remote">Remoto</option>
-                <option value="hybrid">Híbrido</option>
-                <option value="onsite">Presencial</option>
+                {Object.entries(WORK_MODALITY_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
               <select
                 name="status"
@@ -144,7 +149,7 @@ export default async function TeamOfferDetailPage({
                 ))}
               </select>
               <label className="text-sm text-zinc-600">
-                Inicio
+                {t('ops.offer.start')}
                 <input
                   name="startDate"
                   type="date"
@@ -153,7 +158,7 @@ export default async function TeamOfferDetailPage({
                 />
               </label>
               <label className="text-sm text-zinc-600">
-                Vigencia
+                {t('ops.offer.validUntil')}
                 <input
                   name="validUntil"
                   type="date"
@@ -162,7 +167,7 @@ export default async function TeamOfferDetailPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Emisión
+                {t('ops.offer.issued')}
                 <input
                   name="issuedAt"
                   type="date"
@@ -171,7 +176,7 @@ export default async function TeamOfferDetailPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Responsabilidades
+                {t('ops.offer.responsibilities')}
                 <textarea
                   name="responsibilities"
                   rows={5}
@@ -180,7 +185,7 @@ export default async function TeamOfferDetailPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Condiciones
+                {t('ops.offer.terms')}
                 <textarea
                   name="terms"
                   rows={4}
@@ -189,7 +194,7 @@ export default async function TeamOfferDetailPage({
                 />
               </label>
               <label className="text-sm text-zinc-600 sm:col-span-2">
-                Notas internas
+                {t('ops.offer.notes')}
                 <textarea
                   name="notesInternal"
                   rows={2}
@@ -199,17 +204,17 @@ export default async function TeamOfferDetailPage({
               </label>
             </div>
             <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
-              Guardar cambios
+              {t('ops.offer.save')}
             </button>
           </ToastForm>
 
           <ToastForm
-            success="Estado actualizado"
+            success={t('ops.offer.statusUpdated')}
             action={onStatus}
             className="flex flex-wrap items-end gap-2 rounded-xl border border-zinc-200 bg-white p-4"
           >
             <label className="text-sm text-zinc-600">
-              Cambio rápido de estado
+              {t('ops.offer.quickStatus')}
               <select
                 name="status"
                 defaultValue={offer.status}
@@ -223,13 +228,13 @@ export default async function TeamOfferDetailPage({
               </select>
             </label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Actualizar estado
+              {t('ops.offer.updateStatus')}
             </button>
           </ToastForm>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
-          <iframe title="Vista previa carta oferta" srcDoc={html} className="h-[min(80vh,900px)] w-full bg-white" />
+          <iframe title={t('ops.offer.previewTitle')} srcDoc={html} className="h-[min(80vh,900px)] w-full bg-white" />
         </div>
       </div>
     </div>

@@ -1,3 +1,6 @@
+import { tSync } from '@/i18n/translate';
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+
 export const CAREER_DISCIPLINES = [
   'frontend',
   'backend',
@@ -17,6 +20,20 @@ export const CAREER_DISCIPLINE_LABELS: Record<CareerDiscipline, string> = {
   qa: 'Tester QA',
   other: 'Tester (otro oficio)',
 };
+
+export function careerDisciplineLabel(
+  discipline: string | null | undefined,
+  locale: Locale = DEFAULT_LOCALE
+): string | null {
+  if (!discipline || !isCareerDiscipline(discipline)) return null;
+  return tSync(locale, `career.tester.${discipline}`);
+}
+
+export function careerDisciplineLabels(locale: Locale = DEFAULT_LOCALE): Record<CareerDiscipline, string> {
+  return Object.fromEntries(
+    CAREER_DISCIPLINES.map((key) => [key, tSync(locale, `career.tester.${key}`)])
+  ) as Record<CareerDiscipline, string>;
+}
 
 export const CAREER_DISCIPLINE_CATALOG: Record<CareerDiscipline, string> = {
   frontend: 'tester-frontend',

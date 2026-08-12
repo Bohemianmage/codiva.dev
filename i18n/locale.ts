@@ -20,4 +20,4 @@ export async function getT(): Promise<Translator> {
   return createT(await getLocale());
 }
 
-export { DEFAULT_LOCALE, type Locale };
+export { DEFAULT_LOCALE, type Locale, type Translator };

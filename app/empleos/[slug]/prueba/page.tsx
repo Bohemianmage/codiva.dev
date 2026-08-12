@@ -6,8 +6,9 @@ import CareerAssessment from '@/components/careers/CareerAssessment';
 import { catalogForApplication, catalogForPosting } from '@/lib/careers/assessments/engine';
 import {
   CAREER_DISCIPLINES,
-  CAREER_DISCIPLINE_LABELS,
+  careerDisciplineLabels,
   isCareerDiscipline,
+  localizedJobPostingCopy,
   postingAsksDiscipline,
   publicCareerUrl,
   type CareerDiscipline,
@@ -25,7 +26,7 @@ async function loadPublishedPosting(slug: string) {
   if (!isSupabaseConfigured()) return null;
   const { data } = await createAdminClient()
     .from('ops_job_postings')
-    .select('id, slug, title, status, assessment_key')
+    .select('id, slug, title, title_en, status, assessment_key')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle();
@@ -35,10 +36,12 @@ async function loadPublishedPosting(slug: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const posting = await loadPublishedPosting(slug);
-  if (!posting) return { title: 'Prueba no disponible' };
+  const t = await getT();
+  if (!posting) return { title: t('career.assessment_unavailable') };
+  const copy = localizedJobPostingCopy(posting, t.locale);
   return {
-    title: `Prueba · ${posting.title}`,
-    description: `Prueba de criterio para la vacante ${posting.title} en Codiva.dev.`,
+    title: t('career.assessment_meta_title', { title: copy.title }),
+    description: t('career.assessment_meta_description', { title: copy.title }),
     robots: { index: false, follow: false },
   };
 }
@@ -49,6 +52,8 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
   const posting = await loadPublishedPosting(slug);
   if (!posting) notFound();
   const t = await getT();
+  const DISCIPLINE_LABELS = careerDisciplineLabels(t.locale);
+  const copy = localizedJobPostingCopy(posting, t.locale);
 
   const asksDiscipline = postingAsksDiscipline(posting.slug);
   const discipline: CareerDiscipline | null = isCareerDiscipline(disciplineRaw ?? '')
@@ -62,7 +67,7 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
           href={`/empleos/${posting.slug}`}
           className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-codiva-primary hover:underline"
         >
-          ← {posting.title}
+          ← {copy.title}
         </Link>
         <header className="mb-6">
           <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
@@ -79,7 +84,7 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
                 href={`/empleos/${posting.slug}/prueba?discipline=${key}`}
                 className="block rounded-2xl border border-zinc-200 bg-white px-5 py-4 font-medium text-zinc-900 transition hover:border-codiva-primary/40"
               >
-                {CAREER_DISCIPLINE_LABELS[key]}
+                {DISCIPLINE_LABELS[key]}
               </Link>
             </li>
           ))}
@@ -96,7 +101,7 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
   const applyHref = discipline
     ? `${publicCareerUrl(posting.slug)}?discipline=${discipline}`
     : publicCareerUrl(posting.slug);
-  const heading = discipline ? CAREER_DISCIPLINE_LABELS[discipline] : posting.title;
+  const heading = discipline ? DISCIPLINE_LABELS[discipline] : copy.title;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 pb-24 pt-28 md:px-12">
@@ -104,7 +109,7 @@ export default async function EmpleoPruebaPage({ params, searchParams }: PagePro
         href={`/empleos/${posting.slug}`}
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-codiva-primary hover:underline"
       >
-        ← {posting.title}
+        ← {copy.title}
       </Link>
       <header className="mb-6">
         <h1 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">

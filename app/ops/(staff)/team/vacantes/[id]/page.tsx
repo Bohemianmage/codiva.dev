@@ -3,10 +3,11 @@ import ToastForm from '@/components/ops/ToastForm';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { updateJobPosting } from '@/lib/ops/career-actions';
 import {
-  JOB_EMPLOYMENT_LABELS,
   JOB_EMPLOYMENT_TYPES,
+  careerOpsLabels,
   publicCareerUrl,
 } from '@/lib/ops/careers';
+import { getT } from '@/i18n/locale';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,12 +21,14 @@ export default async function VacanteEditPage({
   const { data: posting } = await supabase
     .from('ops_job_postings')
     .select(
-      'id, slug, title, description, requirements, location, employment_type, status, sort_order'
+      'id, slug, title, title_en, description, description_en, requirements, requirements_en, location, location_en, employment_type, status, sort_order'
     )
     .eq('id', id)
     .maybeSingle();
 
   if (!posting) notFound();
+  const t = await getT();
+  const { JOB_EMPLOYMENT_LABELS, JOB_POSTING_STATUS_LABELS } = careerOpsLabels(t.locale);
 
   async function onSave(formData: FormData) {
     'use server';
@@ -36,11 +39,11 @@ export default async function VacanteEditPage({
     <div className="max-w-2xl">
       <OpsPageHeader
         title={posting.title}
-        description="Edita la vacante. Al publicarla aparece en career.codiva.dev."
+        description={t('ops.careers.editHint')}
       />
       <p className="mb-6 text-sm">
         <Link href="/team?tab=bolsa" className="text-codiva-primary hover:underline">
-          ← Bolsa de trabajo
+          {t('ops.careers.backJobs')}
         </Link>
         {posting.status === 'published' ? (
           <>
@@ -51,19 +54,19 @@ export default async function VacanteEditPage({
               rel="noopener noreferrer"
               className="text-codiva-primary hover:underline"
             >
-              Ver pública
+              {t('ops.careers.viewPublic')}
             </a>
           </>
         ) : null}
       </p>
 
       <ToastForm
-        success="Vacante actualizada"
+        success={t('ops.careers.updatedToast')}
         action={onSave}
         className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
       >
         <label className="block text-sm text-zinc-600">
-          Título
+          {t('ops.careers.title')}
           <input
             name="title"
             required
@@ -72,7 +75,15 @@ export default async function VacanteEditPage({
           />
         </label>
         <label className="block text-sm text-zinc-600">
-          Slug
+          {t('ops.careers.titleEn')}
+          <input
+            name="titleEn"
+            defaultValue={posting.title_en ?? ''}
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm text-zinc-600">
+          {t('ops.careers.slug')}
           <input
             name="slug"
             required
@@ -80,9 +91,10 @@ export default async function VacanteEditPage({
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </label>
+        <p className="text-xs text-zinc-500">{t('ops.careers.enHint')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm text-zinc-600">
-            Ubicación
+            {t('ops.careers.location')}
             <input
               name="location"
               defaultValue={posting.location ?? ''}
@@ -90,7 +102,15 @@ export default async function VacanteEditPage({
             />
           </label>
           <label className="block text-sm text-zinc-600">
-            Tipo de empleo
+            {t('ops.careers.locationEn')}
+            <input
+              name="locationEn"
+              defaultValue={posting.location_en ?? ''}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-sm text-zinc-600">
+            {t('ops.careers.employmentType')}
             <select
               name="employmentType"
               defaultValue={posting.employment_type ?? 'full_time'}
@@ -104,19 +124,21 @@ export default async function VacanteEditPage({
             </select>
           </label>
           <label className="block text-sm text-zinc-600">
-            Estado
+            {t('ops.careers.status')}
             <select
               name="status"
               defaultValue={posting.status}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             >
-              <option value="draft">Borrador</option>
-              <option value="published">Publicada</option>
-              <option value="closed">Cerrada</option>
+              {Object.entries(JOB_POSTING_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block text-sm text-zinc-600">
-            Orden
+            {t('ops.careers.sort')}
             <input
               name="sortOrder"
               type="number"
@@ -126,7 +148,7 @@ export default async function VacanteEditPage({
           </label>
         </div>
         <label className="block text-sm text-zinc-600">
-          Descripción
+          {t('ops.careers.description')}
           <textarea
             name="description"
             rows={8}
@@ -135,7 +157,16 @@ export default async function VacanteEditPage({
           />
         </label>
         <label className="block text-sm text-zinc-600">
-          Requisitos
+          {t('ops.careers.descriptionEn')}
+          <textarea
+            name="descriptionEn"
+            rows={8}
+            defaultValue={posting.description_en ?? ''}
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm text-zinc-600">
+          {t('ops.careers.requirements')}
           <textarea
             name="requirements"
             rows={6}
@@ -143,8 +174,17 @@ export default async function VacanteEditPage({
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </label>
+        <label className="block text-sm text-zinc-600">
+          {t('ops.careers.requirementsEn')}
+          <textarea
+            name="requirementsEn"
+            rows={6}
+            defaultValue={posting.requirements_en ?? ''}
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+        </label>
         <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-          Guardar
+          {t('ops.careers.save')}
         </button>
       </ToastForm>
     </div>

@@ -1,6 +1,8 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { formatCurrency } from '@/lib/ops/labels';
 import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+import { tSync } from '@/i18n/translate';
 
 const BRAND = BRAND_EMAIL;
 const FONT_BODY = `'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
@@ -27,6 +29,28 @@ export const OFFER_STATUS_LABELS: Record<string, string> = {
   declined: 'Declinada',
   withdrawn: 'Retirada',
 };
+
+export function offerLabelsFor(locale: Locale = DEFAULT_LOCALE) {
+  return {
+    WORK_MODALITY_LABELS: {
+      remote: tSync(locale, 'ops.modality.remote'),
+      hybrid: tSync(locale, 'ops.modality.hybrid'),
+      onsite: tSync(locale, 'ops.modality.onsite'),
+    } as Record<string, string>,
+    OPS_ROLE_LABELS: {
+      admin: tSync(locale, 'ops.roles.admin'),
+      pm: tSync(locale, 'ops.roles.pm'),
+      dev: tSync(locale, 'ops.roles.dev'),
+    } as Record<string, string>,
+    OFFER_STATUS_LABELS: {
+      draft: tSync(locale, 'ops.offerStatus.draft'),
+      sent: tSync(locale, 'ops.offerStatus.sent'),
+      accepted: tSync(locale, 'ops.offerStatus.accepted'),
+      declined: tSync(locale, 'ops.offerStatus.declined'),
+      withdrawn: tSync(locale, 'ops.offerStatus.withdrawn'),
+    } as Record<string, string>,
+  };
+}
 
 export type OfferLetterData = {
   fullName: string;

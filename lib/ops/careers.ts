@@ -39,6 +39,36 @@ export function jobEmploymentLabel(
   return tSync(locale, `career.employment.${type}`);
 }
 
+export function jobPostingStatusLabel(
+  status: string | null | undefined,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  if (!status || !isJobPostingStatus(status)) return status || '';
+  return tSync(locale, `career.postingStatus.${status}`);
+}
+
+export function jobApplicationStatusLabel(
+  status: string | null | undefined,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  if (!status || !isJobApplicationStatus(status)) return status || '';
+  return tSync(locale, `career.applicationStatus.${status}`);
+}
+
+export function careerOpsLabels(locale: Locale = DEFAULT_LOCALE) {
+  return {
+    JOB_POSTING_STATUS_LABELS: Object.fromEntries(
+      JOB_POSTING_STATUSES.map((key) => [key, tSync(locale, `career.postingStatus.${key}`)])
+    ) as Record<JobPostingStatus, string>,
+    JOB_EMPLOYMENT_LABELS: Object.fromEntries(
+      JOB_EMPLOYMENT_TYPES.map((key) => [key, tSync(locale, `career.employment.${key}`)])
+    ) as Record<JobEmploymentType, string>,
+    JOB_APPLICATION_STATUS_LABELS: Object.fromEntries(
+      JOB_APPLICATION_STATUSES.map((key) => [key, tSync(locale, `career.applicationStatus.${key}`)])
+    ) as Record<JobApplicationStatus, string>,
+  };
+}
+
 export const JOB_APPLICATION_STATUS_LABELS: Record<JobApplicationStatus, string> = {
   new: 'Nueva',
   reviewed: 'Revisada',
@@ -179,6 +209,8 @@ export {
   isCareerDiscipline,
   postingAsksDiscipline,
   disciplineFromCatalogKey,
+  careerDisciplineLabel,
+  careerDisciplineLabels,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
 
@@ -189,16 +221,83 @@ const SECTION_TITLES = new Set(
     'responsabilidades',
     'responsibilities',
     'sobre el rol',
+    'sobre el puesto',
     'about the role',
     'perfiles que buscamos',
+    'profiles we look for',
     'condiciones',
     'conditions',
     'perfil',
     'profile',
     'requisitos',
     'requirements',
+    'deseable',
+    'nice to have',
   ].map((s) => s.toLowerCase())
 );
+
+const SECTION_TITLE_KEYS: Record<string, string> = {
+  descripción: 'career.section.description',
+  description: 'career.section.description',
+  responsabilidades: 'career.section.responsibilities',
+  responsibilities: 'career.section.responsibilities',
+  'sobre el rol': 'career.about_role',
+  'sobre el puesto': 'career.about_role',
+  'about the role': 'career.about_role',
+  'perfiles que buscamos': 'career.section.profiles',
+  'profiles we look for': 'career.section.profiles',
+  condiciones: 'career.section.conditions',
+  conditions: 'career.section.conditions',
+  perfil: 'career.section.profile',
+  profile: 'career.section.profile',
+  requisitos: 'career.requirements',
+  requirements: 'career.requirements',
+  deseable: 'career.section.nice_to_have',
+  'nice to have': 'career.section.nice_to_have',
+};
+
+export function careerSectionTitle(title: string, locale: Locale = DEFAULT_LOCALE): string {
+  const key = SECTION_TITLE_KEYS[title.trim().toLowerCase()];
+  return key ? tSync(locale, key) : title;
+}
+
+export type JobPostingCopyFields = {
+  title: string;
+  description?: string | null;
+  requirements?: string | null;
+  location?: string | null;
+  title_en?: string | null;
+  description_en?: string | null;
+  requirements_en?: string | null;
+  location_en?: string | null;
+};
+
+function pickLocalized(en: string | null | undefined, es: string | null | undefined, locale: Locale): string {
+  const english = String(en || '').trim();
+  const spanish = String(es || '').trim();
+  if (locale === 'en' && english) return english;
+  return spanish;
+}
+
+function localizeKnownLocation(location: string, locale: Locale): string {
+  if (locale !== 'en' || !location) return location;
+  return location
+    .replace(/\bRemoto\b/gi, 'Remote')
+    .replace(/\bHíbrido\b/gi, 'Hybrid')
+    .replace(/\bPresencial\b/gi, 'On-site')
+    .replace(/\bMéxico\b/gi, 'Mexico')
+    .replace(/\bMexico\b/gi, 'Mexico');
+}
+
+export function localizedJobPostingCopy(row: JobPostingCopyFields, locale: Locale = DEFAULT_LOCALE) {
+  const location = pickLocalized(row.location_en, row.location, locale);
+  return {
+    title: pickLocalized(row.title_en, row.title, locale) || row.title,
+    description: pickLocalized(row.description_en, row.description, locale),
+    requirements: pickLocalized(row.requirements_en, row.requirements, locale),
+    location: location ? localizeKnownLocation(location, locale) : '',
+  };
+}
 
 export type CareerBodyBlock =
   | { type: 'paragraph'; text: string }

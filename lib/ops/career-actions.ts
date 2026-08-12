@@ -42,10 +42,14 @@ async function pickUniqueSlug(
 
 function parsePostingFields(formData: FormData) {
   const title = String(formData.get('title') || '').trim();
+  const titleEn = String(formData.get('titleEn') || '').trim().slice(0, 300);
   const slugRaw = String(formData.get('slug') || '').trim();
   const description = String(formData.get('description') || '').slice(0, 20000);
+  const descriptionEn = String(formData.get('descriptionEn') || '').slice(0, 20000);
   const requirements = String(formData.get('requirements') || '').slice(0, 20000);
+  const requirementsEn = String(formData.get('requirementsEn') || '').slice(0, 20000);
   const location = String(formData.get('location') || '').trim().slice(0, 200);
+  const locationEn = String(formData.get('locationEn') || '').trim().slice(0, 200);
   const employmentRaw = String(formData.get('employmentType') || '').trim();
   const statusRaw = String(formData.get('status') || 'draft').trim();
   const sortOrder = Number(formData.get('sortOrder') || 0);
@@ -56,10 +60,14 @@ function parsePostingFields(formData: FormData) {
 
   return {
     title,
+    titleEn,
     slugRaw,
     description,
+    descriptionEn,
     requirements,
+    requirementsEn,
     location,
+    locationEn,
     employmentType,
     status: statusRaw,
     sortOrder: Number.isFinite(sortOrder) ? Math.floor(sortOrder) : 0,
@@ -76,10 +84,14 @@ export async function createJobPosting(formData: FormData) {
     .from('ops_job_postings')
     .insert({
       title: fields.title,
+      title_en: fields.titleEn,
       slug,
       description: fields.description,
+      description_en: fields.descriptionEn,
       requirements: fields.requirements,
+      requirements_en: fields.requirementsEn,
       location: fields.location,
+      location_en: fields.locationEn,
       employment_type: fields.employmentType,
       status: fields.status,
       sort_order: fields.sortOrder,
@@ -124,10 +136,14 @@ export async function updateJobPosting(postingId: string, formData: FormData) {
     .from('ops_job_postings')
     .update({
       title: fields.title,
+      title_en: fields.titleEn,
       slug,
       description: fields.description,
+      description_en: fields.descriptionEn,
       requirements: fields.requirements,
+      requirements_en: fields.requirementsEn,
       location: fields.location,
+      location_en: fields.locationEn,
       employment_type: fields.employmentType,
       status: fields.status,
       sort_order: fields.sortOrder,
