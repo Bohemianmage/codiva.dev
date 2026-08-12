@@ -41,7 +41,7 @@ export default function Navbar({ variant = 'marketing' }) {
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { t } = useTranslation();
-  const isCareer = variant === 'career';
+  const isSatellite = variant === 'career' || variant === 'ticket';
   const marketingUrl = marketingBaseUrl();
 
   /**
@@ -49,7 +49,7 @@ export default function Navbar({ variant = 'marketing' }) {
    * En la bolsa (career.*) las secciones viven en el sitio de marketing.
    */
   const scrollTo = (id) => {
-    if (isCareer) {
+    if (isSatellite) {
       window.location.href = `${marketingUrl}/#${id}`;
       setMenuOpen(false);
       return;
@@ -63,7 +63,7 @@ export default function Navbar({ variant = 'marketing' }) {
   };
 
   const goBrandHome = () => {
-    if (isCareer) {
+    if (isSatellite) {
       window.location.href = marketingUrl;
       return;
     }

@@ -279,14 +279,31 @@
     "error": "Hubo un error al enviar. Intenta nuevamente."
   },
   "ticket": {
-    "title": "Reportar ticket",
-    "subtitle": "Incluye pasos, URLs y adjunta capturas si aplica.",
+    "eyebrow": "Soporte",
+    "title": "Reportar un incidente",
+    "subtitle": "Cuéntanos qué falló, con pasos, URLs y capturas si las tienes. El equipo lo recibe de inmediato.",
+    "sections": {
+      "contact": "Tus datos",
+      "incident": "Qué ocurrió",
+      "evidence": "Evidencia"
+    },
+    "next": {
+      "title": "Qué sigue",
+      "ack": "Te confirmamos por correo en cuanto quede registrado.",
+      "queue": "El ticket entra como pendiente y el equipo recibe una alerta.",
+      "follow": "Te escribimos si hace falta más contexto para resolverlo."
+    },
+    "dropzone": {
+      "select": "Seleccionar archivos",
+      "or": "o arrástralos aquí"
+    },
     "fields": {
       "priority": "Prioridad",
       "issueTitle": "Título del ticket",
-      "incidentTime": "Hora del incidente (opcional)",
+      "incidentTime": "Hora del incidente",
+      "incidentTimeOptional": "opcional",
       "issueDescription": "Descripción del problema",
-      "attachments": "Adjuntos (opcional)"
+      "attachments": "Adjuntos"
     },
     "priority": {
       "high": "Alta",
@@ -295,17 +312,21 @@
     },
     "buttons": {
       "submit": "Enviar ticket",
+      "submitting": "Enviando ticket…",
       "remove": "Quitar",
       "removeAll": "Quitar todo",
       "new": "Crear otro ticket"
     },
     "status": {
       "submittedTitle": "Ticket registrado",
-      "submittedMsg": "Hemos recibido tu reporte."
+      "submittedMsg": "Hemos recibido tu reporte. El equipo ya tiene el pendiente.",
+      "submittedHint": "Revisa tu correo. Si no llega en unos minutos, mira en spam."
     },
     "hints": {
-      "attachments": "Se aceptan imágenes y documentos. Máx. ~10MB por archivo.",
-      "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…"
+      "attachments": "Imágenes o documentos. Hasta 5 archivos, 10 MB cada uno.",
+      "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…",
+      "maxFiles": "Máximo {{count}} archivos.",
+      "fileTooLarge": "{{name}} supera 10 MB."
     }
   },
   "career": {
@@ -684,6 +705,8 @@
       "title": "Tickets de soporte",
       "empty": "Sin tickets registrados.",
       "new": "Nuevo ticket",
+      "hint": "Describe el incidente. Queda vinculado a este proyecto y el equipo recibe una alerta.",
+      "linkedProject": "Se registrará en {{name}}.",
       "hintPrefix": "Para reportar un incidente usa el",
       "form": "formulario de soporte",
       "hintSuffix": "indicando el mismo email de tu cuenta ({{email}})."

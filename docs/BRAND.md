@@ -68,6 +68,7 @@ Do not label Plus Jakarta Sans as “Satoshi” in code or docs.
 |---------|----------|
 | Marketing site | `codiva.dev` |
 | Bolsa de trabajo | `career.codiva.dev` |
+| Tickets públicos | `ticket.codiva.dev` |
 | Ops (staff) | `ops.codiva.dev` |
 | Portal cliente | `portal.codiva.dev` |
 | Transactional email | `lib/ops/email-templates.ts` |

@@ -85,6 +85,19 @@ export async function notifyStaff({
   return { ok: true };
 }
 
+/** Nunca lanza: el pendiente en Ops no debe depender del correo. */
+export async function notifyStaffSafe(
+  args: Parameters<typeof notifyStaff>[0]
+): Promise<EmailResult> {
+  try {
+    return await notifyStaff(args);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'notifyStaff failed';
+    console.error('notifyStaffSafe:', err);
+    return { ok: false, error: message };
+  }
+}
+
 export async function sendClientEmail({
   to,
   subject,

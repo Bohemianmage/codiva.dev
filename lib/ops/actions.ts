@@ -1311,14 +1311,17 @@ export async function clientFulfillDocumentRequest(
 
   await notifyStaff({
     subject: `Respuesta del cliente - ${project.name}`,
-    html: templateStaffAlert(`Solicitud respondida · ${project.name}`, [
-      `Solicitud: ${req.title}`,
-      `Modo: ${req.input_mode}`,
-      sha256 ? `SHA-256: ${sha256.slice(0, 16)}…` : `Respuesta: texto/accesos`,
-      `Notas: ${notes || '-'}`,
-      `Portal: ${opsBaseUrl()}/projects/${projectId}?tab=documentos`,
-    ]),
-  });
+    html: templateStaffAlert(
+      `Solicitud respondida · ${project.name}`,
+      [
+        `Solicitud: ${req.title}`,
+        `Modo: ${req.input_mode}`,
+        sha256 ? `SHA-256: ${sha256.slice(0, 16)}…` : `Respuesta: texto/accesos`,
+        `Notas: ${notes || '-'}`,
+      ],
+      { ctaLabel: 'Ver documentos', ctaHref: `${opsBaseUrl()}/projects/${projectId}?tab=documentos` }
+    ),
+  }).catch(() => {});
 
   revalidatePath(`/p/${slug}/documentos`);
   revalidatePath(`/projects/${projectId}`);

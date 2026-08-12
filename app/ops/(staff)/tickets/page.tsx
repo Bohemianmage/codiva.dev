@@ -12,7 +12,7 @@ export default async function TicketsPage() {
   const [{ data: tickets }, { data: staff }] = await Promise.all([
     supabase
       .from('tickets')
-      .select('id, title, priority, status, reporter_name, reporter_email, assigned_to, created_at')
+      .select('id, title, priority, status, reporter_name, reporter_email, assigned_to, created_at, projects(name)')
       .order('created_at', { ascending: false }),
     supabase.from('staff_profiles').select('id, full_name').eq('active', true),
   ]);
@@ -27,6 +27,7 @@ export default async function TicketsPage() {
           <thead className="bg-zinc-50 text-left text-zinc-600">
             <tr>
               <th className="px-4 py-3 font-medium">Ticket</th>
+              <th className="px-4 py-3 font-medium">Proyecto</th>
               <th className="px-4 py-3 font-medium">Reportó</th>
               <th className="px-4 py-3 font-medium">Asignado</th>
               <th className="px-4 py-3 font-medium">Prioridad</th>
@@ -41,6 +42,9 @@ export default async function TicketsPage() {
                   <Link href={`/tickets/${t.id}`} className="font-medium hover:text-codiva-primary">
                     {t.title}
                   </Link>
+                </td>
+                <td className="px-4 py-3 text-zinc-600">
+                  {(Array.isArray(t.projects) ? t.projects[0]?.name : t.projects?.name) || EMPTY_LABEL}
                 </td>
                 <td className="px-4 py-3">
                   <div>{t.reporter_name}</div>

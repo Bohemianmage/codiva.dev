@@ -1,5 +1,5 @@
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { notifyStaff } from '@/lib/ops/email';
+import { notifyStaffSafe } from '@/lib/ops/email';
 import { templateContactInboxStaff } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { NextResponse } from 'next/server';
@@ -31,7 +31,7 @@ export async function POST(request) {
       action: 'created',
     });
 
-    await notifyStaff({
+    await notifyStaffSafe({
       subject: `[Inbox] ${name}`,
       html: templateContactInboxStaff(name, email, message),
       replyTo: email,

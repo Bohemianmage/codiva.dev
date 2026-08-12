@@ -1,4 +1,5 @@
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
+import TicketRequestForm from '@/components/ticket/TicketRequestForm';
 import { requireProjectMember } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
@@ -11,13 +12,19 @@ export default async function PortalTicketsPage({
   const { slug } = await params;
   const { project, supabase, user } = await requireProjectMember(slug);
   const t = await getT();
-  const { TICKET_STATUS_LABELS } = labelsFor(t.locale);
+  const { TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
   const { data: tickets } = await supabase
     .from('tickets')
     .select('id, title, status, priority, created_at')
     .eq('project_id', project.id)
     .order('created_at', { ascending: false });
+
+  const defaultName =
+    (typeof user.user_metadata?.full_name === 'string' && user.user_metadata.full_name) ||
+    (typeof user.user_metadata?.name === 'string' && user.user_metadata.name) ||
+    user.email?.split('@')[0] ||
+    '';
 
   return (
     <div className="space-y-6">
@@ -27,9 +34,12 @@ export default async function PortalTicketsPage({
           {(tickets ?? []).map((ticket) => (
             <li
               key={ticket.id}
-              className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm"
+              className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm"
             >
-              <span>{ticket.title}</span>
+              <div className="min-w-0">
+                <p className="truncate font-medium">{ticket.title}</p>
+                <p className="text-xs text-zinc-500">{formatDate(ticket.created_at)}</p>
+              </div>
               <StatusBadge label={TICKET_STATUS_LABELS[ticket.status]} tone={ticketTone(ticket.status)} />
             </li>
           ))}
@@ -41,21 +51,15 @@ export default async function PortalTicketsPage({
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <h3 className="mb-3 font-semibold">{t('portal.ticketsPage.new')}</h3>
-        <p className="text-sm text-zinc-600">
-          {t('portal.ticketsPage.hintPrefix')}{' '}
-          <a href="https://codiva.dev/ticket" className="text-codiva-primary hover:underline">
-            {t('portal.ticketsPage.form')}
-          </a>{' '}
-          {t('portal.ticketsPage.hintSuffix', { email: user.email })}
-        </p>
-        <form
-          action={`/api/ticket`}
-          method="POST"
-          encType="multipart/form-data"
-          className="mt-4 hidden"
-        >
-          <input type="hidden" name="projectId" value={project.id} />
-        </form>
+        <p className="mb-4 text-sm text-zinc-600">{t('portal.ticketsPage.hint')}</p>
+        <TicketRequestForm
+          variant="portal"
+          projectId={project.id}
+          projectName={project.name}
+          defaultName={defaultName}
+          defaultEmail={user.email || ''}
+          lockedIdentity
+        />
       </section>
     </div>
   );

@@ -72,6 +72,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
       <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
         <h2 className="mb-3 font-semibold">Descripción</h2>
+        {ticket.incident_time && (
+          <p className="mb-3 text-sm text-zinc-500">Hora del incidente: {ticket.incident_time}</p>
+        )}
         <p className="whitespace-pre-wrap text-sm">{ticket.description}</p>
       </section>
 
