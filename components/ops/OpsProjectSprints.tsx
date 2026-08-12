@@ -179,8 +179,8 @@ export default function OpsProjectSprints({
                 <h2 className="font-semibold">{sprint.name}</h2>
                 {sprint.goal && <p className="mt-1 text-sm text-zinc-600">{sprint.goal}</p>}
                 <p className="mt-1 text-xs text-zinc-400">
-                  {sprint.starts_on ? formatDate(sprint.starts_on) : '—'} →{' '}
-                  {sprint.ends_on ? formatDate(sprint.ends_on) : '—'}
+                  {sprint.starts_on ? formatDate(sprint.starts_on) : '-'} →{' '}
+                  {sprint.ends_on ? formatDate(sprint.ends_on) : '-'}
                 </p>
               </div>
               <StatusBadge label={SPRINT_STATUS_LABELS[sprint.status] ?? sprint.status} tone={sprintTone(sprint.status)} />

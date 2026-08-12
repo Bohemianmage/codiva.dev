@@ -11,7 +11,7 @@ const CTA_RADIUS = '12px';
 /** Mark oficial: primary teal sobre fondo transparente. */
 const LOGO_URL = `${CODIVA_BRAND.urls.site.replace(/\/$/, '')}/logo.svg`;
 
-/** Wordmark Codiva.dev — tipografía display + colores de marca (no uppercase genérico). */
+/** Wordmark Codiva.dev: tipografía display + colores de marca (no uppercase genérico). */
 function brandWordmarkHtml(): string {
   return `<p style="margin:0;font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">
     Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span>
@@ -354,7 +354,7 @@ export function templateLeadQuoteSent(
       <p style="margin:0;">Puedes consultar el detalle completo en el enlace. Si tienes dudas, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
     cta: { label: 'Ver propuesta', href: quoteUrl },
-    footerNote: 'Documento informativo — consulta únicamente.',
+    footerNote: 'Documento informativo. Consulta únicamente.',
   });
 }
 
@@ -388,7 +388,7 @@ export function templateStaffAlert(title: string, lines: string[]): string {
     title,
     bodyHtml: rows,
     cta: { label: 'Abrir Codiva.dev', href: `${opsBaseUrl()}/dashboard` },
-    footerNote: 'Notificación interna — Codiva.dev',
+    footerNote: 'Notificación interna · Codiva.dev',
   });
 }
 

@@ -93,7 +93,7 @@ export async function sendClientEmail({
   to: string;
   subject: string;
   html: string;
-  /** Por defecto hello@ — las respuestas no van a noreply. */
+  /** Por defecto hello@; las respuestas no van a noreply. */
   replyTo?: string | null;
   from?: EmailFromKind;
 }): Promise<EmailResult> {
