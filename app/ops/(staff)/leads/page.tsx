@@ -2,13 +2,13 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireCapability } from '@/lib/ops/auth';
 import { createLead } from '@/lib/ops/actions';
 import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export default async function LeadsPage() {
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('leads');
   const { data: leads } = await supabase
     .from('leads')
     .select('id, name, company, email, status, source, partner_company, end_client_company, created_at')

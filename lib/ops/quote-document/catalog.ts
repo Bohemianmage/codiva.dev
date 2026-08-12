@@ -41,6 +41,7 @@ export const QUOTE_CATALOG: QuoteCatalogEntry[] = [
   { client: 'Kaucho Quimico', file: 'Cotizacion_EShop_KQ.docx', serviceType: 'E-Shop', pattern: 'table' },
   { client: 'Kaucho Quimico', file: 'Cotizacion_WEB_KQ.docx', serviceType: 'Web', pattern: 'standard' },
   { client: 'Maic/Gas', file: 'Cotizacion_REGIO_PWA.docx', serviceType: 'PWA', pattern: 'standard' },
+  { client: 'FES', file: 'Cotizacion_eshop.pdf', serviceType: 'E-Shop', pattern: 'table' },
   { client: 'NATA-M', file: 'Cotizacion_AD_i18n.docx', serviceType: 'Admin/i18n', pattern: 'standard' },
   { client: 'Pentesting', file: 'Cotizacion_pentesting.docx', serviceType: 'Pentesting', pattern: 'standard' },
   { client: 'Pepe Martínez', file: 'Cotizacion_Jose_Martinez_APP_Automata.docx', serviceType: 'App', pattern: 'standard' },

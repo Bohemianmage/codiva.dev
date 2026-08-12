@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireCapability } from '@/lib/ops/auth';
 import { invitePortalUser } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -19,7 +19,7 @@ type MemberRow = {
 };
 
 export default async function PortalUsersPage() {
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('portal_users');
   const admin = createAdminClient();
 
   const [{ data: members }, { data: projects }] = await Promise.all([

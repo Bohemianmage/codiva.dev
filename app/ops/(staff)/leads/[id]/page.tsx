@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
+import { requireCapability } from '@/lib/ops/auth';
 import {
   updateLeadStatus,
   updateLeadDetails,
@@ -25,7 +25,7 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { tab = 'resumen' } = await searchParams;
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireCapability('leads');
 
   const { data: lead } = await supabase.from('leads').select('*').eq('id', id).single();
   if (!lead) redirect('/leads');
