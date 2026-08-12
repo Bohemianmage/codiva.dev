@@ -74,8 +74,12 @@ export async function GET(request: Request, context: RouteContext) {
     });
   } catch (err) {
     console.error('[carta] PDF generation failed', err);
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: 'No se pudo generar el PDF. Verifica Chrome/Chromium en el entorno.' },
+      {
+        error: 'No se pudo generar el PDF. Verifica Chrome/Chromium en el entorno.',
+        detail: process.env.NODE_ENV !== 'production' ? detail : undefined,
+      },
       { status: 500 }
     );
   }

@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "app/api/ops/alta-personal/[id]/carta/route.ts": {
+      "memory": 1536,
+      "maxDuration": 60
+    }
+  }
+}
