@@ -1,22 +1,50 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
-import Input, { Textarea } from '@/components/ui/Input';
+import Input, { Select, Textarea } from '@/components/ui/Input';
 import { marketingBaseUrl } from '@/lib/ops/host';
+import { readAttemptToken } from '@/components/careers/CareerAssessment';
+import {
+  CAREER_DISCIPLINES,
+  CAREER_DISCIPLINE_CATALOG,
+  CAREER_DISCIPLINE_LABELS,
+  type CareerDiscipline,
+} from '@/lib/ops/career-disciplines';
+
 const MAX_CV_BYTES = 10 * 1024 * 1024;
+
+const DISCIPLINE_I18N: Record<CareerDiscipline, string> = {
+  frontend: 'career.discipline_frontend',
+  backend: 'career.discipline_backend',
+  fullstack: 'career.discipline_fullstack',
+  'ux-ui': 'career.discipline_ux_ui',
+  qa: 'career.discipline_qa',
+  other: 'career.discipline_other',
+};
 
 type Props = {
   jobPostingId: string;
+  asksDiscipline?: boolean;
+  assessmentRequired?: boolean;
+  assessmentHref?: string;
+  initialDiscipline?: CareerDiscipline;
 };
 
-export default function CareerApplyForm({ jobPostingId }: Props) {
+export default function CareerApplyForm({
+  jobPostingId,
+  asksDiscipline = false,
+  assessmentRequired = false,
+  assessmentHref,
+  initialDiscipline,
+}: Props) {
   const { t } = useTranslation();
   const legalBase = marketingBaseUrl();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [discipline, setDiscipline] = useState<CareerDiscipline | ''>(initialDiscipline || '');
   const [coverLetter, setCoverLetter] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [consentData, setConsentData] = useState(false);
@@ -24,11 +52,68 @@ export default function CareerApplyForm({ jobPostingId }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [assessmentToken, setAssessmentToken] = useState('');
+  const [assessmentReady, setAssessmentReady] = useState(!assessmentRequired);
+  const [checkingAssessment, setCheckingAssessment] = useState(assessmentRequired);
+
+  const needsAssessment = assessmentRequired || (asksDiscipline && Boolean(discipline));
+  const pruebaHref =
+    assessmentHref && discipline
+      ? `${assessmentHref.split('?')[0]}?discipline=${encodeURIComponent(discipline)}`
+      : assessmentHref;
+
+  useEffect(() => {
+    if (!needsAssessment) {
+      setCheckingAssessment(false);
+      return;
+    }
+    const token = readAttemptToken(jobPostingId, discipline || undefined);
+    if (!token) {
+      setCheckingAssessment(false);
+      setAssessmentReady(false);
+      setAssessmentToken('');
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/careers/assessments/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        const passed = Boolean(data?.session?.passed && data.session.status === 'completed');
+        const catalogOk =
+          !asksDiscipline ||
+          !discipline ||
+          data?.session?.catalog_key === CAREER_DISCIPLINE_CATALOG[discipline];
+        if (passed && catalogOk) {
+          setAssessmentToken(token);
+          setAssessmentReady(true);
+          if (data.session.full_name) setFullName(data.session.full_name);
+          if (data.session.email) setEmail(data.session.email);
+        } else {
+          setAssessmentReady(false);
+        }
+      } catch {
+        if (!cancelled) setAssessmentReady(false);
+      } finally {
+        if (!cancelled) setCheckingAssessment(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [asksDiscipline, discipline, jobPostingId, needsAssessment]);
 
   const canSubmit = useMemo(() => {
     return (
+      (!needsAssessment || assessmentReady) &&
       fullName.trim() &&
       email.includes('@') &&
+      (!asksDiscipline || Boolean(discipline)) &&
       file &&
       file.type === 'application/pdf' &&
       file.size > 0 &&
@@ -36,7 +121,17 @@ export default function CareerApplyForm({ jobPostingId }: Props) {
       consentData &&
       consentTerms
     );
-  }, [fullName, email, file, consentData, consentTerms]);
+  }, [
+    needsAssessment,
+    assessmentReady,
+    asksDiscipline,
+    discipline,
+    fullName,
+    email,
+    file,
+    consentData,
+    consentTerms,
+  ]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,9 +171,11 @@ export default function CareerApplyForm({ jobPostingId }: Props) {
           full_name: fullName.trim(),
           email: email.trim(),
           phone: phone.trim() || undefined,
+          discipline: asksDiscipline ? discipline || undefined : undefined,
           cover_letter: coverLetter.trim() || undefined,
           consent_data: true,
           consent_terms: true,
+          assessment_token: assessmentToken || undefined,
         }),
       });
       const apply = await applyRes.json();
@@ -88,16 +185,77 @@ export default function CareerApplyForm({ jobPostingId }: Props) {
       const code = err instanceof Error ? err.message : '';
       if (code === 'duplicate_application') setError(t('career.error_duplicate'));
       else if (code === 'rate_limited' || code === 'rate_limited_email') setError(t('career.error_rate'));
-      else setError(t('career.apply_error'));
+      else if (code === 'assessment_required' || code === 'assessment_not_passed') {
+        setError(t('career.assessment_required_error'));
+        setAssessmentReady(false);
+      } else setError(t('career.apply_error'));
     } finally {
       setSubmitting(false);
     }
   }
 
+  function DisciplineField() {
+    if (!asksDiscipline) return null;
+    return (
+      <div>
+        <label htmlFor="career-discipline" className="mb-1 block text-sm font-medium text-zinc-800">
+          {t('career.field_discipline')}
+        </label>
+        <Select
+          id="career-discipline"
+          className=""
+          required
+          value={discipline}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setDiscipline(e.target.value as CareerDiscipline | '')
+          }
+        >
+          <option value="">{t('career.discipline_placeholder')}</option>
+          {CAREER_DISCIPLINES.map((key) => (
+            <option key={key} value={key}>
+              {t(DISCIPLINE_I18N[key], { defaultValue: CAREER_DISCIPLINE_LABELS[key] })}
+            </option>
+          ))}
+        </Select>
+      </div>
+    );
+  }
+
   if (done) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-emerald-900 shadow-sm">
+      <div className="rounded-2xl border border-codiva-primary/20 bg-codiva-primary/5 px-5 py-6 text-zinc-900 shadow-sm">
         <p className="font-semibold">{t('career.apply_success')}</p>
+      </div>
+    );
+  }
+
+  if (asksDiscipline && !discipline) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900">{t('career.apply_title')}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t('career.discipline_gate')}</p>
+        </div>
+        <DisciplineField />
+      </div>
+    );
+  }
+
+  if (needsAssessment && (checkingAssessment || !assessmentReady)) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900">{t('career.apply_title')}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            {checkingAssessment ? t('career.assessment_checking') : t('career.assessment_gate')}
+          </p>
+        </div>
+        <DisciplineField />
+        {!checkingAssessment && pruebaHref ? (
+          <Button as="a" href={pruebaHref} className="w-full">
+            {t('career.assessment_start_cta')}
+          </Button>
+        ) : null}
       </div>
     );
   }
@@ -111,6 +269,8 @@ export default function CareerApplyForm({ jobPostingId }: Props) {
         <h2 className="text-lg font-semibold text-zinc-900">{t('career.apply_title')}</h2>
         <p className="mt-1 text-sm text-zinc-500">{t('career.apply_intro')}</p>
       </div>
+
+      <DisciplineField />
 
       <div>
         <label htmlFor="career-name" className="mb-1 block text-sm font-medium text-zinc-800">

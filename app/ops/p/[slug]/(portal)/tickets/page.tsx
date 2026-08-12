@@ -1,6 +1,7 @@
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
-import { TICKET_STATUS_LABELS } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 
 export default async function PortalTicketsPage({
   params,
@@ -9,6 +10,7 @@ export default async function PortalTicketsPage({
 }) {
   const { slug } = await params;
   const { project, supabase, user } = await requireProjectMember(slug);
+  const { TICKET_STATUS_LABELS } = labelsFor(await getLocale());
 
   const { data: tickets } = await supabase
     .from('tickets')

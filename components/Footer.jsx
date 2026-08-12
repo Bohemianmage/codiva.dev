@@ -10,7 +10,7 @@ import CodivaWordmark from './CodivaWordmark';
 import { careerBaseUrl } from '@/lib/ops/host';
 
 export default function Footer() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const footerRef = useRef(null);
   const inView = useInView(footerRef, { triggerOnce: false, threshold: 0.4 });
 
@@ -39,7 +39,6 @@ export default function Footer() {
           </Link>
           <Link
             href="/ticket"
-            locale={i18n?.language}
             className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
             {t('footer.ticketLink')}

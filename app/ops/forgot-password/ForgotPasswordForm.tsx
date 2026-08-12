@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { requestStaffPasswordReset } from '@/lib/ops/password-reset';
 
 export default function ForgotPasswordForm() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
@@ -14,7 +17,7 @@ export default function ForgotPasswordForm() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-    const toastId = toast.loading('Enviando…');
+    const toastId = toast.loading(t('portal.forgot.sending'));
     const result = await requestStaffPasswordReset(email);
     setMessage({ type: result.ok ? 'ok' : 'err', text: result.message });
     if (result.ok) toast.success(result.message, { id: toastId });
@@ -25,13 +28,14 @@ export default function ForgotPasswordForm() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold tracking-tight text-zinc-900">
-          Codiva<span className="font-medium text-codiva-primary">.dev</span>
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-zinc-900">Recuperar contraseña</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Te enviaremos un enlace si el email tiene acceso de staff.
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-semibold tracking-tight text-zinc-900">
+            Codiva<span className="font-medium text-codiva-primary">.dev</span>
+          </p>
+          <LanguageSwitcher />
+        </div>
+        <h1 className="mt-2 text-2xl font-bold text-zinc-900">{t('portal.forgot.title')}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t('portal.forgot.subtitle')}</p>
 
         {message && (
           <p
@@ -45,7 +49,7 @@ export default function ForgotPasswordForm() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
+            <label className="mb-1 block text-sm font-medium">{t('portal.login.email')}</label>
             <input
               type="email"
               required
@@ -59,13 +63,13 @@ export default function ForgotPasswordForm() {
             disabled={loading}
             className="w-full rounded-lg bg-codiva-primary py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {loading ? 'Enviando…' : 'Enviar enlace'}
+            {loading ? t('portal.forgot.sending') : t('portal.forgot.sendLink')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600">
           <Link href="/login" className="text-codiva-primary hover:underline">
-            Volver al login
+            {t('portal.forgot.back')}
           </Link>
         </p>
       </div>

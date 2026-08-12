@@ -1,6 +1,8 @@
 import { escapeHtml } from '@/utils/escapeHtml';
 import { opsBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
 import { BRAND_EMAIL, CODIVA_BRAND } from '@/lib/brand';
+import { DEFAULT_LOCALE, type Locale } from '@/i18n/config';
+import { tSync } from '@/i18n/translate';
 
 const BRAND = BRAND_EMAIL;
 const BRAND_NAME = CODIVA_BRAND.name;
@@ -24,9 +26,10 @@ type LayoutOptions = {
   bodyHtml: string;
   footerNote?: string;
   cta?: { label: string; href: string };
+  locale?: Locale;
 };
 
-function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOptions): string {
+function emailLayout({ preview, title, bodyHtml, footerNote, cta, locale = DEFAULT_LOCALE }: LayoutOptions): string {
   const ctaBlock = cta
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
         <tr>
@@ -39,7 +42,7 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
         </tr>
       </table>
       <p style="margin:12px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
-        Si el botón no funciona, copia este enlace:<br/>
+        ${escapeHtml(tSync(locale, 'email.ctaFallback'))}<br/>
         <a href="${cta.href}" style="color:${BRAND.primary};">${escapeHtml(cta.href)}</a>
       </p>`
     : '';
@@ -51,7 +54,7 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
   const defaultFooter = CODIVA_BRAND.tagline;
 
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${locale}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -109,8 +112,8 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta }: LayoutOption
 </html>`;
 }
 
-function greeting(name: string): string {
-  return `<p style="margin:0 0 16px;">Hola <strong>${escapeHtml(name)}</strong>,</p>`;
+function greeting(name: string, locale: Locale = DEFAULT_LOCALE): string {
+  return `<p style="margin:0 0 16px;">${escapeHtml(tSync(locale, 'email.hello'))} <strong>${escapeHtml(name)}</strong>,</p>`;
 }
 
 export type QuoteEmailContext = {
@@ -119,83 +122,111 @@ export type QuoteEmailContext = {
   endClientLabel?: string;
 };
 
-export function templateLeadConfirmation(name: string): string {
+export function templateLeadConfirmation(name: string, locale: Locale = DEFAULT_LOCALE): string {
   return emailLayout({
-    preview: `Recibimos tu solicitud de cotización en ${BRAND_NAME}`,
-    title: 'Recibimos tu solicitud',
+    locale,
+    preview: tSync(locale, 'email.lead.preview', { brand: BRAND_NAME }),
+    title: tSync(locale, 'email.lead.title'),
     bodyHtml: `
-      ${greeting(name)}
-      <p style="margin:0 0 12px;">Gracias por contactarnos. Hemos recibido tu solicitud de cotización y nuestro equipo la revisará pronto.</p>
-      <p style="margin:0;">Te responderemos a la brevedad. Si necesitas escribirnos, usa <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
+      ${greeting(name, locale)}
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.lead.body1')}</p>
+      <p style="margin:0;">${tSync(locale, 'email.lead.body2')} <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
-    footerNote: 'Mensaje automático de Codiva.dev. Las respuestas a noreply no se monitorean; escribe a hello@codiva.dev.',
+    footerNote: tSync(locale, 'email.lead.footer'),
   });
 }
 
-export function templateTicketConfirmation(name: string, ticketTitle: string): string {
+export function templateTicketConfirmation(
+  name: string,
+  ticketTitle: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   return emailLayout({
-    preview: `Ticket recibido: ${ticketTitle}`,
-    title: 'Ticket de soporte recibido',
+    locale,
+    preview: tSync(locale, 'email.ticket.preview', { title: ticketTitle }),
+    title: tSync(locale, 'email.ticket.title'),
     bodyHtml: `
-      ${greeting(name)}
-      <p style="margin:0 0 12px;">Hemos registrado tu solicitud de soporte:</p>
+      ${greeting(name, locale)}
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.ticket.body1')}</p>
       <p style="margin:0 0 16px;padding:12px 16px;background:${BRAND.background};border-radius:8px;border-left:4px solid ${BRAND.primary};">
         <strong>${escapeHtml(ticketTitle)}</strong>
       </p>
-      <p style="margin:0;">Te contactaremos pronto con novedades.</p>
+      <p style="margin:0;">${tSync(locale, 'email.ticket.body2')}</p>
     `,
   });
 }
 
-export function templatePasswordRecovery(): string {
+export function templatePasswordRecovery(locale: Locale = DEFAULT_LOCALE): string {
   return emailLayout({
-    preview: 'Restablece tu contraseña de Codiva.dev',
-    title: 'Restablecer contraseña',
+    locale,
+    preview: tSync(locale, 'email.recovery.preview'),
+    title: tSync(locale, 'email.recovery.title'),
     bodyHtml: `
-      <p style="margin:0 0 12px;">Recibimos una solicitud para restablecer tu contraseña.</p>
-      <p style="margin:0 0 12px;">Haz clic en el botón para crear una nueva. El enlace expira en breve por seguridad.</p>
-      <p style="margin:0;color:${BRAND.muted};font-size:14px;">Si no solicitaste esto, puedes ignorar este correo.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.recovery.body1')}</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.recovery.body2')}</p>
+      <p style="margin:0;color:${BRAND.muted};font-size:14px;">${tSync(locale, 'email.recovery.body3')}</p>
     `,
-    cta: { label: 'Crear nueva contraseña', href: '{{RECOVERY_LINK}}' },
+    cta: { label: tSync(locale, 'email.recovery.cta'), href: '{{RECOVERY_LINK}}' },
   });
 }
 
-export function templatePortalPasswordRecovery(projectName: string): string {
+export function templatePortalPasswordRecovery(
+  projectName: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
   return emailLayout({
-    preview: `Restablece tu acceso al portal: ${projectName}`,
-    title: 'Restablecer acceso al portal',
+    locale,
+    preview: tSync(locale, 'email.portalRecovery.preview', { project: projectName }),
+    title: tSync(locale, 'email.portalRecovery.title'),
     bodyHtml: `
-      <p style="margin:0 0 12px;">Recibimos una solicitud para restablecer tu contraseña del portal del proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
-      <p style="margin:0;color:${BRAND.muted};font-size:14px;">Si no solicitaste esto, ignora este correo.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.portalRecovery.body1', { project: '__PROJECT__' }).replace(
+        '__PROJECT__',
+        `<strong>${escapeHtml(projectName)}</strong>`
+      )}</p>
+      <p style="margin:0;color:${BRAND.muted};font-size:14px;">${tSync(locale, 'email.portalRecovery.body2')}</p>
     `,
-    cta: { label: 'Restablecer contraseña', href: '{{RECOVERY_LINK}}' },
+    cta: { label: tSync(locale, 'email.portalRecovery.cta'), href: '{{RECOVERY_LINK}}' },
   });
 }
 
-function projectAccessBlock(projectName: string): string {
+function projectAccessBlock(projectName: string, locale: Locale): string {
   const names = projectName
     .split(/\s+y\s+/)
     .flatMap((part) => part.split(/,\s*/))
     .map((n) => n.trim())
     .filter(Boolean);
   if (names.length <= 1) {
-    return `<p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>`;
+    return `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteNew.accessOne', {
+      brand: BRAND_NAME,
+      project: projectName,
+    })
+      .replace(escapeHtml(BRAND_NAME), `<strong>${escapeHtml(BRAND_NAME)}</strong>`)
+      .replace(escapeHtml(projectName), `<strong>${escapeHtml(projectName)}</strong>`)}</p>`;
   }
   const list = names.map((n) => `<li style="margin:0 0 4px;"><strong>${escapeHtml(n)}</strong></li>`).join('');
-  return `<p style="margin:0 0 12px;">Se creó tu acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para estos proyectos:</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
+  return `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteNew.accessMany', {
+    brand: BRAND_NAME,
+  }).replace(escapeHtml(BRAND_NAME), `<strong>${escapeHtml(BRAND_NAME)}</strong>`)}</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
 }
 
-function projectAccessBlockExisting(projectName: string): string {
+function projectAccessBlockExisting(projectName: string, locale: Locale): string {
   const names = projectName
     .split(/\s+y\s+/)
     .flatMap((part) => part.split(/,\s*/))
     .map((n) => n.trim())
     .filter(Boolean);
   if (names.length <= 1) {
-    return `<p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>`;
+    return `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteExisting.accessOne', {
+      brand: BRAND_NAME,
+      project: projectName,
+    })
+      .replace(escapeHtml(BRAND_NAME), `<strong>${escapeHtml(BRAND_NAME)}</strong>`)
+      .replace(escapeHtml(projectName), `<strong>${escapeHtml(projectName)}</strong>`)}</p>`;
   }
   const list = names.map((n) => `<li style="margin:0 0 4px;"><strong>${escapeHtml(n)}</strong></li>`).join('');
-  return `<p style="margin:0 0 12px;">Se te otorgó acceso al portal de <strong>${escapeHtml(BRAND_NAME)}</strong> para estos proyectos:</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
+  return `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteExisting.accessMany', {
+    brand: BRAND_NAME,
+  }).replace(escapeHtml(BRAND_NAME), `<strong>${escapeHtml(BRAND_NAME)}</strong>`)}</p><ul style="margin:0 0 12px;padding-left:20px;">${list}</ul>`;
 }
 
 export function templatePortalInviteNewUser(
@@ -203,56 +234,64 @@ export function templatePortalInviteNewUser(
   email: string,
   tempPassword: string,
   loginUrl: string,
-  options?: QuoteEmailContext
+  options?: QuoteEmailContext,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
-  const hello = options?.recipientName ? greeting(options.recipientName) : '';
+  const hello = options?.recipientName ? greeting(options.recipientName, locale) : '';
   const clientLine = options?.endClientLabel
-    ? `<p style="margin:0 0 12px;">Cliente: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    ? `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteNew.client', {
+        name: options.endClientLabel,
+      }).replace(escapeHtml(options.endClientLabel), `<strong>${escapeHtml(options.endClientLabel)}</strong>`)}</p>`
     : '';
 
   return emailLayout({
-    preview: `Tu acceso al portal: ${projectName}`,
-    title: 'Bienvenido a tu portal',
+    locale,
+    preview: tSync(locale, 'email.portalInviteNew.preview', { project: projectName }),
+    title: tSync(locale, 'email.portalInviteNew.title'),
     bodyHtml: `
       ${hello}
-      ${projectAccessBlock(projectName)}
+      ${projectAccessBlock(projectName, locale)}
       ${clientLine}
-      <p style="margin:0 0 12px;">Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas. Si tienes más de un proyecto, verás el listado al entrar.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteNew.body')}</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
         <tr>
           <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
-            <p style="margin:0 0 8px;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-            <p style="margin:0;"><strong>Contraseña temporal:</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;">${escapeHtml(tempPassword)}</code></p>
+            <p style="margin:0 0 8px;"><strong>${tSync(locale, 'email.portalInviteNew.email')}</strong> ${escapeHtml(email)}</p>
+            <p style="margin:0;"><strong>${tSync(locale, 'email.portalInviteNew.tempPassword')}</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;">${escapeHtml(tempPassword)}</code></p>
           </td>
         </tr>
       </table>
-      <p style="margin:0;color:${BRAND.muted};font-size:14px;">Te recomendamos cambiar tu contraseña al ingresar.</p>
+      <p style="margin:0;color:${BRAND.muted};font-size:14px;">${tSync(locale, 'email.portalInviteNew.changeHint')}</p>
     `,
-    cta: { label: 'Entrar al portal', href: loginUrl },
+    cta: { label: tSync(locale, 'email.portalInviteNew.cta'), href: loginUrl },
   });
 }
 
 export function templatePortalInviteExistingUser(
   projectName: string,
   loginUrl: string,
-  options?: QuoteEmailContext
+  options?: QuoteEmailContext,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
-  const hello = options?.recipientName ? greeting(options.recipientName) : '';
+  const hello = options?.recipientName ? greeting(options.recipientName, locale) : '';
   const clientLine = options?.endClientLabel
-    ? `<p style="margin:0 0 12px;">Cliente: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    ? `<p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteNew.client', {
+        name: options.endClientLabel,
+      }).replace(escapeHtml(options.endClientLabel), `<strong>${escapeHtml(options.endClientLabel)}</strong>`)}</p>`
     : '';
 
   return emailLayout({
-    preview: `Tienes acceso al portal: ${projectName}`,
-    title: 'Acceso al portal',
+    locale,
+    preview: tSync(locale, 'email.portalInviteExisting.preview', { project: projectName }),
+    title: tSync(locale, 'email.portalInviteExisting.title'),
     bodyHtml: `
       ${hello}
-      ${projectAccessBlockExisting(projectName)}
+      ${projectAccessBlockExisting(projectName, locale)}
       ${clientLine}
-      <p style="margin:0 0 12px;">Usa tu correo y contraseña habituales. En el portal encontrarás propuesta, arquitectura y cotización.</p>
-      <p style="margin:0;">Si necesitas ayuda, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.portalInviteExisting.body')}</p>
+      <p style="margin:0;">${tSync(locale, 'email.portalInviteExisting.help')} <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
-    cta: { label: 'Entrar al portal', href: loginUrl },
+    cta: { label: tSync(locale, 'email.portalInviteExisting.cta'), href: loginUrl },
   });
 }
 
@@ -305,73 +344,100 @@ export function templateStaffInviteExistingUser(
 export function templateQuoteSent(
   projectName: string,
   portalUrl: string,
-  options?: QuoteEmailContext
+  options?: QuoteEmailContext,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   const hello = options?.recipientName
-    ? greeting(options.recipientName)
+    ? greeting(options.recipientName, locale)
     : options?.partnerName
-      ? greeting(options.partnerName)
+      ? greeting(options.partnerName, locale)
       : '';
   const clientLine = options?.endClientLabel
-    ? `<p style="margin:0 0 12px;">Cliente de referencia: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    ? `<p style="margin:0 0 12px;">${tSync(locale, 'email.quoteSent.client', { name: options.endClientLabel }).replace(
+        options.endClientLabel,
+        `<strong>${escapeHtml(options.endClientLabel)}</strong>`
+      )}</p>`
     : '';
 
   return emailLayout({
-    preview: `Nueva cotización disponible: ${projectName}`,
-    title: 'Nueva propuesta comercial',
+    locale,
+    preview: tSync(locale, 'email.quoteSent.preview', { project: projectName }),
+    title: tSync(locale, 'email.quoteSent.title'),
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Tienes una nueva propuesta comercial de <strong>${escapeHtml(BRAND_NAME)}</strong> para el proyecto <strong>${escapeHtml(projectName)}</strong>.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.quoteSent.body1', {
+        brand: BRAND_NAME,
+        project: projectName,
+      })
+        .replace(BRAND_NAME, `<strong>${escapeHtml(BRAND_NAME)}</strong>`)
+        .replace(projectName, `<strong>${escapeHtml(projectName)}</strong>`)}</p>
       ${clientLine}
-      <p style="margin:0 0 12px;">Revisa alcance, arquitectura y montos en tu portal. Si estás de acuerdo, puedes aceptarla desde ahí.</p>
-      <p style="margin:0;">Dudas comerciales: <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.quoteSent.body2')}</p>
+      <p style="margin:0;">${tSync(locale, 'email.quoteSent.doubts')} <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
-    cta: { label: 'Ver cotización', href: portalUrl },
+    cta: { label: tSync(locale, 'email.quoteSent.cta'), href: portalUrl },
   });
 }
 
 export function templateLeadQuoteSent(
   subjectLabel: string,
   quoteUrl: string,
-  options?: QuoteEmailContext
+  options?: QuoteEmailContext,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   const hello = options?.partnerName
-    ? greeting(options.partnerName)
+    ? greeting(options.partnerName, locale)
     : options?.recipientName
-      ? greeting(options.recipientName)
+      ? greeting(options.recipientName, locale)
       : '';
   const clientLine = options?.endClientLabel
-    ? `<p style="margin:0 0 12px;">Cliente de referencia: <strong>${escapeHtml(options.endClientLabel)}</strong>.</p>`
+    ? `<p style="margin:0 0 12px;">${tSync(locale, 'email.quoteSent.client', { name: options.endClientLabel }).replace(
+        options.endClientLabel,
+        `<strong>${escapeHtml(options.endClientLabel)}</strong>`
+      )}</p>`
     : '';
 
   return emailLayout({
-    preview: `Propuesta comercial: ${subjectLabel}`,
-    title: 'Propuesta comercial disponible',
+    locale,
+    preview: tSync(locale, 'email.leadQuote.preview', { subject: subjectLabel }),
+    title: tSync(locale, 'email.leadQuote.title'),
     bodyHtml: `
       ${hello}
-      <p style="margin:0 0 12px;">Te compartimos una propuesta comercial de <strong>${escapeHtml(BRAND_NAME)}</strong> para <strong>${escapeHtml(subjectLabel)}</strong>.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.leadQuote.body1', {
+        brand: BRAND_NAME,
+        subject: subjectLabel,
+      })
+        .replace(BRAND_NAME, `<strong>${escapeHtml(BRAND_NAME)}</strong>`)
+        .replace(subjectLabel, `<strong>${escapeHtml(subjectLabel)}</strong>`)}</p>
       ${clientLine}
-      <p style="margin:0;">Puedes consultar el detalle completo en el enlace. Si tienes dudas, escribe a <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
+      <p style="margin:0;">${tSync(locale, 'email.leadQuote.body2')} <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
     `,
-    cta: { label: 'Ver propuesta', href: quoteUrl },
-    footerNote: 'Documento informativo. Consulta únicamente.',
+    cta: { label: tSync(locale, 'email.leadQuote.cta'), href: quoteUrl },
+    footerNote: tSync(locale, 'email.leadQuote.footer'),
   });
 }
 
 export function templateLegalReacceptance(
   projectName: string,
   acceptUrl: string,
-  versionCode: string
+  versionCode: string,
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   return emailLayout({
-    preview: `Actualización legal - ${projectName}`,
-    title: 'Debes aceptar los documentos legales actualizados',
+    locale,
+    preview: tSync(locale, 'email.legalReaccept.preview', { project: projectName }),
+    title: tSync(locale, 'email.legalReaccept.title'),
     bodyHtml: `
-      <p style="margin:0 0 12px;">Actualizamos los términos, el aviso de privacidad y/o el NDA del portal del proyecto <strong>${escapeHtml(projectName)}</strong> (versión <strong>${escapeHtml(versionCode)}</strong>).</p>
-      <p style="margin:0;">Para seguir usando el portal, acepta los documentos vigentes en tu próximo acceso.</p>
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.legalReaccept.body1', {
+        project: projectName,
+        version: versionCode,
+      })
+        .replace(projectName, `<strong>${escapeHtml(projectName)}</strong>`)
+        .replace(versionCode, `<strong>${escapeHtml(versionCode)}</strong>`)}</p>
+      <p style="margin:0;">${tSync(locale, 'email.legalReaccept.body2')}</p>
     `,
-    cta: { label: 'Revisar y aceptar', href: acceptUrl },
-    footerNote: 'Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.dev.',
+    cta: { label: tSync(locale, 'email.legalReaccept.cta'), href: acceptUrl },
+    footerNote: tSync(locale, 'email.legalReaccept.footer'),
   });
 }
 
@@ -412,21 +478,31 @@ export function templateCareerApplicationStaff({
   email,
   phone,
   jobTitle,
+  discipline,
   coverLetter,
   opsHref,
+  scorePct,
 }: {
   name: string;
   email: string;
   phone?: string;
   jobTitle: string;
+  discipline?: string;
   coverLetter?: string;
   opsHref: string;
+  scorePct?: number | null;
 }): string {
+  const scoreLine =
+    typeof scorePct === 'number'
+      ? `<p style="margin:0 0 8px;"><strong>Prueba:</strong> ${escapeHtml(String(scorePct))}% (aprobada)</p>`
+      : '';
   return emailLayout({
     preview: `${name} postul\u00f3 a ${jobTitle}`,
     title: 'Nueva postulaci\u00f3n',
     bodyHtml: `
       <p style="margin:0 0 8px;"><strong>Vacante:</strong> ${escapeHtml(jobTitle)}</p>
+      ${discipline ? `<p style="margin:0 0 8px;"><strong>Oficio:</strong> ${escapeHtml(discipline)}</p>` : ''}
+      ${scoreLine}
       <p style="margin:0 0 8px;"><strong>Nombre:</strong> ${escapeHtml(name)}</p>
       <p style="margin:0 0 8px;"><strong>Correo:</strong> <a href="mailto:${escapeHtml(email)}" style="color:${BRAND.primary};">${escapeHtml(email)}</a></p>
       ${phone ? `<p style="margin:0 0 8px;"><strong>Tel\u00e9fono:</strong> ${escapeHtml(phone)}</p>` : ''}
@@ -447,10 +523,14 @@ export function applyRecoveryLink(html: string, link: string): string {
   return html.replace(/\{\{RECOVERY_LINK\}\}/g, link);
 }
 
-export function templatePasswordRecoveryHtml(link: string): string {
-  return applyRecoveryLink(templatePasswordRecovery(), link);
+export function templatePasswordRecoveryHtml(link: string, locale: Locale = DEFAULT_LOCALE): string {
+  return applyRecoveryLink(templatePasswordRecovery(locale), link);
 }
 
-export function templatePortalPasswordRecoveryHtml(projectName: string, link: string): string {
-  return applyRecoveryLink(templatePortalPasswordRecovery(projectName), link);
+export function templatePortalPasswordRecoveryHtml(
+  projectName: string,
+  link: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  return applyRecoveryLink(templatePortalPasswordRecovery(projectName, locale), link);
 }

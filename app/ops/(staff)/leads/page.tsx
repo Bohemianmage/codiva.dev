@@ -4,11 +4,14 @@ import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { createLead } from '@/lib/ops/actions';
-import { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export default async function LeadsPage() {
   const { supabase } = await requireCapability('leads');
+  const t = await getT();
+  const { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, formatDate, EMPTY_LABEL } = labelsFor(t.locale);
   const { data: leads } = await supabase
     .from('leads')
     .select('id, name, company, email, status, source, partner_company, end_client_company, created_at')
@@ -24,8 +27,8 @@ export default async function LeadsPage() {
   return (
     <div>
       <OpsPageHeader
-        title="Leads"
-        description="Solicitudes de cotización y contacto comercial"
+        title={t('ops.pages.leads')}
+        description={t('ops.pages.leadsDesc')}
         actions={
           <a
             href={`${opsBaseUrl()}/partner/solicitar`}

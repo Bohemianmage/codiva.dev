@@ -2,40 +2,56 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import i18n from '@/i18n/i18n';
 import { motion, AnimatePresence } from 'framer-motion';
-import useClientReady from '@/hooks/useClientReady';
 import useClickOutside from '@/hooks/useClickOutside';
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isLocale } from '@/i18n/config';
+import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = [
   { code: 'en', label: 'English', flag: '/icons/flags/en.svg' },
   { code: 'es', label: 'Español', flag: '/icons/flags/es.svg' },
 ];
 
+function persistLocale(code) {
+  document.cookie = `${LOCALE_COOKIE}=${code};path=/;max-age=${LOCALE_COOKIE_MAX_AGE};SameSite=Lax`;
+}
+
 export default function LanguageSwitcher() {
-  const isReady = useClientReady();
+  const { t, i18n: i18nHook } = useTranslation();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const currentLang = i18n.resolvedLanguage;
+  const currentLang = isLocale(i18nHook.resolvedLanguage)
+    ? i18nHook.resolvedLanguage
+    : isLocale(i18n.resolvedLanguage)
+      ? i18n.resolvedLanguage
+      : 'es';
   const dropdownRef = useRef(null);
   const timeoutRef = useRef(null);
 
   useClickOutside(dropdownRef, () => setOpen(false));
 
-  // Detecta si estamos en modo desktop
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 768);
     };
-    handleResize(); // detectar al montar
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!isReady) return null;
-
   const safeFlag =
     LANGUAGES.find((l) => l.code === currentLang)?.flag || LANGUAGES[0].flag;
+
+  async function selectLanguage(code) {
+    persistLocale(code);
+    await i18n.changeLanguage(code);
+    document.documentElement.lang = code;
+    setOpen(false);
+    router.refresh();
+  }
 
   return (
     <div
@@ -53,12 +69,11 @@ export default function LanguageSwitcher() {
         }
       }}
     >
-      {/* Botón de idioma */}
       <motion.button
         onClick={() => {
           if (!isDesktop) setOpen((prev) => !prev);
         }}
-        aria-label="Cambiar idioma"
+        aria-label={t('a11y.changeLanguage')}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -85,7 +100,6 @@ export default function LanguageSwitcher() {
         </AnimatePresence>
       </motion.button>
 
-      {/* Dropdown de idiomas */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -98,10 +112,8 @@ export default function LanguageSwitcher() {
             {LANGUAGES.map((lang, index) => (
               <div key={lang.code}>
                 <button
-                  onClick={() => {
-                    i18n.changeLanguage(lang.code);
-                    setOpen(false);
-                  }}
+                  type="button"
+                  onClick={() => selectLanguage(lang.code)}
                   className="flex items-center justify-center gap-3 px-3 py-1.5 w-full hover:bg-zinc-100 text-sm transition rounded-md"
                 >
                   <Image

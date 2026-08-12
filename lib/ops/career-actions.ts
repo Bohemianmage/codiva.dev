@@ -5,13 +5,18 @@ import { redirect } from 'next/navigation';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import {
+  isCareerDiscipline,
   isJobApplicationStatus,
   isJobEmploymentType,
   isJobPostingStatus,
   normalizeJobSlug,
   uniqueJobSlugCandidate,
+  CAREER_DISCIPLINE_LABELS,
 } from '@/lib/ops/careers';
-import { DEFAULT_QA_RESPONSIBILITIES, DEFAULT_RESPONSIBILITIES } from '@/lib/ops/offer-letter';
+import {
+  DEFAULT_RESPONSIBILITIES,
+  responsibilitiesForCareerDiscipline,
+} from '@/lib/ops/offer-letter';
 
 function revalidateCareerPaths(slug?: string) {
   revalidatePath('/team');
@@ -206,7 +211,7 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
 
   const { data: application, error } = await supabase
     .from('ops_job_applications')
-    .select('id, full_name, email, cover_letter, personnel_offer_id, ops_job_postings(title, slug)')
+    .select('id, full_name, email, cover_letter, discipline, personnel_offer_id, ops_job_postings(title, slug)')
     .eq('id', applicationId)
     .single();
 
@@ -218,11 +223,17 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
   const posting = Array.isArray(application.ops_job_postings)
     ? application.ops_job_postings[0]
     : application.ops_job_postings;
-  const positionTitle = posting?.title || 'Colaborador';
+  const discipline =
+    typeof application.discipline === 'string' && isCareerDiscipline(application.discipline)
+      ? application.discipline
+      : null;
+  const disciplineLabel = discipline ? CAREER_DISCIPLINE_LABELS[discipline] : null;
+  const positionTitle =
+    discipline && discipline !== 'other' ? disciplineLabel || posting?.title || 'Colaborador' : posting?.title || 'Colaborador';
   const isPm = posting?.slug === 'project-manager';
-  const isQa = posting?.slug === 'tester-qa';
   const notes = [
     `Origen: bolsa de trabajo (${posting?.slug || 'vacante'}).`,
+    disciplineLabel ? `Oficio: ${disciplineLabel}.` : null,
     application.cover_letter ? `Mensaje del candidato:\n${application.cover_letter}` : null,
   ]
     .filter(Boolean)
@@ -240,7 +251,8 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
       work_modality: 'remote',
       status: 'draft',
       issued_at: new Date().toISOString().slice(0, 10),
-      responsibilities: isQa ? DEFAULT_QA_RESPONSIBILITIES : DEFAULT_RESPONSIBILITIES,
+      responsibilities:
+        responsibilitiesForCareerDiscipline(discipline) || DEFAULT_RESPONSIBILITIES,
       notes_internal: notes,
       created_by: user.id,
     })

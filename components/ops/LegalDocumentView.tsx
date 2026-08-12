@@ -1,13 +1,17 @@
+'use client';
+
 import type { LegalDocument } from '@/lib/ops/legal/content';
+import { useTranslation } from 'react-i18next';
 
 export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
+  const { t } = useTranslation();
   return (
     <article className="mx-auto max-w-3xl space-y-8">
       <header className="space-y-3 border-b border-zinc-200 pb-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-codiva-primary">Codiva.dev</p>
         <h1 className="text-2xl font-bold text-zinc-900">{doc.title}</h1>
         <p className="text-sm text-zinc-500">
-          Versión {doc.versionCode} · Actualizado {doc.updated}
+          {t('legal.version', { code: doc.versionCode, updated: doc.updated })}
         </p>
         <div className="space-y-3 text-sm leading-relaxed text-zinc-700">
           {doc.intro.map((p) => (
@@ -44,7 +48,7 @@ export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
             )}
             {section.closing && <p className="text-sm text-zinc-700">{section.closing}</p>}
             {section.legalNote && (
-              <p className="text-xs text-zinc-500">Fundamento: {section.legalNote}</p>
+              <p className="text-xs text-zinc-500">{t('legal.foundation', { note: section.legalNote })}</p>
             )}
           </section>
         ))}

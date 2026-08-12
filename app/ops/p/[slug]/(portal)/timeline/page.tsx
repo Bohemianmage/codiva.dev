@@ -1,6 +1,7 @@
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
-import { MILESTONE_STATUS_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 
 function milestoneTone(status: string) {
   const map: Record<string, 'neutral' | 'success' | 'warning' | 'danger' | 'info'> = {
@@ -29,6 +30,7 @@ export default async function PortalTimelinePage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor(await getLocale());
 
   const { data: milestones } = await supabase
     .from('milestones')

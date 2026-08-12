@@ -4,7 +4,8 @@ import {
   updateProjectSiteUrls,
   updateSiteAccess,
 } from '@/lib/ops/actions';
-import { SITE_ACCESS_KIND_LABELS } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import ToastForm from '@/components/ops/ToastForm';
 
 type SiteAccessRow = {
@@ -19,7 +20,7 @@ type SiteAccessRow = {
   sort_order: number;
 };
 
-export default function OpsProjectSiteAccess({
+export default async function OpsProjectSiteAccess({
   projectId,
   sitePreviewUrl,
   siteProductionUrl,
@@ -30,6 +31,7 @@ export default function OpsProjectSiteAccess({
   siteProductionUrl: string | null;
   items: SiteAccessRow[];
 }) {
+  const { SITE_ACCESS_KIND_LABELS } = labelsFor(await getLocale());
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">

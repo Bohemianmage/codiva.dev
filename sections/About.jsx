@@ -7,7 +7,6 @@ import Heading from '../components/Heading';
 import Paragraph from '../components/Paragraph';
 import TypewriterCycle from '../components/TypewriterCycle';
 import CodivaWordmark from '../components/CodivaWordmark';
-import BrandPattern from '../components/BrandPattern';
 
 export default function About() {
   const { t } = useTranslation();
@@ -26,9 +25,8 @@ export default function About() {
   return (
     <section
       id="about"
-      className="section-spacing scroll-mt-24 md:scroll-mt-28 relative w-full px-6 md:px-12 flex justify-center bg-zinc-50 overflow-hidden"
+      className="section-spacing scroll-mt-24 md:scroll-mt-28 relative w-full px-6 md:px-12 flex justify-center bg-zinc-50"
     >
-      <BrandPattern />
       <div
         ref={sectionRef}
         className="glass-panel relative w-full max-w-4xl rounded-2xl px-8 py-12 text-center"

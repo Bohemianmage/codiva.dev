@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
 import SecretReveal from '@/components/ops/SecretReveal';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
-import { SITE_ACCESS_KIND_LABELS } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -24,6 +25,7 @@ export default async function PortalSitioPage({
   noStore();
   const { slug } = await params;
   const { project, supabase } = await requirePortalMemberWithAcceptances(slug);
+  const { SITE_ACCESS_KIND_LABELS } = labelsFor(await getLocale());
 
   const { data: accessItems } = await supabase
     .from('project_site_access')

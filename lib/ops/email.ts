@@ -4,6 +4,8 @@ import {
   templateLeadConfirmation,
   templateTicketConfirmation,
 } from '@/lib/ops/email-templates';
+import { tSync } from '@/i18n/translate';
+import type { Locale } from '@/i18n/config';
 
 export type EmailResult =
   | { ok: true }
@@ -116,11 +118,19 @@ export async function sendClientEmail({
   return { ok: true };
 }
 
-export async function sendLeadConfirmationEmail({ to, name }: { to: string; name: string }) {
+export async function sendLeadConfirmationEmail({
+  to,
+  name,
+  locale = 'es',
+}: {
+  to: string;
+  name: string;
+  locale?: Locale;
+}) {
   return sendClientEmail({
     to,
-    subject: `Hemos recibido tu solicitud en ${CODIVA_BRAND.name}`,
-    html: templateLeadConfirmation(name),
+    subject: tSync(locale, 'email.lead.subject', { brand: CODIVA_BRAND.name }),
+    html: templateLeadConfirmation(name, locale),
   });
 }
 
@@ -128,15 +138,17 @@ export async function sendTicketConfirmationEmail({
   to,
   name,
   ticketTitle,
+  locale = 'es',
 }: {
   to: string;
   name: string;
   ticketTitle: string;
+  locale?: Locale;
 }) {
   return sendClientEmail({
     to,
-    subject: `Ticket recibido: ${ticketTitle}`,
-    html: templateTicketConfirmation(name, ticketTitle),
+    subject: tSync(locale, 'email.ticket.subject', { title: ticketTitle }),
+    html: templateTicketConfirmation(name, ticketTitle, locale),
   });
 }
 

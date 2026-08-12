@@ -1,4 +1,6 @@
 import { LEGAL_DOCS_VERSION, LEGAL_UPDATED_LABEL } from '@/lib/ops/legal/version';
+import { PORTAL_NDA_EN, PRIVACY_NOTICE_EN, TERMS_OF_USE_EN } from './content-en';
+import type { Locale } from '@/i18n/config';
 
 export type LegalSection = {
   id: string;
@@ -363,7 +365,15 @@ export const PORTAL_NDA: LegalDocument = {
   ],
 };
 
-export function getLegalDocument(kind: 'terms' | 'privacy' | 'nda'): LegalDocument {
+export function getLegalDocument(
+  kind: 'terms' | 'privacy' | 'nda',
+  locale: Locale = 'es'
+): LegalDocument {
+  if (locale === 'en') {
+    if (kind === 'privacy') return PRIVACY_NOTICE_EN;
+    if (kind === 'nda') return PORTAL_NDA_EN;
+    return TERMS_OF_USE_EN;
+  }
   if (kind === 'privacy') return PRIVACY_NOTICE;
   if (kind === 'nda') return PORTAL_NDA;
   return TERMS_OF_USE;

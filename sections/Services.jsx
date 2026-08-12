@@ -36,8 +36,7 @@ const fadeInUp = {
 };
 
 export default function Services() {
-  const { t, i18n } = useTranslation();
-  const currentLang = i18n.language;
+  const { t } = useTranslation();
   const [expandedIndex, setExpandedIndex] = useState(null);
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { triggerOnce: false, threshold: 0.6 });
@@ -73,9 +72,8 @@ export default function Services() {
             {services.map((service, index) => {
               const isExpanded = expandedIndex === index;
               const detailsId = `service-details-${index}`;
-              const price = currentLang === 'es'
-                ? ['Desde $28,000 MXN', 'Desde $60,000 MXN', 'Desde $2,000 MXN/h'][index]
-                : ['From $1,400 USD', 'From $3,000 USD', 'From $100 USD/h'][index];
+              const prices = t('services.prices', { returnObjects: true });
+              const price = Array.isArray(prices) ? prices[index] : '';
 
               return (
                 <motion.div

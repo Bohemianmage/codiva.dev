@@ -1,21 +1,28 @@
 import PartnerRequestForm from '@/components/ops/PartnerRequestForm';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { marketingBaseUrl } from '@/lib/ops/host';
+import { getT } from '@/i18n/locale';
 
-export const metadata = {
-  title: 'Solicitar cotización - Partners Codiva',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata() {
+  const t = await getT();
+  return {
+    title: t('partner.title'),
+    robots: { index: false, follow: false },
+  };
+}
 
-export default function PartnerRequestPage() {
+export default async function PartnerRequestPage() {
+  const t = await getT();
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-10">
       <div className="mx-auto max-w-2xl">
+        <div className="mb-4 flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <header className="mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-codiva-primary">Codiva Partners</p>
-          <h1 className="mt-2 text-2xl font-bold text-zinc-900">Solicitar cotización comercial</h1>
-          <p className="mt-2 text-sm text-zinc-600">
-            Para agencias, consultores e intermediarios que necesitan una propuesta de Codiva para su cliente.
-          </p>
+          <h1 className="mt-2 text-2xl font-bold text-zinc-900">{t('partner.title')}</h1>
+          <p className="mt-2 text-sm text-zinc-600">{t('partner.subtitle')}</p>
         </header>
 
         <PartnerRequestForm />
@@ -23,10 +30,10 @@ export default function PartnerRequestPage() {
         <footer className="mt-10 space-y-2 text-center text-xs text-zinc-500">
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a href="/legal/terminos" className="hover:text-codiva-primary hover:underline">
-              Términos
+              {t('partner.terms')}
             </a>
             <a href="/legal/aviso-privacidad" className="hover:text-codiva-primary hover:underline">
-              Aviso de privacidad
+              {t('partner.privacy')}
             </a>
           </div>
           <a href={marketingBaseUrl()} className="text-codiva-primary hover:underline">

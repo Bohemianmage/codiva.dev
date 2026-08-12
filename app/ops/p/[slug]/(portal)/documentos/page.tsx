@@ -1,7 +1,8 @@
 import PortalDocumentRequests from '@/components/ops/PortalDocumentRequests';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { clientFulfillDocumentRequest } from '@/lib/ops/actions';
-import { DOCUMENT_SOURCE_LABELS, DOCUMENT_TYPE_LABELS, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { mutualNdaPath } from '@/lib/ops/legal/mutual-nda';
 import { opsFileHref } from '@/lib/ops/storage';
 
@@ -12,6 +13,7 @@ export default async function PortalDocumentsPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requirePortalMemberWithAcceptances(slug);
+  const { DOCUMENT_SOURCE_LABELS, DOCUMENT_TYPE_LABELS, formatDate } = labelsFor(await getLocale());
 
   const [{ data: documents }, { data: orgDocuments }, { data: requests }, { data: organization }] =
     await Promise.all([

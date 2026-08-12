@@ -6,7 +6,7 @@ import * as Yup from 'yup';
 import { useTranslation } from 'react-i18next';
 
 export default function FormularioCotizacion() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,7 +46,10 @@ export default function FormularioCotizacion() {
         const res = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            locale: i18n.language?.startsWith('en') ? 'en' : 'es',
+          }),
         });
         if (res.ok) {
           setSubmitted(true);

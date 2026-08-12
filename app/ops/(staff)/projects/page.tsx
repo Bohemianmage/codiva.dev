@@ -6,7 +6,8 @@ import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
 import { listVisibleProjectIds, requireStaff } from '@/lib/ops/auth';
 import { createProject } from '@/lib/ops/actions';
 import { can } from '@/lib/ops/permissions';
-import { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
 
 export default async function ProjectsPage() {
@@ -14,6 +15,8 @@ export default async function ProjectsPage() {
   const { supabase, user, staff } = access;
   const canCreate = can(staff.role, 'projects_create');
   const visibleIds = await listVisibleProjectIds(supabase, user.id, staff.role);
+  const t = await getT();
+  const { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } = labelsFor(t.locale);
 
   let projectsQuery = supabase
     .from('projects')
@@ -40,11 +43,11 @@ export default async function ProjectsPage() {
   return (
     <div>
       <OpsPageHeader
-        title="Proyectos"
+        title={t('ops.pages.projects')}
         description={
           can(staff.role, 'projects_all')
-            ? 'Gestión de proyectos y portales de cliente'
-            : 'Proyectos en los que estás asignado'
+            ? t('ops.pages.projectsAll')
+            : t('ops.pages.projectsAssigned')
         }
       />
 

@@ -47,6 +47,7 @@ export async function POST(request) {
     await sendLeadConfirmationEmail({
       to: body.email,
       name: body.name || 'Cliente',
+      locale: body.locale === 'en' ? 'en' : 'es',
     }).catch(() => {});
 
     await notifyStaff({

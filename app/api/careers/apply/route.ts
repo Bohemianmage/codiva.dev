@@ -6,14 +6,19 @@ import { notifyStaff } from '@/lib/ops/email';
 import { templateCareerApplicationStaff } from '@/lib/ops/email-templates';
 import {
   CAREER_DEDUPE_HOURS,
+  CAREER_DISCIPLINE_LABELS,
   CAREER_RL_APPLY,
   CAREER_RL_APPLY_EMAIL,
   assertCareerCvObjectExists,
   careerRateLimitConsume,
   hashCareerIp,
+  isCareerDiscipline,
   isCvPathForJob,
+  postingAsksDiscipline,
   safeCareerStr,
 } from '@/lib/ops/careers';
+import { catalogForApplication } from '@/lib/careers/assessments/engine';
+import { loadAttemptByToken } from '@/lib/careers/assessments/server';
 import { opsBaseUrl } from '@/lib/ops/host';
 
 export const runtime = 'nodejs';
@@ -61,6 +66,7 @@ export async function POST(request: Request) {
   const phone = safeCareerStr(body.phone, 40);
   const coverLetter = safeCareerStr(body.cover_letter ?? body.coverLetter, 8000);
   const originalFilename = safeCareerStr(body.original_filename ?? body.originalFilename, 200);
+  const disciplineRaw = safeCareerStr(body.discipline, 40).toLowerCase();
 
   if (!fullName || !email || !email.includes('@')) {
     return NextResponse.json({ ok: false, error: 'missing_or_invalid_contact' }, { status: 400 });
@@ -81,7 +87,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data: job, error: jobErr } = await admin
     .from('ops_job_postings')
-    .select('id, title, slug, status')
+    .select('id, title, slug, status, assessment_key')
     .eq('id', jobPostingId)
     .maybeSingle();
 
@@ -90,6 +96,43 @@ export async function POST(request: Request) {
   }
   if (!job?.id || job.status !== 'published') {
     return NextResponse.json({ ok: false, error: 'job_not_available' }, { status: 400 });
+  }
+
+  const asksDiscipline = postingAsksDiscipline(job.slug);
+  const discipline = isCareerDiscipline(disciplineRaw) ? disciplineRaw : null;
+  if (asksDiscipline && !discipline) {
+    return NextResponse.json({ ok: false, error: 'missing_or_invalid_discipline' }, { status: 400 });
+  }
+
+  const catalog = catalogForApplication(job.assessment_key, job.slug, discipline);
+  let assessmentAttemptId: string | null = null;
+  let assessmentScorePct: number | null = null;
+  if (catalog) {
+    const assessmentToken = safeCareerStr(body.assessment_token ?? body.assessmentToken, 80);
+    if (assessmentToken.length < 16) {
+      return NextResponse.json({ ok: false, error: 'assessment_required' }, { status: 400 });
+    }
+    const attempt = await loadAttemptByToken(assessmentToken);
+    if (
+      !attempt ||
+      attempt.job_posting_id !== jobPostingId ||
+      attempt.status !== 'completed' ||
+      !attempt.passed ||
+      attempt.email.toLowerCase() !== email ||
+      attempt.catalog_key !== catalog.key
+    ) {
+      return NextResponse.json({ ok: false, error: 'assessment_not_passed' }, { status: 400 });
+    }
+    const { data: used } = await admin
+      .from('ops_job_applications')
+      .select('id')
+      .eq('assessment_attempt_id', attempt.id)
+      .maybeSingle();
+    if (used?.id) {
+      return NextResponse.json({ ok: false, error: 'duplicate_application' }, { status: 409 });
+    }
+    assessmentAttemptId = attempt.id;
+    assessmentScorePct = attempt.score_pct;
   }
 
   const cutoff = new Date(Date.now() - CAREER_DEDUPE_HOURS * 3600 * 1000).toISOString();
@@ -121,6 +164,7 @@ export async function POST(request: Request) {
       full_name: fullName,
       email,
       phone: phone || null,
+      discipline: asksDiscipline ? discipline : null,
       cover_letter: coverLetter || null,
       cv_storage_path: cvPath,
       original_filename: originalFilename || null,
@@ -128,6 +172,7 @@ export async function POST(request: Request) {
       consent_terms_at: now,
       ip_hash: hashCareerIp(ip),
       status: 'new',
+      assessment_attempt_id: assessmentAttemptId,
     })
     .select('id')
     .maybeSingle();
@@ -141,18 +186,23 @@ export async function POST(request: Request) {
     entityType: 'job_application',
     entityId: inserted?.id || jobPostingId,
     action: 'created',
-    metadata: { jobPostingId, slug: job.slug },
+    metadata: { jobPostingId, slug: job.slug, discipline: discipline || null },
   });
 
+  const disciplineLabel = discipline ? CAREER_DISCIPLINE_LABELS[discipline] : '';
   await notifyStaff({
-    subject: `[Bolsa] ${fullName} · ${job.title}`,
+    subject: disciplineLabel
+      ? `[Bolsa] ${fullName} · ${disciplineLabel}`
+      : `[Bolsa] ${fullName} · ${job.title}`,
     html: templateCareerApplicationStaff({
       name: fullName,
       email,
       phone,
       jobTitle: job.title,
+      discipline: disciplineLabel || undefined,
       coverLetter,
       opsHref: `${opsBaseUrl()}/team?tab=bolsa`,
+      scorePct: assessmentScorePct,
     }),
     replyTo: email,
   }).catch(() => {});

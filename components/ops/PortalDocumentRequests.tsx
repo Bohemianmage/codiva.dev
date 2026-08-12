@@ -3,11 +3,7 @@
 import { useMemo, useState } from 'react';
 import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import ToastForm from '@/components/ops/ToastForm';
-import {
-  DOCUMENT_REQUEST_INPUT_LABELS,
-  DOCUMENT_REQUEST_STATUS_LABELS,
-  formatDate,
-} from '@/lib/ops/labels';
+import { useLabels } from '@/lib/ops/use-labels';
 
 export type PortalDocRequest = {
   id: string;
@@ -49,6 +45,7 @@ export default function PortalDocumentRequests({
   templates = [],
   fulfillAction,
 }: Props) {
+  const { DOCUMENT_REQUEST_INPUT_LABELS, DOCUMENT_REQUEST_STATUS_LABELS, formatDate } = useLabels();
   const sorted = useMemo(
     () => [...requests].sort((a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title)),
     [requests]

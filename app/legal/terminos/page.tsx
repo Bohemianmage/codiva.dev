@@ -1,21 +1,18 @@
 import LegalDocumentView from '@/components/ops/LegalDocumentView';
-import { TERMS_OF_USE } from '@/lib/ops/legal/content';
-import Link from 'next/link';
+import { getLegalDocument } from '@/lib/ops/legal/content';
+import { getLocale, getT } from '@/i18n/locale';
 
-export const metadata = {
-  title: 'Términos y Condiciones - Codiva',
-};
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t('legal.termsTitle') };
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const locale = await getLocale();
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-10">
-      <div className="mx-auto mb-6 max-w-3xl">
-        <Link href="/" className="text-sm text-codiva-primary hover:underline">
-          ← Volver
-        </Link>
-      </div>
+    <div className="px-4 py-10">
       <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-8 sm:px-10">
-        <LegalDocumentView doc={TERMS_OF_USE} />
+        <LegalDocumentView doc={getLegalDocument('terms', locale)} />
       </div>
     </div>
   );

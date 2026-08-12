@@ -8,12 +8,8 @@ import {
   updateProjectSprint,
   updateSprintItem,
 } from '@/lib/ops/actions';
-import {
-  EMPTY_LABEL,
-  formatDate,
-  SPRINT_ITEM_STATUS_LABELS,
-  SPRINT_STATUS_LABELS,
-} from '@/lib/ops/labels';
+import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { can } from '@/lib/ops/permissions';
 
 type StaffOption = { id: string; full_name: string; role: string };
@@ -57,7 +53,7 @@ function profileName(row: ProjectStaffRow) {
   return p?.full_name || EMPTY_LABEL;
 }
 
-export default function OpsProjectSprints({
+export default async function OpsProjectSprints({
   projectId,
   staffRole,
   currentUserId,
@@ -74,6 +70,7 @@ export default function OpsProjectSprints({
   sprints: SprintRow[];
   items: SprintItemRow[];
 }) {
+  const { formatDate, SPRINT_ITEM_STATUS_LABELS, SPRINT_STATUS_LABELS } = labelsFor(await getLocale());
   const canPlan = can(staffRole, 'sprints_plan');
   const staffName = new Map(allStaff.map((s) => [s.id, s.full_name]));
 

@@ -66,7 +66,8 @@ export function buildQuoteDocumentData(
 
 export function buildQuoteDocumentHtml(
   quote: QuoteRow,
-  context: { lead?: LeadContext; project?: ProjectContext }
+  context: { lead?: LeadContext; project?: ProjectContext },
+  locale?: 'es' | 'en'
 ): string {
-  return renderQuoteDocumentHtml(buildQuoteDocumentData(quote, context));
+  return renderQuoteDocumentHtml(buildQuoteDocumentData(quote, context), locale);
 }

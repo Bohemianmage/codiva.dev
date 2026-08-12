@@ -2,7 +2,8 @@ import Link from 'next/link';
 import PortalCanvasViewer from '@/components/ops/PortalCanvasViewer';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireProjectMember } from '@/lib/ops/auth';
-import { formatCurrency, formatDate, QUOTE_STATUS_LABELS } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getLocale } from '@/i18n/locale';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
 
 export default async function PortalProposalPage({
@@ -12,6 +13,7 @@ export default async function PortalProposalPage({
 }) {
   const { slug } = await params;
   const { project, supabase } = await requireProjectMember(slug);
+  const { formatCurrency, formatDate, QUOTE_STATUS_LABELS } = labelsFor(await getLocale());
   const visibility = getPortalVisibility(project);
 
   const [{ data: canvases }, { data: quotes }] = await Promise.all([

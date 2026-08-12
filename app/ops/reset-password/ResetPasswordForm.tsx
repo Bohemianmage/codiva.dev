@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { updatePassword } from '@/lib/ops/password-reset';
 
 export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?: string }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -16,14 +19,14 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
-      const msg = 'Las contraseñas no coinciden.';
+      const msg = t('portal.reset.mismatch');
       setMessage({ type: 'err', text: msg });
       toast.error(msg);
       return;
     }
     setLoading(true);
     setMessage(null);
-    const toastId = toast.loading('Guardando…');
+    const toastId = toast.loading(t('portal.reset.saving'));
     const result = await updatePassword(password);
     setMessage({ type: result.ok ? 'ok' : 'err', text: result.message });
     setLoading(false);
@@ -38,11 +41,14 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-semibold tracking-tight text-zinc-900">
-          Codiva<span className="font-medium text-codiva-primary">.dev</span>
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-zinc-900">Nueva contraseña</h1>
-        <p className="mt-1 text-sm text-zinc-600">Mínimo 8 caracteres.</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-semibold tracking-tight text-zinc-900">
+            Codiva<span className="font-medium text-codiva-primary">.dev</span>
+          </p>
+          <LanguageSwitcher />
+        </div>
+        <h1 className="mt-2 text-2xl font-bold text-zinc-900">{t('portal.reset.title')}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t('portal.reset.hint')}</p>
 
         {message && (
           <p
@@ -56,7 +62,7 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Nueva contraseña</label>
+            <label className="mb-1 block text-sm font-medium">{t('portal.reset.newPassword')}</label>
             <input
               type="password"
               required
@@ -67,7 +73,7 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Confirmar contraseña</label>
+            <label className="mb-1 block text-sm font-medium">{t('portal.reset.confirmPassword')}</label>
             <input
               type="password"
               required
@@ -82,13 +88,13 @@ export default function ResetPasswordForm({ loginPath = '/login' }: { loginPath?
             disabled={loading}
             className="w-full rounded-lg bg-codiva-primary py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {loading ? 'Guardando…' : 'Guardar contraseña'}
+            {loading ? t('portal.reset.saving') : t('portal.reset.save')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-600">
           <Link href={loginPath} className="text-codiva-primary hover:underline">
-            Volver al login
+            {t('portal.reset.back')}
           </Link>
         </p>
       </div>

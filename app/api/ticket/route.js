@@ -49,6 +49,7 @@ export async function POST(req) {
       priority: toStr(form.get('priority')),
       incidentTime: toStr(form.get('incidentTime')),
       projectId: toStr(form.get('projectId')) || null,
+      locale: toStr(form.get('locale')),
     };
 
     const errors = validate(body);
@@ -116,6 +117,7 @@ export async function POST(req) {
       to: body.email,
       name: body.name,
       ticketTitle: body.issueTitle,
+      locale: body.locale === 'en' ? 'en' : 'es',
     });
 
     await notifyStaff({

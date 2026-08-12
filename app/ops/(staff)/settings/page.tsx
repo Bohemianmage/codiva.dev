@@ -1,20 +1,18 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import { requireStaff } from '@/lib/ops/auth';
-import { EMPTY_LABEL, formatDate } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
+import { getT } from '@/i18n/locale';
 import { publishLegalVersionAndNotify } from '@/lib/ops/actions';
 import { LEGAL_DOCS_VERSION, LEGAL_UPDATED_LABEL } from '@/lib/ops/legal/version';
 import { can } from '@/lib/ops/permissions';
 import Link from 'next/link';
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  pm: 'Project Manager',
-  dev: 'Desarrollador',
-};
-
 export default async function SettingsPage() {
   const { user, staff, supabase } = await requireStaff();
+  const t = await getT();
+  const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
+  const ROLE_LABELS = { admin: t('ops.roles.admin'), pm: t('ops.roles.pm'), dev: t('ops.roles.dev') };
   const canPublishLegal = can(staff.role, 'legal_publish');
   const canManageTeam = can(staff.role, 'team');
 

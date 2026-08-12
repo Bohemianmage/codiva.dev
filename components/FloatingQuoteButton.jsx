@@ -130,7 +130,14 @@ export default function FloatingQuoteButton() {
                   validationSchema={validationSchema}
                   onSubmit={(values) => {
                     const { name, projectType, message } = values;
-                    const text = `¡Hola! Me gustaría recibir una cotización.\n\n👤 *${t('common.fields.name')}:* ${name}\n💼 *${t('common.fields.projectType')}:* ${projectType}\n📝 *${t('common.fields.message')}:* ${message || 'N/A'}`;
+                    const text = t('quote.whatsappMessage', {
+                      nameLabel: t('common.fields.name'),
+                      name,
+                      typeLabel: t('common.fields.projectType'),
+                      projectType,
+                      messageLabel: t('common.fields.message'),
+                      message: message || 'N/A',
+                    });
                     const url = `https://wa.me/5215566819736?text=${encodeURIComponent(text)}`;
                     window.open(url, '_blank');
                     setOpen(false);

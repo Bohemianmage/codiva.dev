@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import OpsToaster from '@/components/ops/OpsToaster';
+import { getT } from '@/i18n/locale';
 
-export const metadata: Metadata = {
-  title: 'Codiva.dev',
-  description: 'Backoffice operativo Codiva',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: 'Codiva.dev',
+    description: t('ops.metaDescription'),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default function OpsRootLayout({ children }: { children: React.ReactNode }) {
   return (
