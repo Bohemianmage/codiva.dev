@@ -7,6 +7,7 @@ import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { CODIVA_BRAND } from '@/lib/brand';
 import CodivaWordmark from './CodivaWordmark';
+import { careerBaseUrl } from '@/lib/ops/host';
 
 export default function Footer() {
   const { t, i18n } = useTranslation();
@@ -30,6 +31,12 @@ export default function Footer() {
         </span>
 
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+          <Link
+            href={careerBaseUrl()}
+            className="text-zinc-300 hover:text-white font-medium transition-colors"
+          >
+            {t('footer.careers')}
+          </Link>
           <Link
             href="/ticket"
             locale={i18n?.language}

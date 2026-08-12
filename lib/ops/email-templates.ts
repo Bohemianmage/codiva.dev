@@ -407,6 +407,41 @@ export function templateContactInboxStaff(name: string, email: string, message: 
   });
 }
 
+export function templateCareerApplicationStaff({
+  name,
+  email,
+  phone,
+  jobTitle,
+  coverLetter,
+  opsHref,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  jobTitle: string;
+  coverLetter?: string;
+  opsHref: string;
+}): string {
+  return emailLayout({
+    preview: `${name} postul\u00f3 a ${jobTitle}`,
+    title: 'Nueva postulaci\u00f3n',
+    bodyHtml: `
+      <p style="margin:0 0 8px;"><strong>Vacante:</strong> ${escapeHtml(jobTitle)}</p>
+      <p style="margin:0 0 8px;"><strong>Nombre:</strong> ${escapeHtml(name)}</p>
+      <p style="margin:0 0 8px;"><strong>Correo:</strong> <a href="mailto:${escapeHtml(email)}" style="color:${BRAND.primary};">${escapeHtml(email)}</a></p>
+      ${phone ? `<p style="margin:0 0 8px;"><strong>Tel\u00e9fono:</strong> ${escapeHtml(phone)}</p>` : ''}
+      ${
+        coverLetter
+          ? `<p style="margin:16px 0 8px;"><strong>Mensaje:</strong></p>
+      <p style="margin:0;padding:16px;background:${BRAND.background};border-radius:8px;white-space:pre-line;">${escapeHtml(coverLetter)}</p>`
+          : ''
+      }
+    `,
+    cta: { label: 'Ver postulaciones', href: opsHref },
+    footerNote: 'Notificaci\u00f3n interna \u00b7 Bolsa de trabajo Codiva.dev',
+  });
+}
+
 /** Reemplaza placeholder de recovery link en plantilla Supabase o post-proceso */
 export function applyRecoveryLink(html: string, link: string): string {
   return html.replace(/\{\{RECOVERY_LINK\}\}/g, link);

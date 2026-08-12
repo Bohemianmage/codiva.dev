@@ -3,6 +3,7 @@
 ## Controles activos
 
 - Bucket `ops-files` privado; acceso vía `/api/ops/file` (URL firmada 5 min)
+- Bucket `job-application-cvs` privado; CVs de la bolsa vía `/api/ops/careers/cv` (URL firmada 5 min, solo admin)
 - RLS Storage por proyecto
 - SHA-256 por documento (`content_sha256`)
 - Retención por proyecto (`document_retention_days`, default 365) → `retain_until` / `disposed_at`

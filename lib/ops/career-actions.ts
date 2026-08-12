@@ -1,0 +1,268 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { requireAdminStaff } from '@/lib/ops/auth';
+import { logActivity } from '@/lib/ops/activity';
+import {
+  isJobApplicationStatus,
+  isJobEmploymentType,
+  isJobPostingStatus,
+  normalizeJobSlug,
+  uniqueJobSlugCandidate,
+} from '@/lib/ops/careers';
+import { DEFAULT_QA_RESPONSIBILITIES, DEFAULT_RESPONSIBILITIES } from '@/lib/ops/offer-letter';
+
+function revalidateCareerPaths(slug?: string) {
+  revalidatePath('/team');
+  revalidatePath('/empleos');
+  if (slug) revalidatePath(`/empleos/${slug}`);
+}
+
+async function pickUniqueSlug(
+  supabase: Awaited<ReturnType<typeof requireAdminStaff>>['supabase'],
+  desired: string,
+  excludeId?: string
+): Promise<string> {
+  let slug = normalizeJobSlug(desired);
+  for (let i = 0; i < 24; i += 1) {
+    let query = supabase.from('ops_job_postings').select('id').eq('slug', slug);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { data } = await query.maybeSingle();
+    if (!data?.id) return slug;
+    slug = uniqueJobSlugCandidate(desired);
+  }
+  return uniqueJobSlugCandidate(desired);
+}
+
+function parsePostingFields(formData: FormData) {
+  const title = String(formData.get('title') || '').trim();
+  const slugRaw = String(formData.get('slug') || '').trim();
+  const description = String(formData.get('description') || '').slice(0, 20000);
+  const requirements = String(formData.get('requirements') || '').slice(0, 20000);
+  const location = String(formData.get('location') || '').trim().slice(0, 200);
+  const employmentRaw = String(formData.get('employmentType') || '').trim();
+  const statusRaw = String(formData.get('status') || 'draft').trim();
+  const sortOrder = Number(formData.get('sortOrder') || 0);
+
+  if (title.length < 2) throw new Error('Título requerido');
+  if (!isJobPostingStatus(statusRaw)) throw new Error('Estado inválido');
+  const employmentType = employmentRaw && isJobEmploymentType(employmentRaw) ? employmentRaw : null;
+
+  return {
+    title,
+    slugRaw,
+    description,
+    requirements,
+    location,
+    employmentType,
+    status: statusRaw,
+    sortOrder: Number.isFinite(sortOrder) ? Math.floor(sortOrder) : 0,
+  };
+}
+
+export async function createJobPosting(formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const fields = parsePostingFields(formData);
+  const slug = await pickUniqueSlug(supabase, fields.slugRaw || fields.title);
+  const publishedAt = fields.status === 'published' ? new Date().toISOString() : null;
+
+  const { data, error } = await supabase
+    .from('ops_job_postings')
+    .insert({
+      title: fields.title,
+      slug,
+      description: fields.description,
+      requirements: fields.requirements,
+      location: fields.location,
+      employment_type: fields.employmentType,
+      status: fields.status,
+      sort_order: fields.sortOrder,
+      published_at: publishedAt,
+      created_by: user.id,
+    })
+    .select('id, slug')
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? 'No se pudo crear la vacante');
+
+  await logActivity({
+    entityType: 'job_posting',
+    entityId: data.id,
+    action: 'created',
+    metadata: { slug: data.slug, status: fields.status },
+    actorId: user.id,
+  });
+
+  revalidateCareerPaths(data.slug);
+}
+
+export async function updateJobPosting(postingId: string, formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const fields = parsePostingFields(formData);
+
+  const { data: current, error: currentError } = await supabase
+    .from('ops_job_postings')
+    .select('id, slug, status, published_at')
+    .eq('id', postingId)
+    .single();
+
+  if (currentError || !current) throw new Error('Vacante no encontrada');
+
+  const slug = await pickUniqueSlug(supabase, fields.slugRaw || fields.title, postingId);
+  let publishedAt = current.published_at as string | null;
+  if (fields.status === 'published' && current.status !== 'published') {
+    publishedAt = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from('ops_job_postings')
+    .update({
+      title: fields.title,
+      slug,
+      description: fields.description,
+      requirements: fields.requirements,
+      location: fields.location,
+      employment_type: fields.employmentType,
+      status: fields.status,
+      sort_order: fields.sortOrder,
+      published_at: publishedAt,
+    })
+    .eq('id', postingId);
+
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'job_posting',
+    entityId: postingId,
+    action: 'updated',
+    metadata: { slug, status: fields.status },
+    actorId: user.id,
+  });
+
+  revalidateCareerPaths(slug);
+  if (current.slug !== slug) revalidateCareerPaths(current.slug);
+  revalidatePath(`/team/vacantes/${postingId}`);
+}
+
+export async function deleteDraftJobPosting(postingId: string) {
+  const { user, supabase } = await requireAdminStaff();
+
+  const { data: current, error: currentError } = await supabase
+    .from('ops_job_postings')
+    .select('id, slug, status')
+    .eq('id', postingId)
+    .single();
+
+  if (currentError || !current) throw new Error('Vacante no encontrada');
+  if (current.status !== 'draft') throw new Error('Solo se pueden eliminar vacantes en borrador');
+
+  const { count } = await supabase
+    .from('ops_job_applications')
+    .select('id', { count: 'exact', head: true })
+    .eq('job_posting_id', postingId);
+
+  if ((count ?? 0) > 0) throw new Error('No se puede eliminar: ya hay postulaciones');
+
+  const { error } = await supabase.from('ops_job_postings').delete().eq('id', postingId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'job_posting',
+    entityId: postingId,
+    action: 'deleted',
+    metadata: { slug: current.slug },
+    actorId: user.id,
+  });
+
+  revalidateCareerPaths(current.slug);
+}
+
+export async function updateJobApplicationStatus(applicationId: string, formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const status = String(formData.get('status') || '').trim();
+  if (!isJobApplicationStatus(status)) throw new Error('Estado inválido');
+
+  const { error } = await supabase
+    .from('ops_job_applications')
+    .update({ status })
+    .eq('id', applicationId);
+
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'job_application',
+    entityId: applicationId,
+    action: 'status_updated',
+    metadata: { status },
+    actorId: user.id,
+  });
+
+  revalidatePath('/team');
+}
+
+export async function createPersonnelOfferFromApplication(applicationId: string) {
+  const { user, supabase } = await requireAdminStaff();
+
+  const { data: application, error } = await supabase
+    .from('ops_job_applications')
+    .select('id, full_name, email, cover_letter, personnel_offer_id, ops_job_postings(title, slug)')
+    .eq('id', applicationId)
+    .single();
+
+  if (error || !application) throw new Error('Postulación no encontrada');
+  if (application.personnel_offer_id) {
+    redirect(`/team/ofertas/${application.personnel_offer_id}`);
+  }
+
+  const posting = Array.isArray(application.ops_job_postings)
+    ? application.ops_job_postings[0]
+    : application.ops_job_postings;
+  const positionTitle = posting?.title || 'Colaborador';
+  const isPm = posting?.slug === 'project-manager';
+  const isQa = posting?.slug === 'tester-qa';
+  const notes = [
+    `Origen: bolsa de trabajo (${posting?.slug || 'vacante'}).`,
+    application.cover_letter ? `Mensaje del candidato:\n${application.cover_letter}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  const { data: offer, error: offerError } = await supabase
+    .from('ops_personnel_offers')
+    .insert({
+      full_name: application.full_name,
+      email: application.email,
+      position_title: positionTitle,
+      ops_role: isPm ? 'pm' : 'dev',
+      monthly_compensation: 1200,
+      currency: 'USD',
+      work_modality: 'remote',
+      status: 'draft',
+      issued_at: new Date().toISOString().slice(0, 10),
+      responsibilities: isQa ? DEFAULT_QA_RESPONSIBILITIES : DEFAULT_RESPONSIBILITIES,
+      notes_internal: notes,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (offerError || !offer) throw new Error(offerError?.message ?? 'No se pudo crear la carta oferta');
+
+  await supabase
+    .from('ops_job_applications')
+    .update({ status: 'hired', personnel_offer_id: offer.id })
+    .eq('id', applicationId);
+
+  await logActivity({
+    entityType: 'job_application',
+    entityId: applicationId,
+    action: 'hired',
+    metadata: { offerId: offer.id },
+    actorId: user.id,
+  });
+
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${offer.id}`);
+  redirect(`/team/ofertas/${offer.id}`);
+}

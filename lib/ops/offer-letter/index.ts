@@ -57,6 +57,14 @@ Participar en estimación, priorización y planeación de entregas cuando se req
 Colaborar en la mejora de procesos operativos del estudio (rituales, plantillas, handoffs).
 Otras actividades afines al rol de Project Manager que Codiva asigne según las necesidades del estudio y de los proyectos.`;
 
+export const DEFAULT_QA_RESPONSIBILITIES = `Diseñar y ejecutar pruebas sobre productos de software a la medida y productos digitales de Codiva.dev.
+Validar flujos críticos, regresiones y criterios de aceptación antes de una entrega o pase a producción.
+Reportar defectos con pasos, evidencia y severidad en las herramientas del equipo.
+Acompañar UAT con el cliente o stakeholders cuando el proyecto lo requiera.
+Verificar correcciones y confirmar que el arreglo no rompe lo ya entregado.
+Apoyar la calidad operativa del estudio: checklists, ambientes de prueba y handoff a desarrollo.
+Otras actividades afines a testing y QA que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
 export const DEFAULT_TERMS = `La compensación se paga de forma mensual en la moneda indicada, previo acuerdo de facturación o esquema de pago vigente.
 La colaboración inicia en la fecha acordada, sujeta a la aceptación escrita de esta carta oferta.
 Las responsabilidades listadas son enunciativas y no limitativas: describen el núcleo del rol, sin excluir tareas razonablemente relacionadas con la operación de proyectos de Codiva.dev.

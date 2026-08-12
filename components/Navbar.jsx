@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -9,6 +10,7 @@ import { Sling as Hamburger } from 'hamburger-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import CodivaWordmark from './CodivaWordmark';
+import { careerBaseUrl, marketingBaseUrl } from '@/lib/ops/host';
 
 // Menú de navegación (ya sin 'Home')
 const navItems = [
@@ -33,26 +35,46 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function Navbar() {
+export default function Navbar({ variant = 'marketing' }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { t } = useTranslation();
+  const isCareer = variant === 'career';
+  const marketingUrl = marketingBaseUrl();
+  const careerUrl = careerBaseUrl();
+  const careersHref = isCareer
+    ? pathname?.startsWith('/empleos')
+      ? '/empleos'
+      : '/'
+    : careerUrl;
 
   /**
    * Navega a la sección correspondiente.
-   * Si estamos fuera de '/', redirige con hash.
-   * Si estamos en '/', hace scroll suave.
+   * En la bolsa (career.*) las secciones viven en el sitio de marketing.
    */
   const scrollTo = (id) => {
+    if (isCareer) {
+      window.location.href = `${marketingUrl}/#${id}`;
+      setMenuOpen(false);
+      return;
+    }
     if (pathname !== '/') {
       router.push(`/#${id}`);
     } else {
       scrollToSectionCenter(id);
     }
     setMenuOpen(false);
+  };
+
+  const goBrandHome = () => {
+    if (isCareer) {
+      window.location.href = marketingUrl;
+      return;
+    }
+    scrollTo('hero');
   };
 
   // Mostrar u ocultar navbar según el scroll
@@ -86,7 +108,7 @@ export default function Navbar() {
       <div className="flex items-center justify-between">
         {/* Logo principal (click lleva al inicio) */}
         <motion.div
-          onClick={() => scrollTo('hero')}
+          onClick={goBrandHome}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -114,6 +136,18 @@ export default function Navbar() {
                 {t(labelKey)}
               </motion.button>
             ))}
+            <motion.div variants={itemVariants}>
+              <Link
+                href={careersHref}
+                className={`relative font-medium transition-colors after:absolute after:left-0 after:bottom-[-2px] after:h-[2px] after:bg-codiva-primary after:transition-all ${
+                  isCareer
+                    ? 'text-zinc-900 after:w-full'
+                    : 'text-codiva-secondary hover:text-zinc-900 after:w-0 hover:after:w-full'
+                }`}
+              >
+                {t('nav.careers')}
+              </Link>
+            </motion.div>
           </motion.div>
 
           <div className="pl-4">
@@ -174,6 +208,15 @@ export default function Navbar() {
                     {t(labelKey)}
                   </motion.button>
                 ))}
+                <motion.div variants={itemVariants}>
+                  <Link
+                    href={careersHref}
+                    onClick={() => setMenuOpen(false)}
+                    className="block w-full text-left text-codiva-secondary hover:text-zinc-900 transition font-medium"
+                  >
+                    {t('nav.careers')}
+                  </Link>
+                </motion.div>
               </motion.div>
             </motion.div>
           </>
