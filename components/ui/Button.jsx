@@ -16,7 +16,7 @@ export default function Button({
   as: Tag = 'button',
   variant = 'primary',
   size = 'md',
-  className,
+  className = '',
   children,
   ...props
 }) {
