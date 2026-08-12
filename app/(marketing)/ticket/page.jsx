@@ -2,7 +2,7 @@
 
 /**
  * i18n: todos los textos provienen de translation.json vía react-i18next.
- * Prioridad: 'Alta' | 'Media' | 'Baja' (valores internos en Codiva Ops).
+ * Prioridad: 'Alta' | 'Media' | 'Baja' (valores internos en Codiva.dev).
  */
 
 import { useState } from 'react';

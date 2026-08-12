@@ -11,7 +11,7 @@ const templates = [
     file: 'recovery.html',
     subject: 'Restablecer contraseña - Codiva.dev',
     title: 'Restablecer contraseña',
-    preview: 'Restablece tu contraseña de Codiva Ops',
+    preview: 'Restablece tu contraseña de Codiva.dev',
     paragraphs: [
       'Recibimos una solicitud para restablecer tu contraseña.',
       'Haz clic en el botón para crear una nueva. El enlace expira en breve por seguridad.',
@@ -45,7 +45,7 @@ const templates = [
     file: 'magic-link.html',
     subject: 'Tu enlace de acceso - Codiva.dev',
     title: 'Iniciar sesión',
-    preview: 'Usa este enlace para iniciar sesión en Codiva Ops',
+    preview: 'Usa este enlace para iniciar sesión en Codiva.dev',
     paragraphs: [
       'Solicitaste un enlace mágico para iniciar sesión.',
       'Haz clic en el botón para entrar. El enlace expira en breve.',
