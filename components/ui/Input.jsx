@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-export default function Input({ className, ...props }) {
+export default function Input({ className = '', ...props }) {
   return (
     <input
       className={clsx(
@@ -12,7 +12,7 @@ export default function Input({ className, ...props }) {
   );
 }
 
-export function Textarea({ className, rows = 4, ...props }) {
+export function Textarea({ className = '', rows = 4, ...props }) {
   return (
     <textarea
       rows={rows}
@@ -25,7 +25,7 @@ export function Textarea({ className, rows = 4, ...props }) {
   );
 }
 
-export function Select({ className, children, ...props }) {
+export function Select({ className = '', children, ...props }) {
   return (
     <select
       className={clsx(

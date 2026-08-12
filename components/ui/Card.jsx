@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-export default function Card({ as: Tag = 'div', className, children, ...props }) {
+export default function Card({ as: Tag = 'div', className = '', children, ...props }) {
   return (
     <Tag
       className={clsx(

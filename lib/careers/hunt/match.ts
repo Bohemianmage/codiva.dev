@@ -68,7 +68,8 @@ export function matchHuntReport(input: {
 }): HuntMatch | null {
   const path = normalizePath(input.pageUrl);
   const blob = `${input.title} ${input.description} ${path}`.toLowerCase();
-  const discipline = isCareerDiscipline(input.discipline ?? '') ? input.discipline : null;
+  const rawDiscipline = input.discipline ?? '';
+  const discipline = isCareerDiscipline(rawDiscipline) ? rawDiscipline : null;
   let best: HuntMatch | null = null;
   for (const seed of HUNT_SEEDS) {
     if (!pathMatches(seed, path)) continue;
