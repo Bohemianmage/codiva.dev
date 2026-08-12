@@ -24,7 +24,7 @@ También: staff → Documentos → **Ejecutar retención ahora**.
 | Opción | Costo aprox. | Notas |
 |--------|----------------|-------|
 | **AttachmentScanner** | ~$99/mes · 5 000 scans | Recomendado para SaaS; API simple. Env: `ATTACHMENT_SCANNER_API_KEY` |
-| **VirusTotal Premium** | Quote (~$1.5k–4k+/mes; contratos anuales altos) | API pública gratis **no es uso comercial**. Env: `VIRUSTOTAL_API_KEY`; `VIRUSTOTAL_UPLOAD=true` para subir hashes desconocidos |
+| **VirusTotal Premium** | Quote (~$1.5k-4k+/mes; contratos anuales altos) | API pública gratis **no es uso comercial**. Env: `VIRUSTOTAL_API_KEY`; `VIRUSTOTAL_UPLOAD=true` para subir hashes desconocidos |
 | **AWS GuardDuty Malware for S3** | ~$0.09/GB + ~$0.215/1k objetos (us-east-1); free tier 1 GB + 1 k/mes | Ideal si el storage pasa a S3; hoy Ops usa Supabase Storage |
 | **ClamAV self-hosted** | Infra + mantenimiento | Sin fee de API; más ops |
 | **MetaDefender Cloud** | Enterprise (ej. ~$55k/año en un listing AWS) | Overkill para volumen actual |

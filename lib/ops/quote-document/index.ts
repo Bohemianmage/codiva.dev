@@ -56,7 +56,7 @@ function paragraphs(text: string): string {
 function bulletList(text: string): string {
   const items = text
     .split(/\n/)
-    .map((l) => l.replace(/^[\s•\-–]+/, '').trim())
+    .map((l) => l.replace(/^[\s•\--]+/, '').trim())
     .filter(Boolean);
   if (!items.length) return '';
   return `<ul style="margin:0 0 16px;padding-left:20px;color:${BRAND.text};font-size:14px;line-height:1.7;">

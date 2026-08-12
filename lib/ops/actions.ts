@@ -2106,7 +2106,7 @@ export async function createTimeEntry(projectId: string, formData: FormData) {
 
   const hours = Number(String(formData.get('hours') || '').replace(/,/g, ''));
   if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
-    throw new Error('Horas inválidas (1–24)');
+    throw new Error('Horas inválidas (1-24)');
   }
 
   const staffId = can(access.staff.role, 'sprints_plan')

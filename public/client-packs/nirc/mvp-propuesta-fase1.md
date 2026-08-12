@@ -223,8 +223,8 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 
 ### 5.3 Reglas
 
-1. **Cancelación temprana:** cupo++; offer `cancelled_by_user`; score −0 o −2.  
-2. **Cancelación tarde / no-show:** score −15 (configurable); flag `recent_no_show`; exclusiones temporales de blast (ej. 7-14 días).  
+1. **Cancelación temprana:** cupo++; offer `cancelled_by_user`; score -0 o -2.  
+2. **Cancelación tarde / no-show:** score -15 (configurable); flag `recent_no_show`; exclusiones temporales de blast (ej. 7-14 días).  
 3. **Reemplazo automático:** job `convocatoria.refill` dispara a waitlist (orden FCFS de lista de espera) o enlarge blast.  
 4. **Si ya hubo ContractSigned + Alta aceptada y abandona:**  
    - Check-out forzado / baja IDSE con causa (ej. abandono `"3"` o término `"1"` según legal).  
@@ -240,7 +240,7 @@ Offer accepted → Confirmado → QrIssued → En_proceso_entrada → Trabajando
 | TTL oferta FCFS | 60 min |
 | Ventana no-show tras hora inicio | 30 min |
 | Cancelación “temprana” | ≥ 4 h antes |
-| Penalización no-show | −15 score |
+| Penalización no-show | -15 score |
 | Auto-refill | ON |
 | Overbooking | OFF en fase 1 |
 
