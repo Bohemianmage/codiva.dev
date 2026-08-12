@@ -76,7 +76,7 @@ function paragraphs(text: string): string {
     .filter(Boolean)
     .map(
       (block) =>
-        `<p style="margin:0 0 14px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`
+        `<p class="body">${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`
     )
     .join('');
 }
@@ -87,31 +87,45 @@ function bulletList(text: string): string {
     .map((l) => l.replace(/^[\s•\-–]+/, '').trim())
     .filter(Boolean);
   if (!items.length) return '';
-  return `<ul style="margin:0 0 16px;padding-left:20px;font-family:${FONT_BODY};color:${BRAND.text};font-size:15px;line-height:1.7;">
-    ${items.map((item) => `<li style="margin-bottom:8px;">${escapeHtml(item)}</li>`).join('')}
+  return `<ul class="bullets">
+    ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
   </ul>`;
 }
 
-function section(title: string, body: string, asBullets = false): string {
+function termList(text: string): string {
+  const items = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!items.length) return '';
+  if (items.length === 1) return paragraphs(items[0]);
+  return `<ol class="terms">
+    ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+  </ol>`;
+}
+
+function section(title: string, body: string, mode: 'bullets' | 'terms' | 'prose' = 'prose'): string {
   if (!body.trim()) return '';
+  const content =
+    mode === 'bullets' ? bulletList(body) : mode === 'terms' ? termList(body) : paragraphs(body);
   return `
-    <section style="margin-top:32px;">
-      <h2 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(title)}</h2>
-      ${asBullets ? bulletList(body) : paragraphs(body)}
+    <section class="section">
+      <h2 class="section-title">${escapeHtml(title)}</h2>
+      ${content}
     </section>`;
 }
 
-function metaRow(label: string, value: string): string {
+function metaItem(label: string, value: string, emphasize = false): string {
   return `
-    <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid ${BRAND.border};">
-      <span style="min-width:170px;font-family:${FONT_BODY};font-size:13px;font-weight:600;color:${BRAND.muted};">${escapeHtml(label)}</span>
-      <span style="font-family:${FONT_BODY};font-size:14px;font-weight:500;color:${BRAND.text};">${escapeHtml(value)}</span>
+    <div class="meta-item${emphasize ? ' meta-item--accent' : ''}">
+      <span class="meta-label">${escapeHtml(label)}</span>
+      <span class="meta-value">${escapeHtml(value)}</span>
     </div>`;
 }
 
 /** Wordmark oficial: Codiva (#18181B) + .dev (primary #104E4E). */
-function brandWordmarkHtml(): string {
-  return `<span style="font-family:${FONT_DISPLAY};font-size:22px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></span>`;
+function brandWordmarkHtml(sizePx = 22): string {
+  return `<span class="wordmark" style="font-size:${sizePx}px;">Codiva<span class="wordmark-dot">.dev</span></span>`;
 }
 
 export function offerLetterFilename(fullName: string, ext: 'html' | 'pdf' = 'html') {
@@ -136,7 +150,8 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
   const signerName = data.signerName || 'Jean Claude Martell';
   const signerTitle = data.signerTitle || 'Codiva.dev';
   const signerEmail = data.signerEmail || 'j.martell@codiva.dev';
-  const emailRow = data.email ? metaRow('Correo', data.email) : '';
+  const emailItem = data.email ? metaItem('Correo', data.email) : '';
+  const host = SITE.replace(/^https?:\/\//, '');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -144,90 +159,413 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Carta oferta - ${escapeHtml(data.fullName)} · Codiva.dev</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
   <style>
+    :root {
+      --primary: ${BRAND.primary};
+      --primary-dark: ${BRAND.primaryDark};
+      --ink: ${BRAND.text};
+      --muted: ${BRAND.muted};
+      --text-muted: ${BRAND.textMuted};
+      --line: ${BRAND.border};
+      --soft: #F3F6F6;
+      --accent-wash: #E7F3F2;
+      --paper: #FFFFFF;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: ${FONT_BODY};
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--paper);
+      padding: 0 0 8px;
+    }
+    .topbar {
+      height: 6px;
+      background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 55%, #1A6B6B 100%);
+    }
+    .header {
+      padding: 28px 40px 22px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgba(16,78,78,0.06) 0%, transparent 55%),
+        var(--paper);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-lockup img {
+      display: block;
+      width: 36px;
+      height: 36px;
+      border: 0;
+    }
+    .wordmark {
+      font-family: ${FONT_DISPLAY};
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+    .wordmark-dot { font-weight: 500; color: var(--primary); }
+    .doc-chip {
+      margin: 0;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(16,78,78,0.18);
+      background: var(--accent-wash);
+      font-family: ${FONT_DISPLAY};
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+      white-space: nowrap;
+    }
+    .kicker {
+      margin: 0 0 8px;
+      font-family: ${FONT_DISPLAY};
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+    .title {
+      margin: 0;
+      font-family: ${FONT_DISPLAY};
+      font-size: 32px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .subtitle {
+      margin: 10px 0 0;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .content { padding: 28px 40px 36px; }
+    .date {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .salutation, .intro, .body {
+      margin: 0 0 14px;
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: var(--ink);
+    }
+    .intro { margin-bottom: 22px; color: var(--text-muted); }
+    .intro strong, .salutation strong { color: var(--ink); font-weight: 600; }
+    .offer-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 0;
+      margin: 0 0 28px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--paper);
+    }
+    .comp-block {
+      padding: 22px 24px;
+      background: linear-gradient(160deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: #fff;
+    }
+    .comp-label {
+      margin: 0 0 8px;
+      font-family: ${FONT_DISPLAY};
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.82;
+    }
+    .comp-value {
+      margin: 0;
+      font-family: ${FONT_DISPLAY};
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .comp-note {
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.45;
+      opacity: 0.88;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      padding: 18px 20px;
+      background: var(--soft);
+    }
+    .meta-item { min-width: 0; }
+    .meta-label {
+      display: block;
+      margin: 0 0 3px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .meta-value {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .meta-item--accent .meta-value { color: var(--primary); }
+    .section { margin-top: 26px; page-break-inside: avoid; }
+    .section-title {
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--accent-wash);
+      font-family: ${FONT_DISPLAY};
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+    .bullets, .terms {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .bullets li, .terms li {
+      position: relative;
+      margin: 0 0 9px;
+      padding-left: 18px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    .bullets li:last-child, .terms li:last-child { margin-bottom: 0; }
+    .bullets li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0.85;
+    }
+    .terms li {
+      padding-left: 26px;
+      counter-increment: term;
+    }
+    .terms { counter-reset: term; }
+    .terms li::before {
+      content: counter(term);
+      position: absolute;
+      left: 0;
+      top: 0.1em;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--accent-wash);
+      color: var(--primary);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+    }
+    .note {
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .accept {
+      margin-top: 26px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+    }
+    .accept p {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--ink);
+    }
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-top: 34px;
+      page-break-inside: avoid;
+    }
+    .sig-label {
+      margin: 0 0 48px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sig-line {
+      border-top: 1px solid var(--ink);
+      padding-top: 12px;
+    }
+    .sig-name {
+      margin: 0;
+      font-family: ${FONT_DISPLAY};
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .sig-meta {
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .footer {
+      margin-top: 34px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .footer img {
+      width: 24px;
+      height: 24px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .footer p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    @page { margin: 0; size: A4; }
     @media print {
-      body { background:#fff!important; padding:0!important; }
-      .page { box-shadow:none!important; margin:0!important; border:none!important; border-radius:0!important; }
+      body { background: #fff !important; }
+      .page { max-width: none; padding-bottom: 12mm; }
+      .offer-panel, .accept, .comp-block, .topbar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    @media (max-width: 640px) {
+      .header, .content { padding-left: 20px; padding-right: 20px; }
+      .offer-panel, .meta-grid, .signatures { grid-template-columns: 1fr; }
+      .brand-row { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
-<body style="margin:0;padding:32px 16px;background:${BRAND.background};font-family:${FONT_BODY};color:${BRAND.text};">
-  <article class="page" style="max-width:820px;margin:0 auto;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(24,24,27,0.06);">
-    <header style="background:${BRAND.card};padding:28px 36px 28px;border-bottom:1px solid ${BRAND.border};">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
-        <img src="${LOGO_URL}" alt="Codiva" width="40" height="40" style="display:block;border:0;outline:none;"/>
-        ${brandWordmarkHtml()}
+<body>
+  <article class="page">
+    <div class="topbar"></div>
+    <header class="header">
+      <div class="brand-row">
+        <div class="brand-lockup">
+          <img src="${LOGO_URL}" alt="Codiva" width="36" height="36"/>
+          ${brandWordmarkHtml(22)}
+        </div>
+        <p class="doc-chip">Carta oferta</p>
       </div>
-      <p style="margin:0;font-family:${FONT_DISPLAY};font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND.primary};">Carta oferta</p>
-      <h1 style="margin:12px 0 0;font-family:${FONT_DISPLAY};font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">${escapeHtml(data.fullName)}</h1>
-      <p style="margin:10px 0 0;font-family:${FONT_BODY};font-size:15px;font-weight:500;color:${BRAND.textMuted};">${escapeHtml(data.positionTitle)}</p>
+      <p class="kicker">Oferta de incorporación</p>
+      <h1 class="title">${escapeHtml(data.fullName)}</h1>
+      <p class="subtitle">${escapeHtml(data.positionTitle)}</p>
     </header>
 
-    <div style="padding:32px 36px 40px;">
-      <p style="margin:0 0 20px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.textMuted};">
-        Ciudad de México, a ${escapeHtml(issuedAt)}.
-      </p>
-      <p style="margin:0 0 16px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
-        Estimado/a <strong style="font-weight:600;">${escapeHtml(data.fullName)}</strong>:
-      </p>
-      <p style="margin:0 0 24px;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
-        En <span style="font-family:${FONT_DISPLAY};font-weight:700;letter-spacing:-0.02em;color:${BRAND.text};">Codiva<span style="font-weight:500;color:${BRAND.primary};">.dev</span></span>
-        nos da gusto ofrecerte incorporarte a nuestro equipo de operaciones
-        como <strong style="font-weight:600;">${escapeHtml(data.positionTitle)}</strong>. Esta carta formaliza los términos
-        principales de la oferta.
+    <div class="content">
+      <p class="date">Ciudad de México, a ${escapeHtml(issuedAt)}</p>
+      <p class="salutation">Estimado/a <strong>${escapeHtml(data.fullName)}</strong>:</p>
+      <p class="intro">
+        En ${brandWordmarkHtml(15)} nos da gusto ofrecerte incorporarte a nuestro equipo de operaciones
+        como <strong>${escapeHtml(data.positionTitle)}</strong>. Esta carta formaliza los términos principales de la oferta.
       </p>
 
-      <div style="margin:0 0 8px;padding:4px 18px;border-radius:12px;background:${BRAND.background};border:1px solid ${BRAND.border};">
-        ${metaRow('Puesto', data.positionTitle)}
-        ${emailRow}
-        ${metaRow('Compensación mensual', compensation)}
-        ${metaRow('Modalidad', modality)}
-        ${metaRow('Fecha de inicio', startLabel)}
-        ${metaRow('Fecha de emisión', issuedAt)}
-        ${validLabel ? metaRow('Vigencia de la oferta', validLabel) : ''}
+      <div class="offer-panel">
+        <div class="comp-block">
+          <p class="comp-label">Compensación mensual</p>
+          <p class="comp-value">${escapeHtml(compensation)}</p>
+          <p class="comp-note">Monto bruto mensual · modalidad ${escapeHtml(modality).toLowerCase()}</p>
+        </div>
+        <div class="meta-grid">
+          ${metaItem('Puesto', data.positionTitle)}
+          ${emailItem}
+          ${metaItem('Modalidad', modality)}
+          ${metaItem('Inicio', startLabel)}
+          ${metaItem('Emisión', issuedAt)}
+          ${validLabel ? metaItem('Vigencia', validLabel, true) : ''}
+        </div>
       </div>
 
-      ${section('Responsabilidades', responsibilities, true)}
-      <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:13px;line-height:1.6;color:${BRAND.muted};">
-        Lista enunciativa del núcleo del rol; no es exhaustiva ni limita actividades afines que Codiva asigne.
-      </p>
-      ${section('Condiciones', terms, false)}
+      ${section('Responsabilidades', responsibilities, 'bullets')}
+      <p class="note">Lista enunciativa del núcleo del rol; no es exhaustiva ni limita actividades afines que Codiva asigne.</p>
+      ${section('Condiciones', terms, 'terms')}
 
-      <section style="margin-top:32px;">
-        <h2 style="margin:0 0 14px;font-family:${FONT_DISPLAY};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.primary};">Aceptación</h2>
-        <p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.7;color:${BRAND.text};">
-          Si estás de acuerdo con estos términos, responde por escrito a esta carta (correo o documento firmado)
-          indicando tu aceptación. Con ello daremos inicio a tu alta en el equipo de operaciones de Codiva.dev.
-        </p>
+      <section class="section">
+        <h2 class="section-title">Aceptación</h2>
+        <div class="accept">
+          <p>
+            Si estás de acuerdo con estos términos, responde por escrito a esta carta (correo o documento firmado)
+            indicando tu aceptación. Con ello daremos inicio a tu alta en el equipo de operaciones de Codiva.dev.
+          </p>
+        </div>
       </section>
 
-      <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+      <div class="signatures">
         <div>
-          <p style="margin:0 0 52px;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Por Codiva.dev</p>
-          <div style="border-top:1px solid ${BRAND.border};padding-top:12px;">
-            <p style="margin:0;font-family:${FONT_DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text};">${escapeHtml(signerName)}</p>
-            <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(signerTitle)}</p>
-            <p style="margin:2px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(signerEmail)}</p>
+          <p class="sig-label">Por Codiva.dev</p>
+          <div class="sig-line">
+            <p class="sig-name">${escapeHtml(signerName)}</p>
+            <p class="sig-meta">${escapeHtml(signerTitle)}</p>
+            <p class="sig-meta">${escapeHtml(signerEmail)}</p>
           </div>
         </div>
         <div>
-          <p style="margin:0 0 52px;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Acepto la oferta</p>
-          <div style="border-top:1px solid ${BRAND.border};padding-top:12px;">
-            <p style="margin:0;font-family:${FONT_DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.01em;color:${BRAND.text};">${escapeHtml(data.fullName)}</p>
-            <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Nombre y firma</p>
-            <p style="margin:2px 0 0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">Fecha: _______________</p>
+          <p class="sig-label">Acepto la oferta</p>
+          <div class="sig-line">
+            <p class="sig-name">${escapeHtml(data.fullName)}</p>
+            <p class="sig-meta">Nombre y firma</p>
+            <p class="sig-meta">Fecha: _______________</p>
           </div>
         </div>
       </div>
 
-      <footer style="margin-top:40px;padding-top:20px;border-top:1px solid ${BRAND.border};display:flex;align-items:center;gap:12px;">
-        <img src="${LOGO_URL}" alt="" width="28" height="28" style="display:block;border:0;outline:none;flex-shrink:0;"/>
+      <footer class="footer">
+        <img src="${LOGO_URL}" alt="" width="24" height="24"/>
         <div>
-          <p style="margin:0;font-family:${FONT_BODY};font-size:13px;color:${BRAND.muted};">${escapeHtml(CODIVA_BRAND.tagline)}</p>
-          <p style="margin:4px 0 0;font-family:${FONT_BODY};font-size:13px;">
-            <a href="mailto:${CODIVA_BRAND.urls.email}" style="color:${BRAND.primary};text-decoration:none;">${CODIVA_BRAND.urls.email}</a>
-            · <a href="${CODIVA_BRAND.urls.site}" style="color:${BRAND.primary};text-decoration:none;">${SITE.replace(/^https?:\/\//, '')}</a>
+          <p>${escapeHtml(CODIVA_BRAND.tagline)}</p>
+          <p>
+            <a href="mailto:${CODIVA_BRAND.urls.email}">${CODIVA_BRAND.urls.email}</a>
+            · <a href="${CODIVA_BRAND.urls.site}">${escapeHtml(host)}</a>
           </p>
         </div>
       </footer>
