@@ -473,11 +473,15 @@ export function renderOfferLetterHtml(data: OfferLetterData): string {
       text-decoration: none;
       font-weight: 500;
     }
-    @page { margin: 0; size: A4; }
+    @page {
+      size: A4;
+    }
     @media print {
       body { background: #fff !important; }
-      .page { max-width: none; padding-bottom: 12mm; }
+      .page { max-width: none; }
       .offer-panel, .accept, .comp-block, .topbar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .header { padding-top: 22px; }
+      .header, .content { padding-left: 4mm; padding-right: 4mm; }
     }
     @media (max-width: 640px) {
       .header, .content { padding-left: 20px; padding-right: 20px; }
