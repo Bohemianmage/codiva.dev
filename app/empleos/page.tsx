@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
 import { jobEmploymentLabel, localizedJobPostingCopy, postingAsksDiscipline } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
+import { careerAppHref } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
 import CodivaBrandText from '@/components/CodivaBrandText';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +28,8 @@ function MetaChip({ children }: { children: React.ReactNode }) {
 export default async function EmpleosPage() {
   const t = await getT();
   const locale = t.locale;
+  const host = (await headers()).get('host');
+  const huntHref = careerAppHref(host, '/hallazgos');
   const postings = isSupabaseConfigured()
     ? (
         await createAdminClient()
@@ -52,7 +56,7 @@ export default async function EmpleosPage() {
           {t('career.list_intro')}
         </p>
         <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-600">
-          <Link href="/empleos/hallazgos" className="font-medium text-codiva-primary hover:underline">
+          <Link href={huntHref} className="font-medium text-codiva-primary hover:underline">
             {t('career.hunt_cta')}
           </Link>
         </p>
@@ -78,7 +82,7 @@ export default async function EmpleosPage() {
             return (
               <li key={row.id}>
                 <Link
-                  href={`/empleos/${row.slug}`}
+                  href={careerAppHref(host, `/${row.slug}`)}
                   className="group block rounded-2xl border border-zinc-200 bg-white px-5 py-5 shadow-sm transition hover:border-codiva-primary/40 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-4">

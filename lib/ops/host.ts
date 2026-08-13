@@ -87,6 +87,23 @@ export function careerBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_CAREER_URL ?? 'https://career.codiva.dev').replace(/\/$/, '');
 }
 
+/**
+ * Path interno de la bolsa según el host.
+ * En career.* las URLs públicas no llevan /empleos (rewrite en middleware).
+ * En apex/local sí: /empleos, /empleos/{slug}, ...
+ */
+export function careerAppHref(host: string | null, path = '/'): string {
+  const trimmed = (path || '/').trim();
+  const rest =
+    trimmed === '/' || trimmed === ''
+      ? ''
+      : trimmed.startsWith('/')
+        ? trimmed
+        : `/${trimmed}`;
+  if (isCareerHost(host)) return rest || '/';
+  return `/empleos${rest}`;
+}
+
 /** Formulario público de tickets (host ticket). */
 export function ticketBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_TICKET_URL ?? 'https://ticket.codiva.dev').replace(/\/$/, '');
