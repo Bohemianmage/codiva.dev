@@ -597,7 +597,7 @@ const QA: AssessmentCatalog = {
         {
           key: 'b',
           label:
-            'Cuando el flujo es nuevo o cambió, para descubrir huecos que el script aún no cubre —además de, no en lugar de, los casos acordados.',
+            'Cuando el flujo es nuevo o cambió, para descubrir huecos que el script aún no cubre, además de, no en lugar de, los casos acordados.',
         },
         {
           key: 'c',

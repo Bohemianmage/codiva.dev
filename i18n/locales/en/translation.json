@@ -365,7 +365,7 @@
     "assessment_chip": "Test required",
     "assessment_chip_two_parts": "Two-part test",
     "assessment_start_title": "Before you apply",
-    "assessment_start_intro": "For {{role}} we ask a short situational test. It is not jargon trivia — it is operating judgment.",
+    "assessment_start_intro": "For {{role}} we ask a short situational test. It is not jargon trivia; it is operating judgment.",
     "assessment_start_intro_tester": "For {{role}} the test has two parts: situational judgment, then a finding in your craft on the site. It is not jargon trivia.",
     "assessment_rule_time": "Eight questions, 15 minutes. The timer starts when you begin.",
     "assessment_rule_pass": "You need 70% on the criteria test.",
@@ -426,12 +426,12 @@
     "assessment_meta_description": "Criteria test for the {{title}} opening at Codiva.dev.",
     "meta_description_detail": "{{title}} opening at Codiva.dev. Review the role and apply with your CV.",
     "skip_to_content": "Skip to content",
-    "hunt_cta": "Found something? It’s part of the test — report it with evidence.",
+    "hunt_cta": "Found something? It’s part of the test: report it with evidence.",
     "hunt_doc_title": "Findings · Codiva.dev",
     "hunt_meta": "Report a finding on Codiva.dev. Steps, expected vs. actual, and URL.",
     "hunt_eyebrow": "Test · Findings",
     "hunt_title": "Report a finding",
-    "hunt_intro": "For testers this is the second part of the same test: situational judgment, then a real finding in your craft. Some issues are planted; some may be real. Don’t guess — report URL, steps, and evidence. Once your session is identified, the pages you visit on the job board and the public site become part of the test map.",
+    "hunt_intro": "For testers this is the second part of the same test: situational judgment, then a real finding in your craft. Some issues are planted; some may be real. Don’t guess: report URL, steps, and evidence. Once your session is identified, the pages you visit on the job board and the public site become part of the test map.",
     "hunt_rule_1": "Say where you saw it (URL) and how to reproduce it.",
     "hunt_rule_2": "Separate a defect from a preference. The finding must match your craft.",
     "hunt_rule_3": "You don’t need to inspect the code: if it isn’t visible or usable, it counts less.",
@@ -454,7 +454,7 @@
     "hunt_browse": "Browse the site and come back here to report",
     "hunt_craft_hint_frontend": "Frontend craft: keyboard, HTML semantics, and what is visible or usable on screen.",
     "hunt_craft_hint_backend": "Backend craft: network, APIs, headers, status codes, and the JSON contract.",
-    "hunt_craft_hint_fullstack": "Full-stack craft: it may be in the UI or an API — it counts if the contract does not match what you see.",
+    "hunt_craft_hint_fullstack": "Full-stack craft: it may be in the UI or an API; it counts if the contract does not match what you see.",
     "hunt_craft_hint_ux_ui": "UX/UI craft: language, accessible names, visual consistency, and click targets.",
     "hunt_craft_hint_qa": "QA craft: regressions, broken links, and stale data that never got updated.",
     "hunt_craft_hint_other": "Any finding with evidence counts for this craft.",
@@ -558,7 +558,7 @@
     "quoteOnSite": "Get a quote at codiva.dev"
   },
   "quotePublic": {
-    "banner": "Codiva commercial proposal — view only",
+    "banner": "Codiva commercial proposal: view only",
     "iframeTitle": "Codiva quote"
   },
   "portal": {
@@ -851,7 +851,7 @@
     "labels": {
       "empty": "-",
       "amountPending": "To confirm",
-      "defaultProjectState": "Not started — pending formal approval",
+      "defaultProjectState": "Not started: pending formal approval",
       "leadStatus": {
         "new": "New",
         "contacted": "Contacted",
