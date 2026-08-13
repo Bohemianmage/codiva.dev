@@ -156,16 +156,21 @@ export default function Navbar({ variant = 'marketing' }) {
         </div>
 
         {/* Mobile: idioma + hamburguesa */}
-        <div className="md:hidden flex items-center gap-3">
+        <div className="flex h-7 items-center gap-3 md:hidden">
           <LanguageSwitcher />
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={t('a11y.menu')}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-          >
-            <Hamburger toggled={menuOpen} toggle={setMenuOpen} size={20} color="#1E293B" />
-          </button>
+          <div className="relative h-7 w-7 shrink-0">
+            <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 scale-[0.583]">
+              <Hamburger
+                toggled={menuOpen}
+                toggle={setMenuOpen}
+                size={32}
+                color="#1E293B"
+                label={t('a11y.menu')}
+                rounded
+                hideOutline
+              />
+            </div>
+          </div>
         </div>
       </div>
 
