@@ -31,9 +31,9 @@ function tabClass(active: boolean) {
 export default async function TeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; signal?: string }>;
+  searchParams: Promise<{ tab?: string; signal?: string; origin?: string }>;
 }) {
-  const { tab: tabParam, signal: signalParam } = await searchParams;
+  const { tab: tabParam, signal: signalParam, origin: originParam } = await searchParams;
   const tab = tabParam === 'ofertas' ? 'ofertas' : tabParam === 'bolsa' ? 'bolsa' : 'miembros';
 
   const { supabase } = await requireAdminStaff();
@@ -68,7 +68,7 @@ export default async function TeamPage({
       supabase
         .from('ops_job_assessment_attempts')
         .select(
-          'id, job_posting_id, catalog_key, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number'
+          'id, job_posting_id, catalog_key, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number, ip_hash, user_agent'
         )
         .order('created_at', { ascending: false })
         .limit(200),
@@ -227,6 +227,7 @@ export default async function TeamPage({
           attempts={(attempts ?? []) as OpsJobAttemptRow[]}
           huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
           signal={signalParam || ''}
+          origin={originParam || ''}
         />
       ) : (
         <div className="max-w-3xl space-y-8">
