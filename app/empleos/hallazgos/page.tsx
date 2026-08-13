@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import HuntReportForm from '@/components/careers/HuntReportForm';
-import { careerBaseUrl } from '@/lib/ops/host';
+import { careerAppHref, careerBaseUrl } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
+import { headers } from 'next/headers';
 import { isCareerDiscipline } from '@/lib/ops/career-disciplines';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HuntPage({ searchParams }: PageProps) {
   const t = await getT();
+  const host = (await headers()).get('host');
   const { discipline: disciplineRaw } = await searchParams;
   const discipline = isCareerDiscipline(disciplineRaw ?? '') ? disciplineRaw : undefined;
   const craftHintKey = discipline
@@ -31,7 +33,7 @@ export default async function HuntPage({ searchParams }: PageProps) {
   return (
     <main id="contendido" className="mx-auto w-full max-w-3xl px-6 pb-24 pt-28 md:px-12">
       <Link
-        href="/empleos"
+        href={careerAppHref(host)}
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-codiva-primary hover:underline"
       >
         ← {t('career.back_to_list')}

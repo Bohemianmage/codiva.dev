@@ -15,8 +15,9 @@ import {
   publicCareerUrl,
 } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
-import { marketingBaseUrl } from '@/lib/ops/host';
+import { careerAppHref, marketingBaseUrl } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
+import { headers } from 'next/headers';
 
 type PageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ discipline?: string }> };
 
@@ -74,8 +75,9 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
     ? (disciplineRaw as typeof CAREER_DISCIPLINES[number])
     : undefined;
 
+  const host = (await headers()).get('host');
   const catalog = catalogForPosting(posting.assessment_key, posting.slug);
-  const assessmentHref = asksDiscipline || catalog ? `/empleos/${posting.slug}/prueba` : undefined;
+  const assessmentHref = asksDiscipline || catalog ? careerAppHref(host, `/${posting.slug}/prueba`) : undefined;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -101,7 +103,7 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
     <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28 md:px-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Link
-        href="/empleos"
+        href={careerAppHref(host)}
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-codiva-primary hover:underline"
       >
         ← {t('career.back_to_list')}

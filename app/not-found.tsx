@@ -1,9 +1,16 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
+import { isCareerHost, isTicketHost, marketingBaseUrl } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
 
 export default async function NotFound() {
   const t = await getT();
+  const host = (await headers()).get('host');
+  const quoteOffHost = isCareerHost(host) || isTicketHost(host);
+  const quoteClassName =
+    'rounded-lg border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50';
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 py-16 text-center font-sans antialiased">
       <CodivaWordmarkMark size="sm" />
@@ -19,12 +26,15 @@ export default async function NotFound() {
         >
           {t('errors.home')}
         </Link>
-        <Link
-          href="/cotiza"
-          className="rounded-lg border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          {t('errors.quoteCta')}
-        </Link>
+        {quoteOffHost ? (
+          <a href={`${marketingBaseUrl()}/cotiza`} className={quoteClassName}>
+            {t('errors.quoteCta')}
+          </a>
+        ) : (
+          <Link href="/cotiza" className={quoteClassName}>
+            {t('errors.quoteCta')}
+          </Link>
+        )}
       </div>
     </main>
   );

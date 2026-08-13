@@ -34,6 +34,7 @@ type Props = {
   jobSlug: string;
   jobTitle: string;
   applyHref: string;
+  listHref: string;
   discipline?: string;
 };
 
@@ -44,7 +45,7 @@ function formatMmSs(ms: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, discipline }: Props) {
+export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, listHref, discipline }: Props) {
   const { t } = useTranslation();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -304,7 +305,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         {showHunt && session ? (
           <>
             <p className="text-sm text-zinc-600">
-              <Link href="/empleos" className="font-medium text-codiva-primary hover:underline">
+              <Link href={listHref} className="font-medium text-codiva-primary hover:underline">
                 {t('career.hunt_browse')}
               </Link>
             </p>
