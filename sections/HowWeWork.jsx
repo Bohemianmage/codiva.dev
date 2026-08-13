@@ -25,7 +25,6 @@ export default function HowWeWork() {
   const steps = t('process.steps', { returnObjects: true });
   const stepList = Array.isArray(steps) ? steps : [];
   const count = stepList.length;
-  const rail = count > 1 ? active / (count - 1) : 0;
 
   useEffect(() => {
     if (!inView) setActive(0);
@@ -72,24 +71,14 @@ export default function HowWeWork() {
             aria-label={t('process.title')}
             onMouseEnter={pause}
             onMouseLeave={() => setPaused(false)}
-            className="relative grid grid-cols-1 md:grid-cols-4 md:gap-x-5"
+            className="grid grid-cols-1 md:grid-cols-4 md:items-stretch"
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-[12.5%] top-[1.125rem] hidden h-px bg-codiva-primary/20 md:block"
-            />
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute left-[12.5%] top-[1.125rem] hidden h-px w-[75%] origin-left bg-codiva-primary md:block"
-              initial={false}
-              animate={{ scaleX: reduceMotion ? 1 : rail }}
-              transition={{ duration: 0.45, ease: 'easeInOut' }}
-            />
-
             {stepList.map((step, index) => {
               const isCurrent = !reduceMotion && index === active;
-              const filled = reduceMotion || index < active;
+              const reached = reduceMotion || index <= active;
+              const passed = reduceMotion || index < active;
               const isLast = index === count - 1;
+              const isFirst = index === 0;
 
               return (
                 <motion.li
@@ -103,26 +92,52 @@ export default function HowWeWork() {
                     setActive(index);
                   }}
                   onBlur={resume}
-                  className="flex cursor-pointer gap-4 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-codiva-primary/40 focus-visible:ring-offset-2 md:flex-col md:items-center md:gap-3 md:text-center"
+                  className="flex cursor-pointer gap-4 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-codiva-primary/40 focus-visible:ring-offset-2 md:flex-col md:items-center md:gap-4"
                 >
-                  <div className="flex w-9 shrink-0 flex-col items-center self-stretch">
-                    <span
-                      className={`relative z-10 flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold tracking-wider transition duration-300 ${
-                        isCurrent
-                          ? 'scale-110 bg-codiva-primary text-white shadow-sm'
-                          : filled
-                            ? 'bg-codiva-primary/15 text-codiva-primary'
-                            : 'border border-codiva-primary/25 bg-white/80 text-codiva-primary'
-                      }`}
-                    >
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
+                  <div className="flex w-9 shrink-0 flex-col items-center self-stretch md:w-full md:flex-none">
+                    <div className="relative flex h-9 w-full items-center justify-center">
+                      {isFirst ? null : (
+                        <div
+                          aria-hidden
+                          className="absolute right-1/2 top-1/2 hidden h-px w-1/2 -translate-y-1/2 overflow-hidden bg-codiva-primary/20 md:block"
+                        >
+                          <motion.div
+                            className="h-full w-full origin-left bg-codiva-primary"
+                            initial={false}
+                            animate={{ scaleX: reached ? 1 : 0 }}
+                            transition={{ duration: 0.45, ease: 'easeInOut' }}
+                          />
+                        </div>
+                      )}
+                      {isLast ? null : (
+                        <div
+                          aria-hidden
+                          className="absolute left-1/2 top-1/2 hidden h-px w-1/2 -translate-y-1/2 overflow-hidden bg-codiva-primary/20 md:block"
+                        >
+                          <motion.div
+                            className="h-full w-full origin-left bg-codiva-primary"
+                            initial={false}
+                            animate={{ scaleX: passed ? 1 : 0 }}
+                            transition={{ duration: 0.45, ease: 'easeInOut' }}
+                          />
+                        </div>
+                      )}
+                      <span
+                        className={`relative z-10 flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold tracking-wider ring-[5px] ring-white transition duration-300 ${
+                          isCurrent
+                            ? 'bg-codiva-primary text-white'
+                            : 'border border-codiva-primary/25 bg-white text-codiva-primary'
+                        }`}
+                      >
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                    </div>
                     {isLast ? null : (
                       <div className="mt-2 w-px flex-1 overflow-hidden bg-codiva-primary/20 md:hidden">
                         <motion.div
                           className="h-full w-full origin-top bg-codiva-primary"
                           initial={false}
-                          animate={{ scaleY: filled ? 1 : 0 }}
+                          animate={{ scaleY: passed ? 1 : 0 }}
                           transition={{ duration: 0.45, ease: 'easeInOut' }}
                         />
                       </div>
@@ -130,12 +145,20 @@ export default function HowWeWork() {
                   </div>
 
                   <div
-                    className={`min-w-0 flex-1 rounded-xl px-1 transition duration-300 ${
+                    className={`flex min-w-0 flex-1 flex-col md:w-full md:items-center md:px-2 md:text-center ${
                       isLast ? 'pb-0' : 'pb-8 md:pb-0'
-                    } ${isCurrent ? 'md:bg-codiva-primary/5 md:py-2' : 'md:py-2'}`}
+                    }`}
                   >
-                    <h3 className="mb-2 text-xl font-semibold text-zinc-900">{step.title}</h3>
-                    <p className="text-sm leading-relaxed text-zinc-600 md:text-base">{step.description}</p>
+                    <h3
+                      className={`mb-2 font-display text-base font-semibold leading-snug md:min-h-11 ${
+                        isCurrent ? 'text-codiva-primary' : 'text-zinc-900'
+                      }`}
+                    >
+                      {step.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-zinc-600 md:min-h-[5.25rem]">
+                      {step.description}
+                    </p>
                   </div>
                 </motion.li>
               );

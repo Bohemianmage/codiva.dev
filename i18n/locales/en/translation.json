@@ -94,50 +94,50 @@
     "list": [
       {
         "title": "Web Essentials",
-        "description": "Corporate sites, landing pages, and responsive digital presence for industrial brands, real estate, and professional services.",
+        "description": "Multi-page corporate sites for industrial brands, real estate, and professional services. Custom design, baseline SEO, and a production launch.",
         "badge": "",
         "details": [
           "Custom responsive design",
-          "1 to 3 conversion-optimized sections",
-          "Contact form or clear call-to-action",
-          "SEO-ready structure",
-          "Multilingual support"
+          "Multi-page corporate site — not a 1-to-3-block landing",
+          "Contact form or WhatsApp",
+          "Baseline SEO, indexing, and production deploy",
+          "Production launch and access handoff"
         ],
         "extras": [
-          "Advanced animations",
-          "Multilanguage",
-          "Professional content writing",
-          "CRM / mailing integration",
-          "Premium UI/UX design"
+          "Brand identity",
+          "ES/EN multilingual",
+          "CMS, catalog, or blog",
+          "Product-line microsites",
+          "Professional copywriting"
         ]
       },
       {
         "title": "Apps & Systems",
-        "description": "Custom software for real operations: SaaS platforms, vertical ERPs, marketplaces, and tailored backend systems for startups and companies.",
+        "description": "Custom software that runs the business: SaaS platforms, vertical ERPs, marketplaces, and systems with payments, roles, and integrations. Not a packaged website price.",
         "badge": "Ideal for MVPs & vertical SaaS",
         "details": [
           "Custom frontend and backend",
-          "User roles and admin panels",
-          "Business logic automation",
-          "Integration with Stripe, maps, and external services",
-          "Secure file and data management"
+          "Roles, admin panels, and business logic",
+          "Integrations (payments, APIs, compliance)",
+          "Milestone-based scope — no templates",
+          "UAT and production launch"
         ],
         "extras": [
-          "Advanced scalability / architecture",
-          "Advanced security (auth, encryption, logs)",
-          "Payment / SaaS integration",
-          "Custom external APIs",
+          "Advanced architecture and infrastructure",
+          "Post go-live hypercare",
+          "Native app or multi-country rollout",
+          "Security audit",
           "Premium UI/UX design"
         ]
       },
       {
         "title": "Continuous improvement & support",
-        "description": "Fixes, enhancements, and new capabilities on live platforms: bookings, payments, CRM, inventory, and more.",
+        "description": "Monthly retainer on what is already in production: fixes, sprints, and new capabilities. Hourly work is quoted when the scope does not fit a month.",
         "badge": "",
         "details": [
           "Backlog prioritization and monthly or sprint-based delivery",
           "Bug fixes and UX refinements",
-          "Small features and integrations (APIs, payments, maps, etc.)",
+          "Point features and integrations",
           "Dependency updates and careful releases",
           "Direct communication with the people doing the work"
         ],
@@ -151,10 +151,11 @@
       }
     ],
     "extrasTitle": "Billable extras",
+    "priceNote": "Reference amounts, excluding tax. Final price is quoted to scope.",
     "prices": [
-      "From $1,400 USD",
-      "From $3,000 USD",
-      "From $100 USD/h"
+      "From $1,750 USD",
+      "Custom quote",
+      "From $100 USD/mo"
     ]
   },
   "cases": {
