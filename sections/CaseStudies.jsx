@@ -86,7 +86,7 @@ export default function CaseStudies() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: false, amount: 0.3 }}
-        className="w-full max-w-4xl bg-white rounded-xl shadow-lg px-8 py-12 text-center"
+        className="w-full max-w-4xl lg:max-w-6xl bg-white rounded-xl shadow-lg px-8 py-12 text-center"
       >
         <motion.div variants={fadeInUp}>
           <Heading
