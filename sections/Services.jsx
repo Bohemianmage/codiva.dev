@@ -175,6 +175,13 @@ export default function Services() {
               );
             })}
           </motion.div>
+
+          <motion.p
+            variants={fadeInUp}
+            className="mt-8 text-center text-sm text-zinc-500"
+          >
+            {t('services.priceNote')}
+          </motion.p>
         </motion.div>
       </div>
     </section>

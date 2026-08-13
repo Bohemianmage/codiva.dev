@@ -49,7 +49,7 @@
       },
       {
         "title": "Diseño y desarrollo",
-        "description": "Diseñamos flujos y construimos en iteraciones cortas: frontend, backend, integraciones y paneles admin."
+        "description": "Diseñamos flujos y construimos en iteraciones cortas: frontend, backend, integraciones y paneles."
       },
       {
         "title": "Producción",
@@ -94,51 +94,51 @@
     "list": [
       {
         "title": "Esenciales Web",
-        "description": "Sitios corporativos, landings y presencia digital responsive para marcas industriales, inmobiliarias y servicios profesionales.",
+        "description": "Sitios corporativos de varias páginas para marcas industriales, inmobiliarias y servicios profesionales. Diseño a la medida, SEO base y salida a producción.",
         "badge": "",
         "details": [
           "Diseño personalizado adaptable a móviles",
-          "1 a 3 secciones optimizadas para conversión",
-          "Formulario de contacto o llamada a la acción",
-          "Estructura base para SEO",
-          "Soporte multilenguaje"
+          "Sitio corporativo de varias páginas, no una landing de 1 a 3 bloques",
+          "Formulario de contacto o WhatsApp",
+          "SEO base, indexación y deploy en producción",
+          "Entrega en producción y handoff de accesos"
         ],
         "extras": [
-          "Animaciones avanzadas",
-          "Multilenguaje",
-          "Redacción profesional",
-          "Integración CRM / mailing",
-          "Diseño UI/UX premium"
+          "Identidad de marca",
+          "Multilenguaje ES/EN",
+          "CMS, catálogo o blog",
+          "Micrositios por línea de producto",
+          "Redacción profesional"
         ]
       },
       {
         "title": "Aplicaciones y Sistemas",
-        "description": "Software a la medida para operaciones reales: plataformas SaaS, ERP verticales, marketplaces y sistemas backend para startups y empresas.",
+        "description": "Software a la medida que opera el negocio: plataformas SaaS, ERP verticales, marketplaces y sistemas con pagos, roles e integraciones. No es un sitio con precio de paquete.",
         "badge": "Ideal para MVPs y vertical SaaS",
         "details": [
-          "Frontend y backend personalizados",
-          "Roles de usuario y paneles administrativos",
-          "Automatización de lógica de negocio",
-          "Integración con Stripe, mapas y servicios externos",
-          "Manejo seguro de archivos y datos sensibles"
+          "Frontend y backend a la medida",
+          "Roles, paneles y lógica de negocio",
+          "Integraciones (pagos, APIs, cumplimiento)",
+          "Alcance por hitos, no plantillas",
+          "UAT y salida a producción"
         ],
         "extras": [
-          "Escalabilidad / arquitectura avanzada",
-          "Seguridad avanzada (auth, encryption, logs)",
-          "Integración pagos / SaaS",
-          "APIs externas personalizadas",
+          "Arquitectura e infraestructura avanzada",
+          "Hypercare post go-live",
+          "App nativa o multi-país",
+          "Auditoría de seguridad",
           "Diseño UI/UX premium"
         ]
       },
       {
         "title": "Evolución y soporte continuo",
-        "description": "Mejoras, correcciones y nuevas funciones sobre plataformas en producción: reservas, pagos, CRM, inventario y más.",
+        "description": "Retainer mensual sobre lo que ya está en producción: correcciones, sprints y nuevas capacidades. La tarifa por hora se cotiza si el alcance no cabe en un mes.",
         "badge": "",
         "details": [
           "Priorización de backlog y entregas por sprint o mes",
           "Corrección de bugs y ajustes de UX",
-          "Pequeñas features e integraciones (APIs, pasarelas, mapas, etc.)",
-          "Actualizaciones de dependencias y despliegues con cuidado",
+          "Features e integraciones puntuales",
+          "Actualizaciones y despliegues con cuidado",
           "Comunicación directa con quien ejecuta el trabajo"
         ],
         "extras": [
@@ -151,10 +151,11 @@
       }
     ],
     "extrasTitle": "Extras cotizables",
+    "priceNote": "Montos de referencia, sin IVA. El precio final se cotiza según alcance.",
     "prices": [
-      "Desde $28,000 MXN",
-      "Desde $60,000 MXN",
-      "Desde $2,000 MXN/h"
+      "Desde $35,000 MXN",
+      "Cotización a la medida",
+      "Desde $2,000 MXN/mes"
     ]
   },
   "cases": {
