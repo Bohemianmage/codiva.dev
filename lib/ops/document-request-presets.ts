@@ -1,0 +1,38 @@
+export type DocumentRequestPreset = {
+  code: string;
+  title: string;
+  description: string;
+  instructions: string;
+  expectedType: 'nda' | 'other' | 'contract' | 'proposal_pdf';
+  inputMode: 'file' | 'text' | 'credentials' | 'url';
+  required: boolean;
+  sortOrder: number;
+};
+
+export const DOCUMENT_REQUEST_PRESETS: DocumentRequestPreset[] = [
+  {
+    code: 'nda_signed',
+    title: 'NDA firmado',
+    description: 'Devolver el NDA mutuo firmado por el representante legal de la organización.',
+    instructions: 'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF.',
+    expectedType: 'nda',
+    inputMode: 'file',
+    required: true,
+    sortOrder: 10,
+  },
+  {
+    code: 'github_url',
+    title: 'URL de GitHub existente',
+    description: 'Repositorio GitHub actual del producto o del código del que partiremos.',
+    instructions:
+      'Pega la URL del repo (por ejemplo https://github.com/org/repo). Si es privado, indica en notas cómo invitarnos (agregar a hello@codiva.dev).',
+    expectedType: 'other',
+    inputMode: 'url',
+    required: true,
+    sortOrder: 20,
+  },
+];
+
+export function documentRequestPresetByCode(code: string) {
+  return DOCUMENT_REQUEST_PRESETS.find((preset) => preset.code === code) ?? null;
+}
