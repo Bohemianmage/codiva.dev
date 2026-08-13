@@ -1,9 +1,10 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
+import { useCallback, useState, type ComponentProps, type ReactNode } from 'react';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import ConfirmDialog from '@/components/ops/ConfirmDialog';
 
 type ServerAction = ((formData: FormData) => Promise<unknown>) | (() => Promise<unknown>);
 
@@ -12,6 +13,9 @@ type ToastFormProps = Omit<ComponentProps<'form'>, 'action'> & {
   success?: string;
   loading?: string;
   confirmMessage?: string;
+  confirmTitle?: string;
+  confirmLabel?: string;
+  confirmTone?: 'danger' | 'primary';
   children: ReactNode;
 };
 
@@ -24,37 +28,71 @@ export default function ToastForm({
   success,
   loading,
   confirmMessage,
+  confirmTitle,
+  confirmLabel,
+  confirmTone = 'danger',
   children,
   ...formProps
 }: ToastFormProps) {
   const { t } = useTranslation();
   const successLabel = success ?? t('ops.toast.ready');
   const loadingLabel = loading ?? t('ops.toast.saving');
+  const [pending, setPending] = useState<FormData | null>(null);
 
   function errorMessage(err: unknown): string {
     if (err instanceof Error && err.message) return err.message;
     return t('common.status.actionFailed');
   }
 
-  return (
-    <form
-      {...formProps}
-      action={async (formData) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) return;
-        const id = toast.loading(loadingLabel);
-        try {
-          await action(formData);
-          toast.success(successLabel, { id });
-        } catch (err) {
-          if (isRedirectError(err)) {
-            toast.dismiss(id);
-            throw err;
-          }
-          toast.error(errorMessage(err), { id });
+  const run = useCallback(
+    async (formData: FormData) => {
+      const id = toast.loading(loadingLabel);
+      try {
+        await action(formData);
+        toast.success(successLabel, { id });
+      } catch (err) {
+        if (isRedirectError(err)) {
+          toast.dismiss(id);
+          throw err;
         }
-      }}
-    >
-      {children}
-    </form>
+        toast.error(errorMessage(err), { id });
+      }
+    },
+    // errorMessage uses t; keep the same toast copy for this render
+    [action, loadingLabel, successLabel, t]
+  );
+
+  const closeConfirm = useCallback(() => setPending(null), []);
+
+  return (
+    <>
+      <form
+        {...formProps}
+        action={async (formData) => {
+          if (confirmMessage) {
+            setPending(formData);
+            return;
+          }
+          await run(formData);
+        }}
+      >
+        {children}
+      </form>
+      {confirmMessage ? (
+        <ConfirmDialog
+          open={pending !== null}
+          title={confirmTitle}
+          message={confirmMessage}
+          confirmLabel={confirmLabel}
+          tone={confirmTone}
+          onCancel={closeConfirm}
+          onConfirm={() => {
+            const data = pending;
+            setPending(null);
+            if (data) void run(data);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
