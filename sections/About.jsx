@@ -78,6 +78,9 @@ export default function About() {
             </CodivaBrandText>
             <TypewriterCycle
               phrases={typedPhrases}
+              typingMs={85}
+              deletingMs={48}
+              pauseMs={2800}
               className="font-medium text-codiva-primary"
               active={inView}
               trailingComma
@@ -89,6 +92,9 @@ export default function About() {
             {t('about.paragraph2Intro')}
             <TypewriterCycle
               phrases={integrationPhrases}
+              typingMs={85}
+              deletingMs={48}
+              pauseMs={2800}
               className="font-medium text-codiva-primary"
               active={inView}
               trailingComma
