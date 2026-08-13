@@ -96,6 +96,16 @@ export function publicCareerUrl(slug: string): string {
   return `${careerBaseUrl()}/${slug}`;
 }
 
+export function publicCareerPruebaUrl(slug: string, discipline?: string | null): string {
+  const base = `${careerBaseUrl()}/${slug}/prueba`;
+  return discipline ? `${base}?discipline=${encodeURIComponent(discipline)}` : base;
+}
+
+export function publicCareerHuntUrl(discipline?: string | null): string {
+  const base = `${careerBaseUrl()}/hallazgos`;
+  return discipline ? `${base}?discipline=${encodeURIComponent(discipline)}` : base;
+}
+
 export function normalizeJobSlug(input: string): string {
   const slug = String(input || '')
     .toLowerCase()
@@ -199,6 +209,11 @@ export const CAREER_RL_APPLY_EMAIL = {
 export const CAREER_RL_ASSESSMENT = {
   windowMs: 60 * 60 * 1000,
   max: Number(process.env.CAREER_RL_ASSESSMENT_PER_IP_HOUR || 40),
+};
+
+export const CAREER_RL_HUNT_BEACON = {
+  windowMs: 60 * 60 * 1000,
+  max: Number(process.env.CAREER_RL_HUNT_BEACON_PER_IP_HOUR || 180),
 };
 
 const BULLET_LINE_RE = /^[\u2022\u2023\u25E6\u2043\u2219•\-*]\s+(.*)$/;

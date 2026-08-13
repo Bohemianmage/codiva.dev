@@ -27,6 +27,7 @@ import {
   type AssessmentAttemptRow,
 } from '@/lib/careers/assessments/server';
 import { huntProgressForAttempt } from '@/lib/careers/hunt/progress';
+import { applyHuntCookie } from '@/lib/careers/hunt/events';
 
 export const runtime = 'nodejs';
 
@@ -128,11 +129,15 @@ export async function POST(request: Request) {
   );
   if (passed) {
     const hunt = await huntProgressForAttempt({ email: passed.email, catalogKey: passed.catalog_key });
-    return NextResponse.json({
-      ok: true,
-      already_passed: true,
-      session: publicSession(passed, catalog.title, [], hunt),
-    });
+    return applyHuntCookie(
+      NextResponse.json({
+        ok: true,
+        already_passed: true,
+        session: publicSession(passed, catalog.title, [], hunt),
+      }),
+      passed.public_token,
+      request
+    );
   }
 
   const open = rows.find((r) => r.status === 'started' && new Date(r.expires_at).getTime() > Date.now());
@@ -142,15 +147,19 @@ export async function POST(request: Request) {
       eventType: 'resumed',
       ip: audit.ip,
     });
-    return NextResponse.json({
-      ok: true,
-      resumed: true,
-      session: publicSession(
-        open,
-        catalog.title,
-        publicQuestionsForAttempt(catalog, open.question_ids, parseOptionOrders(open.option_orders))
-      ),
-    });
+    return applyHuntCookie(
+      NextResponse.json({
+        ok: true,
+        resumed: true,
+        session: publicSession(
+          open,
+          catalog.title,
+          publicQuestionsForAttempt(catalog, open.question_ids, parseOptionOrders(open.option_orders))
+        ),
+      }),
+      open.public_token,
+      request
+    );
   }
 
   const lastFinished = rows.find((r) => r.status === 'completed' || r.status === 'expired');
@@ -218,12 +227,16 @@ export async function POST(request: Request) {
     ip: audit.ip,
   });
 
-  return NextResponse.json({
-    ok: true,
-    session: publicSession(
-      row,
-      catalog.title,
-      publicQuestionsForAttempt(catalog, questionIds, optionOrders)
-    ),
-  });
+  return applyHuntCookie(
+    NextResponse.json({
+      ok: true,
+      session: publicSession(
+        row,
+        catalog.title,
+        publicQuestionsForAttempt(catalog, questionIds, optionOrders)
+      ),
+    }),
+    row.public_token,
+    request
+  );
 }

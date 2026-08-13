@@ -14,6 +14,9 @@ import {
   parseAnswers,
   recordAssessmentEvent,
 } from '@/lib/careers/assessments/server';
+import { huntRequiredForCatalog } from '@/lib/careers/hunt/seeds';
+import { applyHuntCookie } from '@/lib/careers/hunt/events';
+import { notifyCandidateHuntPartTwo } from '@/lib/careers/hunt/notify-candidate';
 
 export const runtime = 'nodejs';
 
@@ -50,12 +53,13 @@ export async function POST(request: Request) {
   const row = await expireIfNeeded(found);
 
   if (row.status === 'completed') {
-    return NextResponse.json({
+    const res = NextResponse.json({
       ok: true,
       already: true,
       passed: Boolean(row.passed),
       score_pct: row.score_pct,
     });
+    return row.passed ? applyHuntCookie(res, token, request) : res;
   }
 
   if (row.status !== 'started') {
@@ -111,10 +115,21 @@ export async function POST(request: Request) {
     ip: audit.ip,
   });
 
-  return NextResponse.json({
+  const passed = Boolean(updated?.passed ?? scored.passed);
+  if (passed && huntRequiredForCatalog(row.catalog_key)) {
+    await notifyCandidateHuntPartTwo({
+      email: row.email,
+      name: row.full_name,
+      catalogKey: row.catalog_key,
+      jobPostingId: row.job_posting_id,
+    });
+  }
+
+  const res = NextResponse.json({
     ok: true,
-    passed: Boolean(updated?.passed ?? scored.passed),
+    passed,
     score_pct: updated?.score_pct ?? scored.pct,
     timed_out: timedOut,
   });
+  return passed ? applyHuntCookie(res, token, request) : res;
 }

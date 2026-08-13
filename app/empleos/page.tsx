@@ -89,7 +89,9 @@ export default async function EmpleosPage() {
                       <div className="mt-3 flex flex-wrap gap-2">
                         {employment ? <MetaChip>{employment}</MetaChip> : null}
                         {copy.location ? <MetaChip>{copy.location}</MetaChip> : null}
-                        {catalogForPosting(row.assessment_key, row.slug) || postingAsksDiscipline(row.slug) ? (
+                        {postingAsksDiscipline(row.slug) ? (
+                          <MetaChip>{t('career.assessment_chip_two_parts')}</MetaChip>
+                        ) : catalogForPosting(row.assessment_key, row.slug) ? (
                           <MetaChip>{t('career.assessment_chip')}</MetaChip>
                         ) : null}
                       </div>

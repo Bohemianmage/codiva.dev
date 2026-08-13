@@ -31,9 +31,9 @@ function tabClass(active: boolean) {
 export default async function TeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; signal?: string }>;
 }) {
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, signal: signalParam } = await searchParams;
   const tab = tabParam === 'ofertas' ? 'ofertas' : tabParam === 'bolsa' ? 'bolsa' : 'miembros';
 
   const { supabase } = await requireAdminStaff();
@@ -75,7 +75,7 @@ export default async function TeamPage({
       supabase
         .from('ops_hunt_reports')
         .select(
-          'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, created_at'
+          'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, review_status, evidence_paths, created_at'
         )
         .order('created_at', { ascending: false })
         .limit(80),
@@ -226,6 +226,7 @@ export default async function TeamPage({
           applications={(applications ?? []) as OpsJobApplicationRow[]}
           attempts={(attempts ?? []) as OpsJobAttemptRow[]}
           huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
+          signal={signalParam || ''}
         />
       ) : (
         <div className="max-w-3xl space-y-8">

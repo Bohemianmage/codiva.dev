@@ -294,3 +294,35 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
   revalidatePath(`/team/ofertas/${offer.id}`);
   redirect(`/team/ofertas/${offer.id}`);
 }
+
+export async function updateHuntReportReview(reportId: string, formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const status = String(formData.get('review_status') || '').trim();
+  if (status !== 'open' && status !== 'noted' && status !== 'discarded') {
+    throw new Error('Estado de revisión inválido');
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(reportId)) throw new Error('Hallazgo inválido');
+
+  const { error } = await supabase
+    .from('ops_hunt_reports')
+    .update({
+      review_status: status,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user.id,
+    })
+    .eq('id', reportId);
+
+  if (error) throw new Error('No se pudo guardar la revisión');
+
+  await logActivity({
+    entityType: 'hunt_report',
+    entityId: reportId,
+    action: 'reviewed',
+    metadata: { review_status: status },
+    actorId: user.id,
+  });
+
+  const attemptId = String(formData.get('attempt_id') || '').trim();
+  revalidatePath('/team');
+  if (attemptId) revalidatePath(`/team/intentos/${attemptId}`);
+}

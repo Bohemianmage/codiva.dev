@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import HuntReportForm from '@/components/careers/HuntReportForm';
-import { readAttemptToken, writeAttemptToken } from '@/components/careers/hunt-context';
+import { readAttemptToken, writeAttemptToken, announceHuntSession } from '@/components/careers/hunt-context';
 import type { PublicAssessmentQuestion } from '@/lib/careers/assessments/types';
 
 export { readAttemptToken, writeAttemptToken } from '@/components/careers/hunt-context';
@@ -98,6 +98,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
           const required = String(session?.catalog_key || '').startsWith('tester-');
           setHuntRequired(required);
           setHuntReady(!required);
+          announceHuntSession();
         }
         if (fromTimer && !data.passed) setError(t('career.assessment_timed_out'));
       } catch {
@@ -132,6 +133,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         setResult({ passed: Boolean(s.passed), score_pct: s.score_pct });
         setHuntRequired(Boolean(s.hunt_required));
         setHuntReady(s.hunt_required ? Boolean(s.hunt_ready) : true);
+        if (s.passed) announceHuntSession();
       } else if (s.status === 'started') {
         endsAtRef.current = Date.now() + (s.remaining_ms || 0);
         setRemainingMs(s.remaining_ms || 0);
@@ -219,6 +221,7 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
         setResult({ passed: true, score_pct: s.score_pct });
         setHuntRequired(Boolean(s.hunt_required));
         setHuntReady(s.hunt_required ? Boolean(s.hunt_ready) : true);
+        announceHuntSession();
         return;
       }
       setSession(s);
@@ -336,7 +339,9 @@ export default function CareerAssessment({ jobPostingId, jobTitle, applyHref, di
             {t('career.assessment_start_title')}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            {t('career.assessment_start_intro', { role: jobTitle })}
+            {t(discipline ? 'career.assessment_start_intro_tester' : 'career.assessment_start_intro', {
+              role: jobTitle,
+            })}
           </p>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-600">
             <li>{t('career.assessment_rule_time')}</li>

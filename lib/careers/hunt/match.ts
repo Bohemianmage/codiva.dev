@@ -3,7 +3,7 @@ import {
   isCareerDiscipline,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
-import { HUNT_SEEDS, huntSeedById, type HuntSeed } from './seeds';
+import { HUNT_SEEDS, huntSeedById, type HuntDifficulty, type HuntSeed } from './seeds';
 
 function normalizePath(raw: string): string {
   const value = String(raw || '').trim();
@@ -56,6 +56,7 @@ export type HuntMatch = {
   seedId: string;
   title: string;
   craft: CareerDiscipline;
+  difficulty: HuntDifficulty;
   countsForCraft: boolean;
   score: number;
 };
@@ -83,6 +84,7 @@ export function matchHuntReport(input: {
         seedId: seed.id,
         title: seed.title,
         craft: seed.craft,
+        difficulty: seed.difficulty,
         countsForCraft,
         score,
       };

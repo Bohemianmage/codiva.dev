@@ -20,7 +20,7 @@ function catalog(
 export const TESTER_FRONTEND: AssessmentCatalog = catalog(
   'tester-frontend',
   'Prueba de criterio · Tester frontend',
-  'Ocho situaciones de testing de interfaz en productos a la medida. No buscamos que programes el front: buscamos que sepas qué romper, cómo reportarlo y qué no es un bug. Tienes 15 minutos. Hay que aprobarla para postular.',
+  'Ocho situaciones de testing de interfaz en productos a la medida. No buscamos que programes el front: buscamos que sepas qué romper, cómo reportarlo y qué no es un bug. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   [
     {
       id: 'tf-empty-error-loading',
@@ -171,7 +171,7 @@ export const TESTER_FRONTEND: AssessmentCatalog = catalog(
 export const TESTER_BACKEND: AssessmentCatalog = catalog(
   'tester-backend',
   'Prueba de criterio · Tester backend',
-  'Ocho situaciones de testing de APIs, auth y datos en software a la medida. No buscamos que implementes el servidor: buscamos contratos, permisos y evidencia. Tienes 15 minutos. Hay que aprobarla para postular.',
+  'Ocho situaciones de testing de APIs, auth y datos en software a la medida. No buscamos que implementes el servidor: buscamos contratos, permisos y evidencia. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   [
     {
       id: 'tb-200-empty',
@@ -321,7 +321,7 @@ export const TESTER_BACKEND: AssessmentCatalog = catalog(
 export const TESTER_FULLSTACK: AssessmentCatalog = catalog(
   'tester-fullstack',
   'Prueba de criterio · Tester full stack',
-  'Ocho situaciones de testing de punta a punta: UI, API y operación. Buscamos que persigas el hueco entre capas, no que «el front se ve bien». Tienes 15 minutos. Hay que aprobarla para postular.',
+  'Ocho situaciones de testing de punta a punta: UI, API y operación. Buscamos que persigas el hueco entre capas, no que «el front se ve bien». Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   [
     {
       id: 'ts-ui-ok-api-fail',
@@ -472,7 +472,7 @@ export const TESTER_FULLSTACK: AssessmentCatalog = catalog(
 export const TESTER_UX: AssessmentCatalog = catalog(
   'tester-ux-ui',
   'Prueba de criterio · Tester UX/UI',
-  'Ocho situaciones de testing de flujo, copy y usabilidad. No buscamos que rediseñes el producto: buscamos que detectes cuando la interfaz miente, traba o no se puede usar. Tienes 15 minutos. Hay que aprobarla para postular.',
+  'Ocho situaciones de testing de flujo, copy y usabilidad. No buscamos que rediseñes el producto: buscamos que detectes cuando la interfaz miente, traba o no se puede usar. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   [
     {
       id: 'tu-empty-state',
@@ -627,7 +627,7 @@ export const TESTER_UX: AssessmentCatalog = catalog(
 export const TESTER_GENERAL: AssessmentCatalog = catalog(
   'tester-general',
   'Prueba de criterio · Tester',
-  'Ocho situaciones de testing en productos a la medida, sin especialidad única. Buscamos evidencia, severidad y no confundir defecto con preferencia. Tienes 15 minutos. Hay que aprobarla para postular.',
+  'Ocho situaciones de testing en productos a la medida, sin especialidad única. Buscamos evidencia, severidad y no confundir defecto con preferencia. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   [
     {
       id: 'tg-repro',

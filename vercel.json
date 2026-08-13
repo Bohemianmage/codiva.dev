@@ -3,6 +3,20 @@
     "app/api/ops/alta-personal/[id]/carta/route.ts": {
       "memory": 1536,
       "maxDuration": 60
+    },
+    "app/api/ops/careers/recruiting-report/route.ts": {
+      "memory": 1536,
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/ops/cron/dispose-documents",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/ops/cron/hunt-nudge",
+      "schedule": "15 * * * *"
+    }
+  ]
 }

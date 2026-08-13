@@ -3,6 +3,7 @@ import { ASSESSMENT_PASS_WINDOW_DAYS } from '@/lib/careers/assessments/engine';
 import { disciplineFromCatalogKey, type CareerDiscipline } from '@/lib/ops/career-disciplines';
 import { matchedSeedCountsForDiscipline } from './match';
 import { huntRequiredForCatalog } from './seeds';
+import { EMPTY_HUNT_SCORE, scoreHuntReports, type HuntScore } from './score';
 
 export type HuntProgress = {
   required: boolean;
@@ -10,6 +11,7 @@ export type HuntProgress = {
   matched: number;
   needed: number;
   discipline: CareerDiscipline | null;
+  score: HuntScore;
 };
 
 const HUNT_NEEDED = 1;
@@ -21,7 +23,7 @@ export async function huntProgressForAttempt(input: {
   const discipline = disciplineFromCatalogKey(input.catalogKey);
   const required = huntRequiredForCatalog(input.catalogKey);
   if (!required || !discipline) {
-    return { required: false, ready: true, matched: 0, needed: 0, discipline };
+    return { required: false, ready: true, matched: 0, needed: 0, discipline, score: EMPTY_HUNT_SCORE };
   }
 
   const admin = createAdminClient();
@@ -30,12 +32,13 @@ export async function huntProgressForAttempt(input: {
     .from('ops_hunt_reports')
     .select('matched_seed_id')
     .ilike('email', input.email)
-    .gte('created_at', cutoff)
-    .not('matched_seed_id', 'is', null);
+    .gte('created_at', cutoff);
 
-  const matched = (data ?? []).filter((row) =>
+  const rows = data ?? [];
+  const matched = rows.filter((row) =>
     matchedSeedCountsForDiscipline(row.matched_seed_id, discipline)
   ).length;
+  const score = scoreHuntReports(rows, discipline);
 
   return {
     required: true,
@@ -43,5 +46,6 @@ export async function huntProgressForAttempt(input: {
     matched,
     needed: HUNT_NEEDED,
     discipline,
+    score,
   };
 }

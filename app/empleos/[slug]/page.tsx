@@ -125,6 +125,9 @@ export default async function EmpleoDetailPage({ params, searchParams }: PagePro
                   ))
                 : null}
             </div>
+            {asksDiscipline ? (
+              <p className="mt-4 text-sm leading-relaxed text-zinc-600">{t('career.two_parts_note')}</p>
+            ) : null}
           </header>
 
           <div className="space-y-4">
