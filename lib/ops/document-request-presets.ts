@@ -25,7 +25,7 @@ export const DOCUMENT_REQUEST_PRESETS: DocumentRequestPreset[] = [
     title: 'URL de GitHub existente',
     description: 'Repositorio GitHub actual del producto o del código del que partiremos.',
     instructions:
-      'Pega la URL del repo (por ejemplo https://github.com/org/repo). Si es privado, indica en notas cómo invitarnos (agregar a hello@codiva.dev).',
+      'Pega la URL del repo (por ejemplo https://github.com/org/repo). Si es privado, invita a j.martell@codiva.dev y confírmalo en notas.',
     expectedType: 'other',
     inputMode: 'url',
     required: true,
