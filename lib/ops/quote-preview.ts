@@ -13,6 +13,7 @@ type QuoteRow = {
   considerations?: string | null;
   optional_extras?: string | null;
   line_items?: unknown;
+  phases?: unknown;
   total_amount?: number | null;
   currency?: string | null;
   valid_until?: string | null;

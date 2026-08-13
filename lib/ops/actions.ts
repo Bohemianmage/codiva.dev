@@ -24,10 +24,16 @@ import { opsBaseUrl, opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib
 import { uploadOpsFile } from '@/lib/ops/storage';
 import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
-import { parseLineItemsJson } from '@/lib/ops/quote-document';
+import { parseLineItemsJson, parsePhasesJson } from '@/lib/ops/quote-document';
 import { ensureQuoteAccessToken, publicQuoteUrl } from '@/lib/ops/quote-tokens';
 import { invitePortalUserCore } from '@/lib/ops/portal-invite';
 import { findUserIdByEmail } from '@/lib/ops/auth-users';
+import {
+  architectureStarterHtml,
+  isCanvasKind,
+  MAX_ARCHITECTURE_HTML_CHARS,
+  readClientPackHtml,
+} from '@/lib/ops/architecture';
 
 function parseQuoteFormData(formData: FormData) {
   const lineItemsRaw = String(formData.get('lineItems') || '[]');
@@ -36,6 +42,13 @@ function parseQuoteFormData(formData: FormData) {
     parsedLineItems = JSON.parse(lineItemsRaw);
   } catch {
     parsedLineItems = [];
+  }
+  const phasesRaw = String(formData.get('phases') || '[]');
+  let parsedPhases: unknown = [];
+  try {
+    parsedPhases = JSON.parse(phasesRaw);
+  } catch {
+    parsedPhases = [];
   }
 
   return {
@@ -47,6 +60,7 @@ function parseQuoteFormData(formData: FormData) {
     considerations: String(formData.get('considerations') || ''),
     optionalExtras: String(formData.get('optionalExtras') || ''),
     lineItems: parseLineItemsJson(parsedLineItems),
+    phases: parsePhasesJson(parsedPhases),
     totalAmount: parseFloat(String(formData.get('totalAmount') || '0')) || null,
     currency: String(formData.get('currency') || 'MXN'),
     validUntil: String(formData.get('validUntil') || '') || null,
@@ -218,25 +232,32 @@ export async function createLeadQuote(leadId: string, formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from('quotes').insert({
-    lead_id: leadId,
-    version: (last?.version ?? 0) + 1,
-    status: 'draft',
-    title: parsed.title,
-    service_type: parsed.serviceType,
-    project_state: parsed.projectState,
-    scope: parsed.scope,
-    deliverables: parsed.deliverables,
-    considerations: parsed.considerations,
-    optional_extras: parsed.optionalExtras,
-    line_items: parsed.lineItems,
-    total_amount: parsed.totalAmount,
-    currency: parsed.currency,
-    valid_until: parsed.validUntil,
-    created_by: user.id,
-  });
+  const { data: quote, error } = await supabase
+    .from('quotes')
+    .insert({
+      lead_id: leadId,
+      version: (last?.version ?? 0) + 1,
+      status: 'draft',
+      title: parsed.title,
+      service_type: parsed.serviceType,
+      project_state: parsed.projectState,
+      scope: parsed.scope,
+      deliverables: parsed.deliverables,
+      considerations: parsed.considerations,
+      optional_extras: parsed.optionalExtras,
+      line_items: parsed.lineItems,
+      phases: parsed.phases,
+      total_amount: parsed.totalAmount,
+      currency: parsed.currency,
+      valid_until: parsed.validUntil,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
   if (error) throw new Error(error.message);
   revalidatePath(`/leads/${leadId}`);
+  const { redirectWithToast } = await import('@/lib/ops/toast');
+  redirectWithToast(`/quotes/${quote.id}`, 'Borrador creado');
 }
 
 export async function sendLeadQuote(quoteId: string, leadId: string) {
@@ -565,26 +586,72 @@ export async function createQuote(projectId: string, formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from('quotes').insert({
-    project_id: projectId,
-    version: (last?.version ?? 0) + 1,
-    status: 'draft',
-    title: parsed.title,
-    service_type: parsed.serviceType,
-    project_state: parsed.projectState,
-    scope: parsed.scope,
-    deliverables: parsed.deliverables,
-    considerations: parsed.considerations,
-    optional_extras: parsed.optionalExtras,
-    line_items: parsed.lineItems,
-    phases: [],
-    total_amount: parsed.totalAmount,
-    currency: parsed.currency,
-    valid_until: parsed.validUntil,
-    created_by: user.id,
-  });
+  const { data: quote, error } = await supabase
+    .from('quotes')
+    .insert({
+      project_id: projectId,
+      version: (last?.version ?? 0) + 1,
+      status: 'draft',
+      title: parsed.title,
+      service_type: parsed.serviceType,
+      project_state: parsed.projectState,
+      scope: parsed.scope,
+      deliverables: parsed.deliverables,
+      considerations: parsed.considerations,
+      optional_extras: parsed.optionalExtras,
+      line_items: parsed.lineItems,
+      phases: parsed.phases,
+      total_amount: parsed.totalAmount,
+      currency: parsed.currency,
+      valid_until: parsed.validUntil,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
   if (error) throw new Error(error.message);
   revalidatePath(`/projects/${projectId}`);
+  const { redirectWithToast } = await import('@/lib/ops/toast');
+  redirectWithToast(`/quotes/${quote.id}`, 'Borrador creado');
+}
+
+export async function updateQuote(quoteId: string, formData: FormData) {
+  const access = await assertCapability('quotes');
+  const { supabase } = access;
+  const parsed = parseQuoteFormData(formData);
+
+  const { data: existing } = await supabase
+    .from('quotes')
+    .select('id, project_id, lead_id')
+    .eq('id', quoteId)
+    .maybeSingle();
+  if (!existing) throw new Error('Cotización no encontrada');
+  if (existing.project_id) {
+    await assertProjectAccessOrThrow(access, existing.project_id);
+  }
+
+  const { error } = await supabase
+    .from('quotes')
+    .update({
+      title: parsed.title,
+      service_type: parsed.serviceType,
+      project_state: parsed.projectState,
+      scope: parsed.scope,
+      deliverables: parsed.deliverables,
+      considerations: parsed.considerations,
+      optional_extras: parsed.optionalExtras,
+      line_items: parsed.lineItems,
+      phases: parsed.phases,
+      total_amount: parsed.totalAmount,
+      currency: parsed.currency,
+      valid_until: parsed.validUntil,
+    })
+    .eq('id', quoteId);
+  if (error) throw new Error(error.message);
+
+  if (existing.project_id) revalidatePath(`/projects/${existing.project_id}`);
+  if (existing.lead_id) revalidatePath(`/leads/${existing.lead_id}`);
+  revalidatePath(`/quotes/${quoteId}`);
+  revalidatePath('/p', 'layout');
 }
 
 export async function sendQuote(quoteId: string, projectId: string) {
@@ -643,6 +710,7 @@ export async function sendQuote(quoteId: string, projectId: string) {
   });
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/p', 'layout');
 }
 
 export async function acceptQuote(quoteId: string, projectId: string) {
@@ -967,6 +1035,165 @@ export async function createDeliverable(projectId: string, formData: FormData) {
   });
 
   revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createArchitectureCanvas(projectId: string, formData: FormData) {
+  const access = await assertCapability('deliverables');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase } = access;
+
+  const title = String(formData.get('title') || '').trim();
+  if (!title) throw new Error('Título requerido');
+
+  const kindRaw = String(formData.get('kind') || 'architecture');
+  const kind = isCanvasKind(kindRaw) ? kindRaw : 'architecture';
+  const sortOrder = parseInt(String(formData.get('sortOrder') || '0'), 10) || 0;
+  const visibleToClient = formData.get('visibleToClient') === 'on';
+  const bodyHtml = architectureStarterHtml(title);
+
+  const { data: deliverable, error } = await supabase
+    .from('deliverables')
+    .insert({
+      project_id: projectId,
+      title,
+      description: String(formData.get('description') || ''),
+      url: null,
+      body_html: bodyHtml,
+      visible_to_client: visibleToClient,
+      kind,
+      sort_order: sortOrder,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await logActivity({
+    entityType: 'deliverable',
+    entityId: deliverable.id,
+    action: 'created',
+    actorId: user?.id,
+    metadata: { project_id: projectId, title, kind, source: 'ops_architecture' },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/p', 'layout');
+  const { redirectWithToast } = await import('@/lib/ops/toast');
+  redirectWithToast(`/projects/${projectId}/arquitectura/${deliverable.id}`, 'Canvas creado');
+}
+
+export async function updateArchitectureCanvas(projectId: string, deliverableId: string, formData: FormData) {
+  const access = await assertCapability('deliverables');
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase } = access;
+
+  const { data: existing } = await supabase
+    .from('deliverables')
+    .select('id, kind')
+    .eq('id', deliverableId)
+    .eq('project_id', projectId)
+    .maybeSingle();
+  if (!existing) throw new Error('Canvas no encontrado');
+
+  const title = String(formData.get('title') || '').trim();
+  if (!title) throw new Error('Título requerido');
+
+  const kindRaw = String(formData.get('kind') || existing.kind || 'architecture');
+  const kind = isCanvasKind(kindRaw) ? kindRaw : 'architecture';
+  const sortOrder = parseInt(String(formData.get('sortOrder') || '0'), 10) || 0;
+  const visibleToClient = formData.get('visibleToClient') === 'on';
+  const bodyHtml = String(formData.get('bodyHtml') || '');
+  if (bodyHtml.length > MAX_ARCHITECTURE_HTML_CHARS) {
+    throw new Error('El HTML supera el tamaño máximo permitido');
+  }
+
+  const { error } = await supabase
+    .from('deliverables')
+    .update({
+      title,
+      description: String(formData.get('description') || ''),
+      kind,
+      sort_order: sortOrder,
+      visible_to_client: visibleToClient,
+      body_html: bodyHtml,
+    })
+    .eq('id', deliverableId)
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await logActivity({
+    entityType: 'deliverable',
+    entityId: deliverableId,
+    action: 'updated',
+    actorId: user?.id,
+    metadata: { project_id: projectId, title, kind, visible_to_client: visibleToClient },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}/arquitectura/${deliverableId}`);
+  revalidatePath('/p', 'layout');
+}
+
+export async function hydrateArchitectureFromPacks(projectId: string): Promise<number> {
+  const access = await requireStaff();
+  await assertProjectAccessOrThrow(access, projectId);
+  if (!can(access.staff.role, 'deliverables')) return 0;
+  const { supabase } = access;
+
+  const { data: rows, error } = await supabase
+    .from('deliverables')
+    .select('id, kind, url, body_html')
+    .eq('project_id', projectId);
+  if (error) throw new Error(error.message);
+
+  let adopted = 0;
+  for (const row of rows ?? []) {
+    if (!isCanvasKind(row.kind)) continue;
+    if (row.body_html?.trim()) continue;
+    const html = await readClientPackHtml(row.url);
+    if (!html) continue;
+    const { error: updateError } = await supabase
+      .from('deliverables')
+      .update({ body_html: html })
+      .eq('id', row.id)
+      .eq('project_id', projectId);
+    if (updateError) throw new Error(updateError.message);
+    adopted += 1;
+  }
+
+  if (adopted > 0) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await logActivity({
+      entityType: 'project',
+      entityId: projectId,
+      action: 'architecture_adopted',
+      actorId: user?.id,
+      metadata: { adopted },
+    });
+  }
+
+  return adopted;
+}
+
+export async function adoptArchitecturePacks(projectId: string) {
+  await assertCapability('deliverables');
+  const adopted = await hydrateArchitectureFromPacks(projectId);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/p', 'layout');
+  const { redirectWithToast } = await import('@/lib/ops/toast');
+  redirectWithToast(
+    `/projects/${projectId}?tab=arquitectura`,
+    adopted > 0
+      ? `Ops es ahora la fuente de ${adopted} canvas`
+      : 'No había packs estáticos pendientes'
+  );
 }
 
 export async function markDocumentSigned(documentId: string, projectId: string, signed = true) {

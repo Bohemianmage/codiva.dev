@@ -34,10 +34,13 @@ import { labelsFor, isClientBorneChargeKind } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
+import OpsProjectArchitecture from '@/components/ops/OpsProjectArchitecture';
+import { isCanvasKind } from '@/lib/ops/architecture';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
-import { opsFileHref } from '@/lib/ops/storage';
+import { isLegacyNdaDraftDocument, opsFileHref } from '@/lib/ops/storage';
+import { isLegacyQuotePackDocument } from '@/lib/ops/quotes';
 
 export default async function ProjectDetailPage({
   params,
@@ -210,6 +213,7 @@ export default async function ProjectDetailPage({
     { key: 'sprints', label: 'Sprints' },
     { key: 'horas', label: 'Horas', capability: 'time_entries' as const },
     { key: 'timeline', label: 'Timeline' },
+    { key: 'arquitectura', label: 'Arquitectura' },
     { key: 'cotizaciones', label: 'Cotizaciones', capability: 'quotes' as const },
     { key: 'pagos', label: 'Pagos', capability: 'charges' as const },
     { key: 'documentos', label: 'Documentos' },
@@ -414,8 +418,21 @@ export default async function ProjectDetailPage({
         </div>
       )}
 
+      {tab === 'arquitectura' && (
+        <OpsProjectArchitecture
+          projectId={id}
+          slug={project.slug}
+          kindLabels={DELIVERABLE_KIND_LABELS}
+          canEdit={can(staff.role, 'deliverables')}
+        />
+      )}
+
       {tab === 'cotizaciones' && can(staff.role, 'quotes') && (
         <div className="space-y-6">
+          <p className="text-sm text-zinc-600">
+            Aquí se arma el documento. El cliente lo ve igual en la pestaña <strong>Cotización</strong> del
+            portal (no como PDF suelto en Documentos).
+          </p>
           <OpsQuoteForm
             title="Nueva cotización"
             defaultTitle={`Propuesta - ${project.name}`}
@@ -438,6 +455,12 @@ export default async function ProjectDetailPage({
                 {!project.portal_show_quote ? ' · módulo cotización OFF en proyecto' : ''}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/quotes/${q.id}`}
+                  className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  Editar en Ops
+                </Link>
                 <Link
                   href={`/quotes/${q.id}/preview`}
                   target="_blank"
@@ -829,11 +852,13 @@ export default async function ProjectDetailPage({
 
           <ToastForm success="Documento subido" action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Subir documento (Codiva → cliente)</h3>
+            <p className="text-sm text-zinc-500">
+              Cotizaciones viven en la pestaña Cotizaciones, no como PDF aquí.
+            </p>
             <input name="title" placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="type" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
               <option value="contract">Contrato</option>
               <option value="nda">NDA</option>
-              <option value="proposal_pdf">Propuesta PDF</option>
               <option value="other">Otro</option>
             </select>
             <textarea name="notes" placeholder="Nota visible para el cliente (opcional)" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
@@ -865,6 +890,8 @@ export default async function ProjectDetailPage({
                     {formatDate(d.uploaded_at)}
                     {d.scan_status ? ` · scan:${d.scan_status}` : ''}
                     {d.retain_until ? ` · retener hasta ${formatDate(d.retain_until)}` : ''}
+                    {isLegacyQuotePackDocument(d) ? ' · pack de cotización, oculto al cliente (vive en Cotización)' : ''}
+                    {isLegacyNdaDraftDocument(d) ? ' · borrador pack, oculto al cliente (vive el NDA mutuo de Ops)' : ''}
                   </p>
                   {d.content_sha256 && (
                     <p className="mt-1 font-mono text-xs text-zinc-400" title={d.content_sha256}>
@@ -932,24 +959,26 @@ export default async function ProjectDetailPage({
 
       {tab === 'entregables' && (
         <div className="space-y-6">
+          <p className="text-sm text-zinc-600">
+            Entregas operativas del proyecto. La arquitectura y la propuesta se editan en{' '}
+            <Link href={`/projects/${id}?tab=arquitectura`} className="text-codiva-primary hover:underline">
+              Arquitectura
+            </Link>
+            .
+          </p>
           <ToastForm success="Entregable creado" action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
             <h3 className="font-semibold">Nuevo entregable</h3>
             <input name="title" required placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <select name="kind" defaultValue="other" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="architecture">Arquitectura (canvas portal)</option>
-              <option value="mvp">MVP / Propuesta (canvas portal)</option>
-              <option value="proposal">Propuesta</option>
-              <option value="other">Otro / entregable</option>
-            </select>
+            <input type="hidden" name="kind" value="other" />
             <input name="sortOrder" type="number" defaultValue={0} placeholder="Orden" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="url" placeholder="URL (client-pack, staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="url" placeholder="URL (staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <textarea name="description" placeholder="Descripción" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <BrandedFileInput hint="Opcional · PDF, imagen, Office o ZIP" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Guardar</button>
           </ToastForm>
           <ul className="space-y-2">
-            {(deliverables ?? []).map((d) => {
+            {(deliverables ?? []).filter((d) => !isCanvasKind(d.kind)).map((d) => {
               const fileHref = opsFileHref(d.file_path, d.file_url);
               return (
               <li key={d.id} className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm">
@@ -982,6 +1011,9 @@ export default async function ProjectDetailPage({
               </li>
               );
             })}
+            {!(deliverables ?? []).some((d) => !isCanvasKind(d.kind)) && (
+              <p className="text-sm text-zinc-500">Sin entregables operativos.</p>
+            )}
           </ul>
         </div>
       )}

@@ -238,6 +238,12 @@ export default async function LeadDetailPage({
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
+                  href={`/quotes/${q.id}`}
+                  className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  Editar en Ops
+                </Link>
+                <Link
                   href={`/quotes/${q.id}/preview`}
                   target="_blank"
                   className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"

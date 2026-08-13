@@ -10,6 +10,7 @@ export type PortalCanvasItem = {
   kind: string;
   url: string | null;
   file_url: string | null;
+  canvasPath?: string | null;
 };
 
 type CanvasTab = {
@@ -23,11 +24,15 @@ type CanvasTab = {
 };
 
 function resolveSrc(item: PortalCanvasItem): string | null {
-  return item.url || item.file_url || null;
+  return item.canvasPath || item.url || item.file_url || null;
+}
+
+function isCanvasRoute(src: string): boolean {
+  return /\/canvas\//.test(src);
 }
 
 function isHtml(src: string): boolean {
-  return /\.html?(\?|#|$)/i.test(src);
+  return isCanvasRoute(src) || /\.html?(\?|#|$)/i.test(src);
 }
 
 function isPdf(src: string): boolean {

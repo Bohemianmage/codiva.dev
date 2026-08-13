@@ -14,6 +14,12 @@ export type QuoteLineItem = {
   total?: number | null;
 };
 
+export type QuotePhase = {
+  name?: string;
+  weeks?: string;
+  deliverable?: string;
+};
+
 export type QuoteDocumentData = {
   heading?: string;
   serviceType: string;
@@ -34,6 +40,7 @@ export type QuoteDocumentData = {
   version?: number;
   partnerCompany?: string | null;
   endClientCompany?: string | null;
+  phases?: QuotePhase[];
 };
 
 const BRAND = BRAND_EMAIL;
@@ -73,6 +80,32 @@ function section(title: string, body: string): string {
     <section style="margin-top:28px;">
       <h2 style="margin:0 0 12px;font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(title)}</h2>
       ${isBullets ? bulletList(body) : paragraphs(body)}
+    </section>`;
+}
+
+function phasesBlock(phases: QuotePhase[], locale: Locale): string {
+  const items = phases.filter((phase) => phase.name || phase.deliverable);
+  if (!items.length) return '';
+  const rows = items
+    .map((phase) => {
+      const weeks = phase.weeks
+        ? `<span style="margin-left:8px;font-size:12px;color:${BRAND.muted};">${escapeHtml(
+            tSync(locale, 'quoteDoc.weeks', { weeks: phase.weeks })
+          )}</span>`
+        : '';
+      const deliverable = phase.deliverable
+        ? `<div style="margin-top:4px;font-size:13px;color:${BRAND.muted};">${escapeHtml(phase.deliverable)}</div>`
+        : '';
+      return `<li style="margin:0 0 10px;padding:12px 14px;border:1px solid ${BRAND.border};border-radius:10px;">
+        <strong style="font-size:14px;color:${BRAND.text};">${escapeHtml(phase.name || '')}</strong>${weeks}
+        ${deliverable}
+      </li>`;
+    })
+    .join('');
+  return `
+    <section style="margin-top:28px;">
+      <h2 style="margin:0 0 12px;font-size:15px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${BRAND.primary};">${escapeHtml(tSync(locale, 'quoteDoc.plan'))}</h2>
+      <ul style="margin:0;padding:0;list-style:none;">${rows}</ul>
     </section>`;
 }
 
@@ -187,6 +220,7 @@ export function renderQuoteDocumentHtml(
       ${section(tSync(locale, 'quoteDoc.scope'), data.scope)}
       ${data.deliverables ? section(tSync(locale, 'quoteDoc.deliverables'), data.deliverables) : ''}
       ${lineItemsBlock(lineItems, currency, data.totalAmount)}
+      ${phasesBlock(data.phases ?? [], locale)}
       ${data.considerations ? section(tSync(locale, 'quoteDoc.considerations'), data.considerations) : ''}
       ${data.optionalExtras ? section(tSync(locale, 'quoteDoc.extras'), data.optionalExtras) : ''}
       <footer style="margin-top:36px;padding-top:20px;border-top:1px solid ${BRAND.border};">
@@ -220,6 +254,21 @@ export function parseLineItemsJson(raw: unknown): QuoteLineItem[] {
     .filter(Boolean) as QuoteLineItem[];
 }
 
+export function parsePhasesJson(raw: unknown): QuotePhase[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const o = item as Record<string, unknown>;
+      const name = o.name != null ? String(o.name).trim() : '';
+      const weeks = o.weeks != null ? String(o.weeks).trim() : '';
+      const deliverable = o.deliverable != null ? String(o.deliverable).trim() : '';
+      if (!name && !deliverable) return null;
+      return { name, weeks, deliverable } satisfies QuotePhase;
+    })
+    .filter(Boolean) as QuotePhase[];
+}
+
 export function quoteRowToDocumentData(
   quote: {
     title: string;
@@ -230,6 +279,7 @@ export function quoteRowToDocumentData(
     considerations?: string | null;
     optional_extras?: string | null;
     line_items?: unknown;
+    phases?: unknown;
     total_amount?: number | null;
     currency?: string | null;
     valid_until?: string | null;
@@ -264,5 +314,6 @@ export function quoteRowToDocumentData(
     version: quote.version,
     partnerCompany: context.partnerCompany,
     endClientCompany: context.endClientCompany,
+    phases: parsePhasesJson(quote.phases),
   };
 }

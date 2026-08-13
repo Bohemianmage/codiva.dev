@@ -111,9 +111,30 @@ a {
   animation-play-state: paused;
 }
 
+/* Órbita local: el nodo gira en un radio acotado y el contra-rotate deja el texto derecho. */
+@keyframes case-orbit {
+  from {
+    transform: rotate(0deg) translateX(var(--orbit-r, 6px)) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(var(--orbit-r, 6px)) rotate(-360deg);
+  }
+}
+
+.case-orbit {
+  animation: case-orbit var(--orbit-duration, 14s) linear infinite;
+  animation-delay: var(--orbit-delay, 0s);
+}
+
+.case-orbit:hover,
+.case-orbit:focus-within {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-left,
-  .animate-scroll-right {
+  .animate-scroll-right,
+  .case-orbit {
     animation: none;
   }
 }

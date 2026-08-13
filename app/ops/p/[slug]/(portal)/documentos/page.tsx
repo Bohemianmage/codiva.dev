@@ -4,7 +4,8 @@ import { clientFulfillDocumentRequest } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { mutualNdaPath } from '@/lib/ops/legal/mutual-nda';
-import { opsFileHref } from '@/lib/ops/storage';
+import { isLegacyNdaDraftDocument, opsFileHref } from '@/lib/ops/storage';
+import { isLegacyQuotePackDocument } from '@/lib/ops/quotes';
 
 export default async function PortalDocumentsPage({
   params,
@@ -60,7 +61,7 @@ export default async function PortalDocumentsPage({
   const mergedDocs = [
     ...(documents ?? []),
     ...(orgDocuments ?? []).filter((d) => !(documents ?? []).some((p) => p.id === d.id)),
-  ];
+  ].filter((d) => !isLegacyQuotePackDocument(d) && !isLegacyNdaDraftDocument(d));
 
   const shared = mergedDocs.filter((d) => d.source !== 'client');
   const signedNdas = shared.filter((d) => d.type === 'nda' && d.signed);
@@ -70,9 +71,6 @@ export default async function PortalDocumentsPage({
   const liveNdaHref = mutualNdaPath(slug);
   const liveNdaTitle = t('portal.docs.liveNda', { client: clientName });
   const orgHasSignedNda = Boolean(organization?.mutual_nda_document_id || signedNdas.length);
-  const hasOpenNdaRequest =
-    !orgHasSignedNda &&
-    (requests ?? []).some((r) => r.expected_type === 'nda' && r.status === 'open');
 
   // Si la org ya firmó, no mostrar solicitudes NDA abiertas de este proyecto.
   const visibleRequests = (requests ?? []).filter(
@@ -102,7 +100,7 @@ export default async function PortalDocumentsPage({
     })
     .filter((t): t is { type: string; title: string; href: string } => Boolean(t));
 
-  if (hasOpenNdaRequest) {
+  if (!orgHasSignedNda) {
     templates.unshift({ type: 'nda', title: liveNdaTitle, href: liveNdaHref });
   } else if (signedNdas[0]) {
     const href = hrefFor(signedNdas[0]);

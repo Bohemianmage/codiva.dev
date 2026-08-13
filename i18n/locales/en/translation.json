@@ -160,6 +160,8 @@
   "cases": {
     "title": "Success stories",
     "description": "Over a dozen products in production: LegalTech, hospitality, construction, retail, and corporate sites. These are some of the brands we work with and the technologies we use to ship them.",
+    "visitSite": "Visit {{name}}",
+    "technologiesOf": "Technologies used in {{name}}",
     "list": [
       {
         "name": "Inquilia",
@@ -667,7 +669,7 @@
     },
     "docs": {
       "materialsTitle": "Codiva materials",
-      "materialsHint": "Contracts, signed NDA (client-level), and files we share with you. Identity and proposal live under Proposal.",
+      "materialsHint": "Contracts, signed NDA (client-level), and files we share with you. The mutual NDA draft is generated in Ops. Identity and proposal live under Proposal.",
       "signed": "signed",
       "download": "Download",
       "empty": "No materials yet.",
@@ -754,7 +756,10 @@
       "accept": "Accept proposal",
       "acceptShort": "Accept",
       "reject": "Decline",
-      "other": "Other proposals"
+      "other": "Other proposals",
+      "hint": "This is the document Ops generates. If there is more than one version, choose it above.",
+      "fullscreen": "Full screen",
+      "interactive": "Quote"
     },
     "site": {
       "title": "Your site",
@@ -1356,7 +1361,9 @@
     "version": "Version {{version}}",
     "validUntil": "Valid until",
     "intermediary": "Intermediary",
-    "titleSuffix": "Codiva quote"
+    "titleSuffix": "Codiva quote",
+    "plan": "Delivery plan",
+    "weeks": "Wk. {{weeks}}"
   },
   "auth": {
     "emailRequired": "Enter your email.",

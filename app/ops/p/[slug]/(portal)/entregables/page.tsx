@@ -1,5 +1,6 @@
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { opsFileHref } from '@/lib/ops/storage';
+import { isCanvasKind } from '@/lib/ops/architecture';
 import { getT } from '@/i18n/locale';
 
 export default async function PortalDeliverablesPage({
@@ -18,9 +19,7 @@ export default async function PortalDeliverablesPage({
     .eq('visible_to_client', true)
     .order('sort_order', { ascending: true });
 
-  const operational = (deliverables ?? []).filter(
-    (d) => !['architecture', 'mvp', 'proposal'].includes(d.kind ?? 'other')
-  );
+  const operational = (deliverables ?? []).filter((d) => !isCanvasKind(d.kind));
 
   return (
     <div>

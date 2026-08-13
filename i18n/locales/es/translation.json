@@ -160,6 +160,8 @@
   "cases": {
     "title": "Casos de Éxito",
     "description": "Más de una docena de productos en producción: LegalTech, hospitalidad, construcción, retail y sitios corporativos. Estas son algunas de las marcas con las que trabajamos y las tecnologías que usamos para llevarlas a producción.",
+    "visitSite": "Visitar {{name}}",
+    "technologiesOf": "Tecnologías de {{name}}",
     "list": [
       {
         "name": "Inquilia",
@@ -667,7 +669,7 @@
     },
     "docs": {
       "materialsTitle": "Materiales de Codiva",
-      "materialsHint": "Contratos, NDA firmado (a nivel cliente) y archivos que compartimos contigo. La identidad y propuesta están en Propuesta.",
+      "materialsHint": "Contratos, NDA firmado (a nivel cliente) y archivos que compartimos contigo. El borrador del NDA mutuo se genera en Ops. La identidad y propuesta están en Propuesta.",
       "signed": "firmado",
       "download": "Descargar",
       "empty": "Sin materiales todavía.",
@@ -754,7 +756,10 @@
       "accept": "Aceptar propuesta",
       "acceptShort": "Aceptar",
       "reject": "Rechazar",
-      "other": "Otras propuestas"
+      "other": "Otras propuestas",
+      "hint": "Este es el documento que Ops genera. Si hay más de una versión, elige arriba.",
+      "fullscreen": "Pantalla completa",
+      "interactive": "Cotización"
     },
     "site": {
       "title": "Tu sitio",
@@ -1356,7 +1361,9 @@
     "version": "Versión {{version}}",
     "validUntil": "Válida hasta",
     "intermediary": "Intermediario",
-    "titleSuffix": "Cotización Codiva"
+    "titleSuffix": "Cotización Codiva",
+    "plan": "Plan de entregas",
+    "weeks": "Sem. {{weeks}}"
   },
   "auth": {
     "emailRequired": "Ingresa tu email.",
