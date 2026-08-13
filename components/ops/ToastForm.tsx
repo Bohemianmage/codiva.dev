@@ -11,6 +11,7 @@ type ToastFormProps = Omit<ComponentProps<'form'>, 'action'> & {
   action: ServerAction;
   success?: string;
   loading?: string;
+  confirmMessage?: string;
   children: ReactNode;
 };
 
@@ -22,6 +23,7 @@ export default function ToastForm({
   action,
   success,
   loading,
+  confirmMessage,
   children,
   ...formProps
 }: ToastFormProps) {
@@ -38,6 +40,7 @@ export default function ToastForm({
     <form
       {...formProps}
       action={async (formData) => {
+        if (confirmMessage && !window.confirm(confirmMessage)) return;
         const id = toast.loading(loadingLabel);
         try {
           await action(formData);

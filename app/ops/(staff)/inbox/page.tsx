@@ -3,7 +3,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
-import { updateInboxStatus, convertInboxToLead } from '@/lib/ops/actions';
+import { updateInboxStatus, convertInboxToLead, deleteInboxMessage } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 
@@ -31,6 +31,11 @@ export default async function InboxPage() {
             const result = await convertInboxToLead(m.id);
             const { redirectWithToast } = await import('@/lib/ops/toast');
             redirectWithToast(`/leads/${result.leadId}`, 'Lead creado desde inbox');
+          }
+
+          async function onDelete() {
+            'use server';
+            await deleteInboxMessage(m.id);
           }
 
           return (
@@ -71,6 +76,18 @@ export default async function InboxPage() {
                     </button>
                   </ToastForm>
                 )}
+                <ToastForm
+                  success="Eliminado"
+                  confirmMessage="¿Borrar este mensaje? No se puede deshacer."
+                  action={onDelete}
+                >
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                  >
+                    Borrar
+                  </button>
+                </ToastForm>
               </div>
             </article>
           );
