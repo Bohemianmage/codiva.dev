@@ -44,11 +44,11 @@
     "subtitle": "De la idea al producto en producción, con ritmo claro y comunicación directa con quien escribe el código.",
     "steps": [
       {
-        "title": "Discovery",
+        "title": "Descubrimiento",
         "description": "Entendemos tu operación, usuarios y restricciones. Definimos alcance, prioridades y arquitectura inicial."
       },
       {
-        "title": "Diseño y build",
+        "title": "Diseño y desarrollo",
         "description": "Diseñamos flujos y construimos en iteraciones cortas: frontend, backend, integraciones y paneles admin."
       },
       {

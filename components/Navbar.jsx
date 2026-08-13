@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Sling as Hamburger } from 'hamburger-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import CodivaWordmark from './CodivaWordmark';
@@ -33,6 +32,33 @@ const itemVariants = {
   hidden: { opacity: 0, y: -4 },
   visible: { opacity: 1, y: 0 },
 };
+
+function MenuToggle({ open, onToggle, label }) {
+  const bar =
+    'absolute left-0 h-0.5 w-full rounded-full bg-slate-800 transition duration-200 ease-out';
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-expanded={open}
+      aria-controls="mobile-menu"
+      className="relative flex h-7 w-7 shrink-0 items-center justify-center p-0 leading-none"
+    >
+      <span className="relative block h-3.5 w-[18px]" aria-hidden="true">
+        <span
+          className={`${bar} ${open ? 'top-1/2 -translate-y-1/2 rotate-45' : 'top-0'}`}
+        />
+        <span
+          className={`${bar} top-1/2 -translate-y-1/2 ${open ? 'scale-0 opacity-0' : ''}`}
+        />
+        <span
+          className={`${bar} ${open ? 'top-1/2 -translate-y-1/2 -rotate-45' : 'bottom-0'}`}
+        />
+      </span>
+    </button>
+  );
+}
 
 export default function Navbar({ variant = 'marketing' }) {
   const router = useRouter();
@@ -115,19 +141,25 @@ export default function Navbar({ variant = 'marketing' }) {
         initial={{ y: 0 }}
         animate={{ y: showNavbar ? 0 : -96 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="glass-panel pointer-events-auto relative z-50 mx-auto max-w-7xl rounded-2xl font-inter px-5 py-3 md:px-8 md:py-3.5"
+        className="glass-panel pointer-events-auto relative z-50 mx-auto flex h-14 max-w-7xl items-center rounded-2xl px-5 font-inter md:px-8"
       >
-      <div className="flex items-center justify-between">
+      <div className="flex w-full items-center justify-between">
         {/* Logo principal (click lleva al inicio) */}
         <motion.div
           onClick={goBrandHome}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="flex items-center space-x-2 cursor-pointer"
+          className="flex h-7 cursor-pointer items-center space-x-2"
         >
-          <Image src="/logo.svg" alt="Codiva logo" width={28} height={28} />
-          <CodivaWordmark size="md" variant="default" animate active />
+          <Image src="/logo.svg" alt="Codiva logo" width={28} height={28} className="block h-7 w-7" />
+          <CodivaWordmark
+            size="md"
+            variant="default"
+            animate
+            active
+            className="leading-none [&_span]:leading-none"
+          />
         </motion.div>
 
         {/* Navegación desktop */}
@@ -158,19 +190,11 @@ export default function Navbar({ variant = 'marketing' }) {
         {/* Mobile: idioma + hamburguesa */}
         <div className="flex h-7 items-center gap-3 md:hidden">
           <LanguageSwitcher />
-          <div className="relative h-7 w-7 shrink-0">
-            <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 scale-[0.583]">
-              <Hamburger
-                toggled={menuOpen}
-                toggle={setMenuOpen}
-                size={32}
-                color="#1E293B"
-                label={t('a11y.menu')}
-                rounded
-                hideOutline
-              />
-            </div>
-          </div>
+          <MenuToggle
+            open={menuOpen}
+            onToggle={() => setMenuOpen((open) => !open)}
+            label={t('a11y.menu')}
+          />
         </div>
       </div>
 
