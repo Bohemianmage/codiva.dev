@@ -1,28 +1,44 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { CaseStudyLogo } from './CaseStudyLogo';
 import { getLogoFrame, isWideLogo } from '../utils/logoFrame';
 import useMarqueeCopies from '../hooks/useMarqueeCopies';
 import useMarqueePause from '../hooks/useMarqueePause';
 
-const AUTO_MS = 4800;
-const SWIPE_PX = 44;
 const MARQUEE_GAP = 'gap-6';
+const PIN_MS = 2800;
+const SYNC_MS = 120;
+
+function nameClosestToCenter(container) {
+  const root = container.getBoundingClientRect();
+  const mid = root.left + root.width / 2;
+  let bestName = null;
+  let bestDist = Infinity;
+  container.querySelectorAll('[data-case-name]').forEach((el) => {
+    const box = el.getBoundingClientRect();
+    if (box.right < root.left || box.left > root.right) return;
+    const dist = Math.abs(box.left + box.width / 2 - mid);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestName = el.getAttribute('data-case-name');
+    }
+  });
+  return bestName;
+}
 
 export default function CaseStudiesMobile({ logos }) {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const [index, setIndex] = useState(0);
-  const [timerNonce, setTimerNonce] = useState(0);
-  const pausedRef = useRef(false);
-  const touchRef = useRef({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  const pinnedUntilRef = useRef(0);
   const logosMarquee = useMarqueePause();
   const logosCopies = useMarqueeCopies(logos, MARQUEE_GAP);
+  const inView = useInView(containerRef, { amount: 0.2 });
 
-  const count = logos.length;
   const project = logos[index];
   const indexByName = useMemo(() => {
     const map = new Map();
@@ -30,45 +46,28 @@ export default function CaseStudiesMobile({ logos }) {
     return map;
   }, [logos]);
 
-  const goTo = useCallback(
-    (next) => {
-      if (!count) return;
-      setIndex(((next % count) + count) % count);
-      setTimerNonce((n) => n + 1);
-    },
-    [count]
-  );
-
   useEffect(() => {
-    if (reduceMotion || count < 2) return undefined;
-    const id = setInterval(() => {
-      if (pausedRef.current) return;
-      setIndex((i) => (i + 1) % count);
-    }, AUTO_MS);
-    return () => clearInterval(id);
-  }, [count, reduceMotion, timerNonce]);
+    const container = containerRef.current;
+    if (!container || !inView || indexByName.size === 0) return undefined;
 
-  const onTouchStart = (event) => {
-    pausedRef.current = true;
-    touchRef.current = {
-      x: event.changedTouches[0].clientX,
-      y: event.changedTouches[0].clientY,
+    const sync = () => {
+      if (Date.now() < pinnedUntilRef.current) return;
+      const name = nameClosestToCenter(container);
+      const next = name ? indexByName.get(name) : undefined;
+      if (next == null) return;
+      setIndex((current) => (current === next ? current : next));
     };
-  };
 
-  const onTouchEnd = (event) => {
-    const dx = event.changedTouches[0].clientX - touchRef.current.x;
-    const dy = event.changedTouches[0].clientY - touchRef.current.y;
-    if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
-      goTo(index + (dx < 0 ? 1 : -1));
-    }
-    pausedRef.current = false;
-  };
+    sync();
+    const id = window.setInterval(sync, SYNC_MS);
+    return () => window.clearInterval(id);
+  }, [inView, indexByName, logosCopies.copyCount]);
 
   const selectByName = (name) => {
     const next = indexByName.get(name);
     if (next == null) return;
-    goTo(next);
+    setIndex(next);
+    pinnedUntilRef.current = Date.now() + PIN_MS;
   };
 
   if (!project) return null;
@@ -77,6 +76,7 @@ export default function CaseStudiesMobile({ logos }) {
     <div className="flex flex-col items-center">
       <div
         ref={(node) => {
+          containerRef.current = node;
           logosCopies.containerRef.current = node;
         }}
         className="relative w-full overflow-x-auto scrollbar-hidden px-1 touch-pan-x overscroll-x-contain"
@@ -95,8 +95,7 @@ export default function CaseStudiesMobile({ logos }) {
                 className="flex flex-shrink-0 items-center justify-center"
                 style={{
                   height: '3.5rem',
-                  minWidth:
-                    isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
+                  minWidth: isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
                 }}
               >
                 <CaseStudyLogo
@@ -122,6 +121,7 @@ export default function CaseStudiesMobile({ logos }) {
               <button
                 key={key}
                 type="button"
+                data-case-name={item.name}
                 tabIndex={interactive ? 0 : -1}
                 aria-hidden={!interactive}
                 aria-label={interactive ? item.name : undefined}
@@ -132,8 +132,7 @@ export default function CaseStudiesMobile({ logos }) {
                 }`}
                 style={{
                   height: '3.5rem',
-                  minWidth:
-                    isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
+                  minWidth: isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
                 }}
               >
                 <CaseStudyLogo
@@ -147,11 +146,7 @@ export default function CaseStudiesMobile({ logos }) {
         </div>
       </div>
 
-      <div
-        className="mt-6 w-full"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
+      <div className="mt-6 w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={project.name}

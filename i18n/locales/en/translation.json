@@ -1028,6 +1028,11 @@
       "ready": "Done",
       "saving": "Saving…"
     },
+    "confirm": {
+      "title": "Confirm",
+      "cancel": "Cancel",
+      "ok": "Confirm"
+    },
     "inbox": {
       "filterAll": "All",
       "filterContact": "Contact",

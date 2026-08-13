@@ -153,6 +153,8 @@ export default async function InboxPage({
                   )}
                   <ToastForm
                     success={t('ops.inbox.deleted')}
+                    confirmTitle={t('ops.inbox.delete')}
+                    confirmLabel={t('ops.inbox.delete')}
                     confirmMessage={t('ops.inbox.deleteConfirm')}
                     action={onDelete}
                   >
