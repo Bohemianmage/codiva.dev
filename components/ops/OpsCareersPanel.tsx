@@ -28,6 +28,13 @@ import {
   type HuntConsideration,
 } from '@/lib/careers/hunt/score';
 import { disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
+import {
+  attemptsSharingOrigin,
+  deviceLabelFromUserAgent,
+  distinctOriginEmails,
+  originFingerprint,
+  sharedOriginAttemptCount,
+} from '@/lib/careers/assessments/origin';
 import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 
@@ -86,6 +93,8 @@ export type OpsJobAttemptRow = {
   completed_at: string | null;
   timezone: string | null;
   attempt_number: number | null;
+  ip_hash?: string | null;
+  user_agent?: string | null;
 };
 
 function postingTone(status: string) {
@@ -170,12 +179,14 @@ export default async function OpsCareersPanel({
   attempts = [],
   huntReports = [],
   signal = '',
+  origin = '',
 }: {
   postings: OpsJobPostingRow[];
   applications: OpsJobApplicationRow[];
   attempts?: OpsJobAttemptRow[];
   huntReports?: OpsHuntReportRow[];
   signal?: string;
+  origin?: string;
 }) {
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
@@ -203,9 +214,26 @@ export default async function OpsCareersPanel({
   const appliedWithTest = applications.filter((row) => row.assessment_attempt_id).length;
   const signalFilter =
     signal === 'strong' || signal === 'solid' || signal === 'minimum' || signal === 'none' ? signal : '';
+  const originFilter = origin === 'shared';
+  const sharedOriginCount = sharedOriginAttemptCount(attempts);
+  const originSize = new Map<string, number>();
+  for (const row of attempts) {
+    const hash = String(row.ip_hash || '').trim();
+    if (!hash) continue;
+    originSize.set(hash, (originSize.get(hash) || 0) + 1);
+  }
 
   const attemptsRanked = [...attempts]
     .sort((a, b) => {
+      const aHash = String(a.ip_hash || '').trim();
+      const bHash = String(b.ip_hash || '').trim();
+      const aShared = (originSize.get(aHash) || 0) >= 2 ? 1 : 0;
+      const bShared = (originSize.get(bHash) || 0) >= 2 ? 1 : 0;
+      if (originFilter && aShared !== bShared) return bShared - aShared;
+      if (originFilter && aShared && aHash && aHash === bHash) {
+        return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+      }
+      if (originFilter && aShared && bShared && aHash !== bHash) return aHash.localeCompare(bHash);
       const ha = huntForCandidate(huntReports, a.email, disciplineFromCatalogKey(a.catalog_key));
       const hb = huntForCandidate(huntReports, b.email, disciplineFromCatalogKey(b.catalog_key));
       const diff = considerationRank(hb.score.consideration) - considerationRank(ha.score.consideration);
@@ -213,6 +241,7 @@ export default async function OpsCareersPanel({
       return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
     })
     .filter((row) => {
+      if (originFilter && (originSize.get(String(row.ip_hash || '').trim()) || 0) < 2) return false;
       if (!signalFilter) return true;
       return (
         huntForCandidate(huntReports, row.email, disciplineFromCatalogKey(row.catalog_key)).score
@@ -233,7 +262,14 @@ export default async function OpsCareersPanel({
       return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
     });
 
-  const signalHref = (value: string) => (value ? `/team?tab=bolsa&signal=${value}` : '/team?tab=bolsa');
+  const bolsaHref = ({ signalValue, originValue }: { signalValue?: string; originValue?: string }) => {
+    const params = new URLSearchParams({ tab: 'bolsa' });
+    const nextSignal = signalValue === undefined ? signalFilter : signalValue;
+    const nextOrigin = originValue === undefined ? (originFilter ? 'shared' : '') : originValue;
+    if (nextSignal) params.set('signal', nextSignal);
+    if (nextOrigin) params.set('origin', nextOrigin);
+    return `/team?${params.toString()}`;
+  };
 
 
   return (
@@ -434,7 +470,7 @@ export default async function OpsCareersPanel({
           ].map(([value, label]) => (
             <Link
               key={value || 'all'}
-              href={signalHref(value)}
+              href={bolsaHref({ signalValue: value })}
               className={
                 signalFilter === value
                   ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
@@ -444,13 +480,24 @@ export default async function OpsCareersPanel({
               {label}
             </Link>
           ))}
+          <Link
+            href={bolsaHref({ originValue: originFilter ? '' : 'shared' })}
+            className={
+              originFilter
+                ? 'rounded-full bg-amber-700 px-3 py-1 text-xs font-semibold text-white'
+                : 'rounded-full border border-amber-300 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50'
+            }
+          >
+            {t('ops.careers.originShared')}
+          </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-5">
           {[
             [t('ops.careers.started'), started],
             [t('ops.careers.finished'), completed],
             [t('ops.careers.passed'), passed],
             [t('ops.careers.appliedWithTest'), appliedWithTest],
+            [t('ops.careers.originShared'), sharedOriginCount],
           ].map(([label, value]) => (
             <div key={String(label)} className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
@@ -471,8 +518,20 @@ export default async function OpsCareersPanel({
                 row.email,
                 disciplineFromCatalogKey(row.catalog_key)
               );
+              const peers = attemptsSharingOrigin(attempts, row.ip_hash).filter((peer) => peer.id !== row.id);
+              const fingerprint = originFingerprint(row.ip_hash);
+              const identities = distinctOriginEmails([row, ...peers]);
+              const device = deviceLabelFromUserAgent(row.user_agent);
+              const namedPeers = peers.filter(
+                (peer, index, list) => list.findIndex((p) => p.full_name === peer.full_name) === index
+              ).slice(0, 3);
               return (
-                <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
+                <li
+                  key={row.id}
+                  className={`rounded-xl border bg-white p-4 ${
+                    peers.length ? 'border-amber-300' : 'border-zinc-200'
+                  }`}
+                >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">{row.full_name}</p>
@@ -480,6 +539,7 @@ export default async function OpsCareersPanel({
                       <p className="mt-1 text-xs text-zinc-400">
                         {posting?.title || t('ops.careers.vacancy')} · {t('ops.careers.attemptN', { n: row.attempt_number ?? 1 })} · {formatDate(row.started_at)}
                         {row.timezone ? ` · ${row.timezone}` : ''}
+                        {device ? ` · ${device}` : ''}
                         {row.duration_ms ? ` · ${formatDuration(row.duration_ms)}` : ''}
                         {row.blur_count ? ` · ${t('ops.careers.blurs', { count: row.blur_count })}` : ''}
                         {hunt.total
@@ -488,6 +548,34 @@ export default async function OpsCareersPanel({
                             }`
                           : ''}
                       </p>
+                      {peers.length ? (
+                        <p className="mt-1 text-xs text-amber-800">
+                          {t('ops.careers.sameOrigin', { count: peers.length + 1 })}
+                          {identities > 1
+                            ? ` · ${t('ops.careers.sameOriginIdentities', { count: identities })}`
+                            : ''}
+                          {fingerprint ? ` · ${t('ops.careers.originCode', { code: fingerprint })}` : ''}
+                          {namedPeers.length ? (
+                            <>
+                              {' · '}
+                              {t('ops.careers.originAlso')}
+                              {': '}
+                              {namedPeers.map((peer, index) => (
+                                  <span key={peer.id}>
+                                    {index > 0 ? ', ' : ''}
+                                    <Link href={`/team/intentos/${peer.id}`} className="underline decoration-amber-400 hover:text-amber-950">
+                                      {peer.full_name}
+                                    </Link>
+                                  </span>
+                                ))}
+                            </>
+                          ) : null}
+                        </p>
+                      ) : fingerprint ? (
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {t('ops.careers.originCode', { code: fingerprint })}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-col items-end gap-1">
                     <StatusBadge
@@ -498,6 +586,12 @@ export default async function OpsCareersPanel({
                       }
                       tone={row.passed ? 'success' : row.status === 'started' ? 'warning' : 'neutral'}
                     />
+                    {peers.length ? (
+                      <StatusBadge
+                        label={t('ops.careers.sameOrigin', { count: peers.length + 1 })}
+                        tone="warning"
+                      />
+                    ) : null}
                     {hunt.score.consideration !== 'none' ? (
                       <StatusBadge
                         label={t('ops.careers.consideration', {

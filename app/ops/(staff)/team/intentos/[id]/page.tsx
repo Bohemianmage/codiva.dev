@@ -14,6 +14,11 @@ import {
 import { summarizeHuntTrail } from '@/lib/careers/hunt/trail';
 import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
+import {
+  deviceLabelFromUserAgent,
+  distinctOriginEmails,
+  originFingerprint,
+} from '@/lib/careers/assessments/origin';
 import { labelsFor } from '@/lib/ops/labels';
 import { dateLocale } from '@/i18n/config';
 import { getT, type Translator } from '@/i18n/locale';
@@ -53,14 +58,14 @@ export default async function AssessmentAttemptPage({
   const { data: attempt } = await supabase
     .from('ops_job_assessment_attempts')
     .select(
-      'id, job_posting_id, catalog_key, full_name, email, status, attempt_number, started_at, completed_at, expires_at, time_limit_sec, question_ids, option_orders, answers, score_correct, score_total, score_pct, passed, duration_ms, blur_count, timezone, user_agent'
+      'id, job_posting_id, catalog_key, full_name, email, status, attempt_number, started_at, completed_at, expires_at, time_limit_sec, question_ids, option_orders, answers, score_correct, score_total, score_pct, passed, duration_ms, blur_count, timezone, user_agent, ip_hash'
     )
     .eq('id', id)
     .maybeSingle();
 
   if (!attempt) notFound();
 
-  const [{ data: posting }, { data: events }, { data: application }, { data: huntByAttempt }, { data: huntByEmail }, { data: huntTrail }] =
+  const [{ data: posting }, { data: events }, { data: application }, { data: huntByAttempt }, { data: huntByEmail }, { data: huntTrail }, { data: sameOrigin }] =
     await Promise.all([
     supabase.from('ops_job_postings').select('id, title, slug').eq('id', attempt.job_posting_id).maybeSingle(),
     supabase
@@ -94,6 +99,28 @@ export default async function AssessmentAttemptPage({
       .eq('assessment_attempt_id', attempt.id)
       .order('created_at', { ascending: true })
       .limit(200),
+    attempt.ip_hash
+      ? supabase
+          .from('ops_job_assessment_attempts')
+          .select(
+            'id, catalog_key, full_name, email, status, score_pct, passed, started_at, timezone, user_agent'
+          )
+          .eq('ip_hash', attempt.ip_hash)
+          .neq('id', attempt.id)
+          .order('started_at', { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] as {
+          id: string;
+          catalog_key: string;
+          full_name: string;
+          email: string;
+          status: string;
+          score_pct: number | null;
+          passed: boolean | null;
+          started_at: string;
+          timezone: string | null;
+          user_agent: string | null;
+        }[] }),
   ]);
 
   const catalog = getAssessmentCatalog(attempt.catalog_key);
@@ -143,6 +170,10 @@ export default async function AssessmentAttemptPage({
     events: huntTrail ?? [],
     reports: huntReports,
   });
+  const fingerprint = originFingerprint(attempt.ip_hash);
+  const device = deviceLabelFromUserAgent(attempt.user_agent);
+  const originPeers = sameOrigin ?? [];
+  const originIdentities = distinctOriginEmails([{ email: attempt.email }, ...originPeers]);
 
   const timeOnQuestion = new Map<string, number>();
   let lastView: { id: string; at: number } | null = null;
@@ -229,6 +260,8 @@ export default async function AssessmentAttemptPage({
           <p className="mt-1 text-sm text-zinc-800">{attempt.email}</p>
           <p className="mt-1 text-xs text-zinc-500">
             {attempt.timezone || t('ops.attempt.noTimezone')}
+            {device ? ` · ${t('ops.attempt.device', { device })}` : ''}
+            {fingerprint ? ` · ${t('ops.attempt.originCode', { code: fingerprint })}` : ''}
             {attempt.blur_count
               ? ` · ${t('ops.attempt.blurs', { count: attempt.blur_count })}`
               : ` · ${t('ops.attempt.noBlurs')}`}
@@ -245,6 +278,68 @@ export default async function AssessmentAttemptPage({
               : ''}
           </p>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold">{t('ops.attempt.originTitle')}</h2>
+        <p className="text-sm text-zinc-500">{t('ops.attempt.originHint')}</p>
+        {!fingerprint ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.attempt.originEmpty')}
+          </p>
+        ) : !originPeers.length ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.attempt.originCode', { code: fingerprint })} · {t('ops.attempt.originAlone')}
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-amber-800">
+              {t('ops.attempt.originCode', { code: fingerprint })}
+              {' · '}
+              {t('ops.attempt.originCount', { count: originPeers.length })}
+              {originIdentities > 1
+                ? ` · ${t('ops.careers.sameOriginIdentities', { count: originIdentities })}`
+                : ''}
+            </p>
+            <ul className="space-y-3">
+              {originPeers.map((row) => {
+                const craft = disciplineFromCatalogKey(row.catalog_key);
+                const peerDevice = deviceLabelFromUserAgent(row.user_agent);
+                return (
+                  <li key={row.id} className="rounded-xl border border-amber-300 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{row.full_name}</p>
+                        <p className="text-sm text-zinc-500">{row.email}</p>
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {craft ? DISCIPLINE_LABELS[craft] : row.catalog_key}
+                          {' · '}
+                          {formatDate(row.started_at)}
+                          {row.timezone ? ` · ${row.timezone}` : ''}
+                          {peerDevice ? ` · ${peerDevice}` : ''}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium text-zinc-800">
+                        {row.passed
+                          ? t('ops.attempt.passed')
+                          : row.status === 'completed'
+                            ? t('ops.attempt.failed')
+                            : row.status}
+                        {row.score_pct != null ? ` · ${row.score_pct}%` : ''}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/team/intentos/${row.id}`}
+                      className="mt-3 inline-flex rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.viewProgress')}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </section>
 
       <section className="space-y-3">
