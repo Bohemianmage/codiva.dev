@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logActivity } from '@/lib/ops/activity';
 import { htmlToPdf } from '@/lib/ops/html-to-pdf';
 import { can, type StaffRole } from '@/lib/ops/permissions';
 import { requestAuditFromHeaders } from '@/lib/ops/request-audit';
