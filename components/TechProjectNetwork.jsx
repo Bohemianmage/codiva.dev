@@ -13,6 +13,131 @@ const INNER_RADIUS_RATIO = 0.58;
 /** Rota la distribución para no concentrar wordmarks anchos en la misma zona. */
 const PROJECT_ANGLE_OFFSET = Math.PI / 6;
 
+const PILL_HEIGHT = 32;
+const PILL_PAD_X = 20;
+const PILL_GAP = 10;
+const TECH_OUTER_RATIO = 0.98;
+const TECH_INNER_RATIO = 0.78;
+const COLLISION_PASSES = 8;
+
+let measureCtx;
+
+function shuffle(list) {
+  return [...list].sort(() => Math.random() - 0.5);
+}
+
+function ellipseCircumference(rx, ry) {
+  const h = ((rx - ry) ** 2) / ((rx + ry) ** 2 || 1);
+  return Math.PI * (rx + ry) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+}
+
+/** Punto a una fracción del perímetro (evita el agrupamiento de ángulos iguales). */
+function pointOnEllipse(cx, cy, rx, ry, t) {
+  const target = ((t % 1) + 1) % 1;
+  const steps = 720;
+  const circ = ellipseCircumference(rx, ry);
+  const goal = target * circ;
+  let acc = 0;
+  let prevX = rx;
+  let prevY = 0;
+  for (let i = 1; i <= steps; i++) {
+    const theta = (2 * Math.PI * i) / steps;
+    const x = rx * Math.cos(theta);
+    const y = ry * Math.sin(theta);
+    const d = Math.hypot(x - prevX, y - prevY);
+    if (acc + d >= goal) {
+      const u = d === 0 ? 0 : (goal - acc) / d;
+      return {
+        x: cx + prevX + u * (x - prevX),
+        y: cy + prevY + u * (y - prevY),
+      };
+    }
+    acc += d;
+    prevX = x;
+    prevY = y;
+  }
+  return { x: cx + rx, y: cy };
+}
+
+function measureLabelWidth(text) {
+  if (typeof document === 'undefined') return Math.ceil(text.length * 7.2 + PILL_PAD_X);
+  if (!measureCtx) {
+    measureCtx = document.createElement('canvas').getContext('2d');
+  }
+  measureCtx.font = '12px ui-sans-serif, system-ui, sans-serif, "Segoe UI", Roboto, Arial';
+  return Math.ceil(measureCtx.measureText(text).width) + PILL_PAD_X;
+}
+
+function boxesOverlap(a, b, gap = PILL_GAP) {
+  return (
+    Math.abs(a.x - b.x) < (a.w + b.w) / 2 + gap &&
+    Math.abs(a.y - b.y) < (a.h + b.h) / 2 + gap
+  );
+}
+
+function splitByLength(techs) {
+  const sorted = [...techs].sort((a, b) => b.length - a.length);
+  const outer = [];
+  const inner = [];
+  sorted.forEach((tech, i) => {
+    (i % 2 === 0 ? outer : inner).push(tech);
+  });
+  return { outer: shuffle(outer), inner: shuffle(inner) };
+}
+
+function placeRing(names, cx, cy, rx, ry, tOffset) {
+  const n = names.length;
+  if (n === 0) return [];
+  return names.map((name, idx) => {
+    const w = measureLabelWidth(name);
+    const t = (idx + tOffset) / n;
+    const pos = pointOnEllipse(cx, cy, rx, ry, t);
+    return {
+      name,
+      w,
+      h: PILL_HEIGHT,
+      ringRx: rx,
+      ringRy: ry,
+      t,
+      x: pos.x,
+      y: pos.y,
+    };
+  });
+}
+
+function reproject(tech, cx, cy) {
+  const pos = pointOnEllipse(cx, cy, tech.ringRx, tech.ringRy, tech.t);
+  return { ...tech, x: pos.x, y: pos.y };
+}
+
+function resolveCollisions(techs, projects, cx, cy) {
+  const next = techs.map((t) => ({ ...t }));
+  const obstacles = projects.map((p) => ({ x: p.x, y: p.y, w: p.width, h: p.height }));
+
+  for (let pass = 0; pass < COLLISION_PASSES; pass++) {
+    for (let i = 0; i < next.length; i++) {
+      for (const obs of obstacles) {
+        if (!boxesOverlap(next[i], obs, 6)) continue;
+        next[i].t += 0.012 * (i % 2 === 0 ? 1 : -1);
+        next[i] = reproject(next[i], cx, cy);
+      }
+      for (let j = i + 1; j < next.length; j++) {
+        if (!boxesOverlap(next[i], next[j])) continue;
+        const push = 0.008;
+        let dt = next[j].t - next[i].t;
+        if (dt > 0.5) dt -= 1;
+        if (dt < -0.5) dt += 1;
+        const dir = dt >= 0 ? -1 : 1;
+        next[i].t += push * dir;
+        next[j].t -= push * dir;
+        next[i] = reproject(next[i], cx, cy);
+        next[j] = reproject(next[j], cx, cy);
+      }
+    }
+  }
+  return next;
+}
+
 export default function TechProjectNetwork() {
   const containerRef = useRef(null);
   const intervalRef = useRef(null);
@@ -36,46 +161,85 @@ export default function TechProjectNetwork() {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  const centerX = dimensions.width / 2;
-  const centerY = dimensions.height / 2;
-  const outerRadiusX = centerX * 0.9;
-  const outerRadiusY = centerY * 0.8;
-  const innerRadiusX = outerRadiusX * INNER_RADIUS_RATIO;
-  const innerRadiusY = outerRadiusY * INNER_RADIUS_RATIO;
-
   const shuffledTechList = useMemo(() => {
-    const techListRaw = Array.from(new Set(casesMeta.flatMap(c => c.tech)));
-    return techListRaw.sort(() => Math.random() - 0.5);
+    const techListRaw = Array.from(new Set(casesMeta.flatMap((c) => c.tech)));
+    return shuffle(techListRaw);
   }, []);
 
-  const allItems = useMemo(() => [
-    ...casesMeta.map(c => ({ type: 'project', name: c.name })),
-    ...shuffledTechList.map(t => ({ type: 'tech', name: t })),
-  ], [shuffledTechList]);
+  const techRings = useMemo(() => splitByLength(shuffledTechList), [shuffledTechList]);
 
-  const techPositions = shuffledTechList.map((tech, idx) => ({
-    name: tech,
-    x: centerX + outerRadiusX * Math.cos((2 * Math.PI * idx) / shuffledTechList.length),
-    y: centerY + outerRadiusY * Math.sin((2 * Math.PI * idx) / shuffledTechList.length),
-  }));
+  const allItems = useMemo(
+    () => [
+      ...casesMeta.map((c) => ({ type: 'project', name: c.name })),
+      ...shuffledTechList.map((t) => ({ type: 'tech', name: t })),
+    ],
+    [shuffledTechList]
+  );
 
-  const projectPositions = casesMeta.map((p, idx) => {
-    const frame = getLogoFrame(p);
-    const width = frame.width * NETWORK_LOGO_SCALE;
-    const height = frame.height * NETWORK_LOGO_SCALE;
-    const n = casesMeta.length;
-    const angle = (2 * Math.PI * idx) / n + PROJECT_ANGLE_OFFSET;
+  const layout = useMemo(() => {
+    const { width, height } = dimensions;
+    if (!width || !height) {
+      return { techPositions: [], projectPositions: [], rings: [] };
+    }
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const longest = shuffledTechList.reduce((m, name) => Math.max(m, measureLabelWidth(name)), 80);
+    const padX = longest / 2 + 8;
+    const padY = PILL_HEIGHT / 2 + 8;
+    const outerRadiusX = Math.max(40, centerX - padX);
+    const outerRadiusY = Math.max(40, centerY - padY);
+    const innerRadiusX = outerRadiusX * INNER_RADIUS_RATIO;
+    const innerRadiusY = outerRadiusY * INNER_RADIUS_RATIO;
+
+    const projectPositions = casesMeta.map((p, idx) => {
+      const frame = getLogoFrame(p);
+      const logoWidth = frame.width * NETWORK_LOGO_SCALE;
+      const logoHeight = frame.height * NETWORK_LOGO_SCALE;
+      const n = casesMeta.length;
+      const angle = (2 * Math.PI * idx) / n + PROJECT_ANGLE_OFFSET;
+      return {
+        name: p.name,
+        logo: p.logo,
+        url: p.url,
+        width: logoWidth,
+        height: logoHeight,
+        lineOffset: Math.max(logoWidth, logoHeight) / 2,
+        x: centerX + innerRadiusX * Math.cos(angle),
+        y: centerY + innerRadiusY * Math.sin(angle),
+      };
+    });
+
+    const outerTechs = placeRing(
+      techRings.outer,
+      centerX,
+      centerY,
+      outerRadiusX * TECH_OUTER_RATIO,
+      outerRadiusY * TECH_OUTER_RATIO,
+      0
+    );
+    const innerTechs = placeRing(
+      techRings.inner,
+      centerX,
+      centerY,
+      outerRadiusX * TECH_INNER_RATIO,
+      outerRadiusY * TECH_INNER_RATIO,
+      0.5
+    );
+
     return {
-      name: p.name,
-      logo: p.logo,
-      url: p.url,
-      width,
-      height,
-      lineOffset: Math.max(width, height) / 2,
-      x: centerX + innerRadiusX * Math.cos(angle),
-      y: centerY + innerRadiusY * Math.sin(angle),
+      centerX,
+      centerY,
+      techPositions: resolveCollisions([...outerTechs, ...innerTechs], projectPositions, centerX, centerY),
+      projectPositions,
+      rings: [
+        { rx: outerRadiusX * TECH_OUTER_RATIO, ry: outerRadiusY * TECH_OUTER_RATIO },
+        { rx: outerRadiusX * TECH_INNER_RATIO, ry: outerRadiusY * TECH_INNER_RATIO },
+      ],
     };
-  });
+  }, [dimensions, shuffledTechList, techRings]);
+
+  const { techPositions, projectPositions, rings, centerX, centerY } = layout;
 
   const applyOffset = (from, to, distance) => {
     const dx = to.x - from.x;
@@ -128,10 +292,23 @@ export default function TechProjectNetwork() {
       className="relative w-full min-h-[920px] h-[920px] select-none"
     >
       <svg width="100%" height="100%" className="absolute top-0 left-0 z-0">
+        {rings.map((ring) => (
+          <ellipse
+            key={`${ring.rx}-${ring.ry}`}
+            cx={centerX || 0}
+            cy={centerY || 0}
+            rx={ring.rx}
+            ry={ring.ry}
+            fill="none"
+            stroke="#104E4E"
+            strokeOpacity="0.07"
+            strokeWidth="1"
+          />
+        ))}
         {casesMeta.flatMap((project) => {
-          const projPos = projectPositions.find(p2 => p2.name === project.name);
-          return project.tech.map(tech => {
-            const techPos = techPositions.find(t => t.name === tech);
+          const projPos = projectPositions.find((p2) => p2.name === project.name);
+          return project.tech.map((tech) => {
+            const techPos = techPositions.find((t) => t.name === tech);
             if (!projPos || !techPos) return null;
 
             const logoOffset = applyOffset(projPos, techPos, projPos.lineOffset);
@@ -165,30 +342,30 @@ export default function TechProjectNetwork() {
       {techPositions.map((tech, idx) => {
         const isHighlighted =
           (hoveredProject &&
-            casesMeta.find(c => c.name === hoveredProject)?.tech.includes(tech.name)) ||
+            casesMeta.find((c) => c.name === hoveredProject)?.tech.includes(tech.name)) ||
           hoveredTech === tech.name;
 
         return (
           <motion.div
             key={tech.name}
-            className="absolute text-xs rounded-full border border-codiva-secondary whitespace-nowrap"
+            className="absolute text-xs leading-none rounded-full border border-codiva-secondary whitespace-nowrap shadow-sm"
             style={{
               left: tech.x,
               top: tech.y,
-              translateX: '-50%',
-              translateY: '-50%',
-              height: '40px',
-              paddingLeft: '12px',
-              paddingRight: '12px',
+              x: '-50%',
+              y: '-50%',
+              height: `${PILL_HEIGHT}px`,
+              paddingLeft: '10px',
+              paddingRight: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: isHighlighted ? '#104E4E' : '#E5E7EB',
               color: isHighlighted ? '#FFFFFF' : '#6A757A',
-              zIndex: 10,
+              zIndex: isHighlighted ? 25 : 10,
             }}
             transition={{ duration: 0.6, delay: idx * 0.05 }}
-            whileHover={{ scale: 1.2 }}
+            whileHover={{ scale: 1.08 }}
             onMouseEnter={() => handleMouseEnterTech(tech.name)}
             onMouseLeave={handleMouseLeave}
           >
