@@ -7,11 +7,23 @@ import { listVisibleProjectIds, requireStaff } from '@/lib/ops/auth';
 import { buildFinanceSummary, type FinanceFilters } from '@/lib/ops/finance';
 import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
+import { loadInboundItems, type InboundKind } from '@/lib/ops/inbound';
 import { getT } from '@/i18n/locale';
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0] || undefined;
   return value || undefined;
+}
+
+function inboundKindLabel(kind: InboundKind, t: Awaited<ReturnType<typeof getT>>) {
+  const keys: Record<InboundKind, string> = {
+    contact: 'ops.inbox.kindContact',
+    lead: 'ops.inbox.kindLead',
+    ticket: 'ops.inbox.kindTicket',
+    application: 'ops.inbox.kindApplication',
+    hunt: 'ops.inbox.kindHunt',
+  };
+  return t(keys[kind]);
 }
 
 export default async function DashboardPage({
@@ -66,7 +78,7 @@ export default async function DashboardPage({
 
   const [
     { data: leads },
-    { data: inbox },
+    inbound,
     { data: tickets },
     { data: projects },
     { data: financeProjects },
@@ -82,14 +94,11 @@ export default async function DashboardPage({
           .order('created_at', { ascending: false })
           .limit(5)
       : Promise.resolve({ data: [] as never[] }),
-    showCommercial
-      ? supabase
-          .from('inbox_messages')
-          .select('id, name, email, status, created_at')
-          .eq('status', 'unread')
-          .order('created_at', { ascending: false })
-          .limit(5)
-      : Promise.resolve({ data: [] as never[] }),
+    loadInboundItems({
+      supabase,
+      role: staff.role,
+      maxItems: 5,
+    }),
     supabase
       .from('tickets')
       .select('id, title, priority, status, created_at')
@@ -205,25 +214,27 @@ export default async function DashboardPage({
           </section>
         )}
 
-        {showCommercial && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">Inbox sin leer</h2>
-              <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
-                Ver inbox
-              </Link>
-            </div>
-            <ul className="space-y-3">
-              {(inbox ?? []).map((m) => (
-                <li key={m.id} className="text-sm">
-                  <p className="font-medium">{m.name}</p>
-                  <p className="truncate text-zinc-500">{m.email}</p>
-                </li>
-              ))}
-              {!inbox?.length && <p className="text-sm text-zinc-500">Inbox al día</p>}
-            </ul>
-          </section>
-        )}
+        <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold">{t('ops.inbox.pending')}</h2>
+            <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
+              {t('ops.inbox.viewInbox')}
+            </Link>
+          </div>
+          <ul className="space-y-3">
+            {inbound.map((item) => (
+              <li key={item.key} className="text-sm">
+                <Link href={item.href} className="font-medium hover:text-codiva-primary">
+                  {item.title}
+                </Link>
+                <p className="truncate text-zinc-500">
+                  {inboundKindLabel(item.kind, t)} · {item.subtitle}
+                </p>
+              </li>
+            ))}
+            {!inbound.length && <p className="text-sm text-zinc-500">{t('ops.inbox.caughtUp')}</p>}
+          </ul>
+        </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">

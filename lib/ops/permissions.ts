@@ -92,7 +92,7 @@ export function canAny(role: string, capabilities: Capability[]): boolean {
 export const NAV_CAPABILITY: Record<string, Capability | null> = {
   '/dashboard': null,
   '/leads': 'leads',
-  '/inbox': 'inbox',
+  '/inbox': null,
   '/projects': null,
   '/workload': 'workload',
   '/organizations': 'organizations',

@@ -220,6 +220,8 @@ export async function updateJobApplicationStatus(applicationId: string, formData
   });
 
   revalidatePath('/team');
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }
 
 export async function createPersonnelOfferFromApplication(applicationId: string) {
@@ -325,4 +327,6 @@ export async function updateHuntReportReview(reportId: string, formData: FormDat
   const attemptId = String(formData.get('attempt_id') || '').trim();
   revalidatePath('/team');
   if (attemptId) revalidatePath(`/team/intentos/${attemptId}`);
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }

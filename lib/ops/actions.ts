@@ -126,6 +126,8 @@ export async function createLead(formData: FormData) {
   }).catch(() => {});
 
   revalidatePath('/leads');
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
   return lead.id;
 }
 
@@ -171,6 +173,7 @@ export async function convertInboxToLead(messageId: string) {
 
   revalidatePath('/inbox');
   revalidatePath('/leads');
+  revalidatePath('/dashboard');
   return { leadId: lead.id };
 }
 
@@ -187,6 +190,8 @@ export async function updateLeadStatus(leadId: string, status: string) {
   });
   revalidatePath('/leads');
   revalidatePath(`/leads/${leadId}`);
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }
 
 export async function updateLeadDetails(leadId: string, formData: FormData) {
@@ -309,6 +314,7 @@ export async function updateInboxStatus(messageId: string, status: string) {
   const { error } = await supabase.from('inbox_messages').update({ status }).eq('id', messageId);
   if (error) throw new Error(error.message);
   revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }
 
 export async function deleteInboxMessage(messageId: string) {
@@ -349,6 +355,8 @@ export async function updateTicketStatus(ticketId: string, status: string) {
   });
   revalidatePath('/tickets');
   revalidatePath(`/tickets/${ticketId}`);
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }
 
 export async function updateTicketAssignment(ticketId: string, formData: FormData) {
@@ -376,6 +384,8 @@ export async function updateTicketAssignment(ticketId: string, formData: FormDat
   revalidatePath('/tickets');
   revalidatePath(`/tickets/${ticketId}`);
   revalidatePath('/workload');
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
 }
 
 export async function convertLeadToProject(leadId: string) {
@@ -439,6 +449,8 @@ export async function convertLeadToProject(leadId: string) {
 
   revalidatePath('/leads');
   revalidatePath('/projects');
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
   return { projectId: project.id, slug: project.slug };
 }
 
