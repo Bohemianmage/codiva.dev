@@ -7,13 +7,31 @@ import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { CODIVA_BRAND } from '@/lib/brand';
 import CodivaWordmark from './CodivaWordmark';
-import { careerBaseUrl, ticketBaseUrl } from '@/lib/ops/host';
+import { careerBaseUrl, marketingBaseUrl, ticketBaseUrl } from '@/lib/ops/host';
+
+const legalLinkClass = 'text-zinc-300 hover:text-white font-medium transition-colors';
+
+function LegalLink({ href, children }) {
+  if (href.startsWith('http')) {
+    return (
+      <a href={href} className={legalLinkClass}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={legalLinkClass}>
+      {children}
+    </Link>
+  );
+}
 
 export default function Footer({ variant = 'marketing' }) {
   const { t } = useTranslation();
   const footerRef = useRef(null);
   const inView = useInView(footerRef, { triggerOnce: false, threshold: 0.4 });
   const isCareer = variant === 'career';
+  const legalBase = isCareer || variant === 'ticket' ? marketingBaseUrl() : '';
   const year = isCareer ? 2024 : new Date().getFullYear();
 
   return (
@@ -61,18 +79,8 @@ export default function Footer({ variant = 'marketing' }) {
               {t('footer.feed')}
             </a>
           ) : null}
-          <Link
-            href="/legal/terminos"
-            className="text-zinc-300 hover:text-white font-medium transition-colors"
-          >
-            {t('footer.terms')}
-          </Link>
-          <Link
-            href="/legal/aviso-privacidad"
-            className="text-zinc-300 hover:text-white font-medium transition-colors"
-          >
-            {t('footer.privacy')}
-          </Link>
+          <LegalLink href={`${legalBase}/legal/terminos`}>{t('footer.terms')}</LegalLink>
+          <LegalLink href={`${legalBase}/legal/aviso-privacidad`}>{t('footer.privacy')}</LegalLink>
 
           <a
             href={`mailto:${CODIVA_BRAND.urls.email}`}
