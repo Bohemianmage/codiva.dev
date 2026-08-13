@@ -11,7 +11,8 @@ import {
   huntDifficultyLabel,
   scoreHuntReports,
 } from '@/lib/careers/hunt/score';
-import { summarizeHuntTrail } from '@/lib/careers/hunt/trail';
+import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trail';
+import HuntTrailMap from '@/components/ops/HuntTrailMap';
 import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
 import {
@@ -159,17 +160,13 @@ export default async function AssessmentAttemptPage({
   ).length;
   const huntScore = scoreHuntReports(huntReports, discipline);
   const locale = t.locale === 'en' ? 'en' : 'es';
-  const huntPages = new Set(
-    (huntTrail ?? [])
-      .filter((row) => row.event_type === 'page_view')
-      .map((row) => `${row.host || ''}${row.path}`)
-  );
   const trail = summarizeHuntTrail({
     passedAt: attempt.completed_at,
     discipline,
     events: huntTrail ?? [],
     reports: huntReports,
   });
+  const trailSteps = buildHuntTrailSteps(huntTrail ?? [], huntReports);
   const fingerprint = originFingerprint(attempt.ip_hash);
   const device = deviceLabelFromUserAgent(attempt.user_agent);
   const originPeers = sameOrigin ?? [];
@@ -440,69 +437,13 @@ export default async function AssessmentAttemptPage({
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">{t('ops.attempt.huntMapTitle')}</h2>
-        <p className="text-sm text-zinc-500">{t('ops.attempt.huntMapHint')}</p>
-        <p className="text-sm text-zinc-700">
-          {trail.formOnly
-            ? t('ops.attempt.huntFormOnly')
-            : trail.browsedSite
-              ? t('ops.attempt.huntBrowsed', { count: trail.uniquePages })
-              : t('ops.attempt.huntNoTrail')}
-          {trail.visitedFeed ? ` · ${t('ops.attempt.huntVisitedFeed')}` : ''}
-          {trail.visitedMarketing ? ` · ${t('ops.attempt.huntVisitedMarketing')}` : ''}
-          {' · '}
-          {trail.msToFirstCraft != null
-            ? t('ops.attempt.huntTimeToCraft', { time: formatDuration(trail.msToFirstCraft, t) })
-            : t('ops.attempt.huntNoCraftYet')}
-        </p>
-        {huntScore.consideration !== 'none' ? (
-          <p className="text-sm text-zinc-700">
-            {t('ops.careers.consideration', {
-              label: huntConsiderationLabel(huntScore.consideration, locale),
-            })}
-            {huntScore.hardest
-              ? ` · ${t('ops.careers.hardest', {
-                  label: huntDifficultyLabel(huntScore.hardest, locale),
-                })}`
-              : ''}
-            {huntPages.size ? ` · ${t('ops.attempt.huntMapPages', { count: huntPages.size })}` : ''}
-          </p>
-        ) : null}
-        {!huntTrail?.length ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-            {t('ops.attempt.huntMapEmpty')}
-          </p>
-        ) : (
-          <ol className="space-y-2">
-            {huntTrail.map((event) => (
-              <li key={event.id} className="flex gap-3 text-sm">
-                <span className="w-36 shrink-0 tabular-nums text-zinc-400">
-                  {new Date(event.created_at).toLocaleString(dateLocale(t.locale), {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })}
-                </span>
-                <span className="text-zinc-800">
-                  {event.event_type === 'reported'
-                    ? t('ops.attempt.huntMapReported', {
-                        path: `${event.host || ''}${event.path}`,
-                      })
-                    : t('ops.attempt.huntMapPage', {
-                        path: `${event.host || ''}${event.path}`,
-                      })}
-                  {event.referrer ? (
-                    <span className="block text-xs text-zinc-400">
-                      {t('ops.attempt.huntMapFrom', { from: event.referrer })}
-                    </span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <HuntTrailMap
+        trail={trail}
+        steps={trailSteps}
+        formatDuration={(ms) => formatDuration(ms, t)}
+        t={t}
+        locale={locale}
+      />
 
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.attempt.answers')}</h2>
