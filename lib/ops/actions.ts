@@ -311,6 +311,31 @@ export async function updateInboxStatus(messageId: string, status: string) {
   revalidatePath('/inbox');
 }
 
+export async function deleteInboxMessage(messageId: string) {
+  const { supabase, user } = await assertCapability('inbox');
+
+  const { data: message, error: fetchError } = await supabase
+    .from('inbox_messages')
+    .select('id, name, email')
+    .eq('id', messageId)
+    .single();
+  if (fetchError || !message) throw new Error('Mensaje no encontrado');
+
+  const { error } = await supabase.from('inbox_messages').delete().eq('id', messageId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'inbox',
+    entityId: messageId,
+    action: 'deleted',
+    metadata: { name: message.name, email: message.email },
+    actorId: user.id,
+  });
+
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
+}
+
 export async function updateTicketStatus(ticketId: string, status: string) {
   const { supabase, user } = await assertCapability('tickets');
   const { error } = await supabase.from('tickets').update({ status }).eq('id', ticketId);
