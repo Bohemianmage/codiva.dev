@@ -30,11 +30,6 @@ export default function CaseStudiesMobile({ logos }) {
     return map;
   }, [logos]);
 
-  const descriptions = t('cases.list', { returnObjects: true });
-  const description = Array.isArray(descriptions)
-    ? descriptions.find((item) => item.name === project?.name)?.description
-    : null;
-
   const goTo = useCallback(
     (next) => {
       if (!count) return;
@@ -77,8 +72,6 @@ export default function CaseStudiesMobile({ logos }) {
   };
 
   if (!project) return null;
-
-  const logoFrame = getLogoFrame(project);
 
   return (
     <div className="flex flex-col items-center">
@@ -168,33 +161,8 @@ export default function CaseStudiesMobile({ logos }) {
             transition={{ duration: 0.22 }}
             className="flex flex-col items-center"
           >
-            <div className="flex w-full items-center gap-4 text-left">
-              <a
-                href={project.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-shrink-0 items-center justify-center"
-                style={{
-                  height: '4rem',
-                  width: isWideLogo(project) ? `${logoFrame.width / 20}rem` : '4.5rem',
-                }}
-                aria-label={t('cases.visitSite', { name: project.name })}
-              >
-                <CaseStudyLogo
-                  item={project}
-                  alt=""
-                  className="h-full w-auto max-w-full object-contain"
-                />
-              </a>
-              <div className="min-w-0">
-                <p className="text-base font-semibold text-codiva-primary">{project.name}</p>
-                {description ? (
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-600">{description}</p>
-                ) : null}
-              </div>
-            </div>
             <ul
-              className="mt-5 flex min-h-[4.5rem] w-full flex-wrap justify-center gap-2"
+              className="flex min-h-[4.5rem] w-full flex-wrap justify-center gap-2"
               aria-label={t('cases.technologiesOf', { name: project.name })}
             >
               {project.tech.map((tech) => (

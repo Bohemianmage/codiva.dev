@@ -9,6 +9,8 @@ import { can } from '@/lib/ops/permissions';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
+import { documentRequestPresetByCode } from '@/lib/ops/document-request-presets';
+import { normalizeRequestedUrl } from '@/lib/ops/requested-url';
 import { sendClientEmail, notifyStaff } from '@/lib/ops/email';
 import {
   templateQuoteSent,
@@ -1305,7 +1307,7 @@ export async function createDocumentRequest(projectId: string, formData: FormDat
   if (!title) throw new Error('Título requerido');
 
   const inputMode = String(formData.get('inputMode') || 'file');
-  if (!['file', 'text', 'credentials'].includes(inputMode)) {
+  if (!['file', 'text', 'credentials', 'url'].includes(inputMode)) {
     throw new Error('Modo de respuesta inválido');
   }
 
@@ -1339,6 +1341,34 @@ export async function createDocumentRequest(projectId: string, formData: FormDat
   });
 
   revalidatePath(`/projects/${projectId}`);
+}
+
+export async function createDocumentRequestFromPreset(projectId: string, presetCode: string) {
+  const preset = documentRequestPresetByCode(presetCode);
+  if (!preset) throw new Error('Plantilla desconocida');
+
+  const access = await requireStaff();
+  await assertProjectAccessOrThrow(access, projectId);
+  const { supabase } = access;
+
+  const { data: existing } = await supabase
+    .from('document_requests')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('code', preset.code)
+    .maybeSingle();
+  if (existing) throw new Error('Esa solicitud ya existe en este proyecto');
+
+  const fd = new FormData();
+  fd.set('code', preset.code);
+  fd.set('title', preset.title);
+  fd.set('description', preset.description);
+  fd.set('instructions', preset.instructions);
+  fd.set('expectedType', preset.expectedType);
+  fd.set('inputMode', preset.inputMode);
+  fd.set('sortOrder', String(preset.sortOrder));
+  if (preset.required) fd.set('required', 'on');
+  await createDocumentRequest(projectId, fd);
 }
 
 export async function updateDocumentRequestStatus(
@@ -1500,6 +1530,8 @@ export async function clientFulfillDocumentRequest(
       throw new Error('Indica al menos proveedor, dominio o notas de acceso');
     }
     responseText = JSON.stringify(payload, null, 2);
+  } else if (req.input_mode === 'url') {
+    responseText = normalizeRequestedUrl(String(formData.get('responseText') || ''));
   } else {
     responseText = String(formData.get('responseText') || '').trim();
     if (!responseText) throw new Error('Escribe la información solicitada');
@@ -1543,7 +1575,11 @@ export async function clientFulfillDocumentRequest(
       [
         `Solicitud: ${req.title}`,
         `Modo: ${req.input_mode}`,
-        sha256 ? `SHA-256: ${sha256.slice(0, 16)}…` : `Respuesta: texto/accesos`,
+        sha256
+          ? `SHA-256: ${sha256.slice(0, 16)}…`
+          : req.input_mode === 'url' && responseText
+            ? `URL: ${responseText}`
+            : `Respuesta: texto/accesos`,
         `Notas: ${notes || '-'}`,
       ],
       { ctaLabel: 'Ver documentos', ctaHref: `${opsBaseUrl()}/projects/${projectId}?tab=documentos` }

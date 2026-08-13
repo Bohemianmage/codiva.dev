@@ -690,6 +690,8 @@
       "ndaHint": "PDF firmado por el representante legal",
       "fileHint": "PDF, imagen, Office o ZIP",
       "textPlaceholder": "Escribe aquí la información solicitada",
+      "urlPlaceholder": "https://…",
+      "githubUrlPlaceholder": "https://github.com/org/repo",
       "provider": "Proveedor (Vercel, Cloudflare, GoDaddy…)",
       "domain": "Dominio (ej. nirc.mx)",
       "panelUrl": "URL del panel",
@@ -932,7 +934,8 @@
       "documentRequestInput": {
         "file": "Archivo",
         "text": "Texto",
-        "credentials": "Accesos"
+        "credentials": "Accesos",
+        "url": "URL"
       },
       "chargeKind": {
         "development": "Desarrollo",

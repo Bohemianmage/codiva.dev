@@ -18,6 +18,7 @@ import {
   markDocumentSigned,
   runDocumentRetentionDisposal,
   createDocumentRequest,
+  createDocumentRequestFromPreset,
   updateDocumentRequestStatus,
   setDeliverableVisibility,
   setQuoteVisibility,
@@ -41,6 +42,8 @@ import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
 import { isLegacyNdaDraftDocument, opsFileHref } from '@/lib/ops/storage';
 import { isLegacyQuotePackDocument } from '@/lib/ops/quotes';
+import { DOCUMENT_REQUEST_PRESETS } from '@/lib/ops/document-request-presets';
+import { isHttpUrl } from '@/lib/ops/requested-url';
 
 export default async function ProjectDetailPage({
   params,
@@ -226,6 +229,13 @@ export default async function ProjectDetailPage({
     'use server';
     await updateProject(id, formData);
   }
+
+  const existingRequestCodes = new Set(
+    (docRequests ?? []).map((r) => r.code).filter((code): code is string => Boolean(code))
+  );
+  const availableRequestPresets = DOCUMENT_REQUEST_PRESETS.filter(
+    (preset) => !existingRequestCodes.has(preset.code)
+  );
 
   return (
     <div>
@@ -719,6 +729,27 @@ export default async function ProjectDetailPage({
                 responder a lo que pidas aquí.
               </p>
             </div>
+            {availableRequestPresets.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {availableRequestPresets.map((preset) => (
+                  <ToastForm
+                    key={preset.code}
+                    success="Solicitud creada"
+                    action={async () => {
+                      'use server';
+                      await createDocumentRequestFromPreset(id, preset.code);
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      + {preset.title}
+                    </button>
+                  </ToastForm>
+                ))}
+              </div>
+            ) : null}
             <ToastForm success="Solicitud creada"
               action={async (fd) => {
                 'use server';
@@ -740,6 +771,7 @@ export default async function ProjectDetailPage({
               <select name="inputMode" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
                 <option value="file">Archivo</option>
                 <option value="text">Texto</option>
+                <option value="url">URL</option>
                 <option value="credentials">Accesos (hosting/dominio)</option>
               </select>
               <select name="expectedType" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
@@ -797,11 +829,21 @@ export default async function ProjectDetailPage({
                         {r.required ? ' · requerido' : ''}
                       </p>
                       {r.description && <p className="mt-1 text-zinc-600">{r.description}</p>}
-                      {r.response_text && (
-                        <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs text-zinc-700">
-                          {r.response_text}
-                        </pre>
-                      )}
+                      {r.response_text &&
+                        (isHttpUrl(r.response_text) ? (
+                          <a
+                            href={r.response_text}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-block break-all text-sm text-codiva-primary hover:underline"
+                          >
+                            {r.response_text}
+                          </a>
+                        ) : (
+                          <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs text-zinc-700">
+                            {r.response_text}
+                          </pre>
+                        ))}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {r.status !== 'open' && (

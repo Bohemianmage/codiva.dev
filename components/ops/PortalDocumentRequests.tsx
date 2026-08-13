@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import BrandedFileInput from '@/components/ops/BrandedFileInput';
 import ToastForm from '@/components/ops/ToastForm';
 import { useLabels } from '@/lib/ops/use-labels';
+import { isHttpUrl } from '@/lib/ops/requested-url';
 
 export type PortalDocRequest = {
   id: string;
@@ -12,7 +13,8 @@ export type PortalDocRequest = {
   description: string | null;
   instructions: string | null;
   expected_type: string;
-  input_mode: 'file' | 'text' | 'credentials' | string;
+  input_mode: 'file' | 'text' | 'credentials' | 'url' | string;
+  code?: string | null;
   status: string;
   required: boolean;
   sort_order: number;
@@ -210,6 +212,22 @@ export default function PortalDocumentRequests({
                         />
                       )}
 
+                      {req.input_mode === 'url' && (
+                        <input
+                          name="responseText"
+                          type="text"
+                          required
+                          inputMode="url"
+                          autoComplete="url"
+                          placeholder={
+                            req.code === 'github_url'
+                              ? t('portal.docs.githubUrlPlaceholder')
+                              : t('portal.docs.urlPlaceholder')
+                          }
+                          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                        />
+                      )}
+
                       {req.input_mode === 'credentials' && (
                         <div className="grid gap-3 sm:grid-cols-2">
                           <input
@@ -260,11 +278,21 @@ export default function PortalDocumentRequests({
                         {t('portal.docs.delivered')}
                         {req.fulfilled_at ? ` · ${formatDate(req.fulfilled_at)}` : ''}
                       </p>
-                      {req.response_text && (
-                        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-xs text-zinc-700">
-                          {req.response_text}
-                        </pre>
-                      )}
+                      {req.response_text &&
+                        (isHttpUrl(req.response_text) ? (
+                          <a
+                            href={req.response_text}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-block break-all text-sm font-medium text-codiva-primary hover:underline"
+                          >
+                            {req.response_text}
+                          </a>
+                        ) : (
+                          <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-xs text-zinc-700">
+                            {req.response_text}
+                          </pre>
+                        ))}
                       {req.fulfilled_document_id && (
                         <p className="mt-2 text-xs text-emerald-800">{t('portal.docs.fileReceived')}</p>
                       )}

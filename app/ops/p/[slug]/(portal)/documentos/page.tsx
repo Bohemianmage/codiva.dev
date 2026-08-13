@@ -38,7 +38,7 @@ export default async function PortalDocumentsPage({
       supabase
         .from('document_requests')
         .select(
-          'id, title, description, instructions, expected_type, input_mode, status, required, sort_order, due_date, fulfilled_at, response_text, fulfilled_document_id'
+          'id, title, description, instructions, expected_type, input_mode, status, required, sort_order, due_date, fulfilled_at, response_text, fulfilled_document_id, code'
         )
         .eq('project_id', project.id)
         .eq('visible_to_client', true)

@@ -79,6 +79,7 @@ export function labelsFor(locale: Locale = DEFAULT_LOCALE) {
       'file',
       'text',
       'credentials',
+      'url',
     ]),
     CHARGE_KIND_LABELS: group(locale, 'chargeKind', [
       'development',
