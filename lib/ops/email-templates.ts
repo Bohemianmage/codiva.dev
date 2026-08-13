@@ -513,7 +513,7 @@ export function templateCareerApplicationStaff({
           : ''
       }
     `,
-    cta: { label: 'Ver postulaciones', href: opsHref },
+    cta: { label: 'Ver inbox', href: opsHref },
     footerNote: 'Notificaci\u00f3n interna \u00b7 Bolsa de trabajo Codiva.dev',
   });
 }
@@ -558,7 +558,7 @@ export function templateHuntReportStaff({
           : ''
       }
     `,
-    cta: { label: 'Ver bolsa', href: opsHref },
+    cta: { label: 'Ver inbox', href: opsHref },
     footerNote: 'Notificaci\u00f3n interna \u00b7 Cacer\u00eda de hallazgos Codiva.dev',
   });
 }

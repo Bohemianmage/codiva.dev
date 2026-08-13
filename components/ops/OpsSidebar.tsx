@@ -30,7 +30,7 @@ const NAV: {
 }[] = [
   { href: '/dashboard', labelKey: 'ops.nav.dashboard', icon: LayoutDashboard },
   { href: '/leads', labelKey: 'ops.nav.leads', icon: Users, capability: 'leads' },
-  { href: '/inbox', labelKey: 'ops.nav.inbox', icon: Inbox, capability: 'inbox' },
+  { href: '/inbox', labelKey: 'ops.nav.inbox', icon: Inbox },
   { href: '/projects', labelKey: 'ops.nav.projects', icon: FolderKanban },
   { href: '/workload', labelKey: 'ops.nav.workload', icon: Gauge, capability: 'workload' },
   { href: '/organizations', labelKey: 'ops.nav.organizations', icon: Building2, capability: 'organizations' },

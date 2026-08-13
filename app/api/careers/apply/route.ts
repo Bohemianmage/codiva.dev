@@ -209,7 +209,7 @@ export async function POST(request: Request) {
       jobTitle: job.title,
       discipline: disciplineLabel || undefined,
       coverLetter,
-      opsHref: `${opsBaseUrl()}/team?tab=bolsa`,
+      opsHref: `${opsBaseUrl()}/inbox`,
       scorePct: assessmentScorePct,
     }),
     replyTo: email,

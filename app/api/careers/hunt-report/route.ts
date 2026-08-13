@@ -198,7 +198,7 @@ export async function POST(request: Request) {
       expected,
       matchedTitle: match?.title,
       discipline: discipline ? CAREER_DISCIPLINE_LABELS[discipline] : undefined,
-      opsHref: `${opsBaseUrl()}/team?tab=bolsa`,
+      opsHref: `${opsBaseUrl()}/inbox`,
     }),
     replyTo: email,
   }).catch(() => {});
