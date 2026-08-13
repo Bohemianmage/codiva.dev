@@ -48,18 +48,6 @@ function withSessionCookies(from: NextResponse, to: NextResponse) {
   return to;
 }
 
-/** Packs comerciales / internos: no servir en portal del cliente. */
-const STAFF_ONLY_CLIENT_PACKS = [
-  '/client-packs/nirc/mvp-fase1.html',
-  '/client-packs/nirc/nirc-arquitectura-completa.html',
-  '/client-packs/nirc/mvp-propuesta-fase1.md',
-  '/client-packs/inquilia/arquitectura-completa.html',
-];
-
-function isStaffOnlyClientPack(pathname: string) {
-  return STAFF_ONLY_CLIENT_PACKS.some((p) => pathname === p || pathname.endsWith(p));
-}
-
 function absoluteRedirect(request: NextRequest, base: string, path: string) {
   const url = new URL(path, base.endsWith('/') ? base : `${base}/`);
   request.nextUrl.searchParams.forEach((value, key) => {
@@ -116,6 +104,12 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
     return sessionResponse;
+  }
+
+  if (pathname.startsWith('/client-packs')) {
+    const missing = request.nextUrl.clone();
+    missing.pathname = '/ops/__missing';
+    return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
   }
 
   const onOps = isOpsHost(host);
@@ -235,16 +229,7 @@ export async function middleware(request: NextRequest) {
 
   // --- PORTAL (clientes) ---
   if (onPortal) {
-    if (
-      pathname.startsWith('/client-packs') ||
-      pathname.startsWith('/legal') ||
-      pathname.startsWith('/auth/')
-    ) {
-      if (isStaffOnlyClientPack(pathname)) {
-        const missing = request.nextUrl.clone();
-        missing.pathname = '/ops/__missing';
-        return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
-      }
+    if (pathname.startsWith('/legal') || pathname.startsWith('/auth/')) {
       if (pathname.startsWith('/auth/')) {
         const url = request.nextUrl.clone();
         url.pathname = `/ops${pathname}`;
@@ -314,7 +299,7 @@ export async function middleware(request: NextRequest) {
 
   // --- OPS (staff) ---
   if (onOps) {
-    if (pathname.startsWith('/client-packs') || pathname.startsWith('/legal')) {
+    if (pathname.startsWith('/legal')) {
       return sessionResponse;
     }
 

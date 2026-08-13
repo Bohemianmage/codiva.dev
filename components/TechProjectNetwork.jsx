@@ -110,6 +110,15 @@ function reproject(tech, cx, cy) {
   return { ...tech, x: pos.x, y: pos.y };
 }
 
+function orbitParams(idx) {
+  return {
+    r: 5 + (idx % 4),
+    duration: 12 + (idx % 6),
+    delay: -((idx * 1.37) % 12),
+    reverse: idx % 2 === 1,
+  };
+}
+
 function resolveCollisions(techs, projects, cx, cy) {
   const next = techs.map((t) => ({ ...t }));
   const obstacles = projects.map((p) => ({ x: p.x, y: p.y, w: p.width, h: p.height }));
@@ -179,7 +188,7 @@ export default function TechProjectNetwork() {
   const layout = useMemo(() => {
     const { width, height } = dimensions;
     if (!width || !height) {
-      return { techPositions: [], projectPositions: [], rings: [] };
+      return { techPositions: [], projectPositions: [] };
     }
 
     const centerX = width / 2;
@@ -194,8 +203,9 @@ export default function TechProjectNetwork() {
 
     const projectPositions = casesMeta.map((p, idx) => {
       const frame = getLogoFrame(p);
-      const logoWidth = frame.width * NETWORK_LOGO_SCALE;
-      const logoHeight = frame.height * NETWORK_LOGO_SCALE;
+      const scale = NETWORK_LOGO_SCALE * (p.networkScale ?? 1);
+      const logoWidth = frame.width * scale;
+      const logoHeight = frame.height * scale;
       const n = casesMeta.length;
       const angle = (2 * Math.PI * idx) / n + PROJECT_ANGLE_OFFSET;
       return {
@@ -228,18 +238,12 @@ export default function TechProjectNetwork() {
     );
 
     return {
-      centerX,
-      centerY,
       techPositions: resolveCollisions([...outerTechs, ...innerTechs], projectPositions, centerX, centerY),
       projectPositions,
-      rings: [
-        { rx: outerRadiusX * TECH_OUTER_RATIO, ry: outerRadiusY * TECH_OUTER_RATIO },
-        { rx: outerRadiusX * TECH_INNER_RATIO, ry: outerRadiusY * TECH_INNER_RATIO },
-      ],
     };
   }, [dimensions, shuffledTechList, techRings]);
 
-  const { techPositions, projectPositions, rings, centerX, centerY } = layout;
+  const { techPositions, projectPositions } = layout;
 
   const applyOffset = (from, to, distance) => {
     const dx = to.x - from.x;
@@ -292,19 +296,6 @@ export default function TechProjectNetwork() {
       className="relative w-full min-h-[920px] h-[920px] select-none"
     >
       <svg width="100%" height="100%" className="absolute top-0 left-0 z-0">
-        {rings.map((ring) => (
-          <ellipse
-            key={`${ring.rx}-${ring.ry}`}
-            cx={centerX || 0}
-            cy={centerY || 0}
-            rx={ring.rx}
-            ry={ring.ry}
-            fill="none"
-            stroke="#104E4E"
-            strokeOpacity="0.07"
-            strokeWidth="1"
-          />
-        ))}
         {casesMeta.flatMap((project) => {
           const projPos = projectPositions.find((p2) => p2.name === project.name);
           return project.tech.map((tech) => {
@@ -344,33 +335,50 @@ export default function TechProjectNetwork() {
           (hoveredProject &&
             casesMeta.find((c) => c.name === hoveredProject)?.tech.includes(tech.name)) ||
           hoveredTech === tech.name;
+        const orbit = orbitParams(idx);
 
         return (
-          <motion.div
+          <div
             key={tech.name}
-            className="absolute text-xs leading-none rounded-full border border-codiva-secondary whitespace-nowrap shadow-sm"
+            className="absolute"
             style={{
               left: tech.x,
               top: tech.y,
-              x: '-50%',
-              y: '-50%',
-              height: `${PILL_HEIGHT}px`,
-              paddingLeft: '10px',
-              paddingRight: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: isHighlighted ? '#104E4E' : '#E5E7EB',
-              color: isHighlighted ? '#FFFFFF' : '#6A757A',
               zIndex: isHighlighted ? 25 : 10,
             }}
-            transition={{ duration: 0.6, delay: idx * 0.05 }}
-            whileHover={{ scale: 1.08 }}
-            onMouseEnter={() => handleMouseEnterTech(tech.name)}
-            onMouseLeave={handleMouseLeave}
           >
-            {tech.name}
-          </motion.div>
+            <div
+              className="case-orbit"
+              style={{
+                '--orbit-r': `${orbit.r}px`,
+                '--orbit-duration': `${orbit.duration}s`,
+                '--orbit-delay': `${orbit.delay}s`,
+                animationDirection: orbit.reverse ? 'reverse' : 'normal',
+              }}
+            >
+              <motion.div
+                className="absolute text-xs leading-none rounded-full border border-codiva-secondary whitespace-nowrap shadow-sm"
+                style={{
+                  x: '-50%',
+                  y: '-50%',
+                  height: `${PILL_HEIGHT}px`,
+                  paddingLeft: '10px',
+                  paddingRight: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isHighlighted ? '#104E4E' : '#E5E7EB',
+                  color: isHighlighted ? '#FFFFFF' : '#6A757A',
+                }}
+                transition={{ duration: 0.6, delay: idx * 0.05 }}
+                whileHover={{ scale: 1.08 }}
+                onMouseEnter={() => handleMouseEnterTech(tech.name)}
+                onMouseLeave={handleMouseLeave}
+              >
+                {tech.name}
+              </motion.div>
+            </div>
+          </div>
         );
       })}
 

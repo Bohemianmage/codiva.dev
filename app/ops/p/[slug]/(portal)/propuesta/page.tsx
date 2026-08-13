@@ -5,6 +5,7 @@ import { requireProjectMember } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { filterClientCanvases, getPortalVisibility } from '@/lib/ops/portal-visibility';
+import { portalCanvasPath } from '@/lib/ops/architecture';
 
 export default async function PortalProposalPage({
   params,
@@ -56,7 +57,12 @@ export default async function PortalProposalPage({
       <section>
         <h2 className="mb-1 text-lg font-semibold">{t('portal.proposal.title')}</h2>
         <p className="mb-5 text-sm text-zinc-600">{t('portal.proposal.hint')}</p>
-        <PortalCanvasViewer items={visibleCanvases} />
+        <PortalCanvasViewer
+          items={visibleCanvases.map((item) => ({
+            ...item,
+            canvasPath: portalCanvasPath(slug, item.id),
+          }))}
+        />
       </section>
 
       {visibility.showQuote && quote && (

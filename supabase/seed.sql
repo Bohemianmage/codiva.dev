@@ -140,7 +140,7 @@ INSERT INTO documents (
     'NDA mutuo - borrador (generado en portal)',
     'client-packs/nirc/nda-borrador.html',
     '/client-packs/nirc/nda-borrador.html',
-    false, true, 'staff',
+    false, false, 'staff',
     ''
   )
 ON CONFLICT (id) DO NOTHING;

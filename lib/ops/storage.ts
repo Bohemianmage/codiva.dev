@@ -15,21 +15,26 @@ export function isPublicClientPackPath(pathOrUrl: string | null | undefined): bo
   return pathOrUrl.startsWith('/client-packs/') || pathOrUrl.startsWith('client-packs/');
 }
 
-/** Href seguro para UI: packs públicos o proxy autenticado. */
+/** Borrador NDA estático: el cliente usa el NDA mutuo generado en Ops. */
+export function isLegacyNdaDraftDocument(doc: {
+  type?: string | null;
+  signed?: boolean | null;
+  file_url?: string | null;
+  file_path?: string | null;
+}): boolean {
+  if (doc.type !== 'nda' || doc.signed) return false;
+  return isPublicClientPackPath(doc.file_path) || isPublicClientPackPath(doc.file_url);
+}
+
+/** Href seguro para UI: solo storage autenticado (packs estáticos ya no se sirven por HTTP). */
 export function opsFileHref(filePath: string | null | undefined, fileUrl?: string | null): string | null {
   if (filePath && isOpsStoragePath(filePath)) {
     return `/api/ops/file?path=${encodeURIComponent(filePath)}`;
   }
-  if (fileUrl && isPublicClientPackPath(fileUrl)) {
-    return fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
-  }
-  if (filePath && isPublicClientPackPath(filePath)) {
-    return filePath.startsWith('/') ? filePath : `/${filePath}`;
-  }
-  if (fileUrl && /^https?:\/\//i.test(fileUrl)) {
+  if (fileUrl && fileUrl.startsWith('/api/ops/file')) {
     return fileUrl;
   }
-  if (fileUrl && fileUrl.startsWith('/api/ops/file')) {
+  if (fileUrl && /^https?:\/\//i.test(fileUrl) && !isPublicClientPackPath(fileUrl)) {
     return fileUrl;
   }
   return null;

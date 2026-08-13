@@ -51,6 +51,7 @@ export default function useMarqueeCopies(items, measureGapClassName) {
     return Array.from({ length: copyCount }, (_, copyIdx) =>
       items.map((item, j) => ({
         item,
+        copyIdx,
         key: `m-${copyIdx}-${j}-${typeof item === 'object' && item?.name ? item.name : String(item)}`,
       }))
     ).flat();
