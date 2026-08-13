@@ -16,6 +16,10 @@ type Props = {
   onReported?: (huntReady: boolean | null) => void;
 };
 
+type Shot = { id: string; file: File; preview: string };
+
+const MAX_SHOTS = 4;
+
 export default function HuntReportForm({
   defaultUrl = '',
   defaultName = '',
@@ -33,6 +37,7 @@ export default function HuntReportForm({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [expected, setExpected] = useState('');
+  const [shots, setShots] = useState<Shot[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [keepGoing, setKeepGoing] = useState(false);
@@ -68,6 +73,12 @@ export default function HuntReportForm({
     if (defaultEmail) setEmail(defaultEmail);
   }, [defaultEmail, defaultName]);
 
+  useEffect(() => {
+    return () => {
+      shots.forEach((shot) => URL.revokeObjectURL(shot.preview));
+    };
+  }, [shots]);
+
   const token = assessmentToken || ctx?.token || '';
   const craft = discipline || ctx?.discipline || '';
   const identityLocked = Boolean(lockIdentity && fullName.trim() && email.includes('@'));
@@ -82,12 +93,63 @@ export default function HuntReportForm({
     [fullName, email, pageUrl, title, description]
   );
 
+  function addImageFiles(files: File[]) {
+    setShots((prev) => {
+      const next = [...prev];
+      for (const file of files) {
+        if (next.length >= MAX_SHOTS) break;
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > 3 * 1024 * 1024) continue;
+        next.push({
+          id: `${file.name}-${file.size}-${file.lastModified}-${next.length}`,
+          file,
+          preview: URL.createObjectURL(file),
+        });
+      }
+      return next;
+    });
+  }
+
+  function onPaste(e: React.ClipboardEvent) {
+    const files = [...e.clipboardData.items]
+      .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => Boolean(file));
+    if (!files.length) return;
+    e.preventDefault();
+    if (!token) return;
+    addImageFiles(files);
+  }
+
+  function removeShot(id: string) {
+    setShots((prev) => {
+      const shot = prev.find((row) => row.id === id);
+      if (shot) URL.revokeObjectURL(shot.preview);
+      return prev.filter((row) => row.id !== id);
+    });
+  }
+
+  async function uploadShots(): Promise<string[]> {
+    if (!token || !shots.length) return [];
+    const paths: string[] = [];
+    for (const shot of shots) {
+      const body = new FormData();
+      body.append('token', token);
+      body.append('file', shot.file, shot.file.name || 'paste.png');
+      const res = await fetch('/api/careers/hunt-evidence', { method: 'POST', body });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && typeof data.path === 'string') paths.push(data.path);
+    }
+    return paths;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
     setError('');
     try {
+      const evidencePaths = await uploadShots();
       const res = await fetch('/api/careers/hunt-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,6 +162,7 @@ export default function HuntReportForm({
           expected: expected.trim() || undefined,
           discipline: craft || undefined,
           assessment_token: token || undefined,
+          evidence_paths: evidencePaths,
         }),
       });
       const data = await res.json();
@@ -110,6 +173,10 @@ export default function HuntReportForm({
         setTitle('');
         setDescription('');
         setExpected('');
+        setShots((prev) => {
+          prev.forEach((shot) => URL.revokeObjectURL(shot.preview));
+          return [];
+        });
         setError('');
         setKeepGoing(true);
         return;
@@ -136,7 +203,11 @@ export default function HuntReportForm({
   }
 
   return (
-    <form className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6" onSubmit={onSubmit}>
+    <form
+      className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6"
+      onSubmit={onSubmit}
+      onPaste={onPaste}
+    >
       <div>
         <h2 className="text-lg font-semibold text-zinc-900">{t('career.hunt_form_title')}</h2>
         <p className="mt-1 text-sm text-zinc-500">{t('career.hunt_form_intro')}</p>
@@ -213,6 +284,28 @@ export default function HuntReportForm({
         />
         <p className="mt-1 text-xs text-zinc-500">{t('career.hunt_field_description_hint')}</p>
       </div>
+      {shots.length ? (
+        <ul className="flex flex-wrap gap-2">
+          {shots.map((shot) => (
+            <li key={shot.id} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={shot.preview}
+                alt=""
+                className="h-20 w-20 rounded-lg border border-zinc-200 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => removeShot(shot.id)}
+                className="absolute -right-1 -top-1 rounded-full bg-white px-1.5 text-xs text-zinc-600 shadow"
+                aria-label={t('career.hunt_shot_remove')}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div>
         <label htmlFor="hunt-expected" className="mb-1 block text-sm font-medium text-zinc-800">
           {t('career.hunt_field_expected')}

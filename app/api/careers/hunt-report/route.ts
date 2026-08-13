@@ -12,6 +12,10 @@ import {
 } from '@/lib/ops/careers';
 import { matchHuntReport } from '@/lib/careers/hunt/match';
 import { huntProgressForAttempt } from '@/lib/careers/hunt/progress';
+import { notifyCandidateApplyReady } from '@/lib/careers/hunt/notify-candidate';
+import { recordHuntEvent } from '@/lib/careers/hunt/events';
+import { huntEvidenceExists, HUNT_MAX_EVIDENCE_FILES, isHuntEvidencePath } from '@/lib/careers/hunt/evidence';
+import { urlLooksLikeFeed } from '@/lib/careers/hunt/trail';
 import { loadAttemptByToken } from '@/lib/careers/assessments/server';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { CAREER_DISCIPLINE_LABELS } from '@/lib/ops/career-disciplines';
@@ -49,6 +53,12 @@ export async function POST(request: Request) {
   const disciplineRaw = safeCareerStr(body.discipline, 40).toLowerCase();
   const discipline = isCareerDiscipline(disciplineRaw) ? disciplineRaw : null;
   const assessmentToken = safeCareerStr(body.assessment_token ?? body.assessmentToken, 80);
+  const evidenceRaw = Array.isArray(body.evidence_paths ?? body.evidencePaths)
+    ? ((body.evidence_paths ?? body.evidencePaths) as unknown[])
+    : [];
+  const evidencePaths = [
+    ...new Set(evidenceRaw.map((value) => safeCareerStr(value, 200)).filter(isHuntEvidencePath)),
+  ].slice(0, HUNT_MAX_EVIDENCE_FILES);
 
   if (!fullName || !email.includes('@') || !pageUrl || title.length < 4 || description.length < 20) {
     return NextResponse.json({ ok: false, error: 'missing_or_invalid_fields' }, { status: 400 });
@@ -77,7 +87,18 @@ export async function POST(request: Request) {
     catalogKey = attempt.catalog_key;
   }
 
+  const evidenceOk: string[] = [];
+  for (const path of evidencePaths) {
+    if (attemptId && !path.includes(`/hunt/${attemptId}/`) && !path.startsWith(`hunt/${attemptId}/`)) {
+      continue;
+    }
+    if (await huntEvidenceExists(path)) evidenceOk.push(path);
+  }
+
   const match = matchHuntReport({ pageUrl, title, description, discipline });
+  const huntBefore = catalogKey
+    ? await huntProgressForAttempt({ email, catalogKey })
+    : null;
   const admin = createAdminClient();
 
   const cutoff = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
@@ -106,6 +127,7 @@ export async function POST(request: Request) {
       assessment_attempt_id: attemptId,
       job_posting_id: jobPostingId,
       ip_hash: hashCareerIp(ip),
+      evidence_paths: evidenceOk,
     })
     .select('id')
     .maybeSingle();
@@ -113,6 +135,32 @@ export async function POST(request: Request) {
   if (insertErr) {
     console.error('POST /api/careers/hunt-report', insertErr);
     return NextResponse.json({ ok: false, error: 'report_insert_failed' }, { status: 500 });
+  }
+
+  if (attemptId) {
+    await recordHuntEvent({
+      attemptId,
+      eventType: 'reported',
+      path: pageUrl,
+      host: (() => {
+        try {
+          return new URL(pageUrl.includes('://') ? pageUrl : `https://${pageUrl}`).hostname;
+        } catch {
+          return '';
+        }
+      })(),
+      payload: { report_id: inserted?.id || null, matched_seed_id: match?.seedId || null },
+      ip: audit.ip,
+    });
+    if (urlLooksLikeFeed(pageUrl)) {
+      await recordHuntEvent({
+        attemptId,
+        eventType: 'page_view',
+        path: '/api/careers/feed',
+        host: 'career.codiva.dev',
+        ip: audit.ip,
+      });
+    }
   }
 
   await logActivity({
@@ -128,6 +176,14 @@ export async function POST(request: Request) {
   });
 
   const hunt = catalogKey ? await huntProgressForAttempt({ email, catalogKey }) : null;
+  if (hunt?.ready && !huntBefore?.ready && jobPostingId) {
+    await notifyCandidateApplyReady({
+      email,
+      name: fullName,
+      catalogKey,
+      jobPostingId,
+    });
+  }
 
   await notifyStaff({
     subject: match

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation'; 
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import { Analytics } from '@vercel/analytics/react';
+import HuntBeacon from '../components/careers/HuntBeacon';
 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -73,6 +74,8 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
           className: 'font-inter text-sm',
         }}
       />
+
+      {isTicket ? null : <HuntBeacon />}
 
       <Analytics />
     </div>

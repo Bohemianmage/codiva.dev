@@ -16,10 +16,17 @@ import {
   createJobPosting,
   createPersonnelOfferFromApplication,
   deleteDraftJobPosting,
+  updateHuntReportReview,
   updateJobApplicationStatus,
 } from '@/lib/ops/career-actions';
 import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
+import {
+  huntConsiderationLabel,
+  huntDifficultyLabel,
+  scoreHuntReports,
+  type HuntConsideration,
+} from '@/lib/careers/hunt/score';
 import { disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
 import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
@@ -59,6 +66,8 @@ export type OpsHuntReportRow = {
   matched_seed_id: string | null;
   discipline?: string | null;
   assessment_attempt_id?: string | null;
+  review_status?: string | null;
+  evidence_paths?: string[] | null;
   created_at: string;
 };
 
@@ -127,6 +136,20 @@ function emailKey(value: string) {
   return value.trim().toLowerCase();
 }
 
+function considerationRank(value: HuntConsideration) {
+  if (value === 'strong') return 3;
+  if (value === 'solid') return 2;
+  if (value === 'minimum') return 1;
+  return 0;
+}
+
+function considerationTone(value: HuntConsideration) {
+  if (value === 'strong') return 'success' as const;
+  if (value === 'solid') return 'info' as const;
+  if (value === 'minimum') return 'warning' as const;
+  return 'neutral' as const;
+}
+
 function huntForCandidate(
   reports: OpsHuntReportRow[],
   email: string,
@@ -138,7 +161,7 @@ function huntForCandidate(
       ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline)
       : Boolean(row.matched_seed_id)
   );
-  return { rows, total: rows.length, craftHits: craftHits.length };
+  return { rows, total: rows.length, craftHits: craftHits.length, score: scoreHuntReports(rows, discipline) };
 }
 
 export default async function OpsCareersPanel({
@@ -146,17 +169,20 @@ export default async function OpsCareersPanel({
   applications,
   attempts = [],
   huntReports = [],
+  signal = '',
 }: {
   postings: OpsJobPostingRow[];
   applications: OpsJobApplicationRow[];
   attempts?: OpsJobAttemptRow[];
   huntReports?: OpsHuntReportRow[];
+  signal?: string;
 }) {
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
   const { JOB_POSTING_STATUS_LABELS, JOB_EMPLOYMENT_LABELS, JOB_APPLICATION_STATUS_LABELS } =
     careerOpsLabels(t.locale);
   const DISCIPLINE_LABELS = careerDisciplineLabels(t.locale);
+  const locale = t.locale === 'en' ? 'en' : 'es';
   async function onCreate(formData: FormData) {
     'use server';
     await createJobPosting(formData);
@@ -175,6 +201,40 @@ export default async function OpsCareersPanel({
   const completed = attempts.filter((row) => row.status === 'completed').length;
   const passed = attempts.filter((row) => row.passed).length;
   const appliedWithTest = applications.filter((row) => row.assessment_attempt_id).length;
+  const signalFilter =
+    signal === 'strong' || signal === 'solid' || signal === 'minimum' || signal === 'none' ? signal : '';
+
+  const attemptsRanked = [...attempts]
+    .sort((a, b) => {
+      const ha = huntForCandidate(huntReports, a.email, disciplineFromCatalogKey(a.catalog_key));
+      const hb = huntForCandidate(huntReports, b.email, disciplineFromCatalogKey(b.catalog_key));
+      const diff = considerationRank(hb.score.consideration) - considerationRank(ha.score.consideration);
+      if (diff) return diff;
+      return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+    })
+    .filter((row) => {
+      if (!signalFilter) return true;
+      return (
+        huntForCandidate(huntReports, row.email, disciplineFromCatalogKey(row.catalog_key)).score
+          .consideration === signalFilter
+      );
+    });
+
+  const applicationsRanked = [...applications]
+    .sort((a, b) => {
+      const ha = huntForCandidate(huntReports, a.email, a.discipline);
+      const hb = huntForCandidate(huntReports, b.email, b.discipline);
+      const diff = considerationRank(hb.score.consideration) - considerationRank(ha.score.consideration);
+      if (diff) return diff;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    })
+    .filter((row) => {
+      if (!signalFilter) return true;
+      return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
+    });
+
+  const signalHref = (value: string) => (value ? `/team?tab=bolsa&signal=${value}` : '/team?tab=bolsa');
+
 
   return (
     <div className="max-w-4xl space-y-10">
@@ -317,6 +377,14 @@ export default async function OpsCareersPanel({
                       {t('ops.careers.viewPublic')}
                     </a>
                   ) : null}
+                  <a
+                    href={`/api/ops/careers/recruiting-report?pipeline=1&job=${row.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                  >
+                    {t('ops.careers.pipelineHtml')}
+                  </a>
                   {row.status === 'draft' ? (
                     <ToastForm
                       success={t('ops.careers.deleted')}
@@ -340,6 +408,43 @@ export default async function OpsCareersPanel({
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.careers.testsTitle')}</h2>
         <p className="text-sm text-zinc-500">{t('ops.careers.testsHint')}</p>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/api/ops/careers/recruiting-report?pipeline=1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+          >
+            {t('ops.careers.pipelineHtml')}
+          </a>
+          <a
+            href="/api/ops/careers/recruiting-report?pipeline=1&format=pdf"
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+          >
+            {t('ops.careers.pipelinePdf')}
+          </a>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            ['', t('ops.careers.signalAll')],
+            ['strong', huntConsiderationLabel('strong', locale)],
+            ['solid', huntConsiderationLabel('solid', locale)],
+            ['minimum', huntConsiderationLabel('minimum', locale)],
+            ['none', huntConsiderationLabel('none', locale)],
+          ].map(([value, label]) => (
+            <Link
+              key={value || 'all'}
+              href={signalHref(value)}
+              className={
+                signalFilter === value
+                  ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
+                  : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50'
+              }
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
         <div className="grid gap-3 sm:grid-cols-4">
           {[
             [t('ops.careers.started'), started],
@@ -353,13 +458,13 @@ export default async function OpsCareersPanel({
             </div>
           ))}
         </div>
-        {!attempts.length ? (
+        {!attemptsRanked.length ? (
           <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.careers.testsEmpty')}
           </p>
         ) : (
           <ul className="space-y-3">
-            {attempts.slice(0, 40).map((row) => {
+            {attemptsRanked.slice(0, 40).map((row) => {
               const posting = postings.find((p) => p.id === row.job_posting_id);
               const hunt = huntForCandidate(
                 huntReports,
@@ -384,6 +489,7 @@ export default async function OpsCareersPanel({
                           : ''}
                       </p>
                     </div>
+                    <div className="flex flex-col items-end gap-1">
                     <StatusBadge
                       label={
                         row.score_pct != null
@@ -392,14 +498,37 @@ export default async function OpsCareersPanel({
                       }
                       tone={row.passed ? 'success' : row.status === 'started' ? 'warning' : 'neutral'}
                     />
+                    {hunt.score.consideration !== 'none' ? (
+                      <StatusBadge
+                        label={t('ops.careers.consideration', {
+                          label: huntConsiderationLabel(hunt.score.consideration, locale),
+                        })}
+                        tone={considerationTone(hunt.score.consideration)}
+                      />
+                    ) : null}
+                    </div>
                   </div>
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Link
                       href={`/team/intentos/${row.id}`}
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
                     >
                       {t('ops.careers.viewProgress')}
                     </Link>
+                    <a
+                      href={`/api/ops/careers/recruiting-report?attempt=${row.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.reportHtml')}
+                    </a>
+                    <a
+                      href={`/api/ops/careers/recruiting-report?attempt=${row.id}&format=pdf`}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.reportPdf')}
+                    </a>
                   </div>
                 </li>
               );
@@ -410,13 +539,13 @@ export default async function OpsCareersPanel({
 
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.careers.appsTitle')}</h2>
-        {!applications.length ? (
+        {!applicationsRanked.length ? (
           <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.careers.appsEmpty')}
           </p>
         ) : (
           <ul className="space-y-3">
-            {applications.map((row) => {
+            {applicationsRanked.map((row) => {
               const hunt = huntForCandidate(huntReports, row.email, row.discipline);
               return (
               <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -439,10 +568,20 @@ export default async function OpsCareersPanel({
                         : ''}
                     </p>
                   </div>
+                  <div className="flex flex-col items-end gap-1">
                   <StatusBadge
                     label={JOB_APPLICATION_STATUS_LABELS[row.status as JobApplicationStatus] ?? row.status}
                     tone={applicationTone(row.status)}
                   />
+                  {hunt.score.consideration !== 'none' ? (
+                    <StatusBadge
+                      label={t('ops.careers.consideration', {
+                        label: huntConsiderationLabel(hunt.score.consideration, locale),
+                      })}
+                      tone={considerationTone(hunt.score.consideration)}
+                    />
+                  ) : null}
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <a
@@ -556,6 +695,11 @@ export default async function OpsCareersPanel({
                       <p className="mt-1 text-xs text-zinc-400">
                         {row.page_url} · {formatDate(row.created_at)}
                         {craftLabel ? ` · ${craftLabel}` : ''}
+                        {seed
+                          ? ` · ${t('ops.careers.difficulty', {
+                              label: huntDifficultyLabel(seed.difficulty, locale),
+                            })}`
+                          : ''}
                       </p>
                     </div>
                     <StatusBadge
@@ -566,10 +710,51 @@ export default async function OpsCareersPanel({
                             : t('ops.careers.seed', { craft: DISCIPLINE_LABELS[seed.craft] })
                           : t('ops.careers.noMatch')
                       }
-                      tone={seed ? (countsForLinked ? 'success' : 'info') : 'warning'}
+                      tone={seed ? (countsForLinked ? 'success' : 'info') : 'neutral'}
                     />
                   </div>
-                  {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : null}
+                  {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : (
+                    <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
+                  )}
+                  {(row.evidence_paths ?? []).length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(row.evidence_paths ?? []).map((_, index) => (
+                        <a
+                          key={`${row.id}-${index}`}
+                          href={`/api/ops/careers/hunt-file?id=${row.id}&n=${index}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                        >
+                          {t('ops.careers.evidence', { n: index + 1 })}
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!seed ? (
+                    <ToastForm
+                      success={t('ops.careers.reviewSaved')}
+                      action={async (fd) => {
+                        'use server';
+                        await updateHuntReportReview(row.id, fd);
+                      }}
+                      className="mt-3 flex flex-wrap items-center gap-2"
+                    >
+                      <input type="hidden" name="attempt_id" value={row.assessment_attempt_id || ''} />
+                      <select
+                        name="review_status"
+                        defaultValue={row.review_status || 'open'}
+                        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+                      >
+                        <option value="open">{t('ops.careers.reviewOpen')}</option>
+                        <option value="noted">{t('ops.careers.reviewNoted')}</option>
+                        <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
+                      </select>
+                      <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                        {t('ops.team.save')}
+                      </button>
+                    </ToastForm>
+                  ) : null}
                   {linkedAttempt ? (
                     <div className="mt-3">
                       <Link

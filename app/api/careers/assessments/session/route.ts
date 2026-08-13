@@ -17,6 +17,7 @@ import {
   parseOptionOrders,
 } from '@/lib/careers/assessments/server';
 import { huntProgressForAttempt } from '@/lib/careers/hunt/progress';
+import { applyHuntCookie } from '@/lib/careers/hunt/events';
 
 export const runtime = 'nodejs';
 
@@ -63,25 +64,29 @@ export async function POST(request: Request) {
       ? await huntProgressForAttempt({ email: row.email, catalogKey: row.catalog_key })
       : { required: false, ready: true, matched: 0, needed: 0, discipline: null };
 
-  return NextResponse.json({
-    ok: true,
-    session: {
-      token: row.public_token,
-      job_posting_id: row.job_posting_id,
-      catalog_key: row.catalog_key,
-      status: row.status,
-      full_name: row.full_name,
-      email: row.email,
-      attempt_number: row.attempt_number,
-      remaining_ms: row.status === 'started' ? remainingMs(row.expires_at) : 0,
-      time_limit_sec: row.time_limit_sec,
-      passed: row.passed,
-      score_pct: row.status === 'completed' ? row.score_pct : null,
-      title: catalog?.title ?? 'Prueba',
-      questions,
-      answers: row.answers ?? {},
-      hunt_required: hunt.required,
-      hunt_ready: hunt.ready,
-    },
-  });
+  return applyHuntCookie(
+    NextResponse.json({
+      ok: true,
+      session: {
+        token: row.public_token,
+        job_posting_id: row.job_posting_id,
+        catalog_key: row.catalog_key,
+        status: row.status,
+        full_name: row.full_name,
+        email: row.email,
+        attempt_number: row.attempt_number,
+        remaining_ms: row.status === 'started' ? remainingMs(row.expires_at) : 0,
+        time_limit_sec: row.time_limit_sec,
+        passed: row.passed,
+        score_pct: row.status === 'completed' ? row.score_pct : null,
+        title: catalog?.title ?? 'Prueba',
+        questions,
+        answers: row.answers ?? {},
+        hunt_required: hunt.required,
+        hunt_ready: hunt.ready,
+      },
+    }),
+    row.public_token,
+    request
+  );
 }

@@ -48,6 +48,7 @@ export default async function HuntPage({ searchParams }: PageProps) {
           <li>{t('career.hunt_rule_1')}</li>
           <li>{t('career.hunt_rule_2')}</li>
           <li>{t('career.hunt_rule_3')}</li>
+          <li>{t('career.hunt_rule_4')}</li>
         </ul>
         {craftHintKey ? (
           <p className="mt-4 text-sm leading-relaxed text-zinc-700">{t(craftHintKey)}</p>

@@ -339,7 +339,7 @@ const QA: AssessmentCatalog = {
   key: 'tester-qa',
   title: 'Prueba de criterio · Tester QA',
   intro:
-    'Ocho situaciones de testing transversal en productos a la medida que operan negocios reales. Buscamos reportes reproducibles, criterio de severidad y no confundir un defecto con una preferencia. Tienes 15 minutos. Hay que aprobarla para postular.',
+    'Ocho situaciones de testing transversal en productos a la medida que operan negocios reales. Buscamos reportes reproducibles, criterio de severidad y no confundir un defecto con una preferencia. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
   questionCount: 8,
   timeLimitSec: 15 * 60,
   passPct: 70,

@@ -1,10 +1,18 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import ToastForm from '@/components/ops/ToastForm';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { getAssessmentCatalog } from '@/lib/careers/assessments/catalog';
 import { parseAnswers } from '@/lib/careers/assessments/server';
 import { reviewRowsForAttempt, scoreAnswers } from '@/lib/careers/assessments/engine';
 import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
+import {
+  huntConsiderationLabel,
+  huntDifficultyLabel,
+  scoreHuntReports,
+} from '@/lib/careers/hunt/score';
+import { summarizeHuntTrail } from '@/lib/careers/hunt/trail';
+import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
 import { labelsFor } from '@/lib/ops/labels';
 import { dateLocale } from '@/i18n/config';
@@ -52,7 +60,7 @@ export default async function AssessmentAttemptPage({
 
   if (!attempt) notFound();
 
-  const [{ data: posting }, { data: events }, { data: application }, { data: huntByAttempt }, { data: huntByEmail }] =
+  const [{ data: posting }, { data: events }, { data: application }, { data: huntByAttempt }, { data: huntByEmail }, { data: huntTrail }] =
     await Promise.all([
     supabase.from('ops_job_postings').select('id, title, slug').eq('id', attempt.job_posting_id).maybeSingle(),
     supabase
@@ -68,18 +76,24 @@ export default async function AssessmentAttemptPage({
     supabase
       .from('ops_hunt_reports')
       .select(
-        'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, created_at'
+        'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, review_status, evidence_paths, created_at'
       )
       .eq('assessment_attempt_id', attempt.id)
       .order('created_at', { ascending: false }),
     supabase
       .from('ops_hunt_reports')
       .select(
-        'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, created_at'
+        'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, review_status, evidence_paths, created_at'
       )
       .ilike('email', attempt.email)
       .order('created_at', { ascending: false })
       .limit(40),
+    supabase
+      .from('ops_hunt_events')
+      .select('id, event_type, path, host, referrer, created_at')
+      .eq('assessment_attempt_id', attempt.id)
+      .order('created_at', { ascending: true })
+      .limit(200),
   ]);
 
   const catalog = getAssessmentCatalog(attempt.catalog_key);
@@ -102,6 +116,8 @@ export default async function AssessmentAttemptPage({
       expected: string | null;
       matched_seed_id: string | null;
       discipline: string | null;
+      review_status?: string | null;
+      evidence_paths?: string[] | null;
       created_at: string;
     }
   >();
@@ -114,6 +130,19 @@ export default async function AssessmentAttemptPage({
   const craftHits = huntReports.filter((row) =>
     discipline ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline) : Boolean(row.matched_seed_id)
   ).length;
+  const huntScore = scoreHuntReports(huntReports, discipline);
+  const locale = t.locale === 'en' ? 'en' : 'es';
+  const huntPages = new Set(
+    (huntTrail ?? [])
+      .filter((row) => row.event_type === 'page_view')
+      .map((row) => `${row.host || ''}${row.path}`)
+  );
+  const trail = summarizeHuntTrail({
+    passedAt: attempt.completed_at,
+    discipline,
+    events: huntTrail ?? [],
+    reports: huntReports,
+  });
 
   const timeOnQuestion = new Map<string, number>();
   let lastView: { id: string; at: number } | null = null;
@@ -151,6 +180,19 @@ export default async function AssessmentAttemptPage({
             </Link>
           </>
         ) : null}
+        {' · '}
+        <a
+          href={`/api/ops/careers/recruiting-report?attempt=${attempt.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-codiva-primary hover:underline"
+        >
+          {t('ops.attempt.reportHtml')}
+        </a>
+        {' · '}
+        <a href={`/api/ops/careers/recruiting-report?attempt=${attempt.id}&format=pdf`} className="text-codiva-primary hover:underline">
+          {t('ops.attempt.reportPdf')}
+        </a>
       </p>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -196,6 +238,11 @@ export default async function AssessmentAttemptPage({
                   craftHits ? ` ${t('ops.careers.craftHits', { count: craftHits })}` : ''
                 }`
               : ''}
+            {huntScore.consideration !== 'none'
+              ? ` · ${t('ops.careers.consideration', {
+                  label: huntConsiderationLabel(huntScore.consideration, locale),
+                })}`
+              : ''}
           </p>
         </div>
       </section>
@@ -232,12 +279,19 @@ export default async function AssessmentAttemptPage({
                         : seed
                           ? t('ops.attempt.seedCraft', { craft: DISCIPLINE_LABELS[seed.craft] })
                           : t('ops.attempt.noSeed')}
+                      {seed
+                        ? ` · ${t('ops.careers.difficulty', {
+                            label: huntDifficultyLabel(seed.difficulty, locale),
+                          })}`
+                        : ''}
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400">
                     {row.page_url} · {formatDate(row.created_at)}
                   </p>
-                  {seed ? <p className="mt-1 text-xs text-zinc-500">{seed.title}</p> : null}
+                  {seed ? <p className="mt-1 text-xs text-zinc-500">{seed.title}</p> : (
+                    <p className="mt-1 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
+                  )}
                   <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-700">{row.description}</p>
                   {row.expected ? (
                     <p className="mt-2 text-sm text-zinc-600">
@@ -245,10 +299,113 @@ export default async function AssessmentAttemptPage({
                       {row.expected}
                     </p>
                   ) : null}
+                  {(row.evidence_paths ?? []).length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(row.evidence_paths ?? []).map((_, index) => (
+                        <a
+                          key={`${row.id}-ev-${index}`}
+                          href={`/api/ops/careers/hunt-file?id=${row.id}&n=${index}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                        >
+                          {t('ops.careers.evidence', { n: index + 1 })}
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!seed ? (
+                    <ToastForm
+                      success={t('ops.careers.reviewSaved')}
+                      action={async (fd) => {
+                        'use server';
+                        await updateHuntReportReview(row.id, fd);
+                      }}
+                      className="mt-3 flex flex-wrap items-center gap-2"
+                    >
+                      <input type="hidden" name="attempt_id" value={attempt.id} />
+                      <select
+                        name="review_status"
+                        defaultValue={row.review_status || 'open'}
+                        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+                      >
+                        <option value="open">{t('ops.careers.reviewOpen')}</option>
+                        <option value="noted">{t('ops.careers.reviewNoted')}</option>
+                        <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
+                      </select>
+                      <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                        {t('ops.team.save')}
+                      </button>
+                    </ToastForm>
+                  ) : null}
                 </li>
               );
             })}
           </ul>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold">{t('ops.attempt.huntMapTitle')}</h2>
+        <p className="text-sm text-zinc-500">{t('ops.attempt.huntMapHint')}</p>
+        <p className="text-sm text-zinc-700">
+          {trail.formOnly
+            ? t('ops.attempt.huntFormOnly')
+            : trail.browsedSite
+              ? t('ops.attempt.huntBrowsed', { count: trail.uniquePages })
+              : t('ops.attempt.huntNoTrail')}
+          {trail.visitedFeed ? ` · ${t('ops.attempt.huntVisitedFeed')}` : ''}
+          {trail.visitedMarketing ? ` · ${t('ops.attempt.huntVisitedMarketing')}` : ''}
+          {' · '}
+          {trail.msToFirstCraft != null
+            ? t('ops.attempt.huntTimeToCraft', { time: formatDuration(trail.msToFirstCraft, t) })
+            : t('ops.attempt.huntNoCraftYet')}
+        </p>
+        {huntScore.consideration !== 'none' ? (
+          <p className="text-sm text-zinc-700">
+            {t('ops.careers.consideration', {
+              label: huntConsiderationLabel(huntScore.consideration, locale),
+            })}
+            {huntScore.hardest
+              ? ` · ${t('ops.careers.hardest', {
+                  label: huntDifficultyLabel(huntScore.hardest, locale),
+                })}`
+              : ''}
+            {huntPages.size ? ` · ${t('ops.attempt.huntMapPages', { count: huntPages.size })}` : ''}
+          </p>
+        ) : null}
+        {!huntTrail?.length ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.attempt.huntMapEmpty')}
+          </p>
+        ) : (
+          <ol className="space-y-2">
+            {huntTrail.map((event) => (
+              <li key={event.id} className="flex gap-3 text-sm">
+                <span className="w-36 shrink-0 tabular-nums text-zinc-400">
+                  {new Date(event.created_at).toLocaleString(dateLocale(t.locale), {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </span>
+                <span className="text-zinc-800">
+                  {event.event_type === 'reported'
+                    ? t('ops.attempt.huntMapReported', {
+                        path: `${event.host || ''}${event.path}`,
+                      })
+                    : t('ops.attempt.huntMapPage', {
+                        path: `${event.host || ''}${event.path}`,
+                      })}
+                  {event.referrer ? (
+                    <span className="block text-xs text-zinc-400">
+                      {t('ops.attempt.huntMapFrom', { from: event.referrer })}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ol>
         )}
       </section>
 
