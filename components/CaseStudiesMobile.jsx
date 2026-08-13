@@ -4,13 +4,28 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { CaseStudyLogo } from './CaseStudyLogo';
-import { getLogoFrame, isWideLogo } from '../utils/logoFrame';
 import useMarqueeCopies from '../hooks/useMarqueeCopies';
 import useMarqueePause from '../hooks/useMarqueePause';
 
-const MARQUEE_GAP = 'gap-6';
+const MARQUEE_GAP = 'gap-5';
+const LOGO_H = '3.5rem';
 const PIN_MS = 2800;
 const SYNC_MS = 120;
+
+function MarqueeLogo({ item }) {
+  return (
+    <span
+      className="flex h-14 flex-shrink-0 items-center justify-center"
+      style={{ height: LOGO_H }}
+    >
+      <CaseStudyLogo
+        item={item}
+        alt=""
+        className="h-full w-auto max-h-full object-contain"
+      />
+    </span>
+  );
+}
 
 function nameClosestToCenter(container) {
   const root = container.getBoundingClientRect();
@@ -87,25 +102,9 @@ export default function CaseStudiesMobile({ logos }) {
           className={`pointer-events-none absolute left-0 top-0 flex w-max ${MARQUEE_GAP} opacity-0`}
           aria-hidden
         >
-          {logos.map((item) => {
-            const frame = getLogoFrame(item);
-            return (
-              <div
-                key={`meas-${item.name}`}
-                className="flex flex-shrink-0 items-center justify-center"
-                style={{
-                  height: '3.5rem',
-                  minWidth: isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
-                }}
-              >
-                <CaseStudyLogo
-                  item={item}
-                  alt=""
-                  className="h-full w-auto object-contain"
-                />
-              </div>
-            );
-          })}
+          {logos.map((item) => (
+            <MarqueeLogo key={`meas-${item.name}`} item={item} />
+          ))}
         </div>
         <div
           style={{ ...logosCopies.marqueeStyle, animationDuration: '45s' }}
@@ -114,7 +113,6 @@ export default function CaseStudiesMobile({ logos }) {
           )}
         >
           {logosCopies.flatWithKeys.map(({ item, key, copyIdx }) => {
-            const frame = getLogoFrame(item);
             const selected = item.name === project.name;
             const interactive = copyIdx === 0;
             return (
@@ -127,19 +125,11 @@ export default function CaseStudiesMobile({ logos }) {
                 aria-label={interactive ? item.name : undefined}
                 aria-pressed={interactive ? selected : undefined}
                 onClick={() => selectByName(item.name)}
-                className={`flex flex-shrink-0 items-center justify-center rounded-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-codiva-primary ${
-                  selected ? 'scale-105 opacity-100' : 'opacity-40'
+                className={`flex-shrink-0 rounded-lg transition-opacity duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-codiva-primary ${
+                  selected ? 'opacity-100' : 'opacity-40'
                 }`}
-                style={{
-                  height: '3.5rem',
-                  minWidth: isWideLogo(item) ? `${frame.width / 22}rem` : '3.5rem',
-                }}
               >
-                <CaseStudyLogo
-                  item={item}
-                  alt=""
-                  className="h-full w-auto object-contain"
-                />
+                <MarqueeLogo item={item} />
               </button>
             );
           })}
