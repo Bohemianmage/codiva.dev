@@ -129,10 +129,26 @@ a {
   animation-play-state: paused;
 }
 
+@keyframes hero-cta-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-cta {
+  animation: hero-cta-in 0.5s ease-out 0.12s both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-left,
   .animate-scroll-right,
-  .case-orbit {
+  .case-orbit,
+  .hero-cta {
     animation: none;
   }
 }

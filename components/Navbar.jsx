@@ -2,36 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useRouter, usePathname } from 'next/navigation';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
-import CodivaWordmark from './CodivaWordmark';
+import CodivaWordmarkMark from './CodivaWordmarkMark';
 import { marketingBaseUrl } from '@/lib/ops/host';
 
-// Menú de navegación (ya sin 'Home')
 const navItems = [
   { labelKey: 'nav.about', id: 'about' },
   { labelKey: 'nav.services', id: 'services' },
   { labelKey: 'nav.cases', id: 'casos' },
   { labelKey: 'nav.contact', id: 'contact' },
 ];
-
-// Animaciones del navbar
-const navVariants = {
-  hidden: { opacity: 0, y: -10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { staggerChildren: 0.03 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: -4 },
-  visible: { opacity: 1, y: 0 },
-};
 
 function MenuToggle({ open, onToggle, label }) {
   const bar =
@@ -96,7 +79,6 @@ export default function Navbar({ variant = 'marketing' }) {
     scrollTo('hero');
   };
 
-  // Mostrar u ocultar navbar según el scroll
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -107,7 +89,6 @@ export default function Navbar({ variant = 'marketing' }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Cerrar menú con Escape
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') setMenuOpen(false);
@@ -118,34 +99,25 @@ export default function Navbar({ variant = 'marketing' }) {
 
   return (
     <div className="pointer-events-none fixed top-0 z-50 w-full px-4 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:px-6">
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            key="mobile-menu-backdrop"
-            onClick={() => setMenuOpen(false)}
-            className="pointer-events-auto fixed inset-0 z-40 bg-zinc-900/45"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            aria-hidden="true"
-          />
-        )}
-      </AnimatePresence>
+      {menuOpen ? (
+        <div
+          onClick={() => setMenuOpen(false)}
+          className="pointer-events-auto fixed inset-0 z-40 bg-zinc-900/45"
+          aria-hidden="true"
+        />
+      ) : null}
 
       <div className="relative z-50 mx-auto max-w-7xl">
-        <motion.nav
-          initial={{ y: 0 }}
-          animate={{ y: showNavbar || menuOpen ? 0 : -96 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="glass-panel pointer-events-auto flex h-14 items-center rounded-2xl px-5 font-inter md:px-8"
+        <nav
+          className={`glass-panel pointer-events-auto flex h-14 items-center rounded-2xl px-5 font-inter transition-transform duration-300 ease-out md:px-8 ${
+            showNavbar || menuOpen ? 'translate-y-0' : '-translate-y-24'
+          }`}
         >
           <div className="flex w-full items-center justify-between">
-            <motion.div
+            <button
+              type="button"
               onClick={goBrandHome}
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="flex h-7 cursor-pointer items-center space-x-2"
+              className="flex h-7 cursor-pointer items-center space-x-2 bg-transparent p-0"
             >
               <Image
                 src="/logo.svg"
@@ -154,33 +126,26 @@ export default function Navbar({ variant = 'marketing' }) {
                 height={28}
                 className="block h-7 w-7"
               />
-              <CodivaWordmark
+              <CodivaWordmarkMark
                 size="md"
                 variant="default"
-                animate
-                active
                 className="leading-none [&_span]:leading-none"
               />
-            </motion.div>
+            </button>
 
             <div className="hidden items-center justify-between gap-6 md:flex">
-              <motion.div
-                className="flex gap-12"
-                variants={navVariants}
-                initial="hidden"
-                animate="visible"
-              >
+              <div className="flex gap-12">
                 {navItems.map(({ labelKey, id }) => (
-                  <motion.button
+                  <button
                     key={id}
-                    variants={itemVariants}
+                    type="button"
                     onClick={() => scrollTo(id)}
                     className="relative font-medium text-codiva-secondary transition-colors after:absolute after:bottom-[-2px] after:left-0 after:h-[2px] after:w-0 after:bg-codiva-primary after:transition-all hover:text-zinc-900 hover:after:w-full"
                   >
                     {t(labelKey)}
-                  </motion.button>
+                  </button>
                 ))}
-              </motion.div>
+              </div>
 
               <div className="pl-4">
                 <LanguageSwitcher />
@@ -196,40 +161,27 @@ export default function Navbar({ variant = 'marketing' }) {
               />
             </div>
           </div>
-        </motion.nav>
+        </nav>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              id="mobile-menu"
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="glass-panel-solid pointer-events-auto absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 h-fit rounded-2xl p-2 md:hidden"
-            >
-              <motion.div
-                variants={navVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                className="flex flex-col"
-              >
-                {navItems.map(({ labelKey, id }) => (
-                  <motion.button
-                    key={id}
-                    type="button"
-                    variants={itemVariants}
-                    onClick={() => scrollTo(id)}
-                    className="flex min-h-12 w-full items-center rounded-xl px-4 text-left text-base font-medium leading-none text-codiva-secondary transition hover:bg-zinc-100 hover:text-zinc-900"
-                  >
-                    {t(labelKey)}
-                  </motion.button>
-                ))}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {menuOpen ? (
+          <div
+            id="mobile-menu"
+            className="glass-panel-solid pointer-events-auto absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 h-fit rounded-2xl p-2 md:hidden"
+          >
+            <div className="flex flex-col">
+              {navItems.map(({ labelKey, id }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => scrollTo(id)}
+                  className="flex min-h-12 w-full items-center rounded-xl px-4 text-left text-base font-medium leading-none text-codiva-secondary transition hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
