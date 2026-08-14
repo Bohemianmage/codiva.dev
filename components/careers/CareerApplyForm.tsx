@@ -22,6 +22,7 @@ const DISCIPLINE_I18N: Record<CareerDiscipline, string> = {
   fullstack: 'career.discipline_fullstack',
   'ux-ui': 'career.discipline_ux_ui',
   qa: 'career.discipline_qa',
+  security: 'career.discipline_security',
   other: 'career.discipline_other',
 };
 

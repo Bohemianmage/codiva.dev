@@ -113,6 +113,12 @@ Reportar problemas de UX/UI con tarea concreta, evidencia y severidad; no con pr
 Colaborar con diseño, desarrollo y PM en estados vacíos, errores y acciones destructivas.
 Otras actividades afines a testing de UX/UI que Codiva asigne según las necesidades del estudio y de los proyectos.`;
 
+export const DEFAULT_SECURITY_RESPONSIBILITIES = `Probar seguridad de aplicación en productos a la medida de Codiva.dev: autorización, cookies, cabeceras y filtración de datos.
+Reportar hallazgos con alcance, impacto y evidencia mínima; no escanear producción ni explotar más de lo necesario.
+Distinguir autenticación de autorización y un secreto filtrado de una preferencia de hardening.
+Colaborar con desarrollo y PM para cerrar defectos antes del pase, sin teatro de pentest.
+Otras actividades afines a testing de seguridad de aplicación que Codiva asigne según las necesidades del estudio y de los proyectos.`;
+
 export function responsibilitiesForCareerDiscipline(
   discipline: string | null | undefined
 ): string | null {
@@ -127,6 +133,8 @@ export function responsibilitiesForCareerDiscipline(
       return DEFAULT_DESIGN_RESPONSIBILITIES;
     case 'qa':
       return DEFAULT_QA_RESPONSIBILITIES;
+    case 'security':
+      return DEFAULT_SECURITY_RESPONSIBILITIES;
     default:
       return null;
   }

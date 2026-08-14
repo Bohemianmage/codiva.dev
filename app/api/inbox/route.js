@@ -3,11 +3,21 @@ import { notifyStaffSafe } from '@/lib/ops/email';
 import { templateContactInboxStaff } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { NextResponse } from 'next/server';
+import {
+  PUBLIC_RL_FORM,
+  PUBLIC_RL_FORM_EMAIL,
+  consumeIpRateLimit,
+  consumeRateLimit,
+  rateLimitJsonResponse,
+} from '@/lib/rate-limit';
 
 export async function POST(request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
+
+  const ipRl = consumeIpRateLimit(request, 'public_inbox', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
 
   try {
     const { name, email, message } = await request.json();
@@ -15,6 +25,14 @@ export async function POST(request) {
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
+
+    const emailKey = String(email).trim().toLowerCase();
+    const emailRl = consumeRateLimit(
+      `public_inbox_email:${emailKey}`,
+      PUBLIC_RL_FORM_EMAIL.windowMs,
+      PUBLIC_RL_FORM_EMAIL.max
+    );
+    if (!emailRl.ok) return rateLimitJsonResponse(emailRl.retryAfterMs);
 
     const admin = createAdminClient();
     const { data: inbox, error } = await admin

@@ -624,6 +624,158 @@ export const TESTER_UX: AssessmentCatalog = catalog(
   ]
 );
 
+export const TESTER_SECURITY: AssessmentCatalog = catalog(
+  'tester-security',
+  'Prueba de criterio · Tester de seguridad',
+  'Ocho situaciones de testing de seguridad de aplicación en software a la medida. No buscamos pentest de red ni explotación: buscamos alcance, autorización, secretos y evidencia sin hacer más daño. Tienes 15 minutos. Al aprobar, reportas un hallazgo de tu oficio en el sitio. Sin las dos partes no se habilita el CV.',
+  [
+    {
+      id: 'tsc-scope-prod',
+      competency: 'Alcance',
+      type: 'single',
+      points: 2,
+      context:
+        'El cliente escribe: «hazle pentest a producción esta noche, sin avisar, para ver si aguantan».',
+      prompt: '¿Qué haces?',
+      options: [
+        { key: 'a', label: 'Escanear prod ya: si no hay contrato, igual «hay que demostrar valor».' },
+        {
+          key: 'b',
+          label:
+            'No se ataca producción sin alcance por escrito. Se propone ambiente de prueba, reglas de engagement y qué queda fuera.',
+        },
+        { key: 'c', label: 'Pedir las credenciales de admin de prod y «entrar suave».' },
+        { key: 'd', label: 'Ignorar el mensaje: seguridad no es cosa de testers.' },
+      ],
+      correct: ['b'],
+    },
+    {
+      id: 'tsc-idor-stop',
+      competency: 'Autorización',
+      type: 'single',
+      points: 2,
+      context:
+        'Con el usuario de prueba A cambias el id en la URL y ves la factura del usuario B.',
+      prompt: '¿Cuál es el siguiente paso correcto?',
+      options: [
+        { key: 'a', label: 'Descargar todas las facturas para un ZIP de evidencia.' },
+        {
+          key: 'b',
+          label:
+            'Defecto grave de autorización. Se reporta con dos usuarios de prueba, ids y respuesta; no se explota más ni se pivotea.',
+        },
+        { key: 'c', label: 'Cerrar: si no está en el UAT, no existe.' },
+        { key: 'd', label: 'Avisar por WhatsApp sin ticket, pasos ni recorte.' },
+      ],
+      correct: ['b'],
+    },
+    {
+      id: 'tsc-authn-authz',
+      competency: 'Auth',
+      type: 'single',
+      points: 2,
+      prompt:
+        'El login funciona. El usuario A, ya dentro, abre `/invoices/id-de-B` y ve datos de B.',
+      options: [
+        { key: 'a', label: 'Fallo de autenticación: el login está mal.' },
+        {
+          key: 'b',
+          label:
+            'Fallo de autorización: la sesión es válida, pero el recurso de otro no debería entregarse. Se reporta así.',
+        },
+        { key: 'c', label: 'Detalle de UX: el menú no debería mostrar el enlace.' },
+        { key: 'd', label: 'Se ignora si A y B son de la misma empresa en staging.' },
+      ],
+      correct: ['b'],
+    },
+    {
+      id: 'tsc-secret-json',
+      competency: 'Secretos',
+      type: 'single',
+      points: 2,
+      prompt: 'Un endpoint público de listado incluye `api_key` en el JSON.',
+      options: [
+        { key: 'a', label: 'Pasa: si es público, la clave «es para el front».' },
+        {
+          key: 'b',
+          label:
+            'Filtración. Se reporta el campo y un recorte; no se pega la clave completa en Slack ni se reutiliza.',
+        },
+        { key: 'c', label: 'Probar la clave contra otros ambientes para «medir impacto».' },
+        { key: 'd', label: 'Solo cuenta si el cliente pidió OWASP en el contrato.' },
+      ],
+      correct: ['b'],
+    },
+    {
+      id: 'tsc-cookie-flags',
+      competency: 'Cookies',
+      type: 'single',
+      points: 2,
+      prompt:
+        'En DevTools una cookie que parece de sesión no trae HttpOnly. El producto maneja cuentas reales.',
+      options: [
+        { key: 'a', label: 'Cosmético: las banderas de cookie no se prueban.' },
+        {
+          key: 'b',
+          label:
+            'Defecto: un script podría leerla. Se reportan nombre y banderas; no se secuestran sesiones de nadie.',
+        },
+        { key: 'c', label: 'Se abre la sesión de un cliente real para demostrar el robo.' },
+        { key: 'd', label: 'Se espera a que alguien reporte XSS y entonces sí importa.' },
+      ],
+      correct: ['b'],
+    },
+    {
+      id: 'tsc-report-multi',
+      competency: 'Evidencia',
+      type: 'multi',
+      points: 2,
+      prompt: 'Marca lo que sí va en un hallazgo de seguridad para que no parezca un ataque.',
+      options: [
+        { key: 'a', label: 'URL, método y ambiente.' },
+        { key: 'b', label: 'Impacto: quién podría ver o hacer qué.' },
+        { key: 'c', label: 'Usuarios de prueba, no cuentas reales de clientes.' },
+        { key: 'd', label: 'Pegar un dump de PII «para que lo vean».' },
+        { key: 'e', label: 'Dejar constancia de que no se explotó más de lo necesario.' },
+      ],
+      correct: ['a', 'b', 'c', 'e'],
+    },
+    {
+      id: 'tsc-rank-severity',
+      competency: 'Severidad',
+      type: 'rank',
+      points: 2,
+      prompt: 'Ordena de mayor a menor severidad para un producto con cuentas reales (1 = primero).',
+      options: [
+        { key: 'a', label: 'Un usuario autenticado lee facturas de otro (autorización).' },
+        { key: 'b', label: 'Cookie de sesión sin flag Secure en un sitio HTTPS.' },
+        { key: 'c', label: 'Falta Content-Security-Policy en la landing de marketing.' },
+        { key: 'd', label: '«Yo habría usado Argon2 en vez de bcrypt», sin evidencia de fallo.' },
+      ],
+      correct: ['a', 'b', 'c', 'd'],
+    },
+    {
+      id: 'tsc-hidden-admin',
+      competency: 'Autorización',
+      type: 'single',
+      points: 2,
+      prompt:
+        'El botón «Admin» está oculto en el front para el rol user. Con el mismo token, GET /api/admin/users responde 200.',
+      options: [
+        { key: 'a', label: 'Pasa: el usuario normal no ve el botón.' },
+        {
+          key: 'b',
+          label:
+            'Defecto de autorización en servidor. Se reporta el request; no se recorre el panel ni se crea un admin.',
+        },
+        { key: 'c', label: 'Solo CSS: se pide un `display:none` más agresivo.' },
+        { key: 'd', label: 'Se publica el endpoint en redes para «presión».' },
+      ],
+      correct: ['b'],
+    },
+  ]
+);
+
 export const TESTER_GENERAL: AssessmentCatalog = catalog(
   'tester-general',
   'Prueba de criterio · Tester',

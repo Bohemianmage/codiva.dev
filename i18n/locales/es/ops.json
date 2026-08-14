@@ -4,6 +4,7 @@
     "subtitle": "Para agencias, consultores e intermediarios que necesitan una propuesta de Codiva para su cliente.",
     "sending": "Enviando solicitud…",
     "sendError": "No se pudo enviar la solicitud.",
+    "rateLimited": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
     "sent": "Solicitud enviada",
     "connectionError": "Error de conexión. Intenta de nuevo.",
     "terms": "Términos",
@@ -813,6 +814,7 @@
   },
   "auth": {
     "emailRequired": "Ingresa tu email.",
+    "rateLimited": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
     "incomplete": "Datos incompletos.",
     "staffIfExists": "Si el email tiene acceso de staff, recibirás un enlace en breve.",
     "portalIfExists": "Si tienes acceso a este portal, recibirás un enlace en breve.",

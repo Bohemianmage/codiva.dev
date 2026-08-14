@@ -4,14 +4,34 @@ import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { NextResponse } from 'next/server';
+import {
+  PUBLIC_RL_FORM,
+  PUBLIC_RL_FORM_EMAIL,
+  consumeIpRateLimit,
+  consumeRateLimit,
+  rateLimitJsonResponse,
+} from '@/lib/rate-limit';
 
 export async function POST(request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
+  const ipRl = consumeIpRateLimit(request, 'public_leads', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
+
   try {
     const body = await request.json();
+    const emailKey = String(body.email || '').trim().toLowerCase();
+    if (emailKey) {
+      const emailRl = consumeRateLimit(
+        `public_leads_email:${emailKey}`,
+        PUBLIC_RL_FORM_EMAIL.windowMs,
+        PUBLIC_RL_FORM_EMAIL.max
+      );
+      if (!emailRl.ok) return rateLimitJsonResponse(emailRl.retryAfterMs);
+    }
+
     const admin = createAdminClient();
 
     const { data: lead, error } = await admin

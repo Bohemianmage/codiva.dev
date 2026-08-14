@@ -29,7 +29,8 @@ export default function PartnerRequestForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = data.error || t('partner.sendError');
+        const msg =
+          res.status === 429 || data.error === 'rate_limited' ? t('partner.rateLimited') : data.error || t('partner.sendError');
         setError(msg);
         toast.error(msg, { id: toastId });
         return;

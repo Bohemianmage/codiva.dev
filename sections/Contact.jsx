@@ -60,6 +60,11 @@ export default function Contact() {
                 body: JSON.stringify(values),
               });
 
+              if (response.status === 429) {
+                toast.error(t('common.status.rateLimited'), { id: toastId });
+                return;
+              }
+
               if (!response.ok) throw new Error('Error sending message');
 
               toast.success(t('common.status.success'), { id: toastId });

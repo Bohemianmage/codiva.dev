@@ -12,10 +12,29 @@ import { findUserIdByEmail } from '@/lib/ops/auth-users';
 import { getT } from '@/i18n/locale';
 import { tSync } from '@/i18n/translate';
 import type { Locale } from '@/i18n/config';
+import { getRequestAudit } from '@/lib/ops/request-audit';
+import { PUBLIC_RL_AUTH, consumeRateLimit } from '@/lib/rate-limit';
 
-type ResetResult = { ok: true; message: string } | { ok: false; message: string };
+type ResetResult =
+  | { ok: true; message: string }
+  | { ok: false; message: string; code?: 'rate_limited' };
 
 export { findUserIdByEmail };
+
+async function enforcePasswordResetRateLimit(email: string): Promise<ResetResult | null> {
+  const t = await getT();
+  const audit = await getRequestAudit();
+  const ip = audit.ip || 'unknown';
+  const ipRl = consumeRateLimit(`auth_reset_ip:${ip}`, PUBLIC_RL_AUTH.windowMs, PUBLIC_RL_AUTH.max);
+  if (!ipRl.ok) return { ok: false, message: t('auth.rateLimited'), code: 'rate_limited' };
+  const emailRl = consumeRateLimit(
+    `auth_reset_email:${email}`,
+    PUBLIC_RL_AUTH.emailWindowMs,
+    PUBLIC_RL_AUTH.emailMax
+  );
+  if (!emailRl.ok) return { ok: false, message: t('auth.rateLimited'), code: 'rate_limited' };
+  return null;
+}
 
 async function sendSupabaseRecoveryEmail(
   email: string,
@@ -110,6 +129,9 @@ export async function requestStaffPasswordReset(email: string): Promise<ResetRes
     return { ok: false, message: t('auth.emailRequired') };
   }
 
+  const limited = await enforcePasswordResetRateLimit(normalized);
+  if (limited) return limited;
+
   const userId = await findUserIdByEmail(normalized);
   if (!userId) {
     return {
@@ -145,6 +167,9 @@ export async function requestPortalPasswordReset(
   if (!normalized || !slug) {
     return { ok: false, message: t('auth.incomplete') };
   }
+
+  const limited = await enforcePasswordResetRateLimit(normalized);
+  if (limited) return limited;
 
   const admin = createAdminClient();
 
@@ -198,6 +223,9 @@ export async function requestPortalHubPasswordReset(email: string): Promise<Rese
   if (!normalized) {
     return { ok: false, message: t('auth.incomplete') };
   }
+
+  const limited = await enforcePasswordResetRateLimit(normalized);
+  if (limited) return limited;
 
   const admin = createAdminClient();
   const userId = await findUserIdByEmail(normalized);

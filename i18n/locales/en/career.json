@@ -15,6 +15,7 @@
     "discipline_fullstack": "Full-stack tester",
     "discipline_ux_ui": "UX / UI tester",
     "discipline_qa": "QA tester",
+    "discipline_security": "Security tester",
     "discipline_other": "Tester (another craft)",
     "discipline_gate": "Choose your testing craft. Each one has its own criteria test and a finding on the site.",
     "field_cv": "CV as PDF",
@@ -104,6 +105,7 @@
     "hunt_rule_2": "Separate a defect from a preference. The finding must match your craft.",
     "hunt_rule_3": "You don’t need to inspect the code: if it isn’t visible or usable, it counts less.",
     "hunt_rule_4": "Once your session is identified, pages you visit on the job board and the public site are recorded on the test map.",
+    "hunt_rule_5": "Do not scan, brute-force auth, or touch the portal or ops. Response headers, cookies, and public API bodies are in scope.",
     "hunt_form_title": "Your report",
     "hunt_form_intro": "One finding per submission. If you find several, send several reports.",
     "hunt_field_url": "Page URL",
@@ -125,6 +127,7 @@
     "hunt_craft_hint_fullstack": "Full-stack craft: it may be in the UI or an API; it counts if the contract does not match what you see.",
     "hunt_craft_hint_ux_ui": "UX/UI craft: language, accessible names, visual consistency, and click targets.",
     "hunt_craft_hint_qa": "QA craft: regressions, broken links, and stale data that never got updated.",
+    "hunt_craft_hint_security": "Security craft: headers, cookies, secrets in public APIs, and extra data that leaked. Observe; do not scan or attack auth.",
     "hunt_craft_hint_other": "Any finding with evidence counts for this craft.",
     "hunt_error": "We could not send it. Check the details and try again.",
     "hunt_error_rate": "Too many reports. Wait a moment.",
@@ -142,6 +145,7 @@
       "fullstack": "Full-stack tester",
       "ux-ui": "UX / UI tester",
       "qa": "QA tester",
+      "security": "Security tester",
       "other": "Tester (other craft)"
     },
     "postingStatus": {
