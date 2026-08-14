@@ -1,0 +1,124 @@
+{
+  "email": {
+    "ctaFallback": "Si el botón no funciona, copia este enlace:",
+    "hello": "Hola",
+    "lead": {
+      "subject": "Hemos recibido tu solicitud en {{brand}}",
+      "preview": "Recibimos tu solicitud de cotización en {{brand}}",
+      "title": "Recibimos tu solicitud",
+      "body1": "Gracias por contactarnos. Hemos recibido tu solicitud de cotización y nuestro equipo la revisará pronto.",
+      "body2": "Te responderemos a la brevedad. Si necesitas escribirnos, usa",
+      "footer": "Mensaje automático de Codiva.dev. Las respuestas a noreply no se monitorean; escribe a hello@codiva.dev."
+    },
+    "ticket": {
+      "subject": "Ticket recibido: {{title}}",
+      "preview": "Ticket recibido: {{title}}",
+      "title": "Ticket de soporte recibido",
+      "body1": "Hemos registrado tu solicitud de soporte:",
+      "body2": "Te contactaremos pronto con novedades."
+    },
+    "recovery": {
+      "preview": "Restablece tu contraseña de Codiva.dev",
+      "title": "Restablecer contraseña",
+      "body1": "Recibimos una solicitud para restablecer tu contraseña.",
+      "body2": "Haz clic en el botón para crear una nueva. El enlace expira en breve por seguridad.",
+      "body3": "Si no solicitaste esto, puedes ignorar este correo.",
+      "cta": "Crear nueva contraseña"
+    },
+    "portalRecovery": {
+      "preview": "Restablece tu acceso al portal: {{project}}",
+      "title": "Restablecer acceso al portal",
+      "body1": "Recibimos una solicitud para restablecer tu contraseña del portal del proyecto {{project}}.",
+      "body2": "Si no solicitaste esto, ignora este correo.",
+      "cta": "Restablecer contraseña"
+    },
+    "portalInviteNew": {
+      "preview": "Tu acceso al portal: {{project}}",
+      "title": "Bienvenido a tu portal",
+      "accessOne": "Se creó tu acceso al portal de {{brand}} para el proyecto {{project}}.",
+      "accessMany": "Se creó tu acceso al portal de {{brand}} para estos proyectos:",
+      "client": "Cliente: {{name}}.",
+      "body": "Ahí podrás revisar la propuesta, la arquitectura y la cotización cuando estén publicadas. Si tienes más de un proyecto, verás el listado al entrar.",
+      "email": "Email:",
+      "tempPassword": "Contraseña temporal:",
+      "changeHint": "Te recomendamos cambiar tu contraseña al ingresar.",
+      "cta": "Entrar al portal"
+    },
+    "portalInviteExisting": {
+      "preview": "Tienes acceso al portal: {{project}}",
+      "title": "Acceso al portal",
+      "accessOne": "Se te otorgó acceso al portal de {{brand}} para el proyecto {{project}}.",
+      "accessMany": "Se te otorgó acceso al portal de {{brand}} para estos proyectos:",
+      "body": "Usa tu correo y contraseña habituales. En el portal encontrarás propuesta, arquitectura y cotización.",
+      "help": "Si necesitas ayuda, escribe a",
+      "cta": "Entrar al portal"
+    },
+    "quoteSent": {
+      "preview": "Nueva cotización disponible: {{project}}",
+      "title": "Nueva propuesta comercial",
+      "body1": "Tienes una nueva propuesta comercial de {{brand}} para el proyecto {{project}}.",
+      "client": "Cliente de referencia: {{name}}.",
+      "body2": "Revisa alcance, arquitectura y montos en tu portal. Si estás de acuerdo, puedes aceptarla desde ahí.",
+      "doubts": "Dudas comerciales:",
+      "cta": "Ver cotización"
+    },
+    "leadQuote": {
+      "preview": "Propuesta comercial: {{subject}}",
+      "title": "Propuesta comercial disponible",
+      "body1": "Te compartimos una propuesta comercial de {{brand}} para {{subject}}.",
+      "body2": "Puedes consultar el detalle completo en el enlace. Si tienes dudas, escribe a",
+      "cta": "Ver propuesta",
+      "footer": "Documento informativo. Consulta únicamente."
+    },
+    "legalReaccept": {
+      "preview": "Actualización legal - {{project}}",
+      "title": "Debes aceptar los documentos legales actualizados",
+      "body1": "Actualizamos los términos, el aviso de privacidad y/o el NDA del portal del proyecto {{project}} (versión {{version}}).",
+      "body2": "Para seguir usando el portal, acepta los documentos vigentes en tu próximo acceso.",
+      "cta": "Revisar y aceptar",
+      "footer": "Si ya no participas en este proyecto, ignora este mensaje o avisa a Codiva.dev."
+    },
+    "careerHunt": {
+      "preview": "Siguiente paso: un hallazgo de tu oficio",
+      "title": "Siguiente: un hallazgo de tu oficio",
+      "body1": "Aprobaste la prueba de criterio de {{craft}}. Falta la segunda parte: encontrar y reportar un hallazgo de tu oficio en el sitio de Codiva.dev.",
+      "body2": "Usa el mismo correo. Recorre el sitio, describe URL, pasos y esperado vs. obtenido. No hace falta inspeccionar código.",
+      "body3": "También puedes reportar aquí:",
+      "cta": "Continuar la prueba"
+    },
+    "careerApplyReady": {
+      "preview": "Ya puedes postular a Codiva.dev",
+      "title": "Ya puedes postular",
+      "body1": "Recibimos un hallazgo de tu oficio. La prueba está completa.",
+      "body2": "Sigue con el mismo correo y envía tu CV.",
+      "cta": "Ir a postular"
+    },
+    "careerHuntNudge": {
+      "preview": "Cuando quieras, sigue con el hallazgo",
+      "title": "Cuando quieras, sigue con el hallazgo",
+      "body1": "La prueba de criterio ya está. El siguiente paso es reportar un hallazgo de tu oficio en el sitio.",
+      "body2": "Usa el mismo correo. También puedes reportar aquí:",
+      "cta": "Continuar la prueba"
+    }
+  },
+  "quoteDoc": {
+    "deliverables": "Entregables",
+    "considerations": "Consideraciones",
+    "extras": "Extras opcionales (no incluidos)",
+    "sincerely": "Atentamente,",
+    "project": "Proyecto",
+    "client": "Cliente",
+    "endClient": "Cliente final",
+    "developer": "Desarrollador",
+    "issued": "Fecha de emisión",
+    "service": "Servicio",
+    "projectState": "Estado del proyecto",
+    "scope": "Alcance del servicio",
+    "version": "Versión {{version}}",
+    "validUntil": "Válida hasta",
+    "intermediary": "Intermediario",
+    "titleSuffix": "Cotización Codiva",
+    "plan": "Plan de entregas",
+    "weeks": "Sem. {{weeks}}"
+  }
+}

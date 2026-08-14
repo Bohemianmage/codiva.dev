@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { resolveLocale } from '@/i18n/translate';
+import { resolveLocale } from '@/i18n/config';
 import { labelsFor } from '@/lib/ops/labels';
 
 export function useLabels() {

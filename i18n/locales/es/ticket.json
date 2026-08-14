@@ -1,0 +1,53 @@
+{
+  "ticket": {
+    "eyebrow": "Soporte",
+    "title": "Reportar un incidente",
+    "subtitle": "Cuéntanos qué falló, con pasos, URLs y capturas si las tienes. El equipo lo recibe de inmediato.",
+    "sections": {
+      "contact": "Tus datos",
+      "incident": "Qué ocurrió",
+      "evidence": "Evidencia"
+    },
+    "next": {
+      "title": "Qué sigue",
+      "ack": "Te confirmamos por correo en cuanto quede registrado.",
+      "queue": "El ticket entra como pendiente y el equipo recibe una alerta.",
+      "follow": "Te escribimos si hace falta más contexto para resolverlo."
+    },
+    "dropzone": {
+      "select": "Seleccionar archivos",
+      "or": "o arrástralos aquí"
+    },
+    "fields": {
+      "priority": "Prioridad",
+      "issueTitle": "Título del ticket",
+      "incidentTime": "Hora del incidente",
+      "incidentTimeOptional": "opcional",
+      "issueDescription": "Descripción del problema",
+      "attachments": "Adjuntos"
+    },
+    "priority": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja"
+    },
+    "buttons": {
+      "submit": "Enviar ticket",
+      "submitting": "Enviando ticket…",
+      "remove": "Quitar",
+      "removeAll": "Quitar todo",
+      "new": "Crear otro ticket"
+    },
+    "status": {
+      "submittedTitle": "Ticket registrado",
+      "submittedMsg": "Hemos recibido tu reporte. El equipo ya tiene el pendiente.",
+      "submittedHint": "Revisa tu correo. Si no llega en unos minutos, mira en spam."
+    },
+    "hints": {
+      "attachments": "Imágenes o documentos. Hasta 5 archivos, 10 MB cada uno.",
+      "textarea": "Qué esperabas, qué ocurrió, pasos para reproducir, capturas/URLs…",
+      "maxFiles": "Máximo {{count}} archivos.",
+      "fileTooLarge": "{{name}} supera 10 MB."
+    }
+  }
+}

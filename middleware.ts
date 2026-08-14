@@ -65,6 +65,7 @@ const CAREER_RESERVED = new Set([
   'ticket',
   'cotiza',
   'proyectos',
+  'cuenta',
   'partner',
   'client-packs',
   'auth',
@@ -143,7 +144,7 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
     }
 
-    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/')) {
+    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/') || pathname === '/cuenta' || pathname.startsWith('/cuenta/')) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, portalBaseUrl(), pathname));
     }
 
@@ -196,7 +197,7 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
     }
 
-    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/')) {
+    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/') || pathname === '/cuenta' || pathname.startsWith('/cuenta/')) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, portalBaseUrl(), pathname));
     }
 
@@ -250,6 +251,8 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/login/') ||
       pathname === '/proyectos' ||
       pathname.startsWith('/proyectos/') ||
+      pathname === '/cuenta' ||
+      pathname.startsWith('/cuenta/') ||
       pathname === '/reset-password' ||
       pathname.startsWith('/reset-password/')
     ) {
@@ -344,7 +347,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (pathname.startsWith('/p/')) {
+  if (pathname.startsWith('/p/') || pathname === '/cuenta' || pathname.startsWith('/cuenta/')) {
     return withSessionCookies(
       sessionResponse,
       absoluteRedirect(request, portalBaseUrl(), pathname)

@@ -1,0 +1,314 @@
+{
+  "title": "Codiva.dev | Custom software and digital products",
+  "description": "Custom software in Mexico: SaaS platforms, vertical operating systems, e-commerce, and corporate sites. Every project is shaped around how your business runs, from idea to production.",
+  "nav": {
+    "about": "About us",
+    "services": "Services",
+    "cases": "Success Stories",
+    "contact": "Contact",
+    "careers": "Careers"
+  },
+  "common": {
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "projectType": "Project type"
+    },
+    "validation": {
+      "required": "This field is required.",
+      "invalidEmail": "Please enter a valid email.",
+      "tooShort": "Too short. Please provide more detail."
+    },
+    "buttons": {
+      "send": "Send Message",
+      "submit": "Send",
+      "seeMore": "See more",
+      "hide": "Hide details"
+    },
+    "status": {
+      "loading": "Sending message...",
+      "success": "Message sent successfully!",
+      "error": "Something went wrong. Please try again later.",
+      "actionFailed": "Could not complete the action."
+    }
+  },
+  "hero": {
+    "cleanCode": "Custom software.",
+    "customTech": "Built around your business.",
+    "withoutNoise": "No bureaucracy, no complications.",
+    "viewServices": "View services"
+  },
+  "process": {
+    "title": "How we work",
+    "subtitle": "From idea to production with a clear rhythm and direct communication with the people writing the code.",
+    "steps": [
+      {
+        "title": "Discovery",
+        "description": "We learn your operations, users, and constraints. We define scope, priorities, and initial architecture."
+      },
+      {
+        "title": "Design & build",
+        "description": "We design flows and ship in short iterations: frontend, backend, integrations, and admin panels."
+      },
+      {
+        "title": "Production",
+        "description": "We deploy carefully: payments, roles, sensitive data, and baseline monitoring ready to operate."
+      },
+      {
+        "title": "Evolution",
+        "description": "Ongoing support, fixes, and new capabilities on top of what is already live."
+      }
+    ]
+  },
+  "about": {
+    "title": "Custom software that runs real businesses",
+    "paragraph1Intro": "At Codiva.dev we build custom software, not templates or generic packages, and ship it to production: ",
+    "productionTypes": [
+      "LegalTech platforms",
+      "construction ERPs",
+      "hospitality operations",
+      "e-commerce",
+      "bilingual corporate sites"
+    ],
+    "paragraph1Outro": " with payments, user roles, admin panels, and ongoing support.",
+    "paragraph2Intro": "Every project starts from how your business operates: we design sustainable architecture, integrate ",
+    "integrationTypes": [
+      "Stripe, Supabase, and external APIs",
+      "payments, billing, and SaaS subscriptions",
+      "CRMs, ERPs, and legacy systems",
+      "WhatsApp Business, email, and real-time alerts",
+      "maps, routing, and field operations",
+      "generative AI, agents, and automation",
+      "e-signatures, KYC, and LegalTech compliance",
+      "marketplaces, inventory, and omnichannel checkout",
+      "Vercel, edge computing, and global deployments",
+      "webhooks, queues, ETL, and data pipelines",
+      "open banking, ACH/wires, and financial reconciliation",
+      "MLS portals, maps, and real-estate scheduling"
+    ],
+    "paragraph2Outro": " and deliver at a clear pace. Whether it's your first launch or evolving what's already live, Codiva.dev works with you through direct communication with the people writing the code."
+  },
+  "services": {
+    "title": "Our Services",
+    "list": [
+      {
+        "title": "Web Essentials",
+        "description": "Multi-page corporate sites for industrial brands, real estate, and professional services. Custom design, baseline SEO, and a production launch.",
+        "badge": "",
+        "details": [
+          "Custom responsive design",
+          "Multi-page corporate site — not a 1-to-3-block landing",
+          "Contact form or WhatsApp",
+          "Baseline SEO, indexing, and production deploy",
+          "Production launch and access handoff"
+        ],
+        "extras": [
+          "Brand identity",
+          "ES/EN multilingual",
+          "CMS, catalog, or blog",
+          "Product-line microsites",
+          "Professional copywriting"
+        ]
+      },
+      {
+        "title": "Apps & Systems",
+        "description": "Custom software that runs the business: SaaS platforms, vertical ERPs, marketplaces, and systems with payments, roles, and integrations. Not a packaged website price.",
+        "badge": "Ideal for MVPs & vertical SaaS",
+        "details": [
+          "Custom frontend and backend",
+          "Roles, admin panels, and business logic",
+          "Integrations (payments, APIs, compliance)",
+          "Milestone-based scope — no templates",
+          "UAT and production launch"
+        ],
+        "extras": [
+          "Advanced architecture and infrastructure",
+          "Post go-live hypercare",
+          "Native app or multi-country rollout",
+          "Security audit",
+          "Premium UI/UX design"
+        ]
+      },
+      {
+        "title": "Continuous improvement & support",
+        "description": "Monthly retainer on what is already in production: fixes, sprints, and new capabilities. Hourly work is quoted when the scope does not fit a month.",
+        "badge": "",
+        "details": [
+          "Backlog prioritization and monthly or sprint-based delivery",
+          "Bug fixes and UX refinements",
+          "Point features and integrations",
+          "Dependency updates and careful releases",
+          "Direct communication with the people doing the work"
+        ],
+        "extras": [
+          "Focused technical audits (security, performance)",
+          "Light documentation or roadmap support",
+          "Short team enablement sessions",
+          "Extra capacity for launches or migrations",
+          "Monitoring and observability improvements"
+        ]
+      }
+    ],
+    "extrasTitle": "Billable extras",
+    "priceNote": "Reference amounts, excluding tax. Final price is quoted to scope.",
+    "prices": [
+      "From $1,750 USD",
+      "Custom quote",
+      "From $100 USD/mo"
+    ]
+  },
+  "cases": {
+    "title": "Success stories",
+    "description": "Over a dozen products in production: LegalTech, hospitality, construction, retail, and corporate sites. These are some of the brands we work with and the technologies we use to ship them.",
+    "visitSite": "Visit {{name}}",
+    "technologiesOf": "Technologies used in {{name}}",
+    "list": [
+      {
+        "name": "Inquilia",
+        "description": "LegalTech rental platform for Mexico: legal screening, digital contracts, full CRM, and Stripe billing."
+      },
+      {
+        "name": "CD648",
+        "description": "Boutique hotel booking system. Real-time availability, Stripe payments, location map, and installable PWA."
+      },
+      {
+        "name": "Quimialcla",
+        "description": "Bilingual corporate site for a water treatment company. Product catalog, WWTP sectors, and direct contact."
+      },
+      {
+        "name": "Morningstar",
+        "description": "Wellness e-commerce with spiritual paths, Stripe checkout, admin panel, and bilingual ES/EN experience."
+      },
+      {
+        "name": "AMIDA",
+        "description": "Corporate site for an architecture and engineering firm. Project gallery, services, and bilingual contact."
+      },
+      {
+        "name": "Suitable",
+        "description": "Hospitality operations SaaS: reservations, cleaning, maintenance, inventory, and access control."
+      },
+      {
+        "name": "YOU. Soluciones Inmobiliarias",
+        "description": "Real estate portal with EasyBroker catalog, maps, visit scheduling, inline CMS, and automated reminders."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Let’s Talk"
+  },
+  "quote": {
+    "thankYou": "Thank you for contacting us. We will get back to you soon.",
+    "button": "Get a quote",
+    "promptTitle": "How do you want to proceed?",
+    "promptSubtitle": "Choose the option that works best for you.",
+    "knowWhatIWant": "I know what I want",
+    "needHelp": "I need help",
+    "fields": {
+      "selectOption": "Select an option",
+      "options": {
+        "webEssentials": "Web Essentials",
+        "appsSystems": "Apps & Systems",
+        "continuousCare": "Continuous improvement & support",
+        "other": "Other"
+      }
+    },
+    "errors": {
+      "name": "Name is required.",
+      "projectType": "Please select a project type.",
+      "messageShort": "Message is too short."
+    },
+    "submitWhatsApp": "Send via WhatsApp",
+    "whatsappMessage": "Hi! I would like a quote.\n\n👤 *{{nameLabel}}:* {{name}}\n💼 *{{typeLabel}}:* {{projectType}}\n📝 *{{messageLabel}}:* {{message}}"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "ticketLink": "Tickets",
+    "huntLink": "Findings",
+    "sitemap": "Site map",
+    "feed": "JSON feed",
+    "careers": "Careers",
+    "terms": "Terms and conditions",
+    "privacy": "Privacy notice"
+  },
+  "fields": {
+    "name": "Full name",
+    "company": "Company / Brand",
+    "email": "Email",
+    "phone": "WhatsApp / Phone",
+    "need": "What do you need?",
+    "sections": "Desired sections",
+    "functionalities": "Required functionalities",
+    "hasContent": "Do you have content?",
+    "hasDomain": "Do you have a domain?",
+    "hasHosting": "Do you have hosting?",
+    "deliveryDate": "Desired delivery date",
+    "selectOption": "Select an option",
+    "budget": "Estimated budget (MXN)",
+    "referenceSite": "Reference site (URL)",
+    "privacyConsent": "I accept the privacy policy",
+    "privacyConsentPrefix": "I accept the",
+    "privacyConsentLink": "privacy notice"
+  },
+  "sections": {
+    "start": "Home",
+    "services": "Services",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "functionalities": {
+    "login": "Login",
+    "catalog": "Catalog",
+    "admin": "Admin",
+    "pwa": "PWA",
+    "blog": "Blog",
+    "multilang": "Multilanguage"
+  },
+  "options": {
+    "yes": "Yes",
+    "no": "No",
+    "partial": "Partial"
+  },
+  "buttons": {
+    "submit": "Submit request"
+  },
+  "validation": {
+    "required": "Required",
+    "invalidEmail": "Invalid email",
+    "invalidUrl": "Invalid URL"
+  },
+  "status": {
+    "success": "Thank you for your request!",
+    "error": "There was an error sending. Please try again."
+  },
+  "a11y": {
+    "changeLanguage": "Change language",
+    "menu": "Menu"
+  },
+  "legal": {
+    "back": "Back",
+    "version": "Version {{code}} · Updated {{updated}}",
+    "foundation": "Legal basis: {{note}}",
+    "updated": "August 11, 2026",
+    "termsTitle": "Terms and Conditions",
+    "privacyTitle": "Privacy Notice",
+    "ndaTitle": "NDA"
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This link does not exist or is no longer available. Check the URL or go back home.",
+    "home": "Go home",
+    "quoteCta": "Get a quote",
+    "serverTitle": "Something went wrong",
+    "serverBody": "An unexpected error occurred. You can retry or go back home.",
+    "retry": "Try again",
+    "criticalTitle": "Critical error",
+    "criticalBody": "The app could not load. Retry; if it persists, contact hello@codiva.dev.",
+    "opsNotFoundBody": "This Ops route does not exist. Go back to the dashboard or check the link.",
+    "opsDashboard": "Go to dashboard",
+    "opsLogin": "Sign in",
+    "portalNotFoundBody": "This portal link does not exist or the project is no longer available. If you have access, use the invitation we sent you.",
+    "goCodiva": "Go to Codiva",
+    "opsServerBody": "An unexpected error occurred. Retry or go back to a known screen."
+  }
+}

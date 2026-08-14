@@ -1,13 +1,5 @@
-import en from './locales/en/translation.json';
-import es from './locales/es/translation.json';
-import { DEFAULT_LOCALE, isLocale, type Locale } from './config';
-
-type Dict = Record<string, unknown>;
-
-const DICTIONARIES: Record<Locale, Dict> = {
-  es: es as Dict,
-  en: en as Dict,
-};
+import { DEFAULT_LOCALE, type Locale } from './config';
+import { DICTIONARIES, type Dict } from './dictionaries';
 
 export type TranslateOptions = {
   returnObjects?: boolean;
@@ -35,13 +27,7 @@ function interpolate(value: string, vars?: Record<string, unknown>): string {
   });
 }
 
-export function resolveLocale(value: unknown): Locale {
-  if (typeof value === 'string') {
-    const short = value.split('-')[0];
-    if (isLocale(short)) return short;
-  }
-  return DEFAULT_LOCALE;
-}
+export { resolveLocale } from './config';
 
 export function tSync(locale: Locale, key: string, options?: TranslateOptions): string {
   const found = lookup(DICTIONARIES[locale], key);

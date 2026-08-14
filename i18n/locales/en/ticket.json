@@ -1,0 +1,53 @@
+{
+  "ticket": {
+    "eyebrow": "Support",
+    "title": "Report an incident",
+    "subtitle": "Tell us what broke, with steps, URLs, and screenshots if you have them. The team gets it right away.",
+    "sections": {
+      "contact": "Your details",
+      "incident": "What happened",
+      "evidence": "Evidence"
+    },
+    "next": {
+      "title": "What happens next",
+      "ack": "We confirm by email as soon as it is filed.",
+      "queue": "The ticket is queued as pending and the team gets an alert.",
+      "follow": "We write back if we need more context to fix it."
+    },
+    "dropzone": {
+      "select": "Choose files",
+      "or": "or drop them here"
+    },
+    "fields": {
+      "priority": "Priority",
+      "issueTitle": "Ticket title",
+      "incidentTime": "Incident time",
+      "incidentTimeOptional": "optional",
+      "issueDescription": "Problem description",
+      "attachments": "Attachments"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "buttons": {
+      "submit": "Send ticket",
+      "submitting": "Sending ticket…",
+      "remove": "Remove",
+      "removeAll": "Remove all",
+      "new": "Create another ticket"
+    },
+    "status": {
+      "submittedTitle": "Ticket received",
+      "submittedMsg": "We have received your report. The team already has it as a pending item.",
+      "submittedHint": "Check your inbox. If it does not arrive in a few minutes, look in spam."
+    },
+    "hints": {
+      "attachments": "Images or documents. Up to 5 files, 10 MB each.",
+      "textarea": "What you expected, what happened, steps to reproduce, screenshots/URLs…",
+      "maxFiles": "Maximum {{count}} files.",
+      "fileTooLarge": "{{name}} exceeds 10 MB."
+    }
+  }
+}

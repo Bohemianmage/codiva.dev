@@ -49,6 +49,9 @@ export default async function PortalProyectosPage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/cuenta" className="text-sm text-zinc-500 hover:text-zinc-800">
+              {t('portal.account.nav')}
+            </Link>
             <LanguageSwitcher />
             <PortalProjectsSignOut />
           </div>
