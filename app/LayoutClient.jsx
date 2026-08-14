@@ -7,9 +7,12 @@ import dynamic from 'next/dynamic';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import HuntBeacon from '../components/careers/HuntBeacon';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import FloatingQuoteButton from '../components/FloatingQuoteButton';
 import { Toaster } from 'react-hot-toast';
+
+const Footer = dynamic(() => import('../components/Footer'));
+const FloatingQuoteButton = dynamic(() => import('../components/FloatingQuoteButton'), {
+  ssr: false,
+});
 
 const Analytics = dynamic(
   () => import('@vercel/analytics/react').then((mod) => mod.Analytics),

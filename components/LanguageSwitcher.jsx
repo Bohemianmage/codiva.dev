@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import i18n from '@/i18n/i18n';
-import { motion, AnimatePresence } from 'framer-motion';
 import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, isLocale } from '@/i18n/config';
 import { useTranslation } from 'react-i18next';
 
@@ -149,49 +148,29 @@ export default function LanguageSwitcher() {
         if (isDesktop) scheduleClose();
       }}
     >
-      <motion.button
+      <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-label={t('a11y.changeLanguage')}
         aria-expanded={open}
         aria-haspopup="listbox"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
         className="flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-white p-0 shadow-sm transition hover:ring-2 ring-codiva-primary"
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentLang}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="h-full w-full"
-          >
-            <Image
-              src={safeFlag}
-              alt={currentLang}
-              width={24}
-              height={24}
-              className="h-full w-full rounded-full object-cover"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
-      </motion.button>
+        <Image
+          src={safeFlag}
+          alt={currentLang}
+          width={24}
+          height={24}
+          className="h-full w-full rounded-full object-cover"
+          priority
+        />
+      </button>
 
       {mounted
         ? createPortal(
-            <AnimatePresence>
-              {open && menuStyle ? (
-                <motion.div
-                  key="language-menu"
+            open && menuStyle ? (
+                <div
                   ref={menuRef}
-                  initial={{ opacity: 0, y: openUp ? 5 : -5, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: openUp ? 5 : -5, scale: 0.98 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
                   style={menuStyle}
                   onMouseEnter={() => {
                     if (isDesktop) keepOpen();
@@ -228,9 +207,8 @@ export default function LanguageSwitcher() {
                       )}
                     </div>
                   ))}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>,
+                </div>
+              ) : null,
             document.body
           )
         : null}

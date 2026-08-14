@@ -8,7 +8,7 @@ const casesMeta = [
   {
     name: 'Inquilia',
     url: 'https://inquilia.com',
-    logo: '/logos/inquilia.svg',
+    logo: '/logos/inquilia.webp',
     tech: [
       'Next.js',
       'Supabase',
@@ -59,8 +59,9 @@ const casesMeta = [
   {
     name: 'AMIDA',
     url: 'https://amida.com.mx',
-    logo: '/logos/amida.svg',
+    logo: '/logos/amida.webp',
     logoFrame: 'landscape',
+    logoSurface: 'dark',
     tech: ['Next.js', 'i18n', 'EmailJS', 'PWA'],
   },
   {

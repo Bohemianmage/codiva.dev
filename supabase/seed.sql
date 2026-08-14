@@ -210,12 +210,12 @@ ON CONFLICT (id) DO NOTHING;
 -- ---------------------------------------------------------------------------
 
 INSERT INTO organizations (id, name, logo_url, contact_email, contact_phone) VALUES
-  ('a0000001-0001-4000-8000-00000000000c', 'Inquilia', '/logos/inquilia.svg', NULL, NULL)
+  ('a0000001-0001-4000-8000-00000000000c', 'Inquilia', '/logos/inquilia.webp', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE organizations SET
   name = 'Inquilia',
-  logo_url = '/logos/inquilia.svg'
+  logo_url = '/logos/inquilia.webp'
 WHERE id = 'a0000001-0001-4000-8000-00000000000c';
 
 INSERT INTO projects (

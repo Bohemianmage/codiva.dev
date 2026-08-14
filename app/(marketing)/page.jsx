@@ -1,9 +1,23 @@
+import dynamic from 'next/dynamic';
 import Hero from '@/sections/Hero';
-import About from '@/sections/About';
-import HowWeWork from '@/sections/HowWeWork';
-import Services from '@/sections/Services';
-import CaseStudies from '@/sections/CaseStudies';
 import ContactLazy from '@/sections/ContactLazy';
+import { getT } from '@/i18n/locale';
+
+const About = dynamic(() => import('@/sections/About'));
+const HowWeWork = dynamic(() => import('@/sections/HowWeWork'));
+const Services = dynamic(() => import('@/sections/Services'));
+const CaseStudies = dynamic(() => import('@/sections/CaseStudies'));
+
+export async function generateMetadata() {
+  const t = await getT();
+  const description = t('description');
+  return {
+    description,
+    alternates: { canonical: '/' },
+    openGraph: { description },
+    twitter: { description },
+  };
+}
 
 export default function Home() {
   return (
