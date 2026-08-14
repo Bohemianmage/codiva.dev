@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import Heading from '../components/Heading';
 import Button from '../components/ui/Button';
+import TypewriterCycle from '../components/TypewriterCycle';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import { useTranslation } from 'react-i18next';
 
@@ -26,7 +27,9 @@ export default function Hero() {
         className="text-zinc-900 leading-tight mb-6"
       >
         {staticText1}{' '}
-        <span className="text-codiva-primary">{staticText2}</span>
+        <span className="text-codiva-primary">
+          <TypewriterCycle phrases={[staticText2]} loop={false} active />
+        </span>
         <br />
         {staticText3}
       </Heading>
