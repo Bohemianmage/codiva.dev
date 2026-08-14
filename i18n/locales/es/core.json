@@ -30,6 +30,7 @@
       "loading": "Enviando mensaje...",
       "success": "¡Mensaje enviado correctamente!",
       "error": "Ocurrió un error. Intenta de nuevo más tarde.",
+      "rateLimited": "Demasiados envíos. Espera un momento e inténtalo de nuevo.",
       "actionFailed": "No se pudo completar la acción."
     }
   },
@@ -279,7 +280,8 @@
   },
   "status": {
     "success": "¡Gracias por tu solicitud!",
-    "error": "Hubo un error al enviar. Intenta nuevamente."
+    "error": "Hubo un error al enviar. Intenta nuevamente.",
+    "rateLimited": "Demasiados envíos. Espera un momento e inténtalo de nuevo."
   },
   "a11y": {
     "changeLanguage": "Cambiar idioma",

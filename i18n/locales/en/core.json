@@ -30,6 +30,7 @@
       "loading": "Sending message...",
       "success": "Message sent successfully!",
       "error": "Something went wrong. Please try again later.",
+      "rateLimited": "Too many submissions. Wait a moment and try again.",
       "actionFailed": "Could not complete the action."
     }
   },
@@ -279,7 +280,8 @@
   },
   "status": {
     "success": "Thank you for your request!",
-    "error": "There was an error sending. Please try again."
+    "error": "There was an error sending. Please try again.",
+    "rateLimited": "Too many submissions. Wait a moment and try again."
   },
   "a11y": {
     "changeLanguage": "Change language",

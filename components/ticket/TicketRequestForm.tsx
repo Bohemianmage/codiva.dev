@@ -165,6 +165,8 @@ export default function TicketRequestForm({
           email: lockedIdentity ? prev.email : '',
         }));
         if (isPortal) router.refresh();
+      } else if (res.status === 429) {
+        setServerError(t('ticket.status.rateLimited'));
       } else {
         setServerError(data?.error || t('status.error'));
       }

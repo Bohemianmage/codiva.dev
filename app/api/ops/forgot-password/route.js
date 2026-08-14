@@ -9,6 +9,9 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, message: 'Email requerido' }, { status: 400 });
     }
     const result = await requestStaffPasswordReset(String(email));
+    if (!result.ok && result.code === 'rate_limited') {
+      return NextResponse.json(result, { status: 429, headers: { 'Retry-After': '3600' } });
+    }
     return NextResponse.json(result, { status: result.ok ? 200 : 502 });
   } catch (err) {
     console.error('POST /api/ops/forgot-password:', err);

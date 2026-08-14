@@ -7,6 +7,7 @@ export const CAREER_DISCIPLINES = [
   'fullstack',
   'ux-ui',
   'qa',
+  'security',
   'other',
 ] as const;
 
@@ -18,6 +19,7 @@ export const CAREER_DISCIPLINE_LABELS: Record<CareerDiscipline, string> = {
   fullstack: 'Tester full stack',
   'ux-ui': 'Tester UX / UI',
   qa: 'Tester QA',
+  security: 'Tester de seguridad',
   other: 'Tester (otro oficio)',
 };
 
@@ -41,6 +43,7 @@ export const CAREER_DISCIPLINE_CATALOG: Record<CareerDiscipline, string> = {
   fullstack: 'tester-fullstack',
   'ux-ui': 'tester-ux-ui',
   qa: 'tester-qa',
+  security: 'tester-security',
   other: 'tester-general',
 };
 

@@ -15,6 +15,7 @@
     "discipline_fullstack": "Tester full stack",
     "discipline_ux_ui": "Tester UX / UI",
     "discipline_qa": "Tester QA",
+    "discipline_security": "Tester de seguridad",
     "discipline_other": "Tester (otro oficio)",
     "discipline_gate": "Elige tu oficio de testing. Cada uno tiene su prueba de criterio y un hallazgo en el sitio.",
     "field_cv": "CV en PDF",
@@ -104,6 +105,7 @@
     "hunt_rule_2": "Separa un defecto de una preferencia. El hallazgo debe ser de tu oficio.",
     "hunt_rule_3": "No hace falta inspeccionar el código: si no se ve o no se usa, no cuenta igual.",
     "hunt_rule_4": "Si ya identificaste tu sesión, las páginas que visites en la bolsa y el sitio público quedan en el mapa de la prueba.",
+    "hunt_rule_5": "No escanees, no fuerces auth ni toques portal u ops. Cabeceras, cookies y el cuerpo de APIs públicas sí cuentan.",
     "hunt_form_title": "Tu reporte",
     "hunt_form_intro": "Un hallazgo por envío. Si encuentras varios, manda varios reportes.",
     "hunt_field_url": "URL de la página",
@@ -125,6 +127,7 @@
     "hunt_craft_hint_fullstack": "Oficio full stack: puede estar en la interfaz o en una API; cuenta si el contrato no cuadra con lo que se ve.",
     "hunt_craft_hint_ux_ui": "Oficio UX/UI: idioma, nombres accesibles, consistencia visual y destinos de clic.",
     "hunt_craft_hint_qa": "Oficio QA: regresiones, enlaces rotos y datos que se quedaron viejos.",
+    "hunt_craft_hint_security": "Oficio seguridad: cabeceras, cookies, secretos en APIs públicas y datos que se filtran de más. Observa; no escanees ni ataques auth.",
     "hunt_craft_hint_other": "Cualquier hallazgo con evidencia cuenta para este oficio.",
     "hunt_error": "No se pudo enviar. Revisa los datos e intenta de nuevo.",
     "hunt_error_rate": "Demasiados reportes. Espera un momento.",
@@ -142,6 +145,7 @@
       "fullstack": "Tester full stack",
       "ux-ui": "Tester UX / UI",
       "qa": "Tester QA",
+      "security": "Tester de seguridad",
       "other": "Tester (otro oficio)"
     },
     "postingStatus": {

@@ -54,9 +54,11 @@ export default function FormularioCotizacion() {
         if (res.ok) {
           setSubmitted(true);
           resetForm();
+        } else if (res.status === 429) {
+          setError(t('status.rateLimited'));
         } else {
           const data = await res.json();
-          setError(data.error || t('status.error'));
+          setError(data.error === 'rate_limited' ? t('status.rateLimited') : data.error || t('status.error'));
         }
       } catch {
         setError(t('status.error'));

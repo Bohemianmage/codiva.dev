@@ -163,33 +163,7 @@ export function safeCareerStr(value: unknown, max: number): string {
     .slice(0, max);
 }
 
-type RateBucket = { count: number; resetAt: number };
-const rateBuckets = new Map<string, RateBucket>();
-
-function pruneRateBuckets() {
-  if (rateBuckets.size < 5000) return;
-  const now = Date.now();
-  for (const [k, v] of rateBuckets) {
-    if (v.resetAt < now) rateBuckets.delete(k);
-  }
-}
-
-export function careerRateLimitConsume(
-  key: string,
-  windowMs: number,
-  max: number
-): { ok: true; remaining: number } | { ok: false; retryAfterMs: number } {
-  pruneRateBuckets();
-  const now = Date.now();
-  let bucket = rateBuckets.get(key);
-  if (!bucket || bucket.resetAt < now) {
-    bucket = { count: 0, resetAt: now + windowMs };
-    rateBuckets.set(key, bucket);
-  }
-  bucket.count += 1;
-  if (bucket.count <= max) return { ok: true, remaining: max - bucket.count };
-  return { ok: false, retryAfterMs: Math.max(0, bucket.resetAt - now) };
-}
+export { consumeRateLimit as careerRateLimitConsume } from '@/lib/rate-limit';
 
 export const CAREER_RL_SIGN_UPLOAD = {
   windowMs: 60 * 60 * 1000,

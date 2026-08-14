@@ -41,7 +41,8 @@
     "status": {
       "submittedTitle": "Ticket received",
       "submittedMsg": "We have received your report. The team already has it as a pending item.",
-      "submittedHint": "Check your inbox. If it does not arrive in a few minutes, look in spam."
+      "submittedHint": "Check your inbox. If it does not arrive in a few minutes, look in spam.",
+      "rateLimited": "Too many tickets. Wait a moment and try again."
     },
     "hints": {
       "attachments": "Images or documents. Up to 5 files, 10 MB each.",

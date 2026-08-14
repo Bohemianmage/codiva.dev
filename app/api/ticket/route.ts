@@ -2,6 +2,13 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
+import {
+  PUBLIC_RL_FORM,
+  PUBLIC_RL_FORM_EMAIL,
+  consumeIpRateLimit,
+  consumeRateLimit,
+  rateLimitJsonResponse,
+} from '@/lib/rate-limit';
 import { notifyStaffSafe, sendTicketConfirmationEmail } from '@/lib/ops/email';
 import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
@@ -47,6 +54,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
+  const ipRl = consumeIpRateLimit(req, 'public_ticket', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
+
   try {
     const contentType = req.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
@@ -69,6 +79,13 @@ export async function POST(req: Request) {
 
     const errors = validate({ ...body, requireCompany: !body.projectId });
     if (errors.length) return NextResponse.json({ error: errors.join(' | ') }, { status: 400 });
+
+    const emailRl = consumeRateLimit(
+      `public_ticket_email:${body.email}`,
+      PUBLIC_RL_FORM_EMAIL.windowMs,
+      PUBLIC_RL_FORM_EMAIL.max
+    );
+    if (!emailRl.ok) return rateLimitJsonResponse(emailRl.retryAfterMs);
 
     const files = form.getAll('attachments').filter((f): f is File => f instanceof File && f.size > 0);
     if (files.length > TICKET_MAX_FILES) {

@@ -41,7 +41,8 @@
     "status": {
       "submittedTitle": "Ticket registrado",
       "submittedMsg": "Hemos recibido tu reporte. El equipo ya tiene el pendiente.",
-      "submittedHint": "Revisa tu correo. Si no llega en unos minutos, mira en spam."
+      "submittedHint": "Revisa tu correo. Si no llega en unos minutos, mira en spam.",
+      "rateLimited": "Demasiados tickets. Espera un momento e inténtalo de nuevo."
     },
     "hints": {
       "attachments": "Imágenes o documentos. Hasta 5 archivos, 10 MB cada uno.",

@@ -4,6 +4,7 @@ import {
   TESTER_FRONTEND,
   TESTER_FULLSTACK,
   TESTER_GENERAL,
+  TESTER_SECURITY,
   TESTER_UX,
 } from './tester-catalogs';
 
@@ -648,6 +649,7 @@ export const ASSESSMENT_CATALOGS: Record<string, AssessmentCatalog> = {
   [TESTER_FULLSTACK.key]: TESTER_FULLSTACK,
   [TESTER_UX.key]: TESTER_UX,
   [TESTER_GENERAL.key]: TESTER_GENERAL,
+  [TESTER_SECURITY.key]: TESTER_SECURITY,
 };
 
 export function getAssessmentCatalog(key: string | null | undefined): AssessmentCatalog | null {
