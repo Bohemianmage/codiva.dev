@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
@@ -32,11 +34,11 @@ const fadeInUp = {
 
 export default function CaseStudies() {
   const { t } = useTranslation();
-  const [logos, setLogos] = useState([]);
+  const [logos, setLogos] = useState(casesMeta);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768);
+    setIsMobile(window.innerWidth < 768);
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -45,8 +47,6 @@ export default function CaseStudies() {
   useEffect(() => {
     setLogos(shuffleArray(casesMeta));
   }, []);
-
-  if (logos.length === 0) return null;
 
   return (
     <section
@@ -78,13 +78,11 @@ export default function CaseStudies() {
           {t('cases.description')}
         </motion.p>
 
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={fadeInUp} className="mt-12 min-h-[12rem] md:min-h-[920px]">
           {isMobile ? (
             <CaseStudiesMobile logos={logos} />
           ) : (
-            <div className="mt-12 min-h-[920px]">
-              <TechProjectNetwork />
-            </div>
+            <TechProjectNetwork />
           )}
         </motion.div>
       </motion.div>

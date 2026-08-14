@@ -2,15 +2,19 @@
 
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation'; 
+import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
-import { Analytics } from '@vercel/analytics/react';
 import HuntBeacon from '../components/careers/HuntBeacon';
-
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import FloatingQuoteButton from '../components/FloatingQuoteButton';
 import { Toaster } from 'react-hot-toast';
+
+const Analytics = dynamic(
+  () => import('@vercel/analytics/react').then((mod) => mod.Analytics),
+  { ssr: false }
+);
 
 export default function LayoutClient({ children, variant = 'marketing' }) {
   const { t } = useTranslation();

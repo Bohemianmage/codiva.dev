@@ -9,6 +9,14 @@ export function isLocale(value: unknown): value is Locale {
   return value === 'es' || value === 'en';
 }
 
+export function resolveLocale(value: unknown): Locale {
+  if (typeof value === 'string') {
+    const short = value.split('-')[0];
+    if (isLocale(short)) return short;
+  }
+  return DEFAULT_LOCALE;
+}
+
 export function localeFromAcceptLanguage(header: string | null | undefined): Locale {
   if (!header) return DEFAULT_LOCALE;
   const parts = header.split(',').map((part) => {

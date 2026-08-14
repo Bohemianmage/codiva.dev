@@ -615,7 +615,7 @@ const QA: AssessmentCatalog = {
       competency: 'Cierre',
       type: 'single',
       points: 1,
-      prompt: 'El desarrollador dice «ya quedó» y adjunta un commit. ¿Qué evidencia cierras el defecto?',
+      prompt: 'El desarrollador dice «ya quedó» y adjunta un commit. ¿Qué evidencia cierra el defecto?',
       options: [
         {
           key: 'a',

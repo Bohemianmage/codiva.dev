@@ -77,6 +77,14 @@ export default function PortalNav({
         </div>
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
+          <Link
+            href={`/p/${slug}/cuenta`}
+            className={`text-sm hover:text-zinc-800 ${
+              normalized === `/p/${slug}/cuenta` ? 'font-medium text-zinc-900' : 'text-zinc-500'
+            }`}
+          >
+            {t('portal.account.nav')}
+          </Link>
           <button type="button" onClick={signOut} className="text-sm text-zinc-500 hover:text-zinc-800">
             {t('portal.signOut')}
           </button>

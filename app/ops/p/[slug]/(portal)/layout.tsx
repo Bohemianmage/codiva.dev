@@ -33,6 +33,9 @@ export default async function PortalLayout({
       <footer className="border-t border-zinc-200 py-6 text-center text-xs text-zinc-500">
         <p>{t('portal.powered')}</p>
         <p className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <Link href={`/p/${slug}/cuenta`} className="hover:text-codiva-primary hover:underline">
+            {t('portal.account.nav')}
+          </Link>
           <Link href="/legal/terminos" className="hover:text-codiva-primary hover:underline">
             {t('footer.terms')}
           </Link>

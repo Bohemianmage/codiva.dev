@@ -1,0 +1,124 @@
+{
+  "email": {
+    "ctaFallback": "If the button does not work, copy this link:",
+    "hello": "Hi",
+    "lead": {
+      "subject": "We received your request at {{brand}}",
+      "preview": "We received your quote request at {{brand}}",
+      "title": "We received your request",
+      "body1": "Thanks for reaching out. We received your quote request and our team will review it soon.",
+      "body2": "We will get back to you shortly. If you need to write to us, use",
+      "footer": "Automatic message from Codiva.dev. Replies to noreply are not monitored; write to hello@codiva.dev."
+    },
+    "ticket": {
+      "subject": "Ticket received: {{title}}",
+      "preview": "Ticket received: {{title}}",
+      "title": "Support ticket received",
+      "body1": "We registered your support request:",
+      "body2": "We will contact you soon with updates."
+    },
+    "recovery": {
+      "preview": "Reset your Codiva.dev password",
+      "title": "Reset password",
+      "body1": "We received a request to reset your password.",
+      "body2": "Click the button to create a new one. The link expires shortly for security.",
+      "body3": "If you did not request this, you can ignore this email.",
+      "cta": "Create new password"
+    },
+    "portalRecovery": {
+      "preview": "Reset your portal access: {{project}}",
+      "title": "Reset portal access",
+      "body1": "We received a request to reset your password for the {{project}} project portal.",
+      "body2": "If you did not request this, ignore this email.",
+      "cta": "Reset password"
+    },
+    "portalInviteNew": {
+      "preview": "Your portal access: {{project}}",
+      "title": "Welcome to your portal",
+      "accessOne": "Your {{brand}} portal access was created for the {{project}} project.",
+      "accessMany": "Your {{brand}} portal access was created for these projects:",
+      "client": "Client: {{name}}.",
+      "body": "There you can review the proposal, architecture, and quote when they are published. If you have more than one project, you will see the list when you sign in.",
+      "email": "Email:",
+      "tempPassword": "Temporary password:",
+      "changeHint": "We recommend changing your password after signing in.",
+      "cta": "Enter portal"
+    },
+    "portalInviteExisting": {
+      "preview": "You have portal access: {{project}}",
+      "title": "Portal access",
+      "accessOne": "You were granted {{brand}} portal access for the {{project}} project.",
+      "accessMany": "You were granted {{brand}} portal access for these projects:",
+      "body": "Use your usual email and password. In the portal you will find the proposal, architecture, and quote.",
+      "help": "If you need help, write to",
+      "cta": "Enter portal"
+    },
+    "quoteSent": {
+      "preview": "New quote available: {{project}}",
+      "title": "New commercial proposal",
+      "body1": "You have a new commercial proposal from {{brand}} for the {{project}} project.",
+      "client": "Reference client: {{name}}.",
+      "body2": "Review scope, architecture, and amounts in your portal. If you agree, you can accept it from there.",
+      "doubts": "Commercial questions:",
+      "cta": "View quote"
+    },
+    "leadQuote": {
+      "preview": "Commercial proposal: {{subject}}",
+      "title": "Commercial proposal available",
+      "body1": "We are sharing a commercial proposal from {{brand}} for {{subject}}.",
+      "body2": "You can review the full detail in the link. If you have questions, write to",
+      "cta": "View proposal",
+      "footer": "Informational document. View only."
+    },
+    "legalReaccept": {
+      "preview": "Legal update - {{project}}",
+      "title": "Please accept the updated legal documents",
+      "body1": "We updated the terms, privacy notice, and/or NDA for the {{project}} project portal (version {{version}}).",
+      "body2": "To keep using the portal, accept the current documents on your next visit.",
+      "cta": "Review and accept",
+      "footer": "If you no longer participate in this project, ignore this message or let Codiva.dev know."
+    },
+    "careerHunt": {
+      "preview": "Next step: a finding in your craft",
+      "title": "Next: a finding in your craft",
+      "body1": "You passed the {{craft}} criteria test. Part two remains: find and report a finding in your craft on the Codiva.dev site.",
+      "body2": "Use the same email. Walk the site and describe the URL, steps, and expected vs. actual. You do not need to inspect code.",
+      "body3": "You can also report here:",
+      "cta": "Continue the test"
+    },
+    "careerApplyReady": {
+      "preview": "You can apply to Codiva.dev now",
+      "title": "You can apply now",
+      "body1": "We received a finding in your craft. The test is complete.",
+      "body2": "Continue with the same email and send your CV.",
+      "cta": "Continue to apply"
+    },
+    "careerHuntNudge": {
+      "preview": "Whenever you’re ready, continue with the finding",
+      "title": "Whenever you’re ready, continue with the finding",
+      "body1": "The criteria test is done. Next is reporting a finding in your craft on the site.",
+      "body2": "Use the same email. You can also report here:",
+      "cta": "Continue the test"
+    }
+  },
+  "quoteDoc": {
+    "deliverables": "Deliverables",
+    "considerations": "Considerations",
+    "extras": "Optional extras (not included)",
+    "sincerely": "Sincerely,",
+    "project": "Project",
+    "client": "Client",
+    "endClient": "End client",
+    "developer": "Developer",
+    "issued": "Issue date",
+    "service": "Service",
+    "projectState": "Project status",
+    "scope": "Scope of service",
+    "version": "Version {{version}}",
+    "validUntil": "Valid until",
+    "intermediary": "Intermediary",
+    "titleSuffix": "Codiva quote",
+    "plan": "Delivery plan",
+    "weeks": "Wk. {{weeks}}"
+  }
+}

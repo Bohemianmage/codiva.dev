@@ -1,5 +1,3 @@
-@import '@fontsource/inter/latin.css';
-
 /* Tailwind directives */
 @tailwind base;
 @tailwind components;
@@ -21,7 +19,7 @@ html {
 body {
   background-color: #F9FAFB; /* Fondo oficial Codiva */
   color: #18181B;            /* Equivale a text-zinc-900 */
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
