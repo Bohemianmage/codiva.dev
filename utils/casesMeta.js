@@ -61,7 +61,6 @@ const casesMeta = [
     url: 'https://amida.com.mx',
     logo: '/logos/amida.webp',
     logoFrame: 'landscape',
-    logoSurface: 'dark',
     tech: ['Next.js', 'i18n', 'EmailJS', 'PWA'],
   },
   {
