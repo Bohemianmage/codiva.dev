@@ -18,9 +18,13 @@ import {
 
 export const runtime = 'nodejs';
 
+function noContent() {
+  return new NextResponse(null, { status: 204 });
+}
+
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ ok: false }, { status: 204 });
+    return noContent();
   }
 
   const audit = requestAuditFromHeaders(request.headers);
@@ -31,7 +35,7 @@ export async function POST(request: Request) {
     CAREER_RL_HUNT_BEACON.max
   );
   if (!rl.ok) {
-    return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 204 });
+    return noContent();
   }
 
   let body: Record<string, unknown> = {};
@@ -43,7 +47,7 @@ export async function POST(request: Request) {
 
   const token = readHuntTokenFromRequest(request, safeCareerStr(body.token, 80));
   if (token.length < 16) {
-    return NextResponse.json({ ok: false }, { status: 204 });
+    return noContent();
   }
 
   const attempt = await loadAttemptByToken(token);
@@ -53,12 +57,12 @@ export async function POST(request: Request) {
     !attempt.passed ||
     !huntRequiredForCatalog(attempt.catalog_key)
   ) {
-    return NextResponse.json({ ok: false }, { status: 204 });
+    return noContent();
   }
 
   const path = sanitizeHuntPath(safeCareerStr(body.path, 200));
   if (!path) {
-    return NextResponse.json({ ok: false }, { status: 204 });
+    return noContent();
   }
   const host =
     sanitizeHuntHost(safeCareerStr(body.host, 80)) ||
