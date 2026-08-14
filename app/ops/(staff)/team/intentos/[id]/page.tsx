@@ -13,6 +13,7 @@ import {
 } from '@/lib/careers/hunt/score';
 import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trail';
 import HuntTrailMap from '@/components/ops/HuntTrailMap';
+import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
 import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
 import {
@@ -392,19 +393,7 @@ export default async function AssessmentAttemptPage({
                     </p>
                   ) : null}
                   {(row.evidence_paths ?? []).length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(row.evidence_paths ?? []).map((_, index) => (
-                        <a
-                          key={`${row.id}-ev-${index}`}
-                          href={`/api/ops/careers/hunt-file?id=${row.id}&n=${index}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                        >
-                          {t('ops.careers.evidence', { n: index + 1 })}
-                        </a>
-                      ))}
-                    </div>
+                    <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
                   ) : null}
                   {!seed ? (
                     <ToastForm

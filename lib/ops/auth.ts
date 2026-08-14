@@ -79,6 +79,12 @@ export async function listVisibleProjectIds(
   return (data ?? []).map((r) => r.project_id);
 }
 
+/** Para `.in('id' | 'project_id', ids)`: null = sin filtro; lista vacía = ningún proyecto. */
+export function projectIdInFilter(visibleIds: string[] | null): string[] | null {
+  if (visibleIds === null) return null;
+  return visibleIds.length ? visibleIds : ['00000000-0000-0000-0000-000000000000'];
+}
+
 export async function assertProjectAccess(
   access: StaffAccess,
   projectId: string

@@ -3,7 +3,7 @@ import DashboardFinance from '@/components/ops/DashboardFinance';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { leadTone, projectTone, ticketTone } from '@/components/ops/StatusBadge';
-import { listVisibleProjectIds, requireStaff } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireStaff } from '@/lib/ops/auth';
 import { buildFinanceSummary, type FinanceFilters } from '@/lib/ops/finance';
 import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
@@ -70,11 +70,19 @@ export default async function DashboardPage({
     .select('id, name, status, organization_id, organizations(id, name)')
     .order('name', { ascending: true });
 
-  if (visibleIds) {
-    const ids = visibleIds.length ? visibleIds : ['00000000-0000-0000-0000-000000000000'];
-    projectsQuery = projectsQuery.in('id', ids);
-    financeProjectsQuery = financeProjectsQuery.in('id', ids);
+  const projectFilter = projectIdInFilter(visibleIds);
+  if (projectFilter) {
+    projectsQuery = projectsQuery.in('id', projectFilter);
+    financeProjectsQuery = financeProjectsQuery.in('id', projectFilter);
   }
+
+  let ticketsQuery = supabase
+    .from('tickets')
+    .select('id, title, priority, status, created_at')
+    .in('status', ['new', 'in_progress'])
+    .order('created_at', { ascending: false })
+    .limit(5);
+  if (projectFilter) ticketsQuery = ticketsQuery.in('project_id', projectFilter);
 
   const [
     { data: leads },
@@ -97,14 +105,10 @@ export default async function DashboardPage({
     loadInboundItems({
       supabase,
       role: staff.role,
+      visibleProjectIds: visibleIds,
       maxItems: 5,
     }),
-    supabase
-      .from('tickets')
-      .select('id, title, priority, status, created_at')
-      .in('status', ['new', 'in_progress'])
-      .order('created_at', { ascending: false })
-      .limit(5),
+    ticketsQuery,
     projectsQuery,
     showFinance ? financeProjectsQuery : Promise.resolve({ data: [] as never[] }),
     showFinance
@@ -217,9 +221,11 @@ export default async function DashboardPage({
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">{t('ops.inbox.pending')}</h2>
-            <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
-              {t('ops.inbox.viewInbox')}
-            </Link>
+            {can(staff.role, 'inbox') ? (
+              <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
+                {t('ops.inbox.viewInbox')}
+              </Link>
+            ) : null}
           </div>
           <ul className="space-y-3">
             {inbound.map((item) => (

@@ -28,7 +28,7 @@ export default function Hero() {
       >
         {staticText1}{' '}
         <span className="text-codiva-primary">
-          <TypewriterCycle phrases={[staticText2]} loop={false} active />
+          <TypewriterCycle className="text-codiva-primary" phrases={[staticText2]} loop={false} active />
         </span>
         <br />
         {staticText3}

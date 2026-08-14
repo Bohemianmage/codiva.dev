@@ -7,21 +7,37 @@ import { publishLegalVersionAndNotify } from '@/lib/ops/actions';
 import { LEGAL_DOCS_VERSION, LEGAL_UPDATED_LABEL } from '@/lib/ops/legal/version';
 import { can } from '@/lib/ops/permissions';
 import Link from 'next/link';
+import { offerLabelsFor } from '@/lib/ops/offer-letter';
 
 export default async function SettingsPage() {
   const { user, staff, supabase } = await requireStaff();
   const t = await getT();
   const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
   const ROLE_LABELS = { admin: t('ops.roles.admin'), pm: t('ops.roles.pm'), dev: t('ops.roles.dev') };
+  const { OPS_ROLE_LABELS } = offerLabelsFor(t.locale);
   const canPublishLegal = can(staff.role, 'legal_publish');
   const canManageTeam = can(staff.role, 'team');
 
-  const { data: versions } = await supabase
-    .from('legal_document_versions')
-    .select('kind, version_code, changelog, published_at')
-    .eq('kind', 'bundle')
-    .order('published_at', { ascending: false })
-    .limit(5);
+  const [{ data: versions }, { data: ownOffer }, { data: ownContract }] = await Promise.all([
+    supabase
+      .from('legal_document_versions')
+      .select('kind, version_code, changelog, published_at')
+      .eq('kind', 'bundle')
+      .order('published_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('ops_personnel_offers')
+      .select('id, position_title, ops_role, status, issued_at')
+      .eq('staff_id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('ops_staff_contracts')
+      .select('id, original_filename, signed_at')
+      .eq('staff_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   async function onPublish(formData: FormData) {
     'use server';
@@ -47,6 +63,17 @@ export default async function SettingsPage() {
               <dt className="text-zinc-500">{t('ops.settings.role')}</dt>
               <dd>{ROLE_LABELS[staff.role as keyof typeof ROLE_LABELS] ?? staff.role}</dd>
             </div>
+            {ownOffer ? (
+              <div>
+                <dt className="text-zinc-500">{t('ops.settings.position')}</dt>
+                <dd>
+                  {ownOffer.position_title}
+                  {ownOffer.ops_role
+                    ? ` · ${OPS_ROLE_LABELS[ownOffer.ops_role as keyof typeof OPS_ROLE_LABELS] ?? ownOffer.ops_role}`
+                    : ''}
+                </dd>
+              </div>
+            ) : null}
           </dl>
           {canManageTeam && (
             <p className="mt-4 text-sm">
@@ -56,6 +83,49 @@ export default async function SettingsPage() {
             </p>
           )}
         </section>
+
+        {ownOffer ? (
+          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+            <h2 className="mb-1 font-semibold">{t('ops.settings.offerTitle')}</h2>
+            <p className="mb-4 text-sm text-zinc-600">{t('ops.settings.offerHint')}</p>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`/api/ops/alta-personal/${ownOffer.id}/carta`}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+              >
+                {t('ops.settings.offerOpen')}
+              </a>
+              <a
+                href={`/api/ops/alta-personal/${ownOffer.id}/carta?format=pdf`}
+                className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
+              >
+                {t('ops.settings.offerPdf')}
+              </a>
+            </div>
+          </section>
+        ) : null}
+
+        {ownOffer || ownContract ? (
+          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+            <h2 className="mb-1 font-semibold">{t('ops.settings.contractTitle')}</h2>
+            {ownContract ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-zinc-600">
+                  {t('ops.settings.contractSigned', { date: formatDate(ownContract.signed_at) })}
+                  {ownContract.original_filename ? ` · ${ownContract.original_filename}` : ''}
+                </p>
+                <a
+                  href={`/api/ops/staff/contract?id=${ownContract.id}`}
+                  className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                >
+                  {t('ops.settings.contractDownload')}
+                </a>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-zinc-500">{t('ops.settings.contractPending')}</p>
+            )}
+          </section>
+        ) : null}
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <h2 className="mb-1 font-semibold">{t('ops.settings.legalTitle')}</h2>

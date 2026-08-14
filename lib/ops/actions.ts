@@ -23,7 +23,8 @@ import {
 } from '@/lib/ops/email-templates';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
 import { opsBaseUrl, opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib/ops/host';
-import { uploadOpsFile } from '@/lib/ops/storage';
+import { deleteOpsFile, uploadOpsFile } from '@/lib/ops/storage';
+import { scanUploadedBytes } from '@/lib/ops/malware-scan';
 import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
 import { parseLineItemsJson, parsePhasesJson } from '@/lib/ops/quote-document';
@@ -764,13 +765,17 @@ export async function acceptQuote(quoteId: string, projectId: string) {
 }
 
 export async function invitePortalUser(formData: FormData) {
-  await assertCapability('portal_users');
+  const access = await assertCapability('portal_users');
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const role = String(formData.get('role') || 'viewer');
   const projectIds = formData
     .getAll('projectIds')
     .map((v) => String(v).trim())
     .filter(Boolean);
+
+  for (const projectId of projectIds) {
+    await assertProjectAccessOrThrow(access, projectId);
+  }
 
   const result = await invitePortalUserCore({ email, role, projectIds });
 
@@ -793,6 +798,9 @@ export async function inviteProjectMember(projectId: string, formData: FormData)
     .filter(Boolean);
 
   const projectIds = [...new Set([projectId, ...siblingIds])];
+  for (const id of projectIds) {
+    await assertProjectAccessOrThrow(access, id);
+  }
   const result = await invitePortalUserCore({ email, role, projectIds });
 
   revalidatePath('/users');
@@ -845,13 +853,17 @@ export async function resendPortalInvite(userId: string) {
 }
 
 export async function addPortalUserProjects(userId: string, formData: FormData) {
-  await assertCapability('portal_users');
+  const access = await assertCapability('portal_users');
   const role = String(formData.get('role') || 'viewer');
   const projectIds = formData
     .getAll('projectIds')
     .map((v) => String(v).trim())
     .filter(Boolean);
   if (!projectIds.length) throw new Error('Selecciona al menos un proyecto');
+
+  for (const projectId of projectIds) {
+    await assertProjectAccessOrThrow(access, projectId);
+  }
 
   const admin = createAdminClient();
   const { data: authUser } = await admin.auth.admin.getUserById(userId);
@@ -870,7 +882,8 @@ export async function addPortalUserProjects(userId: string, formData: FormData) 
 }
 
 export async function removePortalUserProject(userId: string, projectId: string) {
-  await assertCapability('portal_users');
+  const access = await assertCapability('portal_users');
+  await assertProjectAccessOrThrow(access, projectId);
   const admin = createAdminClient();
   const { error } = await admin
     .from('project_members')
@@ -890,13 +903,15 @@ const STAFF_ROLE_LABELS: Record<string, string> = {
   dev: 'Desarrollador',
 };
 
-export async function inviteStaff(formData: FormData) {
-  await requireAdminStaff();
+async function provisionStaffUser(input: {
+  email: string;
+  fullName: string;
+  role: string;
+}): Promise<{ userId: string; isNew: boolean }> {
   const admin = createAdminClient();
-
-  const email = String(formData.get('email') || '').trim().toLowerCase();
-  const fullName = String(formData.get('fullName') || '').trim();
-  const role = String(formData.get('role') || 'pm');
+  const email = input.email.trim().toLowerCase();
+  const fullName = input.fullName.trim();
+  const role = input.role;
   if (!email) throw new Error('Email requerido');
   if (!['admin', 'pm', 'dev'].includes(role)) throw new Error('Rol inválido');
 
@@ -943,7 +958,116 @@ export async function inviteStaff(formData: FormData) {
     throw new Error(mail.error || 'No se pudo enviar el correo');
   }
 
+  return { userId, isNew };
+}
+
+export async function inviteStaff(formData: FormData) {
+  await requireAdminStaff();
+  await provisionStaffUser({
+    email: String(formData.get('email') || ''),
+    fullName: String(formData.get('fullName') || ''),
+    role: String(formData.get('role') || 'pm'),
+  });
   revalidatePath('/team');
+  revalidatePath('/settings');
+}
+
+export async function convertPersonnelOfferToStaff(offerId: string, formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const admin = createAdminClient();
+
+  const { data: offer } = await supabase
+    .from('ops_personnel_offers')
+    .select('id, full_name, email, ops_role, staff_id, status')
+    .eq('id', offerId)
+    .maybeSingle();
+  if (!offer) throw new Error('Oferta no encontrada');
+  if (offer.staff_id) throw new Error('Esta oferta ya está vinculada a un integrante');
+
+  const email =
+    String(formData.get('email') || '').trim().toLowerCase() ||
+    String(offer.email || '').trim().toLowerCase();
+  if (!email) throw new Error('Email de acceso requerido');
+  if (!email.endsWith('@codiva.dev')) {
+    throw new Error('El acceso de staff debe ser un correo @codiva.dev');
+  }
+
+  const { userId } = await provisionStaffUser({
+    email,
+    fullName: offer.full_name,
+    role: offer.ops_role || 'pm',
+  });
+
+  const { error } = await admin
+    .from('ops_personnel_offers')
+    .update({
+      staff_id: userId,
+      email,
+      status: offer.status === 'draft' || offer.status === 'sent' ? 'accepted' : offer.status,
+    })
+    .eq('id', offerId);
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'personnel_offer',
+    entityId: offerId,
+    action: 'converted_to_staff',
+    actorId: user.id,
+    metadata: { staff_id: userId, email, role: offer.ops_role },
+  });
+
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${offerId}`);
+  revalidatePath('/settings');
+}
+
+export async function uploadStaffContract(offerId: string, formData: FormData) {
+  const { user, supabase } = await requireAdminStaff();
+  const file = formData.get('file') as File | null;
+  if (!file?.size) throw new Error('Archivo requerido');
+
+  const { data: offer } = await supabase
+    .from('ops_personnel_offers')
+    .select('id, staff_id')
+    .eq('id', offerId)
+    .maybeSingle();
+  if (!offer) throw new Error('Oferta no encontrada');
+  if (!offer.staff_id) {
+    throw new Error('Convierte la oferta a integrante antes de subir el contrato');
+  }
+
+  const signedAt = String(formData.get('signedAt') || '').trim() || new Date().toISOString().slice(0, 10);
+  const uploaded = await uploadOpsFile(file, `staff/${offer.staff_id}/contracts`);
+  const scan = await scanUploadedBytes(uploaded.buffer, uploaded.sha256, file.name);
+  if (scan.status === 'infected') {
+    await deleteOpsFile(uploaded.path);
+    throw new Error(`Archivo rechazado: posible malware (${scan.provider ?? 'scan'}).`);
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.from('ops_staff_contracts').insert({
+    staff_id: offer.staff_id,
+    offer_id: offerId,
+    file_path: uploaded.path,
+    original_filename: file.name,
+    signed_at: signedAt,
+    uploaded_by: user.id,
+  });
+  if (error) {
+    await deleteOpsFile(uploaded.path).catch(() => undefined);
+    throw new Error(error.message);
+  }
+
+  await logActivity({
+    entityType: 'personnel_offer',
+    entityId: offerId,
+    action: 'contract_uploaded',
+    actorId: user.id,
+    metadata: { staff_id: offer.staff_id, file_path: uploaded.path },
+  });
+
+  revalidatePath('/team');
+  revalidatePath(`/team/ofertas/${offerId}`);
   revalidatePath('/settings');
 }
 

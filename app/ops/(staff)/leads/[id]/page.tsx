@@ -4,6 +4,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
+import { can } from '@/lib/ops/permissions';
 import {
   updateLeadStatus,
   updateLeadDetails,
@@ -26,7 +27,8 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
   const { tab = 'resumen' } = await searchParams;
-  const { supabase } = await requireCapability('leads');
+  const { supabase, staff } = await requireCapability('leads');
+  const canQuotes = can(staff.role, 'quotes');
   const t = await getT();
   const { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency, EMPTY_LABEL } =
     labelsFor(t.locale);
@@ -40,31 +42,36 @@ export default async function LeadDetailPage({
     .eq('active', true)
     .order('full_name');
 
-  const { data: quotes } = await supabase
-    .from('quotes')
-    .select('id, title, version, status, total_amount, currency, sent_at, created_at')
-    .eq('lead_id', id)
-    .order('version', { ascending: false });
+  const { data: quotes } = canQuotes
+    ? await supabase
+        .from('quotes')
+        .select('id, title, version, status, total_amount, currency, sent_at, created_at')
+        .eq('lead_id', id)
+        .order('version', { ascending: false })
+    : { data: [] as never[] };
 
   const admin = createAdminClient();
   const publicLinks: Record<string, string> = {};
-  for (const q of quotes ?? []) {
-    if (q.status === 'sent' || q.status === 'accepted' || q.status === 'rejected') {
-      const { data: tokenRow } = await admin
-        .from('quote_access_tokens')
-        .select('token')
-        .eq('quote_id', q.id)
-        .is('revoked_at', null)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (tokenRow?.token) publicLinks[q.id] = publicQuoteUrl(tokenRow.token);
+  if (canQuotes) {
+    for (const q of quotes ?? []) {
+      if (q.status === 'sent' || q.status === 'accepted' || q.status === 'rejected') {
+        const { data: tokenRow } = await admin
+          .from('quote_access_tokens')
+          .select('token')
+          .eq('quote_id', q.id)
+          .is('revoked_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (tokenRow?.token) publicLinks[q.id] = publicQuoteUrl(tokenRow.token);
+      }
     }
   }
 
+  const activeTab = tab === 'cotizaciones' && canQuotes ? 'cotizaciones' : 'resumen';
   const tabs = [
     { key: 'resumen', label: 'Resumen' },
-    { key: 'cotizaciones', label: 'Cotizaciones' },
+    ...(canQuotes ? [{ key: 'cotizaciones', label: 'Cotizaciones' }] : []),
   ];
 
   async function onStatus(formData: FormData) {
@@ -121,7 +128,7 @@ export default async function LeadDetailPage({
             key={t.key}
             href={`/leads/${id}?tab=${t.key}`}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === t.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
+              activeTab === t.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
             }`}
           >
             {t.label}
@@ -129,7 +136,7 @@ export default async function LeadDetailPage({
         ))}
       </nav>
 
-      {tab === 'resumen' && (
+      {activeTab === 'resumen' && (
         <div className="space-y-8">
           <ToastForm success="Guardado" action={onStatus} className="flex items-end gap-3">
             <div>
@@ -211,7 +218,7 @@ export default async function LeadDetailPage({
         </div>
       )}
 
-      {tab === 'cotizaciones' && (
+      {activeTab === 'cotizaciones' && canQuotes && (
         <div className="space-y-6">
           <OpsQuoteForm
             title="Nueva cotización (pre-proyecto)"

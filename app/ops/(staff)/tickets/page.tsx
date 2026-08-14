@@ -1,24 +1,28 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
-import { requireCapability } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
 import { asProject } from '@/lib/ops/tickets';
 import { getT } from '@/i18n/locale';
 
 export default async function TicketsPage() {
-  const { supabase } = await requireCapability('tickets');
+  const { supabase, user, staff } = await requireCapability('tickets');
   const t = await getT();
   const { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
-  const [{ data: tickets }, { data: staff }] = await Promise.all([
-    supabase
-      .from('tickets')
-      .select('id, title, priority, status, reporter_name, reporter_email, assigned_to, created_at, projects(name)')
-      .order('created_at', { ascending: false }),
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  let ticketsQuery = supabase
+    .from('tickets')
+    .select('id, title, priority, status, reporter_name, reporter_email, assigned_to, created_at, projects(name)')
+    .order('created_at', { ascending: false });
+  if (visibleIds) ticketsQuery = ticketsQuery.in('project_id', visibleIds);
+
+  const [{ data: tickets }, { data: staffRows }] = await Promise.all([
+    ticketsQuery,
     supabase.from('staff_profiles').select('id, full_name').eq('active', true),
   ]);
 
-  const names = new Map((staff ?? []).map((s) => [s.id, s.full_name || s.id.slice(0, 8)]));
+  const names = new Map((staffRows ?? []).map((s) => [s.id, s.full_name || s.id.slice(0, 8)]));
 
   return (
     <div>

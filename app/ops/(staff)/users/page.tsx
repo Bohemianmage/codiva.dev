@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireCapability } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { invitePortalUser } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -19,21 +19,23 @@ type MemberRow = {
 };
 
 export default async function PortalUsersPage() {
-  const { supabase } = await requireCapability('portal_users');
+  const { supabase, user, staff } = await requireCapability('portal_users');
   const admin = createAdminClient();
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
 
-  const [{ data: members }, { data: projects }] = await Promise.all([
-    supabase
-      .from('project_members')
-      .select(
-        'user_id, role, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version, projects(id, name, organization_id)'
-      )
-      .order('invited_at', { ascending: false }),
-    supabase
-      .from('projects')
-      .select('id, name, status, organizations(name)')
-      .order('name'),
-  ]);
+  let membersQuery = supabase
+    .from('project_members')
+    .select(
+      'user_id, role, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version, projects(id, name, organization_id)'
+    )
+    .order('invited_at', { ascending: false });
+  let projectsQuery = supabase.from('projects').select('id, name, status, organizations(name)').order('name');
+  if (visibleIds) {
+    membersQuery = membersQuery.in('project_id', visibleIds);
+    projectsQuery = projectsQuery.in('id', visibleIds);
+  }
+
+  const [{ data: members }, { data: projects }] = await Promise.all([membersQuery, projectsQuery]);
 
   const byUser = new Map<
     string,

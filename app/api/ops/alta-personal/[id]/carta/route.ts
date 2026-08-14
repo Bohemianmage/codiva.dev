@@ -33,7 +33,7 @@ export async function GET(request: Request, context: RouteContext) {
     .eq('active', true)
     .maybeSingle();
 
-  if (!staff || staff.role !== 'admin') {
+  if (!staff) {
     return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
   }
 
@@ -45,6 +45,12 @@ export async function GET(request: Request, context: RouteContext) {
 
   if (!offer) {
     return NextResponse.json({ error: 'Oferta no encontrada' }, { status: 404 });
+  }
+
+  const isOwner = offer.staff_id === user.id;
+  const isAdmin = staff.role === 'admin';
+  if (!isOwner && !isAdmin) {
+    return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
   }
 
   const html = renderOfferLetterHtml(rowToOfferLetterData(offer));

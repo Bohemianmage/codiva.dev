@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { projectTone } from '@/components/ops/StatusBadge';
-import { requireCapability } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { updateOrganization } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
@@ -14,18 +14,24 @@ export default async function OrganizationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireCapability('organizations');
+  const { supabase, user, staff } = await requireCapability('organizations');
   const t = await getT();
   const { EMPTY_LABEL, PROJECT_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
   const { data: org } = await supabase.from('organizations').select('*').eq('id', id).maybeSingle();
   if (!org) notFound();
 
-  const { data: projects } = await supabase
+  let projectsQuery = supabase
     .from('projects')
     .select('id, name, slug, status, progress_percent, target_delivery_date')
     .eq('organization_id', id)
     .order('name');
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  if (visibleIds) {
+    projectsQuery = projectsQuery.in('id', visibleIds);
+  }
+  const { data: projects } = await projectsQuery;
+  if (visibleIds && !(projects ?? []).length) notFound();
 
   async function onUpdate(formData: FormData) {
     'use server';

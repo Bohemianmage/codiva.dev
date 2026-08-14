@@ -3,14 +3,15 @@ import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
-import { requireCapability } from '@/lib/ops/auth';
+import { assertProjectAccess, requireCapability } from '@/lib/ops/auth';
 import { updateTicketAssignment } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase } = await requireCapability('tickets');
+  const access = await requireCapability('tickets');
+  const { supabase } = access;
   const t = await getT();
   const { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
 
@@ -20,6 +21,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   ]);
 
   if (!ticket) redirect('/tickets');
+  if (ticket.project_id) {
+    await assertProjectAccess(access, ticket.project_id);
+  }
 
   const assigneeName =
     staff?.find((s) => s.id === ticket.assigned_to)?.full_name || null;
