@@ -1,7 +1,7 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import { requireAdminStaff } from '@/lib/ops/auth';
-import { updatePersonnelOffer, updatePersonnelOfferStatus } from '@/lib/ops/actions';
+import { convertPersonnelOfferToStaff, updatePersonnelOffer, updatePersonnelOfferStatus, uploadStaffContract } from '@/lib/ops/actions';
 import {
   offerLabelsFor,
   renderOfferLetterHtml,
@@ -10,6 +10,7 @@ import {
 import { getT } from '@/i18n/locale';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import BrandedFileInput from '@/components/ops/BrandedFileInput';
 
 export default async function TeamOfferDetailPage({
   params,
@@ -28,6 +29,14 @@ export default async function TeamOfferDetailPage({
   if (!offer) notFound();
   const t = await getT();
   const { OFFER_STATUS_LABELS, OPS_ROLE_LABELS, WORK_MODALITY_LABELS } = offerLabelsFor(t.locale);
+
+  const { data: contracts } = offer.staff_id
+    ? await supabase
+        .from('ops_staff_contracts')
+        .select('id, original_filename, signed_at, created_at')
+        .eq('offer_id', id)
+        .order('created_at', { ascending: false })
+    : { data: [] as { id: string; original_filename: string; signed_at: string; created_at: string }[] };
 
   const html = renderOfferLetterHtml(rowToOfferLetterData(offer));
 
@@ -230,6 +239,80 @@ export default async function TeamOfferDetailPage({
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
               {t('ops.offer.updateStatus')}
             </button>
+          </ToastForm>
+
+          {offer.staff_id ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-sm text-emerald-900">
+              {t('ops.offer.alreadyMember')}
+            </div>
+          ) : (
+            <ToastForm
+              success={t('ops.offer.convertSuccess')}
+              loading={t('ops.toast.saving')}
+              action={async (fd) => {
+                'use server';
+                await convertPersonnelOfferToStaff(id, fd);
+              }}
+              className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
+            >
+              <h2 className="font-semibold">{t('ops.offer.convertTitle')}</h2>
+              <p className="text-sm text-zinc-500">{t('ops.offer.convertHint')}</p>
+              <input
+                name="email"
+                type="email"
+                required
+                defaultValue={offer.email || ''}
+                placeholder="nombre@codiva.dev"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
+                {t('ops.offer.convertSubmit')}
+              </button>
+            </ToastForm>
+          )}
+
+          <ToastForm
+            success={t('ops.offer.contractUploaded')}
+            loading={t('ops.toast.saving')}
+            action={async (fd) => {
+              'use server';
+              await uploadStaffContract(id, fd);
+            }}
+            className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
+          >
+            <h2 className="font-semibold">{t('ops.offer.contractTitle')}</h2>
+            <p className="text-sm text-zinc-500">{t('ops.offer.contractHint')}</p>
+            <label className="text-sm text-zinc-600">
+              {t('ops.offer.contractSignedAt')}
+              <input
+                name="signedAt"
+                type="date"
+                defaultValue={new Date().toISOString().slice(0, 10)}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <BrandedFileInput name="file" accept="application/pdf,.pdf" hint="PDF firmado" required />
+            <button
+              type="submit"
+              disabled={!offer.staff_id}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t('ops.offer.contractUpload')}
+            </button>
+            {(contracts ?? []).length ? (
+              <ul className="space-y-2 text-sm">
+                {(contracts ?? []).map((row) => (
+                  <li key={row.id}>
+                    <a
+                      href={`/api/ops/staff/contract?id=${row.id}`}
+                      className="text-codiva-primary hover:underline"
+                    >
+                      {row.original_filename || t('ops.offer.contractFile')} · {row.signed_at}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </ToastForm>
         </div>
 

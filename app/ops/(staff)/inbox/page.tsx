@@ -2,7 +2,7 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
-import { requireStaff } from '@/lib/ops/auth';
+import { listVisibleProjectIds, requireCapability } from '@/lib/ops/auth';
 import { updateInboxStatus, convertInboxToLead, deleteInboxMessage } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import {
@@ -37,7 +37,7 @@ export default async function InboxPage({
 }: {
   searchParams: Promise<{ kind?: string | string[] }>;
 }) {
-  const { supabase, staff } = await requireStaff();
+  const { supabase, user, staff } = await requireCapability('inbox');
   const params = await searchParams;
   const t = await getT();
   const { INBOX_STATUS_LABELS, formatDate } = labelsFor(t.locale);
@@ -48,6 +48,7 @@ export default async function InboxPage({
     supabase,
     role: staff.role,
     filter: activeFilter,
+    visibleProjectIds: await listVisibleProjectIds(supabase, user.id, staff.role),
   });
 
   const filterLabel: Record<InboundFilter, string> = {

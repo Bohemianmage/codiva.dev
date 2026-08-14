@@ -1,21 +1,33 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireCapability } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { createOrganization } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { redirect } from 'next/navigation';
 
 export default async function OrganizationsPage() {
-  const { supabase } = await requireCapability('organizations');
+  const { supabase, user, staff } = await requireCapability('organizations');
   const t = await getT();
   const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
+  const visibleProjectIds = await listVisibleProjectIds(supabase, user.id, staff.role);
 
-  const { data: orgs } = await supabase
+  let orgQuery = supabase
     .from('organizations')
     .select('id, name, contact_email, contact_phone, created_at, projects(id)')
     .order('name', { ascending: true });
+
+  if (visibleProjectIds) {
+    const { data: assigned } = await supabase
+      .from('projects')
+      .select('organization_id')
+      .in('id', projectIdInFilter(visibleProjectIds)!);
+    const orgIds = [...new Set((assigned ?? []).map((p) => p.organization_id).filter(Boolean))] as string[];
+    orgQuery = orgQuery.in('id', orgIds.length ? orgIds : ['00000000-0000-0000-0000-000000000000']);
+  }
+
+  const { data: orgs } = await orgQuery;
 
   async function onCreate(formData: FormData) {
     'use server';

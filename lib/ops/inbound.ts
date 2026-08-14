@@ -73,17 +73,25 @@ export async function loadInboundItems({
   filter = 'all',
   perKind = 50,
   maxItems,
+  visibleProjectIds = null,
 }: {
   supabase: OpsClient;
   role: string;
   filter?: InboundFilter;
   perKind?: number;
   maxItems?: number;
+  visibleProjectIds?: string[] | null;
 }): Promise<InboundItem[]> {
   const showContact = can(role, 'inbox') && wantsKind(filter, 'contact');
   const showLeads = can(role, 'leads') && wantsKind(filter, 'lead');
   const showTickets = can(role, 'tickets') && wantsKind(filter, 'ticket');
   const showCareer = can(role, 'team') && (filter === 'all' || filter === 'career');
+  const ticketProjectIds =
+    visibleProjectIds === null
+      ? null
+      : visibleProjectIds.length
+        ? visibleProjectIds
+        : ['00000000-0000-0000-0000-000000000000'];
 
   const empty = { data: [] as never[] };
   const [contacts, leads, tickets, applications, hunts] = await Promise.all([
@@ -104,12 +112,16 @@ export async function loadInboundItems({
           .limit(perKind)
       : Promise.resolve(empty),
     showTickets
-      ? supabase
-          .from('tickets')
-          .select('id, title, reporter_name, reporter_email, priority, created_at, projects(name)')
-          .eq('status', 'new')
-          .order('created_at', { ascending: false })
-          .limit(perKind)
+      ? (() => {
+          let query = supabase
+            .from('tickets')
+            .select('id, title, reporter_name, reporter_email, priority, created_at, projects(name)')
+            .eq('status', 'new')
+            .order('created_at', { ascending: false })
+            .limit(perKind);
+          if (ticketProjectIds) query = query.in('project_id', ticketProjectIds);
+          return query;
+        })()
       : Promise.resolve(empty),
     showCareer
       ? supabase

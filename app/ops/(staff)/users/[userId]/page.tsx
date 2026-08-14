@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireCapability } from '@/lib/ops/auth';
+import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import {
   addPortalUserProjects,
   removePortalUserProject,
@@ -19,24 +19,33 @@ export default async function PortalUserDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId } = await params;
-  const { supabase } = await requireCapability('portal_users');
+  const { supabase, user, staff } = await requireCapability('portal_users');
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
   const admin = createAdminClient();
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
 
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);
   if (userError || !authUser.user) notFound();
 
+  let membershipsQuery = supabase
+    .from('project_members')
+    .select(
+      'id, role, invited_at, project_id, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version, projects(id, name, slug, organization_id, organizations(name))'
+    )
+    .eq('user_id', userId)
+    .order('invited_at', { ascending: false });
+  let allProjectsQuery = supabase.from('projects').select('id, name, organizations(name)').order('name');
+  if (visibleIds) {
+    membershipsQuery = membershipsQuery.in('project_id', visibleIds);
+    allProjectsQuery = allProjectsQuery.in('id', visibleIds);
+  }
+
   const [{ data: memberships }, { data: allProjects }] = await Promise.all([
-    supabase
-      .from('project_members')
-      .select(
-        'id, role, invited_at, project_id, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version, projects(id, name, slug, organization_id, organizations(name))'
-      )
-      .eq('user_id', userId)
-      .order('invited_at', { ascending: false }),
-    supabase.from('projects').select('id, name, organizations(name)').order('name'),
+    membershipsQuery,
+    allProjectsQuery,
   ]);
+  if (visibleIds && !(memberships ?? []).length && !(allProjects ?? []).length) notFound();
 
   const assignedIds = new Set((memberships ?? []).map((m) => m.project_id));
   const available = (allProjects ?? []).filter((p) => !assignedIds.has(p.id));

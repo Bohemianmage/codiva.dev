@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
+import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
 import {
   JOB_EMPLOYMENT_TYPES,
   careerOpsLabels,
@@ -811,19 +812,7 @@ export default async function OpsCareersPanel({
                     <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
                   )}
                   {(row.evidence_paths ?? []).length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(row.evidence_paths ?? []).map((_, index) => (
-                        <a
-                          key={`${row.id}-${index}`}
-                          href={`/api/ops/careers/hunt-file?id=${row.id}&n=${index}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                        >
-                          {t('ops.careers.evidence', { n: index + 1 })}
-                        </a>
-                      ))}
-                    </div>
+                    <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
                   ) : null}
                   {!seed ? (
                     <ToastForm
