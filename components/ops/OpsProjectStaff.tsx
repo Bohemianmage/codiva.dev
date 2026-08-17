@@ -2,6 +2,7 @@ import ToastForm from '@/components/ops/ToastForm';
 import { assignProjectStaff, removeProjectStaff } from '@/lib/ops/actions';
 import { EMPTY_LABEL } from '@/lib/ops/labels';
 import { can } from '@/lib/ops/permissions';
+import { getT } from '@/i18n/locale';
 
 type StaffOption = { id: string; full_name: string; role: string };
 type ProjectStaffRow = {
@@ -15,7 +16,7 @@ function profileName(row: ProjectStaffRow) {
   return p?.full_name || EMPTY_LABEL;
 }
 
-export default function OpsProjectStaff({
+export default async function OpsProjectStaff({
   projectId,
   staffRole,
   projectStaff,
@@ -26,17 +27,15 @@ export default function OpsProjectStaff({
   projectStaff: ProjectStaffRow[];
   allStaff: StaffOption[];
 }) {
+  const t = await getT();
   const canPlan = can(staffRole, 'sprints_plan');
   const assignedIds = new Set(projectStaff.map((row) => row.staff_id));
   const available = allStaff.filter((s) => !assignedIds.has(s.id));
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="mb-1 font-semibold">Equipo interno</h2>
-      <p className="mb-4 text-sm text-zinc-500">
-        Quien esté asignado puede ver todo el expediente de este proyecto: sprints, documentos,
-        tickets, cotizaciones, pagos y portal.
-      </p>
+      <h2 className="mb-1 font-semibold">{t('ops.projectStaff.title')}</h2>
+      <p className="mb-4 text-sm text-zinc-500">{t('ops.projectStaff.hint')}</p>
       <ul className="mb-4 space-y-2">
         {projectStaff.map((row) => (
           <li
@@ -49,24 +48,24 @@ export default function OpsProjectStaff({
             </span>
             {canPlan ? (
               <ToastForm
-                success="Quitado"
+                success={t('ops.projectStaff.removed')}
                 action={async () => {
                   'use server';
                   await removeProjectStaff(projectId, row.staff_id);
                 }}
               >
                 <button type="submit" className="text-xs text-zinc-500 hover:text-red-600">
-                  Quitar
+                  {t('ops.projectStaff.remove')}
                 </button>
               </ToastForm>
             ) : null}
           </li>
         ))}
-        {!projectStaff.length && <p className="text-sm text-zinc-500">Nadie asignado aún.</p>}
+        {!projectStaff.length && <p className="text-sm text-zinc-500">{t('ops.projectStaff.empty')}</p>}
       </ul>
       {canPlan && available.length > 0 ? (
         <ToastForm
-          success="Asignado"
+          success={t('ops.projectStaff.assigned')}
           action={async (fd) => {
             'use server';
             await assignProjectStaff(projectId, fd);
@@ -74,7 +73,7 @@ export default function OpsProjectStaff({
           className="flex flex-wrap gap-2"
         >
           <select name="staffId" required className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-            <option value="">Seleccionar staff</option>
+            <option value="">{t('ops.projectStaff.select')}</option>
             {available.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.full_name || s.id.slice(0, 8)} ({s.role})
@@ -82,12 +81,12 @@ export default function OpsProjectStaff({
             ))}
           </select>
           <select name="roleOnProject" defaultValue="pm" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-            <option value="pm">PM</option>
-            <option value="dev">Dev</option>
-            <option value="member">Member</option>
+            <option value="pm">{t('ops.roles.pm')}</option>
+            <option value="dev">{t('ops.roles.dev')}</option>
+            <option value="member">{t('ops.roles.member')}</option>
           </select>
           <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white">
-            Asignar
+            {t('ops.projectStaff.assign')}
           </button>
         </ToastForm>
       ) : null}

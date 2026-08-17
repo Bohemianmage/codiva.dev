@@ -33,11 +33,13 @@ export default async function ProjectsPage() {
 
   const { data: projects } = await projectsQuery;
 
+  const createdMsg = t('ops.projectsPage.created');
+
   async function onCreate(formData: FormData) {
     'use server';
     const id = await createProject(formData);
     const { redirectWithToast } = await import('@/lib/ops/toast');
-    redirectWithToast(`/projects/${id}`, 'Proyecto creado');
+    redirectWithToast(`/projects/${id}`, createdMsg);
   }
 
   return (
@@ -53,15 +55,15 @@ export default async function ProjectsPage() {
 
       {canCreate && (
         <section className="mb-8 rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold">Nuevo proyecto</h2>
-          <ToastForm success="Creado" action={onCreate} className="grid gap-3 md:grid-cols-2">
-            <input name="name" required placeholder="Nombre del proyecto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="organizationName" placeholder="Empresa cliente" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="contactEmail" type="email" placeholder="Email contacto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+          <h2 className="mb-4 font-semibold">{t('ops.projectsPage.newTitle')}</h2>
+          <ToastForm success={t('ops.projectsPage.createdToast')} action={onCreate} className="grid gap-3 md:grid-cols-2">
+            <input name="name" required placeholder={t('ops.projectsPage.name')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="organizationName" placeholder={t('ops.projectsPage.clientCompany')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="contactEmail" type="email" placeholder={t('ops.projectsPage.contactEmail')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input name="targetDeliveryDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <textarea name="description" placeholder="Descripción" rows={2} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <textarea name="description" placeholder={t('ops.projectsPage.description')} rows={2} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-              Crear proyecto
+              {t('ops.projectsPage.create')}
             </button>
           </ToastForm>
         </section>
@@ -71,11 +73,11 @@ export default async function ProjectsPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-left text-zinc-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Proyecto</th>
-              <th className="px-4 py-3 font-medium">Cliente</th>
-              <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium">Portal</th>
-              <th className="px-4 py-3 font-medium">Entrega</th>
+              <th className="px-4 py-3 font-medium">{t('ops.projectsPage.colProject')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.projectsPage.colClient')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.projectsPage.colStatus')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.projectsPage.colPortal')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.projectsPage.colDelivery')}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,7 +87,7 @@ export default async function ProjectsPage() {
                   <Link href={`/projects/${p.id}`} className="font-medium hover:text-codiva-primary">
                     {p.name}
                   </Link>
-                  <div className="text-xs text-zinc-500">{p.progress_percent}% avance</div>
+                  <div className="text-xs text-zinc-500">{t('ops.projectsPage.progressPct', { pct: p.progress_percent })}</div>
                 </td>
                 <td className="px-4 py-3">{(p.organizations as { name?: string })?.name || EMPTY_LABEL}</td>
                 <td className="px-4 py-3">
@@ -94,11 +96,11 @@ export default async function ProjectsPage() {
                 <td className="px-4 py-3">
                   <div className="flex flex-col items-start gap-1.5">
                     <Link href={staffPortalPreviewPath(p.slug)} className="text-codiva-primary hover:underline">
-                      Vista previa
+                      {t('ops.projectsPage.preview')}
                     </Link>
                     <PortalClientUrl slug={p.slug} />
                     {!p.client_visible && (
-                      <span className="text-[11px] text-amber-700">Aún oculto al cliente</span>
+                      <span className="text-[11px] text-amber-700">{t('ops.projectsPage.hidden')}</span>
                     )}
                   </div>
                 </td>
@@ -108,7 +110,7 @@ export default async function ProjectsPage() {
             {!(projects ?? []).length && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                  No hay proyectos{can(staff.role, 'projects_all') ? '' : ' asignados'} aún.
+                  {can(staff.role, 'projects_all') ? t('ops.projectsPage.empty') : t('ops.projectsPage.emptyAssigned')}
                 </td>
               </tr>
             )}

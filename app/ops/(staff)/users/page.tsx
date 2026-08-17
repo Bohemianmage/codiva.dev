@@ -5,6 +5,7 @@ import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/l
 import { invitePortalUser } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getT } from '@/i18n/locale';
 
 type MemberRow = {
   user_id: string;
@@ -20,6 +21,7 @@ type MemberRow = {
 
 export default async function PortalUsersPage() {
   const { supabase, user, staff } = await requireCapability('portal_users');
+  const t = await getT();
   const admin = createAdminClient();
   const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
 
@@ -77,30 +79,30 @@ export default async function PortalUsersPage() {
   return (
     <div>
       <OpsPageHeader
-        title="Usuarios del portal"
-        description="Clientes con acceso a uno o más proyectos. Una invitación puede cubrir varios proyectos."
+        title={t('ops.pages.users')}
+        description={t('ops.pages.usersDesc')}
       />
 
       <div className="max-w-3xl space-y-8">
         <ToastForm
-          success="Invitación enviada"
+          success={t('ops.portalUsers.inviteSent')}
           action={onInvite}
           className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
         >
-          <h2 className="font-semibold">Invitar usuario</h2>
+          <h2 className="font-semibold">{t('ops.portalUsers.inviteTitle')}</h2>
           <input
             name="email"
             type="email"
             required
-            placeholder="email@cliente.com"
+            placeholder={t('ops.portalUsers.emailPlaceholder')}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
           <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-            <option value="viewer">Viewer: solo lectura</option>
-            <option value="approver">Approver: puede aceptar cotización</option>
+            <option value="viewer">{t('ops.portalUsers.roleViewer')}</option>
+            <option value="approver">{t('ops.portalUsers.roleApprover')}</option>
           </select>
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-zinc-700">Proyectos</legend>
+            <legend className="text-sm font-medium text-zinc-700">{t('ops.portalUsers.projects')}</legend>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-3">
               {(projects ?? []).map((p) => {
                 const org = p.organizations as { name?: string } | { name?: string }[] | null;
@@ -116,17 +118,17 @@ export default async function PortalUsersPage() {
                 );
               })}
               {!projects?.length && (
-                <p className="text-sm text-zinc-500">No hay proyectos todavía.</p>
+                <p className="text-sm text-zinc-500">{t('ops.portalUsers.noProjectsYet')}</p>
               )}
             </div>
           </fieldset>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-            Enviar acceso
+            {t('ops.portalUsers.sendAccess')}
           </button>
         </ToastForm>
 
         <section className="space-y-3">
-          <h2 className="font-semibold">Usuarios</h2>
+          <h2 className="font-semibold">{t('ops.portalUsers.listTitle')}</h2>
           <ul className="space-y-2">
             {[...byUser.entries()].map(([userId, info]) => (
               <li key={userId}>
@@ -138,7 +140,7 @@ export default async function PortalUsersPage() {
                     <div>
                       <p className="font-medium">{emails.get(userId) ?? userId.slice(0, 8)}</p>
                       <p className="text-sm text-zinc-500">
-                        {info.projects.map((p) => p.name).join(' · ') || 'Sin proyectos'}
+                        {info.projects.map((p) => p.name).join(' · ') || t('ops.portalUsers.noProjects')}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -152,7 +154,7 @@ export default async function PortalUsersPage() {
                             : 'bg-amber-50 text-amber-800'
                         }`}
                       >
-                        {info.allComplete ? 'Legales OK' : 'Legales pendientes'}
+                        {info.allComplete ? t('ops.portalUsers.legalOk') : t('ops.portalUsers.legalPending')}
                       </span>
                     </div>
                   </div>
@@ -160,7 +162,7 @@ export default async function PortalUsersPage() {
               </li>
             ))}
             {!byUser.size && (
-              <p className="text-sm text-zinc-500">Aún no hay usuarios del portal.</p>
+              <p className="text-sm text-zinc-500">{t('ops.portalUsers.empty')}</p>
             )}
           </ul>
         </section>

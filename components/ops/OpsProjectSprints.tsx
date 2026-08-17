@@ -7,7 +7,7 @@ import {
   updateSprintItem,
 } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { can } from '@/lib/ops/permissions';
 
 type StaffOption = { id: string; full_name: string; role: string };
@@ -56,7 +56,8 @@ export default async function OpsProjectSprints({
   sprints: SprintRow[];
   items: SprintItemRow[];
 }) {
-  const { formatDate, SPRINT_ITEM_STATUS_LABELS, SPRINT_STATUS_LABELS } = labelsFor(await getLocale());
+  const t = await getT();
+  const { formatDate, SPRINT_ITEM_STATUS_LABELS, SPRINT_STATUS_LABELS } = labelsFor(t.locale);
   const canPlan = can(staffRole, 'sprints_plan');
   const staffName = new Map(allStaff.map((s) => [s.id, s.full_name]));
 
@@ -64,16 +65,16 @@ export default async function OpsProjectSprints({
     <div className="space-y-8">
       {canPlan && (
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold">Nuevo sprint</h2>
+          <h2 className="mb-3 font-semibold">{t('ops.sprints.newTitle')}</h2>
           <ToastForm
-            success="Sprint creado"
+            success={t('ops.sprints.created')}
             action={async (fd) => {
               'use server';
               await createProjectSprint(projectId, fd);
             }}
             className="grid gap-3 sm:grid-cols-2"
           >
-            <input name="name" required placeholder="Nombre (ej. Sprint 1)" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="name" required placeholder={t('ops.sprints.namePlaceholder')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="status" defaultValue="planned" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
               {Object.entries(SPRINT_STATUS_LABELS).map(([v, l]) => (
                 <option key={v} value={v}>
@@ -83,9 +84,9 @@ export default async function OpsProjectSprints({
             </select>
             <input name="startsOn" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input name="endsOn" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <textarea name="goal" placeholder="Objetivo" rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <textarea name="goal" placeholder={t('ops.sprints.goal')} rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Crear sprint
+              {t('ops.sprints.create')}
             </button>
           </ToastForm>
         </section>
@@ -113,7 +114,7 @@ export default async function OpsProjectSprints({
 
             {canPlan && (
               <ToastForm
-                success="Sprint actualizado"
+                success={t('ops.sprints.updated')}
                 action={async (fd) => {
                   'use server';
                   await updateProjectSprint(sprint.id, projectId, fd);
@@ -132,7 +133,7 @@ export default async function OpsProjectSprints({
                 <input name="endsOn" type="date" defaultValue={sprint.ends_on ?? ''} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
                 <textarea name="goal" defaultValue={sprint.goal} rows={2} className="sm:col-span-4 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
                 <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50">
-                  Guardar sprint
+                  {t('ops.sprints.save')}
                 </button>
               </ToastForm>
             )}
@@ -149,10 +150,14 @@ export default async function OpsProjectSprints({
                   </div>
                   {item.details && <p className="mb-2 text-sm text-zinc-600">{item.details}</p>}
                   <p className="mb-2 text-xs text-zinc-400">
-                    Asignado: {item.assignee_id ? staffName.get(item.assignee_id) || item.assignee_id.slice(0, 8) : 'Sin asignar'}
+                    {t('ops.sprints.assigned', {
+                      name: item.assignee_id
+                        ? staffName.get(item.assignee_id) || item.assignee_id.slice(0, 8)
+                        : t('ops.sprints.unassigned'),
+                    })}
                   </p>
                   <ToastForm
-                    success="Ítem actualizado"
+                    success={t('ops.sprints.itemUpdated')}
                     action={async (fd) => {
                       'use server';
                       await updateSprintItem(item.id, projectId, fd);
@@ -167,7 +172,7 @@ export default async function OpsProjectSprints({
                           defaultValue={item.assignee_id ?? ''}
                           className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
                         >
-                          <option value="">Sin asignar</option>
+                          <option value="">{t('ops.sprints.unassigned')}</option>
                           {allStaff.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.full_name || s.id.slice(0, 8)}
@@ -184,39 +189,39 @@ export default async function OpsProjectSprints({
                       ))}
                     </select>
                     <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                      Actualizar
+                      {t('ops.sprints.update')}
                     </button>
                   </ToastForm>
                 </li>
               ))}
               {!visibleItems.length && (
                 <p className="text-sm text-zinc-500">
-                  {canPlan ? 'Sin ítems en este sprint.' : 'No tienes ítems asignados en este sprint.'}
+                  {canPlan ? t('ops.sprints.emptyItems') : t('ops.sprints.emptyMine')}
                 </p>
               )}
             </ul>
 
             {canPlan && (
               <ToastForm
-                success="Ítem creado"
+                success={t('ops.sprints.itemCreated')}
                 action={async (fd) => {
                   'use server';
                   await createSprintItem(sprint.id, projectId, fd);
                 }}
                 className="mt-4 grid gap-2 sm:grid-cols-2"
               >
-                <input name="title" required placeholder="Nuevo ítem" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="title" required placeholder={t('ops.sprints.newItem')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
                 <select name="assigneeId" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                  <option value="">Sin asignar</option>
+                  <option value="">{t('ops.sprints.unassigned')}</option>
                   {allStaff.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.full_name || s.id.slice(0, 8)}
                     </option>
                   ))}
                 </select>
-                <textarea name="details" placeholder="Detalle" rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <textarea name="details" placeholder={t('ops.sprints.details')} rows={2} className="sm:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
                 <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white">
-                  Agregar ítem
+                  {t('ops.sprints.addItem')}
                 </button>
               </ToastForm>
             )}
@@ -226,7 +231,7 @@ export default async function OpsProjectSprints({
 
       {!(sprints ?? []).length && (
         <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-          Aún no hay sprints en este proyecto.
+          {t('ops.sprints.empty')}
         </p>
       )}
     </div>

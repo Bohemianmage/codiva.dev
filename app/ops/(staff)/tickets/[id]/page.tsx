@@ -13,7 +13,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const access = await requireCapability('tickets');
   const { supabase } = access;
   const t = await getT();
-  const { EMPTY_LABEL, TICKET_STATUS_LABELS, formatDate } = labelsFor(t.locale);
+  const { EMPTY_LABEL, TICKET_STATUS_LABELS, TICKET_PRIORITY_LABELS, formatDate } = labelsFor(t.locale);
 
   const [{ data: ticket }, { data: staff }] = await Promise.all([
     supabase.from('tickets').select('*, ticket_attachments(*)').eq('id', id).single(),
@@ -35,17 +35,23 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div>
-      <OpsPageHeader title={ticket.title} description={`Reportado por ${ticket.reporter_name}`} />
+      <OpsPageHeader title={ticket.title} description={t('ops.ticketsPage.reportedBy', { name: ticket.reporter_name })} />
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <StatusBadge label={TICKET_STATUS_LABELS[ticket.status]} tone={ticketTone(ticket.status)} />
-        <span className="text-sm capitalize text-zinc-500">Prioridad {ticket.priority}</span>
+        <span className="text-sm text-zinc-500">
+          {t('ops.ticketsPage.priority', {
+            priority: TICKET_PRIORITY_LABELS[ticket.priority] ?? ticket.priority,
+          })}
+        </span>
         <span className="text-sm text-zinc-500">{formatDate(ticket.created_at)}</span>
-        <span className="text-sm text-zinc-500">Asignado: {assigneeName || EMPTY_LABEL}</span>
+        <span className="text-sm text-zinc-500">
+          {t('ops.ticketsPage.assigned', { name: assigneeName || EMPTY_LABEL })}
+        </span>
       </div>
 
-      <ToastForm success="Guardado" action={onUpdate} className="mb-8 flex flex-wrap items-end gap-3">
+      <ToastForm success={t('ops.ticketsPage.saved')} action={onUpdate} className="mb-8 flex flex-wrap items-end gap-3">
         <label className="text-sm text-zinc-600">
-          Estado
+          {t('ops.ticketsPage.status')}
           <select name="status" defaultValue={ticket.status} className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm">
             {Object.entries(TICKET_STATUS_LABELS).map(([k, v]) => (
               <option key={k} value={k}>
@@ -55,13 +61,13 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           </select>
         </label>
         <label className="text-sm text-zinc-600">
-          Asignado a
+          {t('ops.ticketsPage.assignTo')}
           <select
             name="assignedTo"
             defaultValue={ticket.assigned_to ?? ''}
             className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >
-            <option value="">Sin asignar</option>
+            <option value="">{t('ops.ticketsPage.unassigned')}</option>
             {(staff ?? []).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.full_name || s.id.slice(0, 8)}
@@ -70,21 +76,21 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           </select>
         </label>
         <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
-          Guardar
+          {t('ops.ticketsPage.save')}
         </button>
       </ToastForm>
 
       <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Descripción</h2>
+        <h2 className="mb-3 font-semibold">{t('ops.ticketsPage.description')}</h2>
         {ticket.incident_time && (
-          <p className="mb-3 text-sm text-zinc-500">Hora del incidente: {ticket.incident_time}</p>
+          <p className="mb-3 text-sm text-zinc-500">{t('ops.ticketsPage.incidentTime', { time: ticket.incident_time })}</p>
         )}
         <p className="whitespace-pre-wrap text-sm">{ticket.description}</p>
       </section>
 
       {ticket.ticket_attachments?.length > 0 && (
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold">Adjuntos</h2>
+          <h2 className="mb-3 font-semibold">{t('ops.ticketsPage.attachments')}</h2>
           <ul className="space-y-2 text-sm">
             {ticket.ticket_attachments.map((a: { id: string; file_name: string; file_url: string }) => (
               <li key={a.id}>
@@ -100,7 +106,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
       {ticket.project_id && (
         <p className="mt-4 text-sm">
           <Link href={`/projects/${ticket.project_id}`} className="text-codiva-primary hover:underline">
-            Ver proyecto vinculado
+            {t('ops.ticketsPage.viewProject')}
           </Link>
         </p>
       )}

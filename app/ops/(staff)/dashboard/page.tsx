@@ -179,7 +179,7 @@ export default async function DashboardPage({
                         {item.title}
                       </Link>
                       <p className="text-xs text-zinc-500">
-                        {project?.name || 'Proyecto'} · {sprint?.name || 'Sprint'}
+                        {project?.name || t('ops.dashboard.project')} · {sprint?.name || t('ops.dashboard.sprint')}
                       </p>
                     </div>
                     <StatusBadge
@@ -190,7 +190,7 @@ export default async function DashboardPage({
                 );
               })}
               {!(mySprintItems ?? []).length && (
-                <p className="text-sm text-zinc-500">No tienes ítems pendientes asignados.</p>
+                <p className="text-sm text-zinc-500">{t('ops.dashboard.noSprintItems')}</p>
               )}
             </ul>
           </section>
@@ -199,9 +199,9 @@ export default async function DashboardPage({
         {showCommercial && (
           <section className="rounded-xl border border-zinc-200 bg-white p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">Leads nuevos</h2>
+              <h2 className="font-semibold">{t('ops.dashboard.newLeads')}</h2>
               <Link href="/leads" className="text-sm text-codiva-primary hover:underline">
-                Ver todos
+                {t('ops.dashboard.viewAll')}
               </Link>
             </div>
             <ul className="space-y-3">
@@ -213,7 +213,7 @@ export default async function DashboardPage({
                   <StatusBadge label={LEAD_STATUS_LABELS[l.status]} tone={leadTone(l.status)} />
                 </li>
               ))}
-              {!leads?.length && <p className="text-sm text-zinc-500">Sin leads nuevos</p>}
+              {!leads?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noNewLeads')}</p>}
             </ul>
           </section>
         )}
@@ -244,9 +244,9 @@ export default async function DashboardPage({
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Tickets abiertos</h2>
+            <h2 className="font-semibold">{t('ops.dashboard.openTickets')}</h2>
             <Link href="/tickets" className="text-sm text-codiva-primary hover:underline">
-              Ver tickets
+              {t('ops.dashboard.viewTickets')}
             </Link>
           </div>
           <ul className="space-y-3">
@@ -258,13 +258,13 @@ export default async function DashboardPage({
                 <StatusBadge label={TICKET_STATUS_LABELS[t.status]} tone={ticketTone(t.status)} />
               </li>
             ))}
-            {!tickets?.length && <p className="text-sm text-zinc-500">Sin tickets abiertos</p>}
+            {!tickets?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noOpenTickets')}</p>}
           </ul>
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Proyectos activos</h2>
+            <h2 className="font-semibold">{t('ops.dashboard.activeProjects')}</h2>
             <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
               {t('ops.pages.viewProjects')}
             </Link>
@@ -279,16 +279,16 @@ export default async function DashboardPage({
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-                  <span>{p.progress_percent}% avance</span>
-                  <span>Entrega: {formatDate(p.target_delivery_date)}</span>
+                  <span>{t('ops.dashboard.progressPct', { pct: p.progress_percent })}</span>
+                  <span>{t('ops.dashboard.delivery', { date: formatDate(p.target_delivery_date) })}</span>
                   <Link href={`/projects/${p.id}?tab=sprints`} className="font-medium text-codiva-primary hover:underline">
-                    Sprints
+                    {t('ops.dashboard.sprints')}
                   </Link>
                   <PortalClientUrl slug={p.slug} />
                 </div>
               </li>
             ))}
-            {!projects?.length && <p className="text-sm text-zinc-500">Sin proyectos activos</p>}
+            {!projects?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noActiveProjects')}</p>}
           </ul>
         </section>
       </div>

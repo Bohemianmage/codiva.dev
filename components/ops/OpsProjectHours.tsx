@@ -1,7 +1,7 @@
 import ToastForm from '@/components/ops/ToastForm';
 import { createTimeEntry, deleteTimeEntry } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import { can } from '@/lib/ops/permissions';
 
 type Entry = {
@@ -31,7 +31,8 @@ export default async function OpsProjectHours({
   sprintItems: SprintItemOpt[];
   staffOptions: StaffOpt[];
 }) {
-  const { EMPTY_LABEL, formatDate } = labelsFor(await getLocale());
+  const t = await getT();
+  const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
   const canPlan = can(staffRole, 'sprints_plan');
   const names = new Map(staffOptions.map((s) => [s.id, s.full_name || s.id.slice(0, 8)]));
   const itemTitles = new Map(sprintItems.map((i) => [i.id, i.title]));
@@ -42,11 +43,11 @@ export default async function OpsProjectHours({
     <div className="space-y-6">
       <section className="rounded-xl border border-zinc-200 bg-white p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Registrar horas</h2>
-          <p className="text-sm text-zinc-500">Total listado: {total.toFixed(1)} h</p>
+          <h2 className="font-semibold">{t('ops.hours.title')}</h2>
+          <p className="text-sm text-zinc-500">{t('ops.hours.totalListed', { hours: total.toFixed(1) })}</p>
         </div>
         <ToastForm
-          success="Horas registradas"
+          success={t('ops.hours.logged')}
           action={async (fd) => {
             'use server';
             await createTimeEntry(projectId, fd);
@@ -60,7 +61,7 @@ export default async function OpsProjectHours({
             min={0.25}
             max={24}
             step={0.25}
-            placeholder="Horas"
+            placeholder={t('ops.hours.hoursPlaceholder')}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
           <input
@@ -70,7 +71,7 @@ export default async function OpsProjectHours({
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
           <select name="sprintItemId" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-            <option value="">Sin ítem de sprint</option>
+            <option value="">{t('ops.hours.noSprintItem')}</option>
             {sprintItems.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.title}
@@ -88,12 +89,12 @@ export default async function OpsProjectHours({
           ) : null}
           <textarea
             name="notes"
-            placeholder="Notas (opcional)"
+            placeholder={t('ops.hours.notes')}
             rows={2}
             className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2"
           />
           <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-            Guardar horas
+            {t('ops.hours.save')}
           </button>
         </ToastForm>
       </section>
@@ -102,11 +103,11 @@ export default async function OpsProjectHours({
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-left text-zinc-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Fecha</th>
-              <th className="px-4 py-3 font-medium">Quién</th>
-              <th className="px-4 py-3 font-medium">Horas</th>
-              <th className="px-4 py-3 font-medium">Ítem</th>
-              <th className="px-4 py-3 font-medium">Notas</th>
+              <th className="px-4 py-3 font-medium">{t('ops.hours.colDate')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.hours.colWho')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.hours.colHours')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.hours.colItem')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.hours.colNotes')}</th>
               <th className="px-4 py-3 font-medium" />
             </tr>
           </thead>
@@ -117,20 +118,20 @@ export default async function OpsProjectHours({
                 <td className="px-4 py-3">{names.get(e.staff_id) || EMPTY_LABEL}</td>
                 <td className="px-4 py-3 font-medium">{Number(e.hours).toFixed(2)}</td>
                 <td className="px-4 py-3 text-zinc-500">
-                  {e.sprint_item_id ? itemTitles.get(e.sprint_item_id) || 'Ítem' : '-'}
+                  {e.sprint_item_id ? itemTitles.get(e.sprint_item_id) || t('ops.hours.itemFallback') : EMPTY_LABEL}
                 </td>
-                <td className="px-4 py-3 text-zinc-500">{e.notes || '-'}</td>
+                <td className="px-4 py-3 text-zinc-500">{e.notes || EMPTY_LABEL}</td>
                 <td className="px-4 py-3 text-right">
                   {(canPlan || e.staff_id === currentUserId) && (
                     <ToastForm
-                      success="Eliminado"
+                      success={t('ops.hours.deleted')}
                       action={async () => {
                         'use server';
                         await deleteTimeEntry(e.id, projectId);
                       }}
                     >
                       <button type="submit" className="text-xs text-zinc-400 hover:text-red-600">
-                        Borrar
+                        {t('ops.hours.delete')}
                       </button>
                     </ToastForm>
                   )}
@@ -139,7 +140,7 @@ export default async function OpsProjectHours({
             ))}
           </tbody>
         </table>
-        {!entries.length && <p className="p-6 text-sm text-zinc-500">Aún no hay horas registradas.</p>}
+        {!entries.length && <p className="p-6 text-sm text-zinc-500">{t('ops.hours.empty')}</p>}
       </section>
     </div>
   );
