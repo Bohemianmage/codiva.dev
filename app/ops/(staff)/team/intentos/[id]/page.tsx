@@ -127,7 +127,7 @@ export default async function AssessmentAttemptPage({
   ]);
 
   if (
-    !can(staff.role, 'team') &&
+    !can(staff, 'team') &&
     !isTesterPipelineItem({ catalogKey: attempt.catalog_key, postingSlug: posting?.slug })
   ) {
     notFound();

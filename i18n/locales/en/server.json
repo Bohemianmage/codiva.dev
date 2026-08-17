@@ -99,6 +99,55 @@
       "body1": "The criteria test is done. Next is reporting a finding in your craft on the site.",
       "body2": "Use the same email. You can also report here:",
       "cta": "Continue the test"
+    },
+    "careerCvNudge": {
+      "subject": "Your CV is still needed to apply",
+      "preview": "The test is done. Only the CV is missing.",
+      "title": "Your CV is missing",
+      "body1": "A couple of days ago we received a finding in your craft. The test is complete.",
+      "body2": "The CV is the last step for the application to arrive. Use the same email.",
+      "cta": "Send CV"
+    },
+    "careerRejected": {
+      "subject": "We closed your process for {{jobTitle}}",
+      "preview": "Thank you for the time. Here is where things landed.",
+      "title": "Thanks for the process",
+      "body1": "We are closing your process for {{jobTitle}}.",
+      "body2": "We will not move forward in this round. We are a small team and the fit did not land this time. That does not take away from the work you put in.",
+      "body3": "If a later opening feels right, write to us again. Genuinely. You can browse the open roles whenever you like.",
+      "signoff": "Take care,",
+      "team": "The Codiva.dev team",
+      "cta": "View openings"
+    },
+    "careerReviewed": {
+      "subject": "Your application for {{jobTitle}} is still in process",
+      "preview": "We are looking at it. We will write when there is a next step.",
+      "title": "Still in process",
+      "body1": "We received your application for {{jobTitle}} and we are looking at it.",
+      "body2": "We are a small team and we take this at a steady pace. When there is a next step, we will write to you.",
+      "body3": "You do not need to send anything else for now. If you want to tell us something, reply to this email.",
+      "signoff": "Take care,",
+      "team": "The Codiva.dev team"
+    },
+    "careerInterview": {
+      "subject": "Interview for {{jobTitle}}",
+      "preview": "We would like to talk. Reply with your availability.",
+      "title": "Let's set up a conversation",
+      "body1": "We would like to interview you for {{jobTitle}}.",
+      "body2": "Reply to this email with your availability and we will set a day and time.",
+      "body3": "If the next few days get tight, let us know here.",
+      "signoff": "Take care,",
+      "team": "The Codiva.dev team"
+    },
+    "careerHired": {
+      "subject": "We want you to join as {{jobTitle}}",
+      "preview": "Next is the offer and onboarding.",
+      "title": "We want you to join",
+      "body1": "We want you on the team as {{jobTitle}}.",
+      "body2": "In the next few days we will share the offer and how onboarding continues.",
+      "body3": "If you have a question, reply to this email.",
+      "signoff": "Take care,",
+      "team": "The Codiva.dev team"
     }
   },
   "quoteDoc": {

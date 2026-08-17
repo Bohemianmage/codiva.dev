@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { htmlToPdf } from '@/lib/ops/html-to-pdf';
+import { can } from '@/lib/ops/permissions';
 import {
   offerLetterFilename,
   renderOfferLetterHtml,
@@ -28,7 +29,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   const { data: staff } = await supabase
     .from('staff_profiles')
-    .select('id, role, active')
+    .select('id, role, active, capabilities')
     .eq('id', user.id)
     .eq('active', true)
     .maybeSingle();
@@ -48,8 +49,8 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const isOwner = offer.staff_id === user.id;
-  const isAdmin = staff.role === 'admin';
-  if (!isOwner && !isAdmin) {
+  const canManageTeam = can(staff, 'team');
+  if (!isOwner && !canManageTeam) {
     return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
   }
 

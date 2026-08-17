@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logActivity } from '@/lib/ops/activity';
 import { htmlToPdf } from '@/lib/ops/html-to-pdf';
-import { can, canAny, type StaffRole } from '@/lib/ops/permissions';
+import { can, canAny } from '@/lib/ops/permissions';
 import { isTesterCatalogKey, TESTER_JOB_SLUG } from '@/lib/ops/career-disciplines';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requestAuditFromHeaders } from '@/lib/ops/request-audit';
@@ -25,11 +25,11 @@ async function requireTeamStaff() {
   if (!user) return { error: NextResponse.json({ error: 'No autenticado' }, { status: 401 }) };
   const { data: staff } = await supabase
     .from('staff_profiles')
-    .select('id, role, active')
+    .select('id, role, active, capabilities')
     .eq('id', user.id)
     .eq('active', true)
     .maybeSingle();
-  if (!staff || !canAny(staff.role as StaffRole, ['team', 'careers_review'])) {
+  if (!staff || !canAny(staff, ['team', 'careers_review'])) {
     return { error: NextResponse.json({ error: 'Sin acceso' }, { status: 403 }) };
   }
   return { user, staff };
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
   const user = 'user' in access ? access.user : null;
   const staff = 'staff' in access ? access.staff : null;
   if (!user || !staff) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-  const testersOnly = !can(staff.role as StaffRole, 'team');
+  const testersOnly = !can(staff, 'team');
 
   const url = new URL(request.url);
   const format = url.searchParams.get('format') === 'pdf' ? 'pdf' : 'html';

@@ -16,8 +16,8 @@ export default async function SettingsPage() {
   const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
   const ROLE_LABELS = { admin: t('ops.roles.admin'), pm: t('ops.roles.pm'), dev: t('ops.roles.dev') };
   const { OPS_ROLE_LABELS } = offerLabelsFor(t.locale);
-  const canPublishLegal = can(staff.role, 'legal_publish');
-  const canManageTeam = can(staff.role, 'team');
+  const canPublishLegal = can(staff, 'legal_publish');
+  const canManageTeam = can(staff, 'team');
 
   const [{ data: versions }, { data: ownOffer }, { data: ownContract }] = await Promise.all([
     supabase

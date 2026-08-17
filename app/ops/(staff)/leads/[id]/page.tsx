@@ -28,7 +28,7 @@ export default async function LeadDetailPage({
   const { id } = await params;
   const { tab = 'resumen' } = await searchParams;
   const { supabase, staff } = await requireCapability('leads');
-  const canQuotes = can(staff.role, 'quotes');
+  const canQuotes = can(staff, 'quotes');
   const t = await getT();
   const { LEAD_STATUS_LABELS, LEAD_SOURCE_LABELS, QUOTE_STATUS_LABELS, formatDate, formatCurrency, EMPTY_LABEL } =
     labelsFor(t.locale);

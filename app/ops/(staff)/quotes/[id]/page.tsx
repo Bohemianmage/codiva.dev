@@ -22,7 +22,7 @@ export default async function QuoteEditorPage({
   const t = await getT();
   const { QUOTE_STATUS_LABELS } = labelsFor(t.locale);
 
-  if (!can(staff.role, 'quotes')) notFound();
+  if (!can(staff, 'quotes')) notFound();
 
   const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).single();
   if (!quote) notFound();

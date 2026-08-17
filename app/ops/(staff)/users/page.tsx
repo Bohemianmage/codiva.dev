@@ -23,7 +23,7 @@ export default async function PortalUsersPage() {
   const { supabase, user, staff } = await requireCapability('portal_users');
   const t = await getT();
   const admin = createAdminClient();
-  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff));
 
   let membersQuery = supabase
     .from('project_members')

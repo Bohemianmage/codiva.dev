@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   const hunt =
     row.status === 'completed' && row.passed
       ? await huntProgressForAttempt({ email: row.email, catalogKey: row.catalog_key })
-      : { required: false, ready: true, matched: 0, needed: 0, discipline: null };
+      : { required: false, ready: true, readyAt: null, matched: 0, needed: 0, discipline: null };
 
   return applyHuntCookie(
     NextResponse.json({

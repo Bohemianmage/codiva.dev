@@ -99,6 +99,55 @@
       "body1": "La prueba de criterio ya está. El siguiente paso es reportar un hallazgo de tu oficio en el sitio.",
       "body2": "Usa el mismo correo. También puedes reportar aquí:",
       "cta": "Continuar la prueba"
+    },
+    "careerCvNudge": {
+      "subject": "Falta tu CV para postular",
+      "preview": "La prueba ya está. Solo falta enviar el CV.",
+      "title": "Falta tu CV",
+      "body1": "Hace un par de días recibimos un hallazgo de tu oficio. La prueba ya está completa.",
+      "body2": "Solo falta el CV para que la postulación llegue. Usa el mismo correo.",
+      "cta": "Enviar CV"
+    },
+    "careerRejected": {
+      "subject": "Cerramos tu proceso para {{jobTitle}}",
+      "preview": "Gracias por el tiempo. Te contamos cómo quedó.",
+      "title": "Gracias por el proceso",
+      "body1": "Cerramos tu proceso para {{jobTitle}}.",
+      "body2": "En esta ronda no vamos a seguir adelante. Somos un equipo chico y esta vez el encaje no se dio. Eso no descuenta el trabajo que pusiste.",
+      "body3": "Si más adelante ves una vacante que te haga sentido, escríbenos de nuevo. De verdad. Puedes ver las que están abiertas cuando quieras.",
+      "signoff": "Un saludo,",
+      "team": "El equipo de Codiva.dev",
+      "cta": "Ver vacantes"
+    },
+    "careerReviewed": {
+      "subject": "Tu postulación a {{jobTitle}} sigue en proceso",
+      "preview": "Ya la estamos viendo. Te escribimos cuando haya un siguiente paso.",
+      "title": "Sigue en proceso",
+      "body1": "Recibimos tu postulación a {{jobTitle}} y ya la estamos viendo.",
+      "body2": "Somos un equipo chico y lo tomamos con calma. Cuando haya un siguiente paso, te escribimos.",
+      "body3": "Por ahora no tienes que enviar nada más. Si quieres contarnos algo, responde este correo.",
+      "signoff": "Un saludo,",
+      "team": "El equipo de Codiva.dev"
+    },
+    "careerInterview": {
+      "subject": "Entrevista para {{jobTitle}}",
+      "preview": "Nos gustaría conversar. Responde con tu disponibilidad.",
+      "title": "Agendemos una conversación",
+      "body1": "Nos gustaría entrevistarte para {{jobTitle}}.",
+      "body2": "Responde este correo con tu disponibilidad y coordinamos día y hora.",
+      "body3": "Si en estos días se te complica, avísanos por aquí.",
+      "signoff": "Un saludo,",
+      "team": "El equipo de Codiva.dev"
+    },
+    "careerHired": {
+      "subject": "Queremos que te unas como {{jobTitle}}",
+      "preview": "El siguiente paso es la oferta y la incorporación.",
+      "title": "Queremos que te unas",
+      "body1": "Queremos que te unas al equipo como {{jobTitle}}.",
+      "body2": "En los próximos días te compartimos la oferta y cómo sigue la incorporación.",
+      "body3": "Si tienes alguna duda, responde este correo.",
+      "signoff": "Un saludo,",
+      "team": "El equipo de Codiva.dev"
     }
   },
   "quoteDoc": {

@@ -26,7 +26,7 @@ export default async function OrganizationDetailPage({
     .select('id, name, slug, status, progress_percent, target_delivery_date')
     .eq('organization_id', id)
     .order('name');
-  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff));
   if (visibleIds) {
     projectsQuery = projectsQuery.in('id', visibleIds);
   }

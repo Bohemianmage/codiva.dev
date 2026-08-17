@@ -3,7 +3,7 @@ import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { listVisibleProjectIds, requireCapability } from '@/lib/ops/auth';
-import { updateInboxStatus, convertInboxToLead, deleteInboxMessage } from '@/lib/ops/actions';
+import { updateInboxStatus, updateInboxLane, convertInboxToLead, deleteInboxMessage } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import {
   inboundFiltersFor,
@@ -12,6 +12,7 @@ import {
   type InboundFilter,
   type InboundKind,
 } from '@/lib/ops/inbound';
+import { INBOX_LANES, type InboxLane } from '@/lib/ops/inbox-lane';
 import { getT } from '@/i18n/locale';
 
 function kindTone(kind: InboundKind): 'info' | 'warning' | 'danger' | 'success' | 'neutral' {
@@ -20,6 +21,12 @@ function kindTone(kind: InboundKind): 'info' | 'warning' | 'danger' | 'success' 
   if (kind === 'ticket') return 'danger';
   if (kind === 'application') return 'success';
   return 'warning';
+}
+
+function laneTone(lane: InboxLane): 'info' | 'warning' | 'danger' | 'success' | 'neutral' {
+  if (lane === 'real') return 'success';
+  if (lane === 'test') return 'warning';
+  return 'neutral';
 }
 
 function filterHref(kind: InboundFilter) {
@@ -42,21 +49,28 @@ export default async function InboxPage({
   const t = await getT();
   const { INBOX_STATUS_LABELS, formatDate } = labelsFor(t.locale);
   const filter = parseInboundFilter(params.kind);
-  const availableFilters = inboundFiltersFor(staff.role);
+  const availableFilters = inboundFiltersFor(staff);
   const activeFilter = availableFilters.includes(filter) ? filter : 'all';
   const items = await loadInboundItems({
     supabase,
-    role: staff.role,
+    permissions: staff,
     filter: activeFilter,
-    visibleProjectIds: await listVisibleProjectIds(supabase, user.id, staff.role),
+    visibleProjectIds: await listVisibleProjectIds(supabase, user.id, staff),
   });
 
   const filterLabel: Record<InboundFilter, string> = {
     all: t('ops.inbox.filterAll'),
     contact: t('ops.inbox.filterContact'),
+    test: t('ops.inbox.filterTest'),
+    other: t('ops.inbox.filterOther'),
     lead: t('ops.inbox.filterLeads'),
     ticket: t('ops.inbox.filterTickets'),
     career: t('ops.inbox.filterCareer'),
+  };
+  const laneLabel: Record<InboxLane, string> = {
+    real: t('ops.inbox.laneReal'),
+    test: t('ops.inbox.laneTest'),
+    other: t('ops.inbox.laneOther'),
   };
   const kindLabel: Record<InboundKind, string> = {
     contact: t('ops.inbox.kindContact'),
@@ -88,6 +102,11 @@ export default async function InboxPage({
               await updateInboxStatus(messageId, String(formData.get('status')));
             }
 
+            async function onLane(formData: FormData) {
+              'use server';
+              await updateInboxLane(messageId, String(formData.get('lane')));
+            }
+
             async function onConvertToLead() {
               'use server';
               const result = await convertInboxToLead(messageId);
@@ -106,6 +125,7 @@ export default async function InboxPage({
                   <div>
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <StatusBadge label={kindLabel.contact} tone={kindTone('contact')} />
+                      <StatusBadge label={laneLabel[contact.lane]} tone={laneTone(contact.lane)} />
                       <h2 className="font-semibold">{contact.name}</h2>
                     </div>
                     <p className="text-sm text-zinc-500">
@@ -135,6 +155,22 @@ export default async function InboxPage({
                       {t('ops.inbox.save')}
                     </button>
                   </ToastForm>
+                  <ToastForm success={t('ops.inbox.laneSaved')} action={onLane} className="flex items-end gap-2">
+                    <select
+                      name="lane"
+                      defaultValue={contact.lane}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+                    >
+                      {INBOX_LANES.map((lane) => (
+                        <option key={lane} value={lane}>
+                          {laneLabel[lane]}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                      {t('ops.inbox.save')}
+                    </button>
+                  </ToastForm>
                   {contact.lead_id ? (
                     <Link
                       href={`/leads/${contact.lead_id}`}
@@ -142,7 +178,7 @@ export default async function InboxPage({
                     >
                       {t('ops.inbox.viewLead')}
                     </Link>
-                  ) : (
+                  ) : contact.lane === 'real' ? (
                     <ToastForm success={t('ops.inbox.converted')} action={onConvertToLead}>
                       <button
                         type="submit"
@@ -151,7 +187,7 @@ export default async function InboxPage({
                         {t('ops.inbox.convertLead')}
                       </button>
                     </ToastForm>
-                  )}
+                  ) : null}
                   <ToastForm
                     success={t('ops.inbox.deleted')}
                     confirmTitle={t('ops.inbox.delete')}

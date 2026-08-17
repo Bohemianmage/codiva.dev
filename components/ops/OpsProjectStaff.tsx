@@ -1,7 +1,7 @@
 import ToastForm from '@/components/ops/ToastForm';
 import { assignProjectStaff, removeProjectStaff } from '@/lib/ops/actions';
 import { EMPTY_LABEL } from '@/lib/ops/labels';
-import { can } from '@/lib/ops/permissions';
+import { can, type PermissionSubject } from '@/lib/ops/permissions';
 import { getT } from '@/i18n/locale';
 
 type StaffOption = { id: string; full_name: string; role: string };
@@ -18,17 +18,17 @@ function profileName(row: ProjectStaffRow) {
 
 export default async function OpsProjectStaff({
   projectId,
-  staffRole,
+  permissions,
   projectStaff,
   allStaff,
 }: {
   projectId: string;
-  staffRole: string;
+  permissions: PermissionSubject;
   projectStaff: ProjectStaffRow[];
   allStaff: StaffOption[];
 }) {
   const t = await getT();
-  const canPlan = can(staffRole, 'sprints_plan');
+  const canPlan = can(permissions, 'sprints_plan');
   const assignedIds = new Set(projectStaff.map((row) => row.staff_id));
   const available = allStaff.filter((s) => !assignedIds.has(s.id));
 

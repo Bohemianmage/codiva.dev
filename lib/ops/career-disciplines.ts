@@ -37,6 +37,17 @@ export function careerDisciplineLabels(locale: Locale = DEFAULT_LOCALE): Record<
   ) as Record<CareerDiscipline, string>;
 }
 
+/** Rol visible en Ops y correos: oficio de tester si existe, si no el título de la vacante. */
+export function applicationRoleLabel(input: {
+  postingTitle?: string | null;
+  discipline?: string | null;
+  locale?: Locale;
+}): string {
+  const craft = careerDisciplineLabel(input.discipline, input.locale);
+  if (craft) return craft;
+  return String(input.postingTitle || '').trim();
+}
+
 export const CAREER_DISCIPLINE_CATALOG: Record<CareerDiscipline, string> = {
   frontend: 'tester-frontend',
   backend: 'tester-backend',

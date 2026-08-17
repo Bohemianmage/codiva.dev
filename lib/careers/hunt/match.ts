@@ -3,21 +3,44 @@ import {
   isCareerDiscipline,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
-import { HUNT_SEEDS, huntSeedById, type HuntDifficulty, type HuntSeed } from './seeds';
+import { HUNT_SEEDS, huntSeedById, type HuntDifficulty, type HuntSeed, type HuntSurface } from './seeds';
+
+function fold(value: string): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase();
+}
+
+function parseUrl(raw: string): URL | null {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+  try {
+    return value.includes('://') ? new URL(value) : new URL(value, 'https://career.codiva.dev');
+  } catch {
+    return null;
+  }
+}
 
 function normalizePath(raw: string): string {
-  const value = String(raw || '').trim();
-  if (!value) return '';
-  try {
-    const url = value.includes('://') ? new URL(value) : new URL(value, 'https://career.codiva.dev');
+  const url = parseUrl(raw);
+  if (url) {
     let path = url.pathname.replace(/\/+$/, '') || '/';
     const host = url.hostname.toLowerCase();
     if (host.startsWith('career.') && path === '/') path = '/empleos';
     return path.toLowerCase();
-  } catch {
-    const path = value.split('?')[0]?.toLowerCase() || '';
-    return path.startsWith('/') ? path.replace(/\/+$/, '') || '/' : `/${path}`;
   }
+  const path = String(raw || '').split('?')[0]?.toLowerCase() || '';
+  return path.startsWith('/') ? path.replace(/\/+$/, '') || '/' : `/${path}`;
+}
+
+function reportSurface(raw: string): HuntSurface | null {
+  const url = parseUrl(raw);
+  if (!url) return null;
+  const host = url.hostname.toLowerCase();
+  if (host.startsWith('career.')) return 'career';
+  if (host === 'www.codiva.dev' || host === 'codiva.dev') return 'marketing';
+  return null;
 }
 
 function pathMatches(seed: HuntSeed, path: string): boolean {
@@ -29,8 +52,21 @@ function pathMatches(seed: HuntSeed, path: string): boolean {
   });
 }
 
-function keywordHits(seed: HuntSeed, blob: string): number {
-  return seed.keywords.filter((kw) => blob.includes(kw.toLowerCase())).length;
+function tokenHits(blob: string, token: string): boolean {
+  const t = fold(token).trim();
+  if (!t) return false;
+  if (t.length >= 6 || /[^a-z0-9]/.test(t)) return blob.includes(t);
+  const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'u').test(blob);
+}
+
+function matchedTokens(blob: string, tokens: string[]): string[] {
+  return tokens.filter((token) => tokenHits(blob, token));
+}
+
+function isStrongToken(token: string): boolean {
+  const t = fold(token);
+  return t.length >= 12 || /[_/=#.:\[\]]/.test(t) || (t.length >= 8 && t.includes('-'));
 }
 
 /** Oficio dueño + full stack (front o back) + «otro» (cualquiera). */
@@ -68,17 +104,31 @@ export function matchHuntReport(input: {
   discipline?: string | null;
 }): HuntMatch | null {
   const path = normalizePath(input.pageUrl);
-  const blob = `${input.title} ${input.description} ${path}`.toLowerCase();
+  const surface = reportSurface(input.pageUrl);
+  const blob = fold(`${input.title} ${input.description}`);
   const rawDiscipline = input.discipline ?? '';
   const discipline = isCareerDiscipline(rawDiscipline) ? rawDiscipline : null;
   let best: HuntMatch | null = null;
+
   for (const seed of HUNT_SEEDS) {
+    if (seed.surface === 'career' && surface === 'marketing') continue;
     if (!pathMatches(seed, path)) continue;
-    const hits = keywordHits(seed, blob);
-    if (hits < 2) continue;
+
+    const anchors = matchedTokens(blob, seed.anchors);
+    const minAnchors = seed.minAnchors ?? 1;
+    if (anchors.length < minAnchors) continue;
+
+    const support = matchedTokens(blob, seed.keywords);
+    const strong = anchors.some(isStrongToken);
+    if (!strong && support.length < 1) continue;
+
     const countsForCraft = discipline ? seedCountsForDiscipline(seed, discipline) : false;
     const score =
-      hits * 10 + (seed.paths.includes('*') ? 0 : 5) + (countsForCraft ? 20 : 0);
+      anchors.length * 25 +
+      support.length * 8 +
+      (seed.paths.includes('*') ? 0 : 5) +
+      (countsForCraft ? 20 : 0);
+
     if (!best || score > best.score) {
       best = {
         seedId: seed.id,

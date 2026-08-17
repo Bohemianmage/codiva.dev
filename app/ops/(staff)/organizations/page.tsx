@@ -11,7 +11,7 @@ export default async function OrganizationsPage() {
   const { supabase, user, staff } = await requireCapability('organizations');
   const t = await getT();
   const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
-  const visibleProjectIds = await listVisibleProjectIds(supabase, user.id, staff.role);
+  const visibleProjectIds = await listVisibleProjectIds(supabase, user.id, staff);
 
   let orgQuery = supabase
     .from('organizations')

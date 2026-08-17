@@ -17,7 +17,7 @@ import {
   Gauge,
   PanelLeftClose,
 } from 'lucide-react';
-import { canAny, type Capability, type StaffRole } from '@/lib/ops/permissions';
+import { canAny, type Capability, type PermissionSubject } from '@/lib/ops/permissions';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
@@ -42,12 +42,12 @@ const NAV: {
 
 export default function OpsSidebar({
   staffName,
-  staffRole = 'dev',
+  staffPermissions,
   onHide,
   onNavigate,
 }: {
   staffName: string;
-  staffRole?: StaffRole | string;
+  staffPermissions?: PermissionSubject;
   onHide?: () => void;
   onNavigate?: () => void;
 }) {
@@ -59,7 +59,7 @@ export default function OpsSidebar({
   const items = NAV.filter((item) => {
     if (!item.capability) return true;
     const caps = Array.isArray(item.capability) ? item.capability : [item.capability];
-    return canAny(staffRole, caps);
+    return canAny(staffPermissions ?? 'dev', caps);
   });
 
   async function signOut() {
