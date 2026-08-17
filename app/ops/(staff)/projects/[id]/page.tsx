@@ -28,6 +28,7 @@ import {
 } from '@/lib/ops/actions';
 import OpsProjectSiteAccess from '@/components/ops/OpsProjectSiteAccess';
 import OpsProjectSprints from '@/components/ops/OpsProjectSprints';
+import OpsProjectStaff from '@/components/ops/OpsProjectStaff';
 import OpsProjectHours from '@/components/ops/OpsProjectHours';
 import ToastForm from '@/components/ops/ToastForm';
 import { can } from '@/lib/ops/permissions';
@@ -213,6 +214,7 @@ export default async function ProjectDetailPage({
 
   const tabs = [
     { key: 'resumen', label: 'Resumen' },
+    { key: 'equipo', label: 'Equipo' },
     { key: 'sprints', label: 'Sprints' },
     { key: 'horas', label: 'Horas', capability: 'time_entries' as const },
     { key: 'timeline', label: 'Timeline' },
@@ -364,12 +366,24 @@ export default async function ProjectDetailPage({
         </ToastForm>
       )}
 
+      {tab === 'equipo' && (
+        <OpsProjectStaff
+          projectId={id}
+          staffRole={staff.role}
+          projectStaff={(projectStaffRows ?? []) as never[]}
+          allStaff={(allStaffRows ?? []).map((s) => ({
+            id: s.id,
+            full_name: s.full_name || '',
+            role: s.role,
+          }))}
+        />
+      )}
+
       {tab === 'sprints' && (
         <OpsProjectSprints
           projectId={id}
           staffRole={staff.role}
           currentUserId={user.id}
-          projectStaff={(projectStaffRows ?? []) as never[]}
           allStaff={(allStaffRows ?? []).map((s) => ({
             id: s.id,
             full_name: s.full_name || '',

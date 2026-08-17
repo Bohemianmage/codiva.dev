@@ -6,10 +6,12 @@ import OpsCareersPanel, {
   type OpsJobAttemptRow,
   type OpsJobPostingRow,
 } from '@/components/ops/OpsCareersPanel';
-import { requireAdminStaff } from '@/lib/ops/auth';
+import { requireStaff } from '@/lib/ops/auth';
 import {
+  assignProjectStaff,
   createPersonnelOffer,
   inviteStaff,
+  removeProjectStaff,
   updateStaffProfile,
 } from '@/lib/ops/actions';
 import {
@@ -17,9 +19,16 @@ import {
   offerLabelsFor,
 } from '@/lib/ops/offer-letter';
 import { labelsFor } from '@/lib/ops/labels';
+import { can, canAny } from '@/lib/ops/permissions';
+import {
+  isTesterCatalogKey,
+  isTesterJobSlug,
+  isTesterPipelineItem,
+} from '@/lib/ops/career-disciplines';
 import { getT } from '@/i18n/locale';
 import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import CodivaBrandText from '@/components/CodivaBrandText';
 
 function tabClass(active: boolean) {
@@ -34,58 +43,119 @@ export default async function TeamPage({
   searchParams: Promise<{ tab?: string; signal?: string; origin?: string }>;
 }) {
   const { tab: tabParam, signal: signalParam, origin: originParam } = await searchParams;
-  const tab = tabParam === 'ofertas' ? 'ofertas' : tabParam === 'bolsa' ? 'bolsa' : 'miembros';
-
-  const { supabase } = await requireAdminStaff();
+  const { supabase, staff } = await requireStaff();
+  if (!canAny(staff.role, ['team', 'careers_review'])) {
+    redirect('/dashboard?error=forbidden');
+  }
+  const canManageTeam = can(staff.role, 'team');
+  const tab = !canManageTeam
+    ? 'bolsa'
+    : tabParam === 'ofertas'
+      ? 'ofertas'
+      : tabParam === 'bolsa'
+        ? 'bolsa'
+        : 'miembros';
   const t = await getT();
   const { EMPTY_LABEL, formatCurrency, formatDate } = labelsFor(t.locale);
   const { OPS_ROLE_LABELS, WORK_MODALITY_LABELS, OFFER_STATUS_LABELS } = offerLabelsFor(t.locale);
   const ROLE_LABELS = OPS_ROLE_LABELS;
   const admin = createAdminClient();
 
-  const [{ data: staffRows }, { data: offers }, { data: postings }, { data: applications }, { data: attempts }, { data: huntReports }] =
-    await Promise.all([
-      supabase
-        .from('staff_profiles')
-        .select('id, full_name, role, active, created_at')
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('ops_personnel_offers')
-        .select(
-          'id, full_name, email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at'
-        )
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('ops_job_postings')
-        .select('id, slug, title, location, employment_type, status, updated_at')
-        .order('updated_at', { ascending: false }),
-      supabase
-        .from('ops_job_applications')
-        .select(
-          'id, full_name, email, phone, discipline, status, created_at, personnel_offer_id, original_filename, assessment_attempt_id, ops_job_postings(title, slug)'
-        )
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('ops_job_assessment_attempts')
-        .select(
-          'id, job_posting_id, catalog_key, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number, ip_hash, user_agent'
-        )
-        .order('created_at', { ascending: false })
-        .limit(200),
-      supabase
-        .from('ops_hunt_reports')
-        .select(
-          'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, review_status, evidence_paths, created_at'
-        )
-        .order('created_at', { ascending: false })
-        .limit(80),
-    ]);
+  const empty = { data: [] as never[] };
+  const [
+    { data: staffRows },
+    { data: offers },
+    { data: postings },
+    { data: applications },
+    { data: attempts },
+    { data: huntReports },
+    { data: allProjects },
+    { data: staffAssignments },
+  ] = await Promise.all([
+    canManageTeam
+      ? supabase
+          .from('staff_profiles')
+          .select('id, full_name, role, active, created_at')
+          .order('created_at', { ascending: true })
+      : Promise.resolve(empty),
+    canManageTeam
+      ? supabase
+          .from('ops_personnel_offers')
+          .select(
+            'id, full_name, email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at'
+          )
+          .order('created_at', { ascending: false })
+      : Promise.resolve(empty),
+    supabase
+      .from('ops_job_postings')
+      .select('id, slug, title, location, employment_type, status, updated_at')
+      .order('updated_at', { ascending: false }),
+    supabase
+      .from('ops_job_applications')
+      .select(
+        'id, full_name, email, phone, discipline, status, created_at, personnel_offer_id, original_filename, assessment_attempt_id, ops_job_postings(title, slug)'
+      )
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_job_assessment_attempts')
+      .select(
+        'id, job_posting_id, catalog_key, full_name, email, status, score_pct, passed, duration_ms, blur_count, started_at, completed_at, timezone, attempt_number, ip_hash, user_agent'
+      )
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabase
+      .from('ops_hunt_reports')
+      .select(
+        'id, full_name, email, page_url, title, description, expected, matched_seed_id, discipline, assessment_attempt_id, review_status, evidence_paths, created_at'
+      )
+      .order('created_at', { ascending: false })
+      .limit(80),
+    canManageTeam
+      ? supabase.from('projects').select('id, name, organizations(name)').order('name')
+      : Promise.resolve(empty),
+    canManageTeam
+      ? supabase.from('project_staff').select('project_id, staff_id, role_on_project')
+      : Promise.resolve(empty),
+  ]);
 
   const emails = new Map<string, string>();
-  await Promise.all(
-    (staffRows ?? []).map(async (row) => {
-      const { data } = await admin.auth.admin.getUserById(row.id);
-      if (data.user?.email) emails.set(row.id, data.user.email);
+  if (canManageTeam) {
+    await Promise.all(
+      (staffRows ?? []).map(async (row) => {
+        const { data } = await admin.auth.admin.getUserById(row.id);
+        if (data.user?.email) emails.set(row.id, data.user.email);
+      })
+    );
+  }
+
+  const testerPostingIds = new Set(
+    (postings ?? []).filter((row) => isTesterJobSlug(row.slug)).map((row) => row.id)
+  );
+  const visiblePostings = canManageTeam
+    ? postings
+    : (postings ?? []).filter((row) => isTesterJobSlug(row.slug));
+  const visibleApplications = canManageTeam
+    ? applications
+    : (applications ?? []).filter((row) => {
+        const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
+        return isTesterPipelineItem({ postingSlug: posting?.slug, discipline: row.discipline });
+      });
+  const visibleAttempts = canManageTeam
+    ? attempts
+    : (attempts ?? []).filter(
+        (row) => isTesterCatalogKey(row.catalog_key) || testerPostingIds.has(row.job_posting_id)
+      );
+  const assignmentsByStaff = new Map<string, { project_id: string; role_on_project: string }[]>();
+  for (const row of staffAssignments ?? []) {
+    const list = assignmentsByStaff.get(row.staff_id) ?? [];
+    list.push({ project_id: row.project_id, role_on_project: row.role_on_project });
+    assignmentsByStaff.set(row.staff_id, list);
+  }
+  const projectLabel = new Map(
+    (allProjects ?? []).map((p) => {
+      const org = p.organizations as { name?: string } | { name?: string }[] | null;
+      const orgName = Array.isArray(org) ? org[0]?.name : org?.name;
+      return [p.id, orgName ? `${p.name} · ${orgName}` : p.name] as const;
     })
   );
 
@@ -103,33 +173,37 @@ export default async function TeamPage({
     <div>
       <OpsPageHeader
         title={t('ops.team.title')}
-        description={t('ops.team.description')}
+        description={canManageTeam ? t('ops.team.description') : t('ops.team.descriptionPm')}
       />
 
       <div className="mb-8 flex gap-6 border-b border-zinc-200">
-        <Link href="/team?tab=miembros" className={tabClass(tab === 'miembros')}>
-          {t('ops.team.tabMembers')}
-        </Link>
-        <Link href="/team?tab=ofertas" className={tabClass(tab === 'ofertas')}>
-          {t('ops.team.tabOffers')}
-          {(offers ?? []).length > 0 ? (
-            <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-              {(offers ?? []).length}
-            </span>
-          ) : null}
-        </Link>
+        {canManageTeam ? (
+          <>
+            <Link href="/team?tab=miembros" className={tabClass(tab === 'miembros')}>
+              {t('ops.team.tabMembers')}
+            </Link>
+            <Link href="/team?tab=ofertas" className={tabClass(tab === 'ofertas')}>
+              {t('ops.team.tabOffers')}
+              {(offers ?? []).length > 0 ? (
+                <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                  {(offers ?? []).length}
+                </span>
+              ) : null}
+            </Link>
+          </>
+        ) : null}
         <Link href="/team?tab=bolsa" className={tabClass(tab === 'bolsa')}>
           {t('ops.team.tabJobs')}
-          {(applications ?? []).filter((row) => row.status === 'new').length > 0 ? (
+          {(visibleApplications ?? []).filter((row) => row.status === 'new').length > 0 ? (
             <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-              {(applications ?? []).filter((row) => row.status === 'new').length}
+              {(visibleApplications ?? []).filter((row) => row.status === 'new').length}
             </span>
           ) : null}
         </Link>
       </div>
 
-      {tab === 'miembros' ? (
-        <div className="max-w-2xl space-y-8">
+      {tab === 'miembros' && canManageTeam ? (
+        <div className="max-w-3xl space-y-8">
           <ToastForm
             success={t('ops.team.inviteSent')}
             action={onInvite}
@@ -215,6 +289,91 @@ export default async function TeamPage({
                       {t('ops.team.save')}
                     </button>
                   </ToastForm>
+                  {(() => {
+                    const assigned = assignmentsByStaff.get(row.id) ?? [];
+                    const assignedIds = new Set(assigned.map((a) => a.project_id));
+                    const available = (allProjects ?? []).filter((p) => !assignedIds.has(p.id));
+                    return (
+                      <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
+                        <h3 className="text-sm font-medium">{t('ops.team.projectsTitle')}</h3>
+                        <p className="text-xs text-zinc-500">{t('ops.team.projectsHint')}</p>
+                        <ul className="space-y-2">
+                          {assigned.map((a) => (
+                            <li
+                              key={a.project_id}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 text-sm"
+                            >
+                              <span>
+                                <Link
+                                  href={`/projects/${a.project_id}`}
+                                  className="text-codiva-primary hover:underline"
+                                >
+                                  {projectLabel.get(a.project_id) ?? a.project_id.slice(0, 8)}
+                                </Link>
+                                <span className="text-zinc-500"> · {a.role_on_project}</span>
+                              </span>
+                              <ToastForm
+                                success={t('ops.team.projectsRemoved')}
+                                action={async () => {
+                                  'use server';
+                                  await removeProjectStaff(a.project_id, row.id);
+                                }}
+                              >
+                                <button type="submit" className="text-xs text-zinc-500 hover:text-red-600">
+                                  {t('ops.team.projectsRemove')}
+                                </button>
+                              </ToastForm>
+                            </li>
+                          ))}
+                          {!assigned.length ? (
+                            <p className="text-sm text-zinc-500">{t('ops.team.projectsEmpty')}</p>
+                          ) : null}
+                        </ul>
+                        {available.length > 0 ? (
+                          <ToastForm
+                            success={t('ops.team.projectsAdded')}
+                            action={async (fd) => {
+                              'use server';
+                              const projectId = String(fd.get('projectId') || '').trim();
+                              await assignProjectStaff(projectId, fd);
+                            }}
+                            className="flex flex-wrap gap-2"
+                          >
+                            <input type="hidden" name="staffId" value={row.id} />
+                            <select
+                              name="projectId"
+                              required
+                              className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                            >
+                              <option value="">{t('ops.team.projectsSelect')}</option>
+                              {available.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {projectLabel.get(p.id) ?? p.name}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              name="roleOnProject"
+                              defaultValue={row.role === 'dev' ? 'dev' : 'pm'}
+                              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                            >
+                              <option value="pm">PM</option>
+                              <option value="dev">Dev</option>
+                              <option value="member">Member</option>
+                            </select>
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white"
+                            >
+                              {t('ops.team.projectsAdd')}
+                            </button>
+                          </ToastForm>
+                        ) : (
+                          <p className="text-xs text-zinc-400">{t('ops.team.projectsAllAssigned')}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>
@@ -222,12 +381,13 @@ export default async function TeamPage({
         </div>
       ) : tab === 'bolsa' ? (
         <OpsCareersPanel
-          postings={(postings ?? []) as OpsJobPostingRow[]}
-          applications={(applications ?? []) as OpsJobApplicationRow[]}
-          attempts={(attempts ?? []) as OpsJobAttemptRow[]}
+          postings={(visiblePostings ?? []) as OpsJobPostingRow[]}
+          applications={(visibleApplications ?? []) as OpsJobApplicationRow[]}
+          attempts={(visibleAttempts ?? []) as OpsJobAttemptRow[]}
           huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
           signal={signalParam || ''}
           origin={originParam || ''}
+          canManage={canManageTeam}
         />
       ) : (
         <div className="max-w-3xl space-y-8">

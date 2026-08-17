@@ -1,23 +1,16 @@
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import {
-  assignProjectStaff,
   createProjectSprint,
   createSprintItem,
-  removeProjectStaff,
   updateProjectSprint,
   updateSprintItem,
 } from '@/lib/ops/actions';
-import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
 import { getLocale } from '@/i18n/locale';
 import { can } from '@/lib/ops/permissions';
 
 type StaffOption = { id: string; full_name: string; role: string };
-type ProjectStaffRow = {
-  staff_id: string;
-  role_on_project: string;
-  staff_profiles: { full_name: string; role: string } | { full_name: string; role: string }[] | null;
-};
 type SprintRow = {
   id: string;
   name: string;
@@ -48,16 +41,10 @@ function itemTone(status: string) {
   return 'warning' as const;
 }
 
-function profileName(row: ProjectStaffRow) {
-  const p = Array.isArray(row.staff_profiles) ? row.staff_profiles[0] : row.staff_profiles;
-  return p?.full_name || EMPTY_LABEL;
-}
-
 export default async function OpsProjectSprints({
   projectId,
   staffRole,
   currentUserId,
-  projectStaff,
   allStaff,
   sprints,
   items,
@@ -65,7 +52,6 @@ export default async function OpsProjectSprints({
   projectId: string;
   staffRole: string;
   currentUserId: string;
-  projectStaff: ProjectStaffRow[];
   allStaff: StaffOption[];
   sprints: SprintRow[];
   items: SprintItemRow[];
@@ -76,64 +62,6 @@ export default async function OpsProjectSprints({
 
   return (
     <div className="space-y-8">
-      {canPlan && (
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="mb-3 font-semibold">Equipo del proyecto</h2>
-          <ul className="mb-4 space-y-2">
-            {projectStaff.map((row) => (
-              <li
-                key={row.staff_id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 text-sm"
-              >
-                <span>
-                  {profileName(row)}{' '}
-                  <span className="text-zinc-500">· {row.role_on_project}</span>
-                </span>
-                <ToastForm
-                  success="Quitado"
-                  action={async () => {
-                    'use server';
-                    await removeProjectStaff(projectId, row.staff_id);
-                  }}
-                >
-                  <button type="submit" className="text-xs text-zinc-500 hover:text-red-600">
-                    Quitar
-                  </button>
-                </ToastForm>
-              </li>
-            ))}
-            {!projectStaff.length && (
-              <p className="text-sm text-zinc-500">Nadie asignado aún.</p>
-            )}
-          </ul>
-          <ToastForm
-            success="Asignado"
-            action={async (fd) => {
-              'use server';
-              await assignProjectStaff(projectId, fd);
-            }}
-            className="flex flex-wrap gap-2"
-          >
-            <select name="staffId" required className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="">Seleccionar staff</option>
-              {allStaff.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.full_name || s.id.slice(0, 8)} ({s.role})
-                </option>
-              ))}
-            </select>
-            <select name="roleOnProject" defaultValue="dev" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="pm">PM</option>
-              <option value="dev">Dev</option>
-              <option value="member">Member</option>
-            </select>
-            <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-2 text-sm text-white">
-              Asignar
-            </button>
-          </ToastForm>
-        </section>
-      )}
-
       {canPlan && (
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <h2 className="mb-3 font-semibold">Nuevo sprint</h2>
@@ -240,9 +168,9 @@ export default async function OpsProjectSprints({
                           className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
                         >
                           <option value="">Sin asignar</option>
-                          {projectStaff.map((ps) => (
-                            <option key={ps.staff_id} value={ps.staff_id}>
-                              {profileName(ps)}
+                          {allStaff.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.full_name || s.id.slice(0, 8)}
                             </option>
                           ))}
                         </select>
@@ -280,9 +208,9 @@ export default async function OpsProjectSprints({
                 <input name="title" required placeholder="Nuevo ítem" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
                 <select name="assigneeId" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
                   <option value="">Sin asignar</option>
-                  {projectStaff.map((ps) => (
-                    <option key={ps.staff_id} value={ps.staff_id}>
-                      {profileName(ps)}
+                  {allStaff.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.full_name || s.id.slice(0, 8)}
                     </option>
                   ))}
                 </select>

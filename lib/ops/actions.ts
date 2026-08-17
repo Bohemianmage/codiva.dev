@@ -2351,6 +2351,8 @@ export async function assignProjectStaff(projectId: string, formData: FormData) 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
+  revalidatePath('/team');
 }
 
 export async function removeProjectStaff(projectId: string, staffId: string) {
@@ -2365,6 +2367,8 @@ export async function removeProjectStaff(projectId: string, staffId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
+  revalidatePath('/team');
 }
 
 export async function createProjectSprint(projectId: string, formData: FormData) {

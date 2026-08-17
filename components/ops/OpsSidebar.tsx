@@ -17,7 +17,7 @@ import {
   Gauge,
   PanelLeftClose,
 } from 'lucide-react';
-import { can, type Capability, type StaffRole } from '@/lib/ops/permissions';
+import { canAny, type Capability, type StaffRole } from '@/lib/ops/permissions';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
@@ -26,7 +26,7 @@ const NAV: {
   href: string;
   labelKey: string;
   icon: typeof LayoutDashboard;
-  capability?: Capability | null;
+  capability?: Capability | Capability[] | null;
 }[] = [
   { href: '/dashboard', labelKey: 'ops.nav.dashboard', icon: LayoutDashboard },
   { href: '/leads', labelKey: 'ops.nav.leads', icon: Users, capability: 'leads' },
@@ -36,7 +36,7 @@ const NAV: {
   { href: '/organizations', labelKey: 'ops.nav.organizations', icon: Building2, capability: 'organizations' },
   { href: '/users', labelKey: 'ops.nav.users', icon: ContactRound, capability: 'portal_users' },
   { href: '/tickets', labelKey: 'ops.nav.tickets', icon: Ticket, capability: 'tickets' },
-  { href: '/team', labelKey: 'ops.nav.team', icon: UserCog, capability: 'team' },
+  { href: '/team', labelKey: 'ops.nav.team', icon: UserCog, capability: ['team', 'careers_review'] },
   { href: '/settings', labelKey: 'ops.nav.settings', icon: Settings, capability: 'settings_profile' },
 ];
 
@@ -58,7 +58,8 @@ export default function OpsSidebar({
   const normalized = pathname.replace(/^\/ops/, '') || '/dashboard';
   const items = NAV.filter((item) => {
     if (!item.capability) return true;
-    return can(staffRole, item.capability);
+    const caps = Array.isArray(item.capability) ? item.capability : [item.capability];
+    return canAny(staffRole, caps);
   });
 
   async function signOut() {

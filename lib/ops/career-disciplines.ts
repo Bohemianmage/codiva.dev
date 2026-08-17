@@ -63,3 +63,25 @@ export function disciplineFromCatalogKey(key: string | null | undefined): Career
 export function postingAsksDiscipline(slug: string | null | undefined): boolean {
   return String(slug || '').trim().toLowerCase() !== 'project-manager';
 }
+
+export const TESTER_JOB_SLUG = 'tester-qa';
+
+export function isTesterJobSlug(slug: string | null | undefined): boolean {
+  return String(slug || '').trim().toLowerCase() === TESTER_JOB_SLUG;
+}
+
+export function isTesterCatalogKey(key: string | null | undefined): boolean {
+  return String(key || '').trim().toLowerCase().startsWith('tester-');
+}
+
+export function isTesterPipelineItem(input: {
+  catalogKey?: string | null;
+  postingSlug?: string | null;
+  discipline?: string | null;
+}): boolean {
+  return (
+    isTesterCatalogKey(input.catalogKey) ||
+    isTesterJobSlug(input.postingSlug) ||
+    Boolean(input.discipline && isCareerDiscipline(input.discipline))
+  );
+}

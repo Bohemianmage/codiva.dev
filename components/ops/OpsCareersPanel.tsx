@@ -181,6 +181,7 @@ export default async function OpsCareersPanel({
   huntReports = [],
   signal = '',
   origin = '',
+  canManage = true,
 }: {
   postings: OpsJobPostingRow[];
   applications: OpsJobApplicationRow[];
@@ -188,6 +189,7 @@ export default async function OpsCareersPanel({
   huntReports?: OpsHuntReportRow[];
   signal?: string;
   origin?: string;
+  canManage?: boolean;
 }) {
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
@@ -275,6 +277,7 @@ export default async function OpsCareersPanel({
 
   return (
     <div className="max-w-4xl space-y-10">
+      {canManage ? (
       <ToastForm
         success={t('ops.careers.created')}
         action={onCreate}
@@ -369,6 +372,7 @@ export default async function OpsCareersPanel({
           {t('ops.careers.createSubmit')}
         </button>
       </ToastForm>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.careers.listTitle')}</h2>
@@ -398,12 +402,14 @@ export default async function OpsCareersPanel({
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={`/team/vacantes/${row.id}`}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                  >
-                    {t('ops.careers.edit')}
-                  </Link>
+                  {canManage ? (
+                    <Link
+                      href={`/team/vacantes/${row.id}`}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.edit')}
+                    </Link>
+                  ) : null}
                   {row.status === 'published' ? (
                     <a
                       href={publicCareerUrl(row.slug)}
@@ -422,7 +428,7 @@ export default async function OpsCareersPanel({
                   >
                     {t('ops.careers.pipelineHtml')}
                   </a>
-                  {row.status === 'draft' ? (
+                  {canManage && row.status === 'draft' ? (
                     <ToastForm
                       success={t('ops.careers.deleted')}
                       action={async () => {
@@ -700,14 +706,14 @@ export default async function OpsCareersPanel({
                       {t('ops.careers.viewTest')}
                     </Link>
                   ) : null}
-                  {row.personnel_offer_id ? (
+                  {canManage && row.personnel_offer_id ? (
                     <Link
                       href={`/team/ofertas/${row.personnel_offer_id}`}
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
                     >
                       {t('ops.careers.viewOffer')}
                     </Link>
-                  ) : (
+                  ) : canManage ? (
                     <ToastForm
                       success={t('ops.careers.offerCreated')}
                       loading={t('ops.careers.creating')}
@@ -720,7 +726,7 @@ export default async function OpsCareersPanel({
                         {t('ops.careers.hire')}
                       </button>
                     </ToastForm>
-                  )}
+                  ) : null}
                   <ToastForm
                     success={t('ops.careers.statusUpdated')}
                     action={async (fd) => {

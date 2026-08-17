@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { chargeAmountNumber } from '@/lib/ops/charges';
 import { getAcceptanceStatus, type MemberAcceptanceFields } from '@/lib/ops/legal/acceptances';
-import { can, type Capability, type StaffRole } from '@/lib/ops/permissions';
+import { can, canAny, type Capability, type StaffRole } from '@/lib/ops/permissions';
 
 const PROJECT_SELECT =
   'id, name, slug, status, client_visible, organization_id, progress_percent, description, target_delivery_date, portal_show_quote, portal_show_costs, site_preview_url, site_production_url';
@@ -39,6 +39,24 @@ export async function requireStaff() {
 /** Solo administradores (gestión de equipo). */
 export async function requireAdminStaff() {
   return requireCapability('team');
+}
+
+/** Admin o PM: ver postulaciones, pruebas y hallazgos de la bolsa. */
+export async function requireCareersReview() {
+  const access = await requireStaff();
+  if (!canAny(access.staff.role, ['team', 'careers_review'])) {
+    redirect('/dashboard?error=forbidden');
+  }
+  return access;
+}
+
+/** Para server actions de revisión de bolsa. */
+export async function assertCareersReview() {
+  const access = await requireStaff();
+  if (!canAny(access.staff.role, ['team', 'careers_review'])) {
+    throw new Error('No tienes permiso para esta acción');
+  }
+  return access;
 }
 
 /** Staff con una capability concreta; si no, redirige a dashboard. */

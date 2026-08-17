@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdminStaff } from '@/lib/ops/auth';
+import { requireCareersReview } from '@/lib/ops/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { HUNT_EVIDENCE_BUCKET, isHuntEvidencePath } from '@/lib/careers/hunt/evidence';
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 });
   }
 
-  await requireAdminStaff();
+  await requireCareersReview();
   const admin = createAdminClient();
   const { data: report } = await admin
     .from('ops_hunt_reports')

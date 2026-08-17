@@ -594,7 +594,8 @@
     },
     "team": {
       "title": "Team",
-      "description": "Members, offer letters, and job board. Admins only.",
+      "description": "Members, offer letters, and job board.",
+      "descriptionPm": "Tester assessments and applications.",
       "tabMembers": "Members",
       "tabOffers": "Offer letters",
       "tabJobs": "Job board",
@@ -625,7 +626,16 @@
       "offersTitle": "Offers",
       "offersEmpty": "No offer letters yet. Create the first one above.",
       "issued": "Issued {{date}}",
-      "perMonth": "/ month"
+      "perMonth": "/ month",
+      "projectsTitle": "Assigned projects",
+      "projectsHint": "The project manager only sees the file for these projects: sprints, documents, tickets, quotes, payments, and portal.",
+      "projectsEmpty": "No projects assigned. Until you assign one, they will see nothing under Projects.",
+      "projectsSelect": "Select a project",
+      "projectsAdd": "Assign",
+      "projectsRemove": "Remove",
+      "projectsAdded": "Project assigned",
+      "projectsRemoved": "Project removed",
+      "projectsAllAssigned": "Already assigned to every project."
     },
     "careers": {
       "created": "Role created",

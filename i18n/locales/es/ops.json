@@ -594,7 +594,8 @@
     },
     "team": {
       "title": "Equipo",
-      "description": "Miembros, cartas oferta y bolsa de trabajo. Solo administradores.",
+      "description": "Miembros, cartas oferta y bolsa de trabajo.",
+      "descriptionPm": "Resultados de pruebas y postulaciones de testers.",
       "tabMembers": "Miembros",
       "tabOffers": "Cartas oferta",
       "tabJobs": "Bolsa de trabajo",
@@ -625,7 +626,16 @@
       "offersTitle": "Ofertas",
       "offersEmpty": "Aún no hay cartas oferta. Crea la primera arriba.",
       "issued": "Emitida {{date}}",
-      "perMonth": "/ mes"
+      "perMonth": "/ mes",
+      "projectsTitle": "Proyectos asignados",
+      "projectsHint": "El project manager solo ve el expediente de estos proyectos: sprints, documentos, tickets, cotizaciones, pagos y portal.",
+      "projectsEmpty": "Sin proyectos asignados. Hasta que asignes uno, no verá nada en Proyectos.",
+      "projectsSelect": "Seleccionar proyecto",
+      "projectsAdd": "Asignar",
+      "projectsRemove": "Quitar",
+      "projectsAdded": "Proyecto asignado",
+      "projectsRemoved": "Proyecto quitado",
+      "projectsAllAssigned": "Ya está en todos los proyectos."
     },
     "careers": {
       "created": "Vacante creada",
