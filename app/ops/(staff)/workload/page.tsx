@@ -115,16 +115,18 @@ export default async function WorkloadPage() {
                 <p className="text-xs uppercase tracking-wide text-zinc-400">{person.role}</p>
               </div>
               <div className="flex flex-wrap gap-3 text-sm text-zinc-600">
-                <span>{person.projectCount} proyectos</span>
-                <span>{person.sprintItems.length} ítems abiertos</span>
-                <span>{person.tickets.length} tickets</span>
-                <span className="font-medium text-codiva-primary">{person.hoursThisWeek.toFixed(1)} h esta semana</span>
+                <span>{t('ops.workloadPage.projectsCount', { count: person.projectCount })}</span>
+                <span>{t('ops.workloadPage.openItems', { count: person.sprintItems.length })}</span>
+                <span>{t('ops.workloadPage.ticketsCount', { count: person.tickets.length })}</span>
+                <span className="font-medium text-codiva-primary">
+                  {t('ops.workloadPage.hoursWeek', { hours: person.hoursThisWeek.toFixed(1) })}
+                </span>
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div>
-                <h3 className="mb-2 text-sm font-medium text-zinc-700">Sprint</h3>
+                <h3 className="mb-2 text-sm font-medium text-zinc-700">{t('ops.workloadPage.sprint')}</h3>
                 <ul className="space-y-2">
                   {person.sprintItems.map((item) => (
                     <li key={item.id} className="flex items-start justify-between gap-2 text-sm">
@@ -146,12 +148,12 @@ export default async function WorkloadPage() {
                     </li>
                   ))}
                   {!person.sprintItems.length && (
-                    <p className="text-sm text-zinc-400">Sin ítems abiertos</p>
+                    <p className="text-sm text-zinc-400">{t('ops.workloadPage.noOpenItems')}</p>
                   )}
                 </ul>
               </div>
               <div>
-                <h3 className="mb-2 text-sm font-medium text-zinc-700">Tickets</h3>
+                <h3 className="mb-2 text-sm font-medium text-zinc-700">{t('ops.workloadPage.tickets')}</h3>
                 <ul className="space-y-2">
                   {person.tickets.map((t) => (
                     <li key={t.id} className="flex items-start justify-between gap-2 text-sm">
@@ -161,7 +163,7 @@ export default async function WorkloadPage() {
                       <StatusBadge label={TICKET_STATUS_LABELS[t.status] ?? t.status} tone={ticketTone(t.status)} />
                     </li>
                   ))}
-                  {!person.tickets.length && <p className="text-sm text-zinc-400">Sin tickets</p>}
+                  {!person.tickets.length && <p className="text-sm text-zinc-400">{t('ops.workloadPage.noTickets')}</p>}
                 </ul>
               </div>
             </div>
@@ -169,11 +171,11 @@ export default async function WorkloadPage() {
         ))}
         {!loads.length && (
           <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500">
-            No hay staff activo.
+            {t('ops.workloadPage.noStaff')}
           </p>
         )}
       </div>
-      <p className="mt-4 text-xs text-zinc-400">Semana desde {formatDate(weekStartStr)}</p>
+      <p className="mt-4 text-xs text-zinc-400">{t('ops.workloadPage.weekFrom', { date: formatDate(weekStartStr) })}</p>
     </div>
   );
 }

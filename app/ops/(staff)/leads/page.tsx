@@ -17,11 +17,13 @@ export default async function LeadsPage() {
     .select('id, name, company, email, status, source, partner_company, end_client_company, created_at')
     .order('created_at', { ascending: false });
 
+  const createdMsg = t('ops.leadsPage.created');
+
   async function onCreate(formData: FormData) {
     'use server';
     const id = await createLead(formData);
     const { redirectWithToast } = await import('@/lib/ops/toast');
-    redirectWithToast(`/leads/${id}`, 'Lead creado');
+    redirectWithToast(`/leads/${id}`, createdMsg);
   }
 
   return (
@@ -36,49 +38,49 @@ export default async function LeadsPage() {
             rel="noreferrer"
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
-            Formulario partners
+            {t('ops.leadsPage.partnerForm')}
           </a>
         }
       />
 
       <section className="mb-8 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="mb-4 font-semibold">Nuevo lead</h2>
-        <ToastForm success="Creado" action={onCreate} className="space-y-4">
+        <h2 className="mb-4 font-semibold">{t('ops.leadsPage.newTitle')}</h2>
+        <ToastForm success={t('ops.leadsPage.createdToast')} action={onCreate} className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
-            <input name="name" required placeholder="Nombre contacto *" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="email" type="email" required placeholder="Email *" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="company" placeholder="Empresa" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="phone" placeholder="Teléfono" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="name" required placeholder={t('ops.leadsPage.nameRequired')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="email" type="email" required placeholder={t('ops.leadsPage.emailRequired')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="company" placeholder={t('ops.leadsPage.company')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="phone" placeholder={t('ops.leadsPage.phone')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="source" defaultValue="manual" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
               {Object.entries(LEAD_SOURCE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
             <input name="deliveryDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="budget" type="number" step="0.01" placeholder="Presupuesto referencia" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="referenceSite" placeholder="Sitio de referencia" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="budget" type="number" step="0.01" placeholder={t('ops.leadsPage.budget')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="referenceSite" placeholder={t('ops.leadsPage.reference')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </div>
-          <textarea name="need" placeholder="Necesidad / alcance" rows={3} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+          <textarea name="need" placeholder={t('ops.leadsPage.need')} rows={3} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
 
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-            <p className="mb-3 text-sm font-medium text-zinc-700">Intermediario (opcional)</p>
+            <p className="mb-3 text-sm font-medium text-zinc-700">{t('ops.leadsPage.partnerOptional')}</p>
             <div className="grid gap-3 md:grid-cols-3">
-              <input name="partnerName" placeholder="Nombre" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
-              <input name="partnerCompany" placeholder="Agencia / empresa" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
-              <input name="partnerEmail" type="email" placeholder="Email (destino cotización)" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
+              <input name="partnerName" placeholder={t('ops.leadsPage.partnerName')} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
+              <input name="partnerCompany" placeholder={t('ops.leadsPage.partnerCompany')} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
+              <input name="partnerEmail" type="email" placeholder={t('ops.leadsPage.partnerEmail')} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
             </div>
           </div>
 
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-            <p className="mb-3 text-sm font-medium text-zinc-700">Cliente final (opcional)</p>
+            <p className="mb-3 text-sm font-medium text-zinc-700">{t('ops.leadsPage.endClientOptional')}</p>
             <div className="grid gap-3 md:grid-cols-2">
-              <input name="endClientName" placeholder="Nombre" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
-              <input name="endClientCompany" placeholder="Empresa" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
+              <input name="endClientName" placeholder={t('ops.leadsPage.endClientName')} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
+              <input name="endClientCompany" placeholder={t('ops.leadsPage.endClientCompany')} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" />
             </div>
           </div>
 
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-            Crear lead
+            {t('ops.leadsPage.create')}
           </button>
         </ToastForm>
       </section>
@@ -87,11 +89,11 @@ export default async function LeadsPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-left text-zinc-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Empresa</th>
-              <th className="px-4 py-3 font-medium">Contacto</th>
-              <th className="px-4 py-3 font-medium">Origen</th>
-              <th className="px-4 py-3 font-medium">Estado</th>
-              <th className="px-4 py-3 font-medium">Fecha</th>
+              <th className="px-4 py-3 font-medium">{t('ops.leadsPage.colCompany')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.leadsPage.colContact')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.leadsPage.colSource')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.leadsPage.colStatus')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.leadsPage.colDate')}</th>
             </tr>
           </thead>
           <tbody>
@@ -102,7 +104,7 @@ export default async function LeadsPage() {
                     {lead.end_client_company || lead.company || lead.partner_company || EMPTY_LABEL}
                   </Link>
                   {lead.partner_company && lead.company && lead.partner_company !== lead.company && (
-                    <div className="text-xs text-zinc-500">vía {lead.partner_company}</div>
+                    <div className="text-xs text-zinc-500">{t('ops.leadsPage.viaPartner', { company: lead.partner_company })}</div>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -120,7 +122,7 @@ export default async function LeadsPage() {
             ))}
           </tbody>
         </table>
-        {!leads?.length && <p className="p-6 text-sm text-zinc-500">No hay leads registrados</p>}
+        {!leads?.length && <p className="p-6 text-sm text-zinc-500">{t('ops.leadsPage.empty')}</p>}
       </div>
     </div>
   );

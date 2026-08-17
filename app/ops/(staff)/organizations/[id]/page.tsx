@@ -42,46 +42,46 @@ export default async function OrganizationDetailPage({
     <div>
       <OpsPageHeader
         title={org.name}
-        description="Datos de la organización cliente"
+        description={t('ops.orgs.detailDesc')}
         actions={
           <Link href="/organizations" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
-            Volver
+            {t('ops.orgs.back')}
           </Link>
         }
       />
 
       <ToastForm
-        success="Guardado"
+        success={t('ops.orgs.saved')}
         action={onUpdate}
         className="mb-8 max-w-2xl space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
       >
-        <h2 className="font-semibold">Datos</h2>
+        <h2 className="font-semibold">{t('ops.orgs.data')}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-zinc-600 sm:col-span-2">
-            Nombre
+            {t('ops.orgs.name')}
             <input name="name" required defaultValue={org.name} className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-zinc-600">
-            Email
+            {t('ops.orgs.contactEmail')}
             <input name="contactEmail" type="email" defaultValue={org.contact_email ?? ''} className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-zinc-600">
-            Teléfono
+            {t('ops.orgs.phone')}
             <input name="contactPhone" defaultValue={org.contact_phone ?? ''} className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-zinc-600 sm:col-span-2">
-            URL logo
+            {t('ops.orgs.logoUrlLabel')}
             <input name="logoUrl" defaultValue={org.logo_url ?? ''} className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </label>
         </div>
-        <p className="text-xs text-zinc-400">Alta: {formatDate(org.created_at)}</p>
+        <p className="text-xs text-zinc-400">{t('ops.orgs.createdOn', { date: formatDate(org.created_at) })}</p>
         <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50">
-          Guardar cambios
+          {t('ops.orgs.save')}
         </button>
       </ToastForm>
 
       <section className="space-y-3">
-        <h2 className="font-semibold">Proyectos</h2>
+        <h2 className="font-semibold">{t('ops.orgs.projects')}</h2>
         <ul className="space-y-2">
           {(projects ?? []).map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm">
@@ -90,7 +90,10 @@ export default async function OrganizationDetailPage({
                   {p.name}
                 </Link>
                 <p className="text-xs text-zinc-400">
-                  {p.progress_percent}% · Entrega {formatDate(p.target_delivery_date) || EMPTY_LABEL}
+                  {t('ops.orgs.deliveryPct', {
+                    pct: p.progress_percent,
+                    date: formatDate(p.target_delivery_date) || EMPTY_LABEL,
+                  })}
                 </p>
               </div>
               <StatusBadge label={PROJECT_STATUS_LABELS[p.status] ?? p.status} tone={projectTone(p.status)} />
@@ -98,7 +101,7 @@ export default async function OrganizationDetailPage({
           ))}
           {!(projects ?? []).length && (
             <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-6 text-center text-sm text-zinc-500">
-              Sin proyectos vinculados.
+              {t('ops.orgs.noProjects')}
             </p>
           )}
         </ul>

@@ -38,24 +38,24 @@ export default async function OrganizationsPage() {
   return (
     <div>
       <OpsPageHeader
-        title="Organizaciones"
-        description="Clientes y empresas vinculadas a proyectos."
+        title={t('ops.pages.organizations')}
+        description={t('ops.pages.organizationsDesc')}
       />
 
       <ToastForm
-        success="Organización creada"
+        success={t('ops.orgs.created')}
         action={onCreate}
         className="mb-8 max-w-2xl space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
       >
-        <h2 className="font-semibold">Nueva organización</h2>
+        <h2 className="font-semibold">{t('ops.orgs.newTitle')}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input name="name" required placeholder="Nombre" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
-          <input name="contactEmail" type="email" placeholder="Email de contacto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-          <input name="contactPhone" placeholder="Teléfono" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-          <input name="logoUrl" placeholder="URL logo (opcional)" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
+          <input name="name" required placeholder={t('ops.orgs.name')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
+          <input name="contactEmail" type="email" placeholder={t('ops.orgs.contactEmail')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+          <input name="contactPhone" placeholder={t('ops.orgs.phone')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+          <input name="logoUrl" placeholder={t('ops.orgs.logoUrl')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
         </div>
         <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-          Crear
+          {t('ops.orgs.create')}
         </button>
       </ToastForm>
 
@@ -63,10 +63,10 @@ export default async function OrganizationsPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-zinc-50 text-left text-zinc-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Organización</th>
-              <th className="px-4 py-3 font-medium">Contacto</th>
-              <th className="px-4 py-3 font-medium">Proyectos</th>
-              <th className="px-4 py-3 font-medium">Alta</th>
+              <th className="px-4 py-3 font-medium">{t('ops.orgs.colOrg')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.orgs.colContact')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.orgs.colProjects')}</th>
+              <th className="px-4 py-3 font-medium">{t('ops.orgs.colCreated')}</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +90,7 @@ export default async function OrganizationsPage() {
             })}
           </tbody>
         </table>
-        {!orgs?.length && <p className="p-6 text-sm text-zinc-500">Aún no hay organizaciones.</p>}
+        {!orgs?.length && <p className="p-6 text-sm text-zinc-500">{t('ops.orgs.empty')}</p>}
       </div>
     </div>
   );

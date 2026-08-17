@@ -65,26 +65,26 @@ export default async function PortalUserDetailPage({
     <div>
       <OpsPageHeader
         title={email}
-        description="Accesos del portal y estado de documentos legales"
+        description={t('ops.portalUsers.detailDesc')}
       />
 
       <div className="max-w-2xl space-y-8">
         <div className="flex flex-wrap gap-3">
-          <ToastForm success="Invitación reenviada" action={onResend}>
+          <ToastForm success={t('ops.portalUsers.resent')} action={onResend}>
             <button
               type="submit"
               className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm hover:bg-zinc-50"
             >
-              Reenviar acceso
+              {t('ops.portalUsers.resend')}
             </button>
           </ToastForm>
           <Link href="/users" className="rounded-lg px-4 py-2 text-sm text-codiva-primary hover:underline">
-            ← Usuarios
+            {t('ops.portalUsers.back')}
           </Link>
         </div>
 
         <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="font-semibold">Proyectos asignados</h2>
+          <h2 className="font-semibold">{t('ops.portalUsers.assigned')}</h2>
           <ul className="space-y-3 text-sm">
             {(memberships ?? []).map((m) => {
               const rawProject = m.projects as unknown;
@@ -111,22 +111,22 @@ export default async function PortalUserDetailPage({
                     </Link>
                     <p className="text-zinc-500">
                       {m.role}
-                      {orgName ? ` · ${orgName}` : ''} · invitado {formatDate(m.invited_at)}
+                      {orgName ? ` · ${orgName}` : ''} · {t('ops.portalUsers.invitedOn', { date: formatDate(m.invited_at) })}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">
                       {acceptance.complete
-                        ? 'Legales OK'
-                        : `Pendiente: ${[
-                            !acceptance.terms ? 'TyC' : null,
-                            !acceptance.privacy ? 'Privacidad' : null,
-                            !acceptance.nda ? 'NDA' : null,
+                        ? t('ops.portalUsers.legalOk')
+                        : `${t('ops.portalUsers.pendingPrefix')} ${[
+                            !acceptance.terms ? t('ops.portalUsers.legalTerms') : null,
+                            !acceptance.privacy ? t('ops.portalUsers.legalPrivacy') : null,
+                            !acceptance.nda ? t('ops.portalUsers.legalNda') : null,
                           ]
                             .filter(Boolean)
                             .join(', ')}`}
                     </p>
                   </div>
                   <ToastForm
-                    success="Acceso quitado"
+                    success={t('ops.portalUsers.removed')}
                     action={async () => {
                       'use server';
                       await removePortalUserProject(userId, m.project_id);
@@ -136,28 +136,28 @@ export default async function PortalUserDetailPage({
                       type="submit"
                       className="rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50"
                     >
-                      Quitar
+                      {t('ops.portalUsers.remove')}
                     </button>
                   </ToastForm>
                 </li>
               );
             })}
             {!memberships?.length && (
-              <p className="text-zinc-500">Sin proyectos asignados.</p>
+              <p className="text-zinc-500">{t('ops.portalUsers.noneAssigned')}</p>
             )}
           </ul>
         </section>
 
         {available.length > 0 && (
           <ToastForm
-            success="Proyectos agregados"
+            success={t('ops.portalUsers.added')}
             action={onAdd}
             className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
           >
-            <h2 className="font-semibold">Agregar proyectos</h2>
+            <h2 className="font-semibold">{t('ops.portalUsers.addTitle')}</h2>
             <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="viewer">Viewer</option>
-              <option value="approver">Approver</option>
+              <option value="viewer">{t('ops.portalUsers.roleViewerShort')}</option>
+              <option value="approver">{t('ops.portalUsers.roleApproverShort')}</option>
             </select>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-3">
               {available.map((p) => {
@@ -176,10 +176,10 @@ export default async function PortalUserDetailPage({
             </div>
             <label className="flex items-center gap-2 text-sm text-zinc-600">
               <input type="checkbox" name="sendEmail" />
-              Enviar correo de aviso
+              {t('ops.portalUsers.sendEmail')}
             </label>
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              Agregar
+              {t('ops.portalUsers.add')}
             </button>
           </ToastForm>
         )}
