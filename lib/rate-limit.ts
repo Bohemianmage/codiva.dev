@@ -77,3 +77,9 @@ export const PUBLIC_RL_AUTH = {
   emailWindowMs: 60 * 60 * 1000,
   emailMax: Number(process.env.PUBLIC_RL_AUTH_PER_EMAIL_HOUR || 3),
 };
+
+/** Cambio de contraseña con sesión iniciada (perfil ops). */
+export const STAFF_RL_PASSWORD_CHANGE = {
+  windowMs: 15 * 60 * 1000,
+  max: Number(process.env.STAFF_RL_PASSWORD_CHANGE_PER_15MIN || 8),
+};

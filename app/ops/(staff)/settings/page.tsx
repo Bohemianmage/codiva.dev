@@ -1,3 +1,4 @@
+import OpsChangePasswordForm from '@/components/ops/OpsChangePasswordForm';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import { requireStaff } from '@/lib/ops/auth';
@@ -82,6 +83,12 @@ export default async function SettingsPage() {
               </Link>
             </p>
           )}
+        </section>
+
+        <section id="password" className="rounded-xl border border-zinc-200 bg-white p-5">
+          <h2 className="mb-1 font-semibold">{t('ops.settings.passwordTitle')}</h2>
+          <p className="mb-4 text-sm text-zinc-600">{t('ops.settings.passwordHint')}</p>
+          <OpsChangePasswordForm />
         </section>
 
         {ownOffer ? (
