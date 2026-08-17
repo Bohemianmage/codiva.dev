@@ -1,6 +1,6 @@
 import type { createClient } from '@/lib/supabase/server';
-import { can } from '@/lib/ops/permissions';
-import { careerDisciplineLabel } from '@/lib/ops/career-disciplines';
+import { can, canAny } from '@/lib/ops/permissions';
+import { careerDisciplineLabel, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import { asProject } from '@/lib/ops/tickets';
 
 type OpsClient = Awaited<ReturnType<typeof createClient>>;
@@ -57,7 +57,7 @@ export function inboundFiltersFor(role: string): InboundFilter[] {
   if (can(role, 'inbox')) filters.push('contact');
   if (can(role, 'leads')) filters.push('lead');
   if (can(role, 'tickets')) filters.push('ticket');
-  if (can(role, 'team')) filters.push('career');
+  if (canAny(role, ['team', 'careers_review'])) filters.push('career');
   return filters;
 }
 
@@ -85,7 +85,8 @@ export async function loadInboundItems({
   const showContact = can(role, 'inbox') && wantsKind(filter, 'contact');
   const showLeads = can(role, 'leads') && wantsKind(filter, 'lead');
   const showTickets = can(role, 'tickets') && wantsKind(filter, 'ticket');
-  const showCareer = can(role, 'team') && (filter === 'all' || filter === 'career');
+  const showCareer = canAny(role, ['team', 'careers_review']) && (filter === 'all' || filter === 'career');
+  const careerTestersOnly = showCareer && !can(role, 'team');
   const ticketProjectIds =
     visibleProjectIds === null
       ? null
@@ -185,6 +186,12 @@ export async function loadInboundItems({
 
   for (const row of applications.data ?? []) {
     const posting = firstRelated(row.ops_job_postings);
+    if (
+      careerTestersOnly &&
+      !isTesterPipelineItem({ postingSlug: posting?.slug, discipline: row.discipline })
+    ) {
+      continue;
+    }
     const discipline = careerDisciplineLabel(row.discipline);
     items.push({
       key: `application:${row.id}`,

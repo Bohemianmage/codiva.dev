@@ -1,6 +1,6 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
-import { requireAdminStaff } from '@/lib/ops/auth';
+import { requireCareersReview } from '@/lib/ops/auth';
 import { getAssessmentCatalog } from '@/lib/careers/assessments/catalog';
 import { parseAnswers } from '@/lib/careers/assessments/server';
 import { reviewRowsForAttempt, scoreAnswers } from '@/lib/careers/assessments/engine';
@@ -15,12 +15,13 @@ import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trai
 import HuntTrailMap from '@/components/ops/HuntTrailMap';
 import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
 import { updateHuntReportReview } from '@/lib/ops/career-actions';
-import { careerDisciplineLabels, disciplineFromCatalogKey } from '@/lib/ops/career-disciplines';
+import { careerDisciplineLabels, disciplineFromCatalogKey, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import {
   deviceLabelFromUserAgent,
   distinctOriginEmails,
   originFingerprint,
 } from '@/lib/careers/assessments/origin';
+import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
 import { dateLocale } from '@/i18n/config';
 import { getT, type Translator } from '@/i18n/locale';
@@ -52,7 +53,7 @@ export default async function AssessmentAttemptPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireAdminStaff();
+  const { supabase, staff } = await requireCareersReview();
   const t = await getT();
   const { EMPTY_LABEL, formatDate } = labelsFor(t.locale);
   const DISCIPLINE_LABELS = careerDisciplineLabels(t.locale);
@@ -124,6 +125,13 @@ export default async function AssessmentAttemptPage({
           user_agent: string | null;
         }[] }),
   ]);
+
+  if (
+    !can(staff.role, 'team') &&
+    !isTesterPipelineItem({ catalogKey: attempt.catalog_key, postingSlug: posting?.slug })
+  ) {
+    notFound();
+  }
 
   const catalog = getAssessmentCatalog(attempt.catalog_key);
   const answers = parseAnswers(attempt.answers);

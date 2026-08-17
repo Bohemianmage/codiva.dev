@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { requireAdminStaff } from '@/lib/ops/auth';
+import { requireCareersReview } from '@/lib/ops/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logActivity } from '@/lib/ops/activity';
 import { requestAuditFromHeaders } from '@/lib/ops/request-audit';
 import { CAREER_CV_BUCKET, isCvPathForJob } from '@/lib/ops/careers';
+import { can } from '@/lib/ops/permissions';
+import { isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 
 export const runtime = 'nodejs';
 
@@ -14,15 +16,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 });
   }
 
-  const { user, supabase } = await requireAdminStaff();
+  const { user, supabase, staff } = await requireCareersReview();
   const { data: application, error } = await supabase
     .from('ops_job_applications')
-    .select('id, job_posting_id, cv_storage_path, original_filename')
+    .select('id, job_posting_id, cv_storage_path, original_filename, discipline, ops_job_postings(slug)')
     .eq('id', applicationId)
     .maybeSingle();
 
   if (error || !application?.cv_storage_path) {
     return NextResponse.json({ error: 'Postulación no encontrada' }, { status: 404 });
+  }
+  const posting = Array.isArray(application.ops_job_postings)
+    ? application.ops_job_postings[0]
+    : application.ops_job_postings;
+  if (
+    !can(staff.role, 'team') &&
+    !isTesterPipelineItem({ postingSlug: posting?.slug, discipline: application.discipline })
+  ) {
+    return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
   }
   if (!isCvPathForJob(application.job_posting_id, application.cv_storage_path)) {
     return NextResponse.json({ error: 'Ruta de CV inválida' }, { status: 400 });

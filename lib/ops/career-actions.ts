@@ -2,8 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { requireAdminStaff } from '@/lib/ops/auth';
+import { requireAdminStaff, requireCareersReview } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
+import { can } from '@/lib/ops/permissions';
+import { isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import {
   isCareerDiscipline,
   isJobApplicationStatus,
@@ -200,7 +202,25 @@ export async function deleteDraftJobPosting(postingId: string) {
 }
 
 export async function updateJobApplicationStatus(applicationId: string, formData: FormData) {
-  const { user, supabase } = await requireAdminStaff();
+  const { user, supabase, staff } = await requireCareersReview();
+  if (!can(staff.role, 'team')) {
+    const { data: application } = await supabase
+      .from('ops_job_applications')
+      .select('discipline, ops_job_postings(slug)')
+      .eq('id', applicationId)
+      .maybeSingle();
+    const posting = Array.isArray(application?.ops_job_postings)
+      ? application?.ops_job_postings[0]
+      : application?.ops_job_postings;
+    if (
+      !isTesterPipelineItem({
+        postingSlug: posting?.slug,
+        discipline: application?.discipline,
+      })
+    ) {
+      throw new Error('No tienes permiso para esta postulación');
+    }
+  }
   const status = String(formData.get('status') || '').trim();
   if (!isJobApplicationStatus(status)) throw new Error('Estado inválido');
 
@@ -298,7 +318,7 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
 }
 
 export async function updateHuntReportReview(reportId: string, formData: FormData) {
-  const { user, supabase } = await requireAdminStaff();
+  const { user, supabase } = await requireCareersReview();
   const status = String(formData.get('review_status') || '').trim();
   if (status !== 'open' && status !== 'noted' && status !== 'discarded') {
     throw new Error('Estado de revisión inválido');

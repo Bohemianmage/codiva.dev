@@ -10,6 +10,7 @@ export type Capability =
   | 'workload'
   | 'time_entries'
   | 'team'
+  | 'careers_review'
   | 'legal_publish'
   | 'projects_all'
   | 'projects_create'
@@ -34,6 +35,7 @@ const ROLE_CAPABILITIES: Record<StaffRole, ReadonlySet<Capability>> = {
     'workload',
     'time_entries',
     'team',
+    'careers_review',
     'legal_publish',
     'projects_all',
     'projects_create',
@@ -50,10 +52,13 @@ const ROLE_CAPABILITIES: Record<StaffRole, ReadonlySet<Capability>> = {
   pm: new Set<Capability>([
     'leads',
     'inbox',
+    'quotes',
+    'charges',
     'portal_users',
     'organizations',
     'workload',
     'time_entries',
+    'careers_review',
     'projects_create',
     'milestones_write',
     'sprints_plan',
@@ -98,6 +103,6 @@ export const NAV_CAPABILITY: Record<string, Capability | null> = {
   '/organizations': 'organizations',
   '/users': 'portal_users',
   '/tickets': 'tickets',
-  '/team': 'team',
+  '/team': 'careers_review',
   '/settings': 'settings_profile',
 };
