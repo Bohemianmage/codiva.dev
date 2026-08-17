@@ -21,7 +21,7 @@ export default async function QuotePreviewPage({
   if (!quote) notFound();
 
   let backHref = '/leads';
-  let backLabel = 'Volver a leads';
+  let backLabel = t('ops.quotePage.backLeads');
   let lead = null;
   let project = null;
 
@@ -29,7 +29,7 @@ export default async function QuotePreviewPage({
     const { data } = await supabase.from('leads').select('*').eq('id', quote.lead_id).single();
     lead = data;
     backHref = `/leads/${quote.lead_id}?tab=cotizaciones`;
-    backLabel = 'Volver al lead';
+    backLabel = t('ops.quotePage.backLead');
   } else if (quote.project_id) {
     const { data } = await supabase
       .from('projects')
@@ -44,7 +44,7 @@ export default async function QuotePreviewPage({
       };
     }
     backHref = `/projects/${quote.project_id}?tab=cotizaciones`;
-    backLabel = 'Volver al proyecto';
+    backLabel = t('ops.quotePage.backProject');
   }
 
   const html = buildQuoteDocumentHtml(quote, { lead, project });
@@ -53,8 +53,8 @@ export default async function QuotePreviewPage({
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
       <OpsPageHeader
-        title={`Vista previa · ${quote.title}`}
-        description={`Versión ${quote.version}`}
+        title={t('ops.quotePage.previewTitle', { title: quote.title })}
+        description={t('ops.quotePage.version', { version: quote.version })}
         actions={
           <div className="flex items-center gap-3">
             <StatusBadge
@@ -73,13 +73,13 @@ export default async function QuotePreviewPage({
 
       {isDraft && (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Borrador - así se verá la propuesta antes de enviarla.
+          {t('ops.quotePage.draftBanner')}
         </p>
       )}
 
       <div className="flex-1 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
         <iframe
-          title="Vista previa cotización"
+            title={t('ops.quotePage.iframeTitle')}
           srcDoc={html}
           className="h-[min(80vh,900px)] w-full border-0"
           sandbox="allow-same-origin"

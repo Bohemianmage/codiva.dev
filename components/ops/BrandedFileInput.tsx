@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   name?: string;
@@ -20,9 +21,10 @@ export default function BrandedFileInput({
   name = 'file',
   required,
   accept,
-  hint = 'PDF, imagen o ZIP · arrastra o selecciona',
+  hint,
   className = '',
 }: Props) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -99,15 +101,15 @@ export default function BrandedFileInput({
         {file ? (
           <>
             <p className="max-w-full truncate text-sm font-medium text-zinc-900">{file.name}</p>
-            <p className="text-xs text-zinc-500">{formatBytes(file.size)} · clic para cambiar</p>
+            <p className="text-xs text-zinc-500">{t('ops.fileInput.change', { size: formatBytes(file.size) })}</p>
           </>
         ) : (
           <>
             <p className="text-sm font-medium text-zinc-900">
-              <span className="text-codiva-primary">Seleccionar archivo</span>
-              <span className="text-zinc-500"> o arrastrarlo aquí</span>
+              <span className="text-codiva-primary">{t('ops.fileInput.select')}</span>
+              <span className="text-zinc-500">{t('ops.fileInput.orDrop')}</span>
             </p>
-            <p className="text-xs text-zinc-500">{hint}</p>
+            <p className="text-xs text-zinc-500">{hint ?? t('ops.fileInput.defaultHint')}</p>
           </>
         )}
       </label>
@@ -118,7 +120,7 @@ export default function BrandedFileInput({
           onClick={() => applyFile(null)}
           className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-800"
         >
-          Quitar archivo
+          {t('ops.fileInput.remove')}
         </button>
       )}
     </div>

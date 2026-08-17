@@ -213,19 +213,19 @@ export default async function ProjectDetailPage({
   );
 
   const tabs = [
-    { key: 'resumen', label: 'Resumen' },
-    { key: 'equipo', label: 'Equipo' },
-    { key: 'sprints', label: 'Sprints' },
-    { key: 'horas', label: 'Horas', capability: 'time_entries' as const },
-    { key: 'timeline', label: 'Timeline' },
-    { key: 'arquitectura', label: 'Arquitectura' },
-    { key: 'cotizaciones', label: 'Cotizaciones', capability: 'quotes' as const },
-    { key: 'pagos', label: 'Pagos', capability: 'charges' as const },
-    { key: 'documentos', label: 'Documentos' },
-    { key: 'entregables', label: 'Entregables' },
-    { key: 'accesos', label: 'Accesos' },
-    { key: 'tickets', label: 'Tickets' },
-  ].filter((t) => !('capability' in t && t.capability) || can(staff.role, t.capability!));
+    { key: 'resumen', labelKey: 'ops.project.tabResumen' },
+    { key: 'equipo', labelKey: 'ops.project.tabEquipo' },
+    { key: 'sprints', labelKey: 'ops.project.tabSprints' },
+    { key: 'horas', labelKey: 'ops.project.tabHoras', capability: 'time_entries' as const },
+    { key: 'timeline', labelKey: 'ops.project.tabTimeline' },
+    { key: 'arquitectura', labelKey: 'ops.project.tabArquitectura' },
+    { key: 'cotizaciones', labelKey: 'ops.project.tabCotizaciones', capability: 'quotes' as const },
+    { key: 'pagos', labelKey: 'ops.project.tabPagos', capability: 'charges' as const },
+    { key: 'documentos', labelKey: 'ops.project.tabDocumentos' },
+    { key: 'entregables', labelKey: 'ops.project.tabEntregables' },
+    { key: 'accesos', labelKey: 'ops.project.tabAccesos' },
+    { key: 'tickets', labelKey: 'ops.project.tabTickets' },
+  ].filter((tabDef) => !('capability' in tabDef && tabDef.capability) || can(staff.role, tabDef.capability!));
 
   async function onUpdateProject(formData: FormData) {
     'use server';
@@ -250,21 +250,21 @@ export default async function ProjectDetailPage({
               href={`/api/ops/projects/${id}/compliance-export`}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Export compliance
+              {t('ops.project.exportCompliance')}
             </a>
             <a
               href={staffPortalPreviewPath(project.slug)}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-              title="Vista previa con sesión staff (ops)"
+              title={t('ops.project.previewTitle')}
             >
-              Vista previa
+              {t('ops.project.preview')}
             </a>
             <a
               href={projectPortalUrl(project.slug)}
               className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-medium text-white hover:bg-codiva-primary-dark"
-              title="Abrir URL del cliente"
+              title={t('ops.project.clientUrlTitle')}
             >
-              URL cliente
+              {t('ops.project.clientUrl')}
             </a>
           </div>
         }
@@ -276,28 +276,28 @@ export default async function ProjectDetailPage({
       </div>
 
       <nav className="mb-8 flex flex-wrap gap-2 border-b border-zinc-200 pb-3">
-        {tabs.map((t) => (
+        {tabs.map((tabItem) => (
           <Link
-            key={t.key}
-            href={`/projects/${id}?tab=${t.key}`}
+            key={tabItem.key}
+            href={`/projects/${id}?tab=${tabItem.key}`}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === t.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
+              tab === tabItem.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
             }`}
           >
-            {t.label}
+            {t(tabItem.labelKey)}
           </Link>
         ))}
       </nav>
 
       {tab === 'resumen' && (
-        <ToastForm success="Proyecto actualizado" action={onUpdateProject} className="max-w-2xl space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
+        <ToastForm success={t('ops.project.updated')} action={onUpdateProject} className="max-w-2xl space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
           <div>
-            <label className="mb-1 block text-sm font-medium">Nombre</label>
+            <label className="mb-1 block text-sm font-medium">{t('ops.project.name')}</label>
             <input name="name" defaultValue={project.name} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">Estado</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.project.status')}</label>
               <select name="status" defaultValue={project.status} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
                 {Object.entries(PROJECT_STATUS_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
@@ -305,19 +305,19 @@ export default async function ProjectDetailPage({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Avance %</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.project.progress')}</label>
               <input name="progressPercent" type="number" min={0} max={100} defaultValue={project.progress_percent} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Inicio</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.project.start')}</label>
               <input name="startDate" type="date" defaultValue={project.start_date ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Entrega estimada</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.project.delivery')}</label>
               <input name="targetDeliveryDate" type="date" defaultValue={project.target_delivery_date ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Retención documentos (días)</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.project.retention')}</label>
               <input
                 name="documentRetentionDays"
                 type="number"
@@ -326,18 +326,18 @@ export default async function ProjectDetailPage({
                 defaultValue={project.document_retention_days ?? 365}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
-              <p className="mt-1 text-xs text-zinc-500">Tras vencer, el cron/disposicion borra el archivo del storage.</p>
+              <p className="mt-1 text-xs text-zinc-500">{t('ops.project.retentionHint')}</p>
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Descripción</label>
+            <label className="mb-1 block text-sm font-medium">{t('ops.project.description')}</label>
             <textarea name="description" rows={4} defaultValue={project.description ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           </div>
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 space-y-3">
-            <p className="text-sm font-medium text-zinc-900">Visibilidad en portal</p>
+            <p className="text-sm font-medium text-zinc-900">{t('ops.project.portalVisibility')}</p>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="clientVisible" defaultChecked={project.client_visible} />
-              Portal visible para el cliente
+              {t('ops.project.portalVisible')}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -345,7 +345,7 @@ export default async function ProjectDetailPage({
                 name="portalShowQuote"
                 defaultChecked={project.portal_show_quote !== false}
               />
-              Mostrar cotización (nav + página + cards)
+              {t('ops.project.showQuote')}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -353,15 +353,14 @@ export default async function ProjectDetailPage({
                 name="portalShowCosts"
                 defaultChecked={project.portal_show_costs !== false}
               />
-              Mostrar canvas MVP / propuesta comercial
+              {t('ops.project.showCosts')}
             </label>
             <p className="text-xs text-zinc-500">
-              Cotización y canvas comercial también dependen de “visible al cliente” en cada ítem.
-              No uses la descripción del proyecto para montos si costos está apagado.
+              {t('ops.project.visibilityHint')}
             </p>
           </div>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-            Guardar cambios
+            {t('ops.project.saveChanges')}
           </button>
         </ToastForm>
       )}
@@ -433,12 +432,12 @@ export default async function ProjectDetailPage({
                 </div>
                 {m.description && <p className="mt-2 text-sm text-zinc-600">{m.description}</p>}
                 <p className="mt-2 text-xs text-zinc-400">
-                  Entrega: {formatDate(m.due_date)}
+                  {t('ops.project.deliveryDate', { date: formatDate(m.due_date) })}
                 </p>
               </div>
             )
           )}
-          {!milestones?.length && <p className="text-sm text-zinc-500">Sin hitos.</p>}
+          {!milestones?.length && <p className="text-sm text-zinc-500">{t('ops.project.noMilestones')}</p>}
         </div>
       )}
 
@@ -454,12 +453,13 @@ export default async function ProjectDetailPage({
       {tab === 'cotizaciones' && can(staff.role, 'quotes') && (
         <div className="space-y-6">
           <p className="text-sm text-zinc-600">
-            Aquí se arma el documento. El cliente lo ve igual en la pestaña <strong>Cotización</strong> del
-            portal (no como PDF suelto en Documentos).
+            {t('ops.project.quotesHintPrefix')}{' '}
+            <strong>{t('ops.project.quotesHintStrong')}</strong>{' '}
+            {t('ops.project.quotesHintSuffix')}
           </p>
           <OpsQuoteForm
-            title="Nueva cotización"
-            defaultTitle={`Propuesta - ${project.name}`}
+            title={t('ops.project.newQuote')}
+            defaultTitle={t('ops.project.proposalTitle', { name: project.name })}
             action={async (formData) => {
               'use server';
               await createQuote(id, formData);
@@ -474,39 +474,39 @@ export default async function ProjectDetailPage({
               <p className="text-sm text-zinc-600 whitespace-pre-wrap">{q.scope}</p>
               <p className="mt-2 text-sm font-medium">{formatCurrency(q.total_amount, q.currency)}</p>
               <p className="mt-2 text-xs text-zinc-500">
-                Portal:{' '}
-                {q.visible_to_client !== false ? 'visible al cliente' : 'oculta al cliente'}
-                {!project.portal_show_quote ? ' · módulo cotización OFF en proyecto' : ''}
+                {t('ops.project.portal')}{' '}
+                {q.visible_to_client !== false ? t('ops.project.visibleClient') : t('ops.project.hiddenClient')}
+                {!project.portal_show_quote ? t('ops.project.quoteModuleOff') : ''}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href={`/quotes/${q.id}`}
                   className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
                 >
-                  Editar en Ops
+                  {t('ops.project.editInOps')}
                 </Link>
                 <Link
                   href={`/quotes/${q.id}/preview`}
                   target="_blank"
                   className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 >
-                  Vista previa
+                  {t('ops.project.preview')}
                 </Link>
                 {q.status === 'draft' && (
-                  <ToastForm success="Cotización enviada" action={async () => { 'use server'; await sendQuote(q.id, id); }}>
+                  <ToastForm success={t('ops.project.quoteSent')} action={async () => { 'use server'; await sendQuote(q.id, id); }}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                      Enviar al cliente
+                      {t('ops.project.sendQuote')}
                     </button>
                   </ToastForm>
                 )}
-                <ToastForm success="Visibilidad actualizada"
+                <ToastForm success={t('ops.project.visibilityUpdated')}
                   action={async () => {
                     'use server';
                     await setQuoteVisibility(id, q.id, q.visible_to_client === false);
                   }}
                 >
                   <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                    {q.visible_to_client === false ? 'Mostrar en portal' : 'Ocultar en portal'}
+                    {q.visible_to_client === false ? t('ops.project.showInPortal') : t('ops.project.hideInPortal')}
                   </button>
                 </ToastForm>
               </div>
@@ -518,13 +518,11 @@ export default async function ProjectDetailPage({
       {tab === 'pagos' && can(staff.role, 'charges') && (
         <div className="space-y-6">
           <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <h3 className="font-semibold">Nuevo cargo</h3>
+            <h3 className="font-semibold">{t('ops.project.newCharge')}</h3>
             <p className="mt-1 text-sm text-zinc-500">
-              Desarrollo (honorarios Codiva) o pass-through: hosting/dominio siempre a cargo del
-              cliente cuando aplican. Vacío en monto = “Por confirmar” (p. ej. renovación anual al
-              costo real).
+              {t('ops.project.chargeHint')}
             </p>
-            <ToastForm success="Cargo creado"
+            <ToastForm success={t('ops.project.chargeCreated')}
               action={async (fd) => {
                 'use server';
                 await createProjectCharge(id, fd);
@@ -534,7 +532,7 @@ export default async function ProjectDetailPage({
               <input
                 name="title"
                 required
-                placeholder="Concepto"
+                placeholder={t('ops.project.concept')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <select name="kind" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" defaultValue="development">
@@ -549,7 +547,7 @@ export default async function ProjectDetailPage({
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="Monto (opcional)"
+                placeholder={t('ops.project.amountOptional')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <select name="status" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" defaultValue="pending">
@@ -559,37 +557,37 @@ export default async function ProjectDetailPage({
                   </option>
                 ))}
               </select>
-              <input name="periodLabel" placeholder="Periodo (ej. 2025)" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="periodLabel" placeholder={t('ops.project.period')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               <input name="dueDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               <input
                 name="noticeDays"
                 type="number"
                 min="0"
                 defaultValue={30}
-                placeholder="Aviso T-N (días)"
+                placeholder={t('ops.project.noticeDays')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <p className="text-xs text-zinc-500 md:col-span-1">
-                Con fecha de vencimiento, el portal avisa desde T-N (default 30).
+                {t('ops.project.noticeHint')}
               </p>
               <textarea
                 name="description"
                 rows={2}
-                placeholder="Descripción visible al cliente"
+                placeholder={t('ops.project.descClient')}
                 className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <textarea
                 name="staffNotes"
                 rows={2}
-                placeholder="Notas internas (no salen al portal)"
+                placeholder={t('ops.project.staffNotes')}
                 className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <label className="flex items-center gap-2 text-sm text-zinc-700 md:col-span-2">
                 <input type="checkbox" name="visibleToClient" value="on" defaultChecked />
-                Visible en portal (requiere “temas de costos” ON)
+                {t('ops.project.visiblePortalCosts')}
               </label>
               <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-                Agregar cargo
+                {t('ops.project.addCharge')}
               </button>
             </ToastForm>
           </section>
@@ -604,7 +602,7 @@ export default async function ProjectDetailPage({
                   </span>
                   {isClientBorneChargeKind(c.kind) && (
                     <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                      A cargo del cliente
+                      {t('ops.project.clientBorne')}
                     </span>
                   )}
                 </div>
@@ -612,7 +610,7 @@ export default async function ProjectDetailPage({
                   {formatChargeAmount(c.amount, c.currency)}
                 </p>
               </div>
-              <ToastForm success="Cargo actualizado"
+              <ToastForm success={t('ops.project.chargeUpdated')}
                 action={async (fd) => {
                   'use server';
                   await updateProjectCharge(c.id, id, fd);
@@ -639,7 +637,7 @@ export default async function ProjectDetailPage({
                   min="0"
                   step="0.01"
                   defaultValue={c.amount ?? ''}
-                  placeholder="Por confirmar"
+                  placeholder={t('ops.project.amountTbd')}
                   className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 />
                 <select name="status" defaultValue={c.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -652,7 +650,7 @@ export default async function ProjectDetailPage({
                 <input
                   name="periodLabel"
                   defaultValue={c.period_label ?? ''}
-                  placeholder="Periodo"
+                  placeholder={t('ops.project.periodShort')}
                   className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 />
                 <input
@@ -667,7 +665,7 @@ export default async function ProjectDetailPage({
                   min="0"
                   defaultValue={c.notice_days ?? 30}
                   className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                  title="Aviso T-N en días"
+                  title={t('ops.project.noticeTitle')}
                 />
                 <textarea
                   name="description"
@@ -679,27 +677,26 @@ export default async function ProjectDetailPage({
                   name="staffNotes"
                   rows={2}
                   defaultValue={c.staff_notes ?? ''}
-                  placeholder="Notas internas"
+                  placeholder={t('ops.project.staffNotesShort')}
                   className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 />
                 <label className="flex items-center gap-2 text-sm text-zinc-700">
                   <input type="checkbox" name="visibleToClient" defaultChecked={c.visible_to_client !== false} />
-                  Visible en portal
+                  {t('ops.project.visiblePortal')}
                 </label>
                 <p className="text-xs text-zinc-500">
-                  {c.status === 'paid' ? `Pagado ${formatDate(c.paid_at)}` : c.due_date ? `Vence ${formatDate(c.due_date)}` : 'Sin vencimiento'}
+                  {c.status === 'paid' ? t('ops.project.paidOn', { date: formatDate(c.paid_at) }) : c.due_date ? t('ops.project.dueOn', { date: formatDate(c.due_date) }) : t('ops.project.noDue')}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 md:col-span-2">
                   <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                    Guardar
+                    {t('ops.project.save')}
                   </button>
                   <p className="text-xs text-zinc-500">
-                    Para quitar un cargo (p. ej. hosting que no aplica): usa Eliminar abajo, o marca estado
-                    Omitido y ocúltalo del portal.
+                    {t('ops.project.chargeDeleteHint')}
                   </p>
                 </div>
               </ToastForm>
-              <ToastForm success="Eliminado"
+              <ToastForm success={t('ops.project.deleted')}
                 action={async () => {
                   'use server';
                   await deleteProjectCharge(c.id, id);
@@ -710,37 +707,36 @@ export default async function ProjectDetailPage({
                   type="submit"
                   className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
                 >
-                  Eliminar cargo
+                  {t('ops.project.deleteCharge')}
                 </button>
               </ToastForm>
             </article>
           ))}
-          {!charges?.length && <p className="text-sm text-zinc-500">Sin cargos. Agrega anticipo, saldo u hosting arriba.</p>}
+          {!charges?.length && <p className="text-sm text-zinc-500">{t('ops.project.noCharges')}</p>}
         </div>
       )}
 
       {tab === 'documentos' && (
         <div className="space-y-6">
           <div className="flex flex-wrap gap-2">
-            <ToastForm success="Retención ejecutada" action={async () => { 'use server'; await runDocumentRetentionDisposal(); }}>
+            <ToastForm success={t('ops.project.retentionRun')} action={async () => { 'use server'; await runDocumentRetentionDisposal(); }}>
               <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                Ejecutar retención ahora
+                {t('ops.project.runRetention')}
               </button>
             </ToastForm>
             <a
               href={`/api/ops/projects/${id}/compliance-export`}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
             >
-              Descargar export JSON
+              {t('ops.project.downloadExport')}
             </a>
           </div>
 
           <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
             <div>
-              <h3 className="font-semibold">Solicitudes al cliente</h3>
+              <h3 className="font-semibold">{t('ops.project.clientRequests')}</h3>
               <p className="mt-1 text-sm text-zinc-500">
-                Al crear una solicitud se habilita el slot en el portal. El cliente solo puede
-                responder a lo que pidas aquí.
+                {t('ops.project.clientRequestsHint')}
               </p>
             </div>
             {availableRequestPresets.length > 0 ? (
@@ -748,7 +744,7 @@ export default async function ProjectDetailPage({
                 {availableRequestPresets.map((preset) => (
                   <ToastForm
                     key={preset.code}
-                    success="Solicitud creada"
+                    success={t('ops.project.requestCreated')}
                     action={async () => {
                       'use server';
                       await createDocumentRequestFromPreset(id, preset.code);
@@ -764,7 +760,7 @@ export default async function ProjectDetailPage({
                 ))}
               </div>
             ) : null}
-            <ToastForm success="Solicitud creada"
+            <ToastForm success={t('ops.project.requestCreated')}
               action={async (fd) => {
                 'use server';
                 await createDocumentRequest(id, fd);
@@ -774,51 +770,49 @@ export default async function ProjectDetailPage({
               <input
                 name="title"
                 required
-                placeholder="Título (ej. Brandbook)"
+                placeholder={t('ops.project.requestTitle')}
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
               />
               <input
                 name="code"
-                placeholder="Código interno (opcional)"
+                placeholder={t('ops.project.requestCode')}
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
               />
               <select name="inputMode" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
-                <option value="file">Archivo</option>
-                <option value="text">Texto</option>
-                <option value="url">URL</option>
-                <option value="credentials">Accesos (hosting/dominio)</option>
+                {Object.entries(DOCUMENT_REQUEST_INPUT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
               <select name="expectedType" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
-                <option value="other">Otro</option>
-                <option value="nda">NDA</option>
-                <option value="contract">Contrato</option>
-                <option value="proposal_pdf">Propuesta PDF</option>
+                {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
               <input
                 name="sortOrder"
                 type="number"
                 defaultValue={((docRequests ?? []).length + 1) * 10}
-                placeholder="Orden"
+                placeholder={t('ops.project.requestOrder')}
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
               />
               <textarea
                 name="description"
                 rows={2}
-                placeholder="Descripción corta para el cliente"
+                placeholder={t('ops.project.requestDesc')}
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
               />
               <textarea
                 name="instructions"
                 rows={2}
-                placeholder="Instrucciones (qué incluir, formato, etc.)"
+                placeholder={t('ops.project.requestInstructions')}
                 className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm sm:col-span-2"
               />
               <label className="flex items-center gap-2 text-sm sm:col-span-2">
                 <input type="checkbox" name="required" defaultChecked />
-                Requerido
+                {t('ops.project.required')}
               </label>
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white sm:col-span-2 sm:w-fit">
-                Crear solicitud (habilita en portal)
+                {t('ops.project.createRequest')}
               </button>
             </ToastForm>
 
@@ -840,7 +834,7 @@ export default async function ProjectDetailPage({
                         {DOCUMENT_REQUEST_STATUS_LABELS[r.status] ?? r.status}
                         {' · '}
                         {DOCUMENT_REQUEST_INPUT_LABELS[r.input_mode] ?? r.input_mode}
-                        {r.required ? ' · requerido' : ''}
+                        {r.required ? t('ops.project.requiredSuffix') : ''}
                       </p>
                       {r.description && <p className="mt-1 text-zinc-600">{r.description}</p>}
                       {r.response_text &&
@@ -861,37 +855,37 @@ export default async function ProjectDetailPage({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {r.status !== 'open' && (
-                        <ToastForm success="Solicitud reabierta"
+                        <ToastForm success={t('ops.project.requestReopened')}
                           action={async () => {
                             'use server';
                             await updateDocumentRequestStatus(id, r.id, 'open');
                           }}
                         >
                           <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
-                            Reabrir
+                            {t('ops.project.reopen')}
                           </button>
                         </ToastForm>
                       )}
                       {r.status === 'open' && (
                         <>
-                          <ToastForm success="Solicitud omitida"
+                          <ToastForm success={t('ops.project.requestWaived')}
                             action={async () => {
                               'use server';
                               await updateDocumentRequestStatus(id, r.id, 'waived');
                             }}
                           >
                             <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
-                              Omitir
+                              {t('ops.project.waive')}
                             </button>
                           </ToastForm>
-                          <ToastForm success="Solicitud cancelada"
+                          <ToastForm success={t('ops.project.requestCancelled')}
                             action={async () => {
                               'use server';
                               await updateDocumentRequestStatus(id, r.id, 'cancelled');
                             }}
                           >
                             <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
-                              Cancelar
+                              {t('ops.project.cancel')}
                             </button>
                           </ToastForm>
                         </>
@@ -901,27 +895,27 @@ export default async function ProjectDetailPage({
                 </li>
               ))}
               {!docRequests?.length && (
-                <p className="text-sm text-zinc-500">Sin solicitudes. Crea la primera para desbloquear la bandeja del cliente.</p>
+                <p className="text-sm text-zinc-500">{t('ops.project.noRequests')}</p>
               )}
             </ul>
           </section>
 
-          <ToastForm success="Documento subido" action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <h3 className="font-semibold">Subir documento (Codiva → cliente)</h3>
+          <ToastForm success={t('ops.project.docUploaded')} action={async (fd) => { 'use server'; await uploadDocument(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <h3 className="font-semibold">{t('ops.project.uploadDoc')}</h3>
             <p className="text-sm text-zinc-500">
-              Cotizaciones viven en la pestaña Cotizaciones, no como PDF aquí.
+              {t('ops.project.uploadDocHint')}
             </p>
-            <input name="title" placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="title" placeholder={t('ops.project.title')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <select name="type" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="contract">Contrato</option>
-              <option value="nda">NDA</option>
-              <option value="other">Otro</option>
+              <option value="contract">{DOCUMENT_TYPE_LABELS.contract}</option>
+              <option value="nda">{DOCUMENT_TYPE_LABELS.nda}</option>
+              <option value="other">{DOCUMENT_TYPE_LABELS.other}</option>
             </select>
-            <textarea name="notes" placeholder="Nota visible para el cliente (opcional)" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <BrandedFileInput required hint="PDF, imagen, Office o ZIP" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="signed" /> Firmado</label>
-            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Subir</button>
+            <textarea name="notes" placeholder={t('ops.project.notesClient')} rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <BrandedFileInput required hint={t('ops.project.fileHint')} />
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> {t('ops.project.visibleClientCheck')}</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="signed" /> {t('ops.project.signed')}</label>
+            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">{t('ops.project.upload')}</button>
           </ToastForm>
           <ul className="space-y-2">
             {staffDocuments.map((d) => {
@@ -936,7 +930,7 @@ export default async function ProjectDetailPage({
                 <div>
                   <p className="font-medium">
                     {d.title} {d.signed ? '✓' : ''}
-                    {d.disposed_at ? ' · DISPUESTO' : ''}
+                    {d.disposed_at ? t('ops.project.disposed') : ''}
                   </p>
                   <p className="text-zinc-500">
                     {DOCUMENT_TYPE_LABELS[d.type] ?? d.type}
@@ -945,9 +939,9 @@ export default async function ProjectDetailPage({
                     {' · '}
                     {formatDate(d.uploaded_at)}
                     {d.scan_status ? ` · scan:${d.scan_status}` : ''}
-                    {d.retain_until ? ` · retener hasta ${formatDate(d.retain_until)}` : ''}
-                    {isLegacyQuotePackDocument(d) ? ' · pack de cotización, oculto al cliente (vive en Cotización)' : ''}
-                    {isLegacyNdaDraftDocument(d) ? ' · borrador pack, oculto al cliente (vive el NDA mutuo de Ops)' : ''}
+                    {d.retain_until ? t('ops.project.retainUntil', { date: formatDate(d.retain_until) }) : ''}
+                    {isLegacyQuotePackDocument(d) ? t('ops.project.legacyQuotePack') : ''}
+                    {isLegacyNdaDraftDocument(d) ? t('ops.project.legacyNda') : ''}
                   </p>
                   {d.content_sha256 && (
                     <p className="mt-1 font-mono text-xs text-zinc-400" title={d.content_sha256}>
@@ -959,13 +953,13 @@ export default async function ProjectDetailPage({
                 <div className="flex items-center gap-2">
                   {href && (
                     <a href={href} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">
-                      Ver
+                      {t('ops.project.view')}
                     </a>
                   )}
                   {!d.signed && (
-                    <ToastForm success="Documento marcado como firmado" action={async () => { 'use server'; await markDocumentSigned(d.id, id, true); }}>
+                    <ToastForm success={t('ops.project.markedSigned')} action={async () => { 'use server'; await markDocumentSigned(d.id, id, true); }}>
                       <button type="submit" className="rounded-lg border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
-                        Marcar firmado
+                        {t('ops.project.markSigned')}
                       </button>
                     </ToastForm>
                   )}
@@ -976,14 +970,14 @@ export default async function ProjectDetailPage({
           </ul>
 
           <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <h3 className="mb-1 font-semibold">Auditoría reciente</h3>
-            <p className="mb-3 text-sm text-zinc-500">Descargas y eventos del proyecto (uploads, legales).</p>
+            <h3 className="mb-1 font-semibold">{t('ops.project.auditTitle')}</h3>
+            <p className="mb-3 text-sm text-zinc-500">{t('ops.project.auditHint')}</p>
             <ul className="space-y-2 text-sm">
               {(fileAccess ?? []).slice(0, 10).map((a) => (
                 <li key={a.id} className="rounded-lg border border-zinc-100 px-3 py-2">
-                  <span className="font-medium">Descarga</span>
+                  <span className="font-medium">{t('ops.project.download')}</span>
                   {' · '}
-                  {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? 'sistema'}
+                  {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? t('ops.project.system')}
                   {' · '}
                   <span className="text-zinc-500">{formatDate(a.created_at)}</span>
                   {a.ip && <span className="text-zinc-400"> · {a.ip}</span>}
@@ -996,17 +990,17 @@ export default async function ProjectDetailPage({
                 .map((a) => (
                   <li key={a.id} className="rounded-lg border border-zinc-100 px-3 py-2">
                     <span className="font-medium">
-                      {a.action === 'legal_accepted' ? 'Aceptación legal' : 'Documento subido'}
+                      {a.action === 'legal_accepted' ? t('ops.project.legalAccepted') : t('ops.project.docUploadedEvent')}
                     </span>
                     {' · '}
-                    {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? 'sistema'}
+                    {memberEmails.get(a.actor_id ?? '') ?? a.actor_id?.slice(0, 8) ?? t('ops.project.system')}
                     {' · '}
                     <span className="text-zinc-500">{formatDate(a.created_at)}</span>
                   </li>
                 ))}
               {!fileAccess?.length &&
                 !(recentActivity ?? []).some((a) => a.action === 'uploaded' || a.action === 'legal_accepted') && (
-                  <p className="text-zinc-500">Sin eventos de auditoría aún.</p>
+                  <p className="text-zinc-500">{t('ops.project.noAudit')}</p>
                 )}
             </ul>
           </section>
@@ -1016,22 +1010,22 @@ export default async function ProjectDetailPage({
       {tab === 'entregables' && (
         <div className="space-y-6">
           <p className="text-sm text-zinc-600">
-            Entregas operativas del proyecto. La arquitectura y la propuesta se editan en{' '}
+            {t('ops.project.deliverablesHintPrefix')}{' '}
             <Link href={`/projects/${id}?tab=arquitectura`} className="text-codiva-primary hover:underline">
-              Arquitectura
+              {t('ops.project.tabArquitectura')}
             </Link>
             .
           </p>
-          <ToastForm success="Entregable creado" action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <h3 className="font-semibold">Nuevo entregable</h3>
-            <input name="title" required placeholder="Título" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+          <ToastForm success={t('ops.project.deliverableCreated')} action={async (fd) => { 'use server'; await createDeliverable(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+            <h3 className="font-semibold">{t('ops.project.newDeliverable')}</h3>
+            <input name="title" required placeholder={t('ops.project.title')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
             <input type="hidden" name="kind" value="other" />
-            <input name="sortOrder" type="number" defaultValue={0} placeholder="Orden" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <input name="url" placeholder="URL (staging, Figma…)" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <textarea name="description" placeholder="Descripción" rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-            <BrandedFileInput hint="Opcional · PDF, imagen, Office o ZIP" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
-            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Guardar</button>
+            <input name="sortOrder" type="number" defaultValue={0} placeholder={t('ops.project.requestOrder')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <input name="url" placeholder={t('ops.project.urlPlaceholder')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <textarea name="description" placeholder={t('ops.project.description')} rows={2} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <BrandedFileInput hint={t('ops.project.fileHintOptional')} />
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> {t('ops.project.visibleClientCheck')}</label>
+            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">{t('ops.project.save')}</button>
           </ToastForm>
           <ul className="space-y-2">
             {(deliverables ?? []).filter((d) => !isCanvasKind(d.kind)).map((d) => {
@@ -1042,25 +1036,25 @@ export default async function ProjectDetailPage({
                   <div>
                     <p className="font-medium">{d.title}</p>
                     <p className="text-zinc-500">
-                      {DELIVERABLE_KIND_LABELS[d.kind] ?? d.kind ?? 'Otro'}
+                      {DELIVERABLE_KIND_LABELS[d.kind] ?? d.kind ?? t('ops.project.other')}
                       {' · '}
-                      {d.visible_to_client ? 'visible al cliente' : 'oculto al cliente'}
+                      {d.visible_to_client ? t('ops.project.visibleClient') : t('ops.project.hiddenClient')}
                     </p>
                     {d.url && <a href={d.url} className="text-codiva-primary hover:underline">{d.url}</a>}
                     {fileHref && (
                       <a href={fileHref} className="block text-codiva-primary hover:underline">
-                        Descargar archivo
+                        {t('ops.project.downloadFile')}
                       </a>
                     )}
                   </div>
-                  <ToastForm success="Visibilidad actualizada"
+                  <ToastForm success={t('ops.project.visibilityUpdated')}
                     action={async () => {
                       'use server';
                       await setDeliverableVisibility(id, d.id, !d.visible_to_client);
                     }}
                   >
                     <button type="submit" className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50">
-                      {d.visible_to_client ? 'Ocultar' : 'Mostrar'}
+                      {d.visible_to_client ? t('ops.project.hide') : t('ops.project.show')}
                     </button>
                   </ToastForm>
                 </div>
@@ -1068,7 +1062,7 @@ export default async function ProjectDetailPage({
               );
             })}
             {!(deliverables ?? []).some((d) => !isCanvasKind(d.kind)) && (
-              <p className="text-sm text-zinc-500">Sin entregables operativos.</p>
+              <p className="text-sm text-zinc-500">{t('ops.project.noDeliverables')}</p>
             )}
           </ul>
         </div>
@@ -1078,29 +1072,27 @@ export default async function ProjectDetailPage({
         <div className="max-w-2xl space-y-10">
           <section className="space-y-6">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Portal Codiva</h3>
-              <p className="mt-1 text-sm text-zinc-600">Invitaciones al portal del proyecto (no son logins del sitio web).</p>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">{t('ops.project.portalCodiva')}</h3>
+              <p className="mt-1 text-sm text-zinc-600">{t('ops.project.portalInviteHint')}</p>
             </div>
-            <ToastForm success="Invitación enviada" action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-              <h3 className="font-semibold">Invitar usuario del cliente</h3>
+            <ToastForm success={t('ops.project.inviteSent')} action={async (fd) => { 'use server'; await inviteProjectMember(id, fd); }} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
+              <h3 className="font-semibold">{t('ops.project.inviteUser')}</h3>
               <p className="text-sm text-zinc-600">
-                Puedes invitar a varias personas (legal, dirección, ops). Cada una aceptará TyC, aviso de
-                privacidad y NDA en su primer acceso (versión {LEGAL_DOCS_VERSION}). También puedes
-                gestionar usuarios multi-proyecto en{' '}
+                {t('ops.project.inviteBodyPrefix', { version: LEGAL_DOCS_VERSION })}{' '}
                 <Link href="/users" className="text-codiva-primary hover:underline">
-                  Usuarios
+                  {t('ops.pages.users')}
                 </Link>
                 .
               </p>
-              <input name="email" type="email" required placeholder="email@cliente.com" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="email" type="email" required placeholder={t('ops.project.inviteEmail')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                <option value="viewer">Viewer - solo lectura</option>
-                <option value="approver">Approver - puede aceptar cotización</option>
+                <option value="viewer">{t('ops.project.roleViewer')}</option>
+                <option value="approver">{t('ops.project.roleApprover')}</option>
               </select>
               {(siblingProjects ?? []).length > 0 && (
                 <fieldset className="space-y-2 rounded-lg border border-zinc-200 p-3">
                   <legend className="px-1 text-sm font-medium text-zinc-700">
-                    También en otros proyectos de este cliente
+                    {t('ops.project.alsoInSiblings')}
                   </legend>
                   {(siblingProjects ?? []).map((p) => (
                     <label key={p.id} className="flex items-center gap-2 text-sm">
@@ -1110,15 +1102,15 @@ export default async function ProjectDetailPage({
                   ))}
                 </fieldset>
               )}
-              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Enviar acceso</button>
+              <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">{t('ops.project.sendAccess')}</button>
             </ToastForm>
             <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
               <span className="inline-flex flex-wrap items-center gap-2">
-                Login cliente:
+                {t('ops.project.clientLogin')}
                 <PortalClientUrl slug={project.slug} path="/login" />
               </span>
               <Link href={staffPortalPreviewPath(project.slug)} className="text-codiva-primary hover:underline">
-                Vista previa (ops)
+                {t('ops.project.previewOps')}
               </Link>
             </div>
             <ul className="space-y-2 text-sm">
@@ -1130,7 +1122,7 @@ export default async function ProjectDetailPage({
                       <div>
                         <p className="font-medium">{memberEmails.get(m.user_id) ?? m.user_id.slice(0, 8)}</p>
                         <p className="text-zinc-500">
-                          {m.role} · invitado {formatDate(m.invited_at)}
+                          {m.role} · {t('ops.project.invitedOn', { date: formatDate(m.invited_at) })}
                         </p>
                       </div>
                       <span
@@ -1140,16 +1132,16 @@ export default async function ProjectDetailPage({
                             : 'bg-amber-50 text-amber-800'
                         }`}
                       >
-                        {acceptance.complete ? 'Legales OK' : 'Pendiente aceptar'}
+                        {acceptance.complete ? t('ops.project.legalOk') : t('ops.project.legalPending')}
                       </span>
                     </div>
                     {!acceptance.complete && (
                       <p className="mt-2 text-xs text-zinc-500">
-                        Falta:{' '}
+                        {t('ops.project.missing')}{' '}
                         {[
-                          !acceptance.terms ? 'TyC' : null,
-                          !acceptance.privacy ? 'Privacidad' : null,
-                          !acceptance.nda ? 'NDA' : null,
+                          !acceptance.terms ? t('ops.project.legalTerms') : null,
+                          !acceptance.privacy ? t('ops.project.legalPrivacy') : null,
+                          !acceptance.nda ? t('ops.project.legalNda') : null,
                         ]
                           .filter(Boolean)
                           .join(', ')}
@@ -1159,7 +1151,7 @@ export default async function ProjectDetailPage({
                 );
               })}
               {!members?.length && (
-                <p className="text-sm text-zinc-500">Aún no hay usuarios invitados. Agrega el primero arriba.</p>
+                <p className="text-sm text-zinc-500">{t('ops.project.noMembers')}</p>
               )}
             </ul>
           </section>
@@ -1175,14 +1167,14 @@ export default async function ProjectDetailPage({
 
       {tab === 'tickets' && (
         <ul className="space-y-2">
-          {(tickets ?? []).map((t) => (
-            <li key={t.id}>
-              <Link href={`/tickets/${t.id}`} className="block rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-codiva-primary/30">
-                {t.title}
+          {(tickets ?? []).map((ticket) => (
+            <li key={ticket.id}>
+              <Link href={`/tickets/${ticket.id}`} className="block rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-codiva-primary/30">
+                {ticket.title}
               </Link>
             </li>
           ))}
-          {!tickets?.length && <p className="text-sm text-zinc-500">Sin tickets vinculados</p>}
+          {!tickets?.length && <p className="text-sm text-zinc-500">{t('ops.project.noTickets')}</p>}
         </ul>
       )}
     </div>
@@ -1196,25 +1188,26 @@ async function MilestoneForm({
   projectId: string;
   createMilestone: typeof import('@/lib/ops/actions').createMilestone;
 }) {
-  const { MILESTONE_STATUS_LABELS } = labelsFor((await getT()).locale);
+  const t = await getT();
+  const { MILESTONE_STATUS_LABELS } = labelsFor(t.locale);
   async function action(formData: FormData) {
     'use server';
     await createMilestone(projectId, formData);
   }
 
   return (
-    <ToastForm success="Hito agregado" action={action} className="rounded-xl border border-zinc-200 bg-white p-5 grid gap-3 md:grid-cols-2">
-      <h3 className="md:col-span-2 font-semibold">Nuevo hito</h3>
-      <input name="title" required placeholder="Título del hito" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+    <ToastForm success={t('ops.project.milestoneAdded')} action={action} className="rounded-xl border border-zinc-200 bg-white p-5 grid gap-3 md:grid-cols-2">
+      <h3 className="md:col-span-2 font-semibold">{t('ops.project.newMilestone')}</h3>
+      <input name="title" required placeholder={t('ops.project.milestoneTitle')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
       <input name="dueDate" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
       <select name="status" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
         {Object.entries(MILESTONE_STATUS_LABELS).map(([k, v]) => (
           <option key={k} value={k}>{v}</option>
         ))}
       </select>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente</label>
-      <textarea name="description" placeholder="Descripción" rows={2} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-      <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">Agregar hito</button>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="visibleToClient" defaultChecked /> {t('ops.project.visibleClientCheck')}</label>
+      <textarea name="description" placeholder={t('ops.project.description')} rows={2} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+      <button type="submit" className="w-fit rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">{t('ops.project.addMilestone')}</button>
     </ToastForm>
   );
 }
@@ -1238,7 +1231,8 @@ async function MilestoneCard({
   updateMilestone: typeof import('@/lib/ops/actions').updateMilestone;
   addMilestoneUpdate: typeof import('@/lib/ops/actions').addMilestoneUpdate;
 }) {
-  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor((await getT()).locale);
+  const t = await getT();
+  const { MILESTONE_STATUS_LABELS, formatDate } = labelsFor(t.locale);
   async function onUpdate(formData: FormData) {
     'use server';
     await updateMilestone(milestone.id, projectId, formData);
@@ -1252,7 +1246,7 @@ async function MilestoneCard({
 
   return (
     <article className="rounded-xl border border-zinc-200 bg-white p-5">
-      <ToastForm success="Guardado" action={onUpdate} className="space-y-3">
+      <ToastForm success={t('ops.project.saved')} action={onUpdate} className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <input name="title" defaultValue={milestone.title} className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium" />
           <select name="status" defaultValue={milestone.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -1265,9 +1259,9 @@ async function MilestoneCard({
         <div className="flex flex-wrap gap-3 items-center">
           <input name="dueDate" type="date" defaultValue={milestone.due_date ?? ''} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="visibleToClient" defaultChecked={milestone.visible_to_client} /> Visible cliente
+            <input type="checkbox" name="visibleToClient" defaultChecked={milestone.visible_to_client} /> {t('ops.project.visibleClientShort')}
           </label>
-          <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">Guardar</button>
+          <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">{t('ops.project.save')}</button>
         </div>
       </ToastForm>
       {milestone.milestone_updates && milestone.milestone_updates.length > 0 && (
@@ -1280,9 +1274,9 @@ async function MilestoneCard({
           ))}
         </ul>
       )}
-      <ToastForm success="Actualización publicada" action={onAddUpdate} className="mt-3 flex gap-2">
-        <input name="body" placeholder="Actualización…" className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-        <button type="submit" className="rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white">Publicar</button>
+      <ToastForm success={t('ops.project.updatePublished')} action={onAddUpdate} className="mt-3 flex gap-2">
+        <input name="body" placeholder={t('ops.project.updatePlaceholder')} className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+        <button type="submit" className="rounded-lg bg-zinc-800 px-3 py-2 text-sm text-white">{t('ops.project.publish')}</button>
       </ToastForm>
     </article>
   );
