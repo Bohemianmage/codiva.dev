@@ -39,9 +39,9 @@ export default async function DashboardPage({
   const access = await requireStaff();
   const { supabase, user, staff } = access;
   const params = await searchParams;
-  const showCommercial = can(staff.role, 'leads');
-  const showFinance = can(staff.role, 'dashboard_finance');
-  const visibleIds = await listVisibleProjectIds(supabase, user.id, staff.role);
+  const showCommercial = can(staff, 'leads');
+  const showFinance = can(staff, 'dashboard_finance');
+  const visibleIds = await listVisibleProjectIds(supabase, user.id, staff);
   const t = await getT();
   const {
     LEAD_STATUS_LABELS,
@@ -104,7 +104,7 @@ export default async function DashboardPage({
       : Promise.resolve({ data: [] as never[] }),
     loadInboundItems({
       supabase,
-      role: staff.role,
+      permissions: staff,
       visibleProjectIds: visibleIds,
       maxItems: 5,
     }),
@@ -221,7 +221,7 @@ export default async function DashboardPage({
         <section className="rounded-xl border border-zinc-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">{t('ops.inbox.pending')}</h2>
-            {can(staff.role, 'inbox') ? (
+            {can(staff, 'inbox') ? (
               <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
                 {t('ops.inbox.viewInbox')}
               </Link>

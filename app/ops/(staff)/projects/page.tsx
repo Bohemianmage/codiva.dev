@@ -13,8 +13,8 @@ import { staffPortalPreviewPath } from '@/lib/ops/host';
 export default async function ProjectsPage() {
   const access = await requireStaff();
   const { supabase, user, staff } = access;
-  const canCreate = can(staff.role, 'projects_create');
-  const visibleIds = await listVisibleProjectIds(supabase, user.id, staff.role);
+  const canCreate = can(staff, 'projects_create');
+  const visibleIds = await listVisibleProjectIds(supabase, user.id, staff);
   const t = await getT();
   const { PROJECT_STATUS_LABELS, formatDate, EMPTY_LABEL } = labelsFor(t.locale);
 
@@ -47,7 +47,7 @@ export default async function ProjectsPage() {
       <OpsPageHeader
         title={t('ops.pages.projects')}
         description={
-          can(staff.role, 'projects_all')
+          can(staff, 'projects_all')
             ? t('ops.pages.projectsAll')
             : t('ops.pages.projectsAssigned')
         }
@@ -110,7 +110,7 @@ export default async function ProjectsPage() {
             {!(projects ?? []).length && (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                  {can(staff.role, 'projects_all') ? t('ops.projectsPage.empty') : t('ops.projectsPage.emptyAssigned')}
+                  {can(staff, 'projects_all') ? t('ops.projectsPage.empty') : t('ops.projectsPage.emptyAssigned')}
                 </td>
               </tr>
             )}

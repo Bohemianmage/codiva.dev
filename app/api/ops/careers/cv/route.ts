@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     ? application.ops_job_postings[0]
     : application.ops_job_postings;
   if (
-    !can(staff.role, 'team') &&
+    !can(staff, 'team') &&
     !isTesterPipelineItem({ postingSlug: posting?.slug, discipline: application.discipline })
   ) {
     return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });

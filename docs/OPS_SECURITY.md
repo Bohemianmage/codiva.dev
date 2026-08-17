@@ -20,7 +20,9 @@ Configura `CRON_SECRET` en el entorno. En Vercel Cron apunta a esa ruta diariame
 
 También: staff → Documentos → **Ejecutar retención ahora**.
 
-Recordatorio de cacería: `GET /api/ops/cron/hunt-nudge` cada hora (mismo `CRON_SECRET`). A las 48 h, si aprobaron criterio y aún no hay hallazgo del oficio, se envía un correo.
+Recordatorio de cacería: `GET /api/ops/cron/hunt-nudge` cada hora (minuto 15, mismo `CRON_SECRET`). A las 48 h, si aprobaron criterio y aún no hay hallazgo del oficio, se envía un correo.
+
+Recordatorio de CV: `GET /api/ops/cron/cv-nudge` cada hora (minuto 45, mismo `CRON_SECRET`). A las 48 h de un hallazgo del oficio, si aún no hay postulación, se envía un correo.
 
 ## Antivirus / malware (opcional)
 

@@ -225,7 +225,7 @@ export default async function ProjectDetailPage({
     { key: 'entregables', labelKey: 'ops.project.tabEntregables' },
     { key: 'accesos', labelKey: 'ops.project.tabAccesos' },
     { key: 'tickets', labelKey: 'ops.project.tabTickets' },
-  ].filter((tabDef) => !('capability' in tabDef && tabDef.capability) || can(staff.role, tabDef.capability!));
+  ].filter((tabDef) => !('capability' in tabDef && tabDef.capability) || can(staff, tabDef.capability!));
 
   async function onUpdateProject(formData: FormData) {
     'use server';
@@ -368,7 +368,7 @@ export default async function ProjectDetailPage({
       {tab === 'equipo' && (
         <OpsProjectStaff
           projectId={id}
-          staffRole={staff.role}
+          permissions={staff}
           projectStaff={(projectStaffRows ?? []) as never[]}
           allStaff={(allStaffRows ?? []).map((s) => ({
             id: s.id,
@@ -381,7 +381,7 @@ export default async function ProjectDetailPage({
       {tab === 'sprints' && (
         <OpsProjectSprints
           projectId={id}
-          staffRole={staff.role}
+          permissions={staff}
           currentUserId={user.id}
           allStaff={(allStaffRows ?? []).map((s) => ({
             id: s.id,
@@ -393,10 +393,10 @@ export default async function ProjectDetailPage({
         />
       )}
 
-      {tab === 'horas' && can(staff.role, 'time_entries') && (
+      {tab === 'horas' && can(staff, 'time_entries') && (
         <OpsProjectHours
           projectId={id}
-          staffRole={staff.role}
+          permissions={staff}
           currentUserId={user.id}
           entries={(timeEntries ?? []) as never[]}
           sprintItems={(sprintItems ?? []).map((i) => ({ id: i.id, title: i.title }))}
@@ -409,11 +409,11 @@ export default async function ProjectDetailPage({
 
       {tab === 'timeline' && (
         <div className="space-y-6">
-          {can(staff.role, 'milestones_write') && (
+          {can(staff, 'milestones_write') && (
             <MilestoneForm projectId={id} createMilestone={createMilestone} />
           )}
           {(milestones ?? []).map((m) =>
-            can(staff.role, 'milestones_write') ? (
+            can(staff, 'milestones_write') ? (
               <MilestoneCard
                 key={m.id}
                 milestone={m}
@@ -446,11 +446,11 @@ export default async function ProjectDetailPage({
           projectId={id}
           slug={project.slug}
           kindLabels={DELIVERABLE_KIND_LABELS}
-          canEdit={can(staff.role, 'deliverables')}
+          canEdit={can(staff, 'deliverables')}
         />
       )}
 
-      {tab === 'cotizaciones' && can(staff.role, 'quotes') && (
+      {tab === 'cotizaciones' && can(staff, 'quotes') && (
         <div className="space-y-6">
           <p className="text-sm text-zinc-600">
             {t('ops.project.quotesHintPrefix')}{' '}
@@ -515,7 +515,7 @@ export default async function ProjectDetailPage({
         </div>
       )}
 
-      {tab === 'pagos' && can(staff.role, 'charges') && (
+      {tab === 'pagos' && can(staff, 'charges') && (
         <div className="space-y-6">
           <section className="rounded-xl border border-zinc-200 bg-white p-5">
             <h3 className="font-semibold">{t('ops.project.newCharge')}</h3>

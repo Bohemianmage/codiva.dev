@@ -19,7 +19,7 @@ import {
   offerLabelsFor,
 } from '@/lib/ops/offer-letter';
 import { labelsFor } from '@/lib/ops/labels';
-import { can, canAny } from '@/lib/ops/permissions';
+import { can, canAny, isCustomizedCapabilities } from '@/lib/ops/permissions';
 import {
   isTesterCatalogKey,
   isTesterJobSlug,
@@ -30,6 +30,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import CodivaBrandText from '@/components/CodivaBrandText';
+import OpsStaffCapabilityFields from '@/components/ops/OpsStaffCapabilityFields';
 
 function tabClass(active: boolean) {
   return active
@@ -43,11 +44,11 @@ export default async function TeamPage({
   searchParams: Promise<{ tab?: string; signal?: string; origin?: string }>;
 }) {
   const { tab: tabParam, signal: signalParam, origin: originParam } = await searchParams;
-  const { supabase, staff } = await requireStaff();
-  if (!canAny(staff.role, ['team', 'careers_review'])) {
+  const { supabase, staff, user } = await requireStaff();
+  if (!canAny(staff, ['team', 'careers_review'])) {
     redirect('/dashboard?error=forbidden');
   }
-  const canManageTeam = can(staff.role, 'team');
+  const canManageTeam = can(staff, 'team');
   const tab = !canManageTeam
     ? 'bolsa'
     : tabParam === 'ofertas'
@@ -75,7 +76,7 @@ export default async function TeamPage({
     canManageTeam
       ? supabase
           .from('staff_profiles')
-          .select('id, full_name, role, active, created_at')
+          .select('id, full_name, role, active, created_at, capabilities')
           .order('created_at', { ascending: true })
       : Promise.resolve(empty),
     canManageTeam
@@ -213,24 +214,26 @@ export default async function TeamPage({
             <p className="text-sm text-zinc-500">
               <CodivaBrandText>{t('ops.team.inviteHint')}</CodivaBrandText>
             </p>
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="nombre@codiva.dev"
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <input
-              name="fullName"
-              type="text"
-              placeholder={t('ops.team.fullName')}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <select name="role" defaultValue="pm" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-              <option value="admin">{ROLE_LABELS.admin}</option>
-              <option value="pm">{ROLE_LABELS.pm}</option>
-              <option value="dev">{ROLE_LABELS.dev}</option>
-            </select>
+            <label className="block text-sm font-medium text-zinc-700">
+              {t('ops.team.inviteEmail')}
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="nombre@codiva.dev"
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-normal"
+              />
+            </label>
+            <label className="block text-sm font-medium text-zinc-700">
+              {t('ops.team.fullName')}
+              <input
+                name="fullName"
+                type="text"
+                placeholder={t('ops.team.fullName')}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-normal"
+              />
+            </label>
+            <OpsStaffCapabilityFields defaultRole="pm" />
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
               {t('ops.team.inviteSend')}
             </button>
@@ -239,7 +242,14 @@ export default async function TeamPage({
           <section className="space-y-3">
             <h2 className="font-semibold">{t('ops.team.membersTitle')}</h2>
             <ul className="space-y-3">
-              {(staffRows ?? []).map((row) => (
+              {(staffRows ?? []).map((row) => {
+                const caps = Array.isArray(row.capabilities) ? row.capabilities : null;
+                const customized = isCustomizedCapabilities(row.role, caps);
+                const hasAllProjects = Boolean(caps?.includes('projects_all'));
+                const assigned = assignmentsByStaff.get(row.id) ?? [];
+                const assignedIds = new Set(assigned.map((a) => a.project_id));
+                const available = (allProjects ?? []).filter((p) => !assignedIds.has(p.id));
+                return (
                 <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                     <div>
@@ -252,9 +262,16 @@ export default async function TeamPage({
                         })}
                       </p>
                     </div>
-                    <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700">
-                      {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] ?? row.role}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-700">
+                        {ROLE_LABELS[row.role as keyof typeof ROLE_LABELS] ?? row.role}
+                      </span>
+                      {customized ? (
+                        <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                          {t('ops.team.permissionsCustom')}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <ToastForm
                     success={t('ops.team.profileUpdated')}
@@ -262,41 +279,47 @@ export default async function TeamPage({
                       'use server';
                       await updateStaffProfile(row.id, fd);
                     }}
-                    className="grid gap-2 sm:grid-cols-3"
+                    className="space-y-3"
                   >
-                    <input
-                      name="fullName"
-                      defaultValue={row.full_name ?? ''}
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-1"
+                    <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+                      <label className="block text-sm font-medium text-zinc-700">
+                        {t('ops.team.fullName')}
+                        <input
+                          name="fullName"
+                          defaultValue={row.full_name ?? ''}
+                          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-normal"
+                        />
+                      </label>
+                      <label className="flex h-10 items-center gap-2 text-sm">
+                        <input type="checkbox" name="active" defaultChecked={row.active} />
+                        {t('ops.team.active')}
+                      </label>
+                    </div>
+                    <OpsStaffCapabilityFields
+                      defaultRole={row.role}
+                      defaultCapabilities={caps}
+                      lockTeam={row.id === user.id}
                     />
-                    <select
-                      name="role"
-                      defaultValue={row.role}
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-                    >
-                      <option value="admin">{ROLE_LABELS.admin}</option>
-                      <option value="pm">{ROLE_LABELS.pm}</option>
-                      <option value="dev">{ROLE_LABELS.dev}</option>
-                    </select>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="active" defaultChecked={row.active} />
-                      {t('ops.team.active')}
-                    </label>
                     <button
                       type="submit"
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 sm:col-span-3"
+                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50"
                     >
                       {t('ops.team.save')}
                     </button>
                   </ToastForm>
-                  {(() => {
-                    const assigned = assignmentsByStaff.get(row.id) ?? [];
-                    const assignedIds = new Set(assigned.map((a) => a.project_id));
-                    const available = (allProjects ?? []).filter((p) => !assignedIds.has(p.id));
-                    return (
-                      <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
-                        <h3 className="text-sm font-medium">{t('ops.team.projectsTitle')}</h3>
-                        <p className="text-xs text-zinc-500">{t('ops.team.projectsHint')}</p>
+                  <details className="group mt-4 border-t border-zinc-100 pt-4">
+                    <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm font-medium text-zinc-800">
+                      <span>{t('ops.team.projectsTitle')}</span>
+                      <span className="text-xs font-normal text-zinc-500">
+                        {hasAllProjects
+                          ? t('ops.team.projectsAllBadge')
+                          : t('ops.team.projectsSummary', { count: assigned.length })}
+                      </span>
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                        <p className="text-xs text-zinc-500">
+                          {hasAllProjects ? t('ops.team.projectsAllAccess') : t('ops.team.projectsHint')}
+                        </p>
                         <ul className="space-y-2">
                           {assigned.map((a) => (
                             <li
@@ -371,11 +394,11 @@ export default async function TeamPage({
                         ) : (
                           <p className="text-xs text-zinc-400">{t('ops.team.projectsAllAssigned')}</p>
                         )}
-                      </div>
-                    );
-                  })()}
+                    </div>
+                  </details>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </section>
         </div>

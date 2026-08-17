@@ -8,7 +8,7 @@ import {
 } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
-import { can } from '@/lib/ops/permissions';
+import { can, type PermissionSubject } from '@/lib/ops/permissions';
 
 type StaffOption = { id: string; full_name: string; role: string };
 type SprintRow = {
@@ -43,14 +43,14 @@ function itemTone(status: string) {
 
 export default async function OpsProjectSprints({
   projectId,
-  staffRole,
+  permissions,
   currentUserId,
   allStaff,
   sprints,
   items,
 }: {
   projectId: string;
-  staffRole: string;
+  permissions: PermissionSubject;
   currentUserId: string;
   allStaff: StaffOption[];
   sprints: SprintRow[];
@@ -58,7 +58,7 @@ export default async function OpsProjectSprints({
 }) {
   const t = await getT();
   const { formatDate, SPRINT_ITEM_STATUS_LABELS, SPRINT_STATUS_LABELS } = labelsFor(t.locale);
-  const canPlan = can(staffRole, 'sprints_plan');
+  const canPlan = can(permissions, 'sprints_plan');
   const staffName = new Map(allStaff.map((s) => [s.id, s.full_name]));
 
   return (

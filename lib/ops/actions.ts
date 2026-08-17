@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireStaff, requireAdminStaff, requirePortalAccess, assertCapability, assertProjectAccessOrThrow } from '@/lib/ops/auth';
-import { can } from '@/lib/ops/permissions';
+import { can, canAny, capabilitiesFromRole, parseCapabilities } from '@/lib/ops/permissions';
 import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
@@ -28,6 +28,7 @@ import { scanUploadedBytes } from '@/lib/ops/malware-scan';
 import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
 import { parseLineItemsJson, parsePhasesJson } from '@/lib/ops/quote-document';
+import { isInboxLane } from '@/lib/ops/inbox-lane';
 import { ensureQuoteAccessToken, publicQuoteUrl } from '@/lib/ops/quote-tokens';
 import { invitePortalUserCore } from '@/lib/ops/portal-invite';
 import { findUserIdByEmail } from '@/lib/ops/auth-users';
@@ -141,6 +142,10 @@ export async function convertInboxToLead(messageId: string) {
     .eq('id', messageId)
     .single();
   if (msgError || !message) throw new Error('Mensaje no encontrado');
+
+  if (message.lane && message.lane !== 'real') {
+    throw new Error('Solo se convierte a lead un contacto real');
+  }
 
   if (message.lead_id) {
     return { leadId: message.lead_id };
@@ -314,6 +319,25 @@ export async function updateInboxStatus(messageId: string, status: string) {
   const { supabase } = await assertCapability('inbox');
   const { error } = await supabase.from('inbox_messages').update({ status }).eq('id', messageId);
   if (error) throw new Error(error.message);
+  revalidatePath('/inbox');
+  revalidatePath('/dashboard');
+}
+
+export async function updateInboxLane(messageId: string, lane: string) {
+  const { supabase, user } = await assertCapability('inbox');
+  if (!isInboxLane(lane)) throw new Error('Carril inválido');
+  const { error } = await supabase
+    .from('inbox_messages')
+    .update({ lane, lane_reason: 'manual' })
+    .eq('id', messageId);
+  if (error) throw new Error(error.message);
+  await logActivity({
+    entityType: 'inbox',
+    entityId: messageId,
+    action: 'lane_updated',
+    metadata: { lane },
+    actorId: user.id,
+  });
   revalidatePath('/inbox');
   revalidatePath('/dashboard');
 }
@@ -907,6 +931,7 @@ async function provisionStaffUser(input: {
   email: string;
   fullName: string;
   role: string;
+  capabilities?: string[];
 }): Promise<{ userId: string; isNew: boolean }> {
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
@@ -914,6 +939,9 @@ async function provisionStaffUser(input: {
   const role = input.role;
   if (!email) throw new Error('Email requerido');
   if (!['admin', 'pm', 'dev'].includes(role)) throw new Error('Rol inválido');
+  const capabilities = input.capabilities?.length
+    ? parseCapabilities(input.capabilities)
+    : capabilitiesFromRole(role);
 
   let userId = await findUserIdByEmail(email);
   let isNew = false;
@@ -937,6 +965,7 @@ async function provisionStaffUser(input: {
       id: userId,
       full_name: fullName || email.split('@')[0],
       role,
+      capabilities,
       active: true,
     },
     { onConflict: 'id' }
@@ -963,10 +992,13 @@ async function provisionStaffUser(input: {
 
 export async function inviteStaff(formData: FormData) {
   await requireAdminStaff();
+  const role = String(formData.get('role') || 'pm');
+  const capabilityValues = formData.getAll('capabilities').map(String);
   await provisionStaffUser({
     email: String(formData.get('email') || ''),
     fullName: String(formData.get('fullName') || ''),
-    role: String(formData.get('role') || 'pm'),
+    role,
+    capabilities: capabilityValues.length ? parseCapabilities(capabilityValues) : capabilitiesFromRole(role),
   });
   revalidatePath('/team');
   revalidatePath('/settings');
@@ -1078,10 +1110,28 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
   const fullName = String(formData.get('fullName') || '').trim();
   const role = String(formData.get('role') || 'pm');
   const active = formData.get('active') === 'on';
+  const capabilities = parseCapabilities(formData.getAll('capabilities'));
 
   if (!['admin', 'pm', 'dev'].includes(role)) throw new Error('Rol inválido');
   if (staffId === user.id && !active) {
     throw new Error('No puedes desactivar tu propia cuenta');
+  }
+  if (staffId === user.id && !capabilities.includes('team')) {
+    throw new Error('No puedes quitarte el permiso de gestionar el equipo');
+  }
+
+  const { data: others } = await admin
+    .from('staff_profiles')
+    .select('id, role, active, capabilities')
+    .eq('active', true)
+    .neq('id', staffId);
+  const otherHasTeam = (others ?? []).some((row) => {
+    if (Array.isArray(row.capabilities) && row.capabilities.includes('team')) return true;
+    return !row.capabilities?.length && row.role === 'admin';
+  });
+  const keepsTeam = active && capabilities.includes('team');
+  if (!keepsTeam && !otherHasTeam) {
+    throw new Error('Debe quedar al menos una persona con permiso para gestionar el equipo');
   }
 
   const { error } = await admin
@@ -1089,6 +1139,7 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
     .update({
       full_name: fullName || undefined,
       role,
+      capabilities,
       active,
     })
     .eq('id', staffId);
@@ -1305,7 +1356,7 @@ export async function updateArchitectureCanvas(projectId: string, deliverableId:
 export async function hydrateArchitectureFromPacks(projectId: string): Promise<number> {
   const access = await requireStaff();
   await assertProjectAccessOrThrow(access, projectId);
-  if (!can(access.staff.role, 'deliverables')) return 0;
+  if (!can(access.staff, 'deliverables')) return 0;
   const { supabase } = access;
 
   const { data: rows, error } = await supabase
@@ -2332,10 +2383,12 @@ export async function updatePersonnelOfferStatus(offerId: string, formData: Form
 }
 
 export async function assignProjectStaff(projectId: string, formData: FormData) {
-  const access = await assertCapability('sprints_plan');
-  await assertProjectAccessOrThrow(access, projectId);
-  if (!can(access.staff.role, 'projects_all') && !can(access.staff.role, 'sprints_plan')) {
+  const access = await requireStaff();
+  if (!canAny(access.staff, ['team', 'sprints_plan'])) {
     throw new Error('No tienes permiso');
+  }
+  if (!can(access.staff, 'projects_all') && !can(access.staff, 'team')) {
+    await assertProjectAccessOrThrow(access, projectId);
   }
 
   const staffId = String(formData.get('staffId') || '').trim();
@@ -2356,8 +2409,13 @@ export async function assignProjectStaff(projectId: string, formData: FormData) 
 }
 
 export async function removeProjectStaff(projectId: string, staffId: string) {
-  const access = await assertCapability('sprints_plan');
-  await assertProjectAccessOrThrow(access, projectId);
+  const access = await requireStaff();
+  if (!canAny(access.staff, ['team', 'sprints_plan'])) {
+    throw new Error('No tienes permiso');
+  }
+  if (!can(access.staff, 'projects_all') && !can(access.staff, 'team')) {
+    await assertProjectAccessOrThrow(access, projectId);
+  }
 
   const { error } = await access.supabase
     .from('project_staff')
@@ -2445,9 +2503,9 @@ export async function updateSprintItem(itemId: string, projectId: string, formDa
     .maybeSingle();
   if (!item) throw new Error('Ítem no encontrado');
 
-  const canPlan = can(access.staff.role, 'sprints_plan');
+  const canPlan = can(access.staff, 'sprints_plan');
   const isAssignee = item.assignee_id === access.user.id;
-  if (!canPlan && !(can(access.staff.role, 'sprints_update_own') && isAssignee)) {
+  if (!canPlan && !(can(access.staff, 'sprints_update_own') && isAssignee)) {
     throw new Error('No tienes permiso para actualizar este ítem');
   }
 
@@ -2540,7 +2598,7 @@ export async function createTimeEntry(projectId: string, formData: FormData) {
     throw new Error('Horas inválidas (1-24)');
   }
 
-  const staffId = can(access.staff.role, 'sprints_plan')
+  const staffId = can(access.staff, 'sprints_plan')
     ? String(formData.get('staffId') || '').trim() || access.user.id
     : access.user.id;
 
@@ -2566,7 +2624,7 @@ export async function deleteTimeEntry(entryId: string, projectId: string) {
   await assertProjectAccessOrThrow(access, projectId);
 
   let query = access.supabase.from('time_entries').delete().eq('id', entryId).eq('project_id', projectId);
-  if (!can(access.staff.role, 'sprints_plan')) {
+  if (!can(access.staff, 'sprints_plan')) {
     query = query.eq('staff_id', access.user.id);
   }
 

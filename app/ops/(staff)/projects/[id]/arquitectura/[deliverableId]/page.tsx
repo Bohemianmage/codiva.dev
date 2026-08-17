@@ -19,7 +19,7 @@ export default async function ArchitectureEditorPage({
   await assertProjectAccess(access, id);
   const { supabase, staff } = access;
 
-  if (!can(staff.role, 'deliverables')) {
+  if (!can(staff, 'deliverables')) {
     redirect(`/projects/${id}?tab=arquitectura`);
   }
 

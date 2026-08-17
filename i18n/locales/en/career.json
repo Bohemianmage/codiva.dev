@@ -156,6 +156,7 @@
     "applicationStatus": {
       "new": "New",
       "reviewed": "Reviewed",
+      "interview": "Interview",
       "hired": "Hired",
       "rejected": "Rejected"
     }

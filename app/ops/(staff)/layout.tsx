@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import { requireStaff } from '@/lib/ops/auth';
 import OpsStaffShell from '@/components/ops/OpsStaffShell';
 import { isOpsSidebarOpenCookie, OPS_SIDEBAR_OPEN_COOKIE } from '@/lib/ops/sidebar-pref';
-import type { StaffRole } from '@/lib/ops/permissions';
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const { staff } = await requireStaff();
@@ -12,7 +11,10 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <OpsStaffShell
       staffName={staff.full_name || 'Staff'}
-      staffRole={(staff.role as StaffRole) || 'dev'}
+      staffPermissions={{
+        role: staff.role,
+        capabilities: Array.isArray(staff.capabilities) ? staff.capabilities : null,
+      }}
       initialSidebarOpen={sidebarOpen}
     >
       {children}

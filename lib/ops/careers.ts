@@ -15,7 +15,7 @@ export type JobPostingStatus = (typeof JOB_POSTING_STATUSES)[number];
 export const JOB_EMPLOYMENT_TYPES = ['full_time', 'part_time', 'contract', 'internship'] as const;
 export type JobEmploymentType = (typeof JOB_EMPLOYMENT_TYPES)[number];
 
-export const JOB_APPLICATION_STATUSES = ['new', 'reviewed', 'hired', 'rejected'] as const;
+export const JOB_APPLICATION_STATUSES = ['new', 'reviewed', 'interview', 'hired', 'rejected'] as const;
 export type JobApplicationStatus = (typeof JOB_APPLICATION_STATUSES)[number];
 
 export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
@@ -72,6 +72,7 @@ export function careerOpsLabels(locale: Locale = DEFAULT_LOCALE) {
 export const JOB_APPLICATION_STATUS_LABELS: Record<JobApplicationStatus, string> = {
   new: 'Nueva',
   reviewed: 'Revisada',
+  interview: 'Entrevista',
   hired: 'Contratada',
   rejected: 'Descartada',
 };
@@ -200,6 +201,7 @@ export {
   disciplineFromCatalogKey,
   careerDisciplineLabel,
   careerDisciplineLabels,
+  applicationRoleLabel,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
 

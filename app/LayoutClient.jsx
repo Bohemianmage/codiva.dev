@@ -70,9 +70,11 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
         </a>
       ) : null}
       {children}
-      <Footer variant={variant} />
+      <div data-site-footer="">
+        <Footer variant={variant} />
+      </div>
 
-      {showQuote && <FloatingQuoteButton />}{/* ← Condicional */}
+      {showQuote && <FloatingQuoteButton />}
 
       <Toaster
         position="top-right"

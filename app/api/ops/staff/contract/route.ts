@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createOpsSignedUrl } from '@/lib/ops/storage';
 import { logActivity } from '@/lib/ops/activity';
+import { can } from '@/lib/ops/permissions';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
 
   const { data: staff } = await supabase
     .from('staff_profiles')
-    .select('id, role, active')
+    .select('id, role, active, capabilities')
     .eq('id', user.id)
     .eq('active', true)
     .maybeSingle();
@@ -41,8 +42,8 @@ export async function GET(request: Request) {
   }
 
   const isOwner = contract.staff_id === user.id;
-  const isAdmin = staff.role === 'admin';
-  if (!isOwner && !isAdmin) {
+  const canManageTeam = can(staff, 'team');
+  if (!isOwner && !canManageTeam) {
     return NextResponse.json({ error: 'Sin acceso' }, { status: 403 });
   }
 

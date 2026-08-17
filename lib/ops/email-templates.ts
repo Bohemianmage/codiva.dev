@@ -643,6 +643,86 @@ export function templateCareerHuntNudge({
   });
 }
 
+export function templateCareerCvNudge({
+  name,
+  applyHref,
+  locale = DEFAULT_LOCALE,
+}: {
+  name: string;
+  applyHref: string;
+  locale?: Locale;
+}): string {
+  return emailLayout({
+    preview: tSync(locale, 'email.careerCvNudge.preview'),
+    title: tSync(locale, 'email.careerCvNudge.title'),
+    locale,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.hello'))} ${escapeHtml(name)},</p>
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.careerCvNudge.body1'))}</p>
+      <p style="margin:0;">${escapeHtml(tSync(locale, 'email.careerCvNudge.body2'))}</p>
+    `,
+    cta: { label: tSync(locale, 'email.careerCvNudge.cta'), href: applyHref },
+    footerNote: tSync(locale, 'email.lead.footer'),
+  });
+}
+
+export function templateCareerApplicationRejected({
+  name,
+  jobTitle,
+  openingsHref,
+  locale = DEFAULT_LOCALE,
+}: {
+  name: string;
+  jobTitle: string;
+  openingsHref: string;
+  locale?: Locale;
+}): string {
+  return emailLayout({
+    preview: tSync(locale, 'email.careerRejected.preview', { jobTitle }),
+    title: tSync(locale, 'email.careerRejected.title'),
+    locale,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.hello'))} ${escapeHtml(name)},</p>
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.careerRejected.body1', { jobTitle }))}</p>
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.careerRejected.body2'))}</p>
+      <p style="margin:0 0 16px;">${escapeHtml(tSync(locale, 'email.careerRejected.body3'))}</p>
+      <p style="margin:0;">${escapeHtml(tSync(locale, 'email.careerRejected.signoff'))}<br/>
+        ${escapeHtml(tSync(locale, 'email.careerRejected.team'))}</p>
+    `,
+    cta: { label: tSync(locale, 'email.careerRejected.cta'), href: openingsHref },
+    footerNote: tSync(locale, 'email.lead.footer'),
+  });
+}
+
+export function templateCareerApplicationPhaseChanged({
+  name,
+  jobTitle,
+  kind,
+  locale = DEFAULT_LOCALE,
+}: {
+  name: string;
+  jobTitle: string;
+  kind: 'reviewed' | 'hired' | 'interview';
+  locale?: Locale;
+}): string {
+  const prefix =
+    kind === 'hired' ? 'email.careerHired' : kind === 'interview' ? 'email.careerInterview' : 'email.careerReviewed';
+  return emailLayout({
+    preview: tSync(locale, `${prefix}.preview`, { jobTitle }),
+    title: tSync(locale, `${prefix}.title`),
+    locale,
+    bodyHtml: `
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, 'email.hello'))} ${escapeHtml(name)},</p>
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, `${prefix}.body1`, { jobTitle }))}</p>
+      <p style="margin:0 0 12px;">${escapeHtml(tSync(locale, `${prefix}.body2`))}</p>
+      <p style="margin:0 0 16px;">${escapeHtml(tSync(locale, `${prefix}.body3`))}</p>
+      <p style="margin:0;">${escapeHtml(tSync(locale, `${prefix}.signoff`))}<br/>
+        ${escapeHtml(tSync(locale, `${prefix}.team`))}</p>
+    `,
+    footerNote: tSync(locale, 'email.lead.footer'),
+  });
+}
+
 /** Reemplaza placeholder de recovery link en plantilla Supabase o post-proceso */
 export function applyRecoveryLink(html: string, link: string): string {
   return html.replace(/\{\{RECOVERY_LINK\}\}/g, link);

@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import { requireAdminStaff, requireCareersReview } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { can } from '@/lib/ops/permissions';
-import { isTesterPipelineItem } from '@/lib/ops/career-disciplines';
+import { isTesterPipelineItem, applicationRoleLabel } from '@/lib/ops/career-disciplines';
 import {
   isCareerDiscipline,
   isJobApplicationStatus,
@@ -15,6 +16,7 @@ import {
   uniqueJobSlugCandidate,
   CAREER_DISCIPLINE_LABELS,
 } from '@/lib/ops/careers';
+import { notifyCandidateApplicationStatus } from '@/lib/careers/notify-application-status';
 import {
   DEFAULT_RESPONSIBILITIES,
   responsibilitiesForCareerDiscipline,
@@ -203,26 +205,31 @@ export async function deleteDraftJobPosting(postingId: string) {
 
 export async function updateJobApplicationStatus(applicationId: string, formData: FormData) {
   const { user, supabase, staff } = await requireCareersReview();
-  if (!can(staff.role, 'team')) {
-    const { data: application } = await supabase
-      .from('ops_job_applications')
-      .select('discipline, ops_job_postings(slug)')
-      .eq('id', applicationId)
-      .maybeSingle();
-    const posting = Array.isArray(application?.ops_job_postings)
-      ? application?.ops_job_postings[0]
-      : application?.ops_job_postings;
+  const status = String(formData.get('status') || '').trim();
+  if (!isJobApplicationStatus(status)) throw new Error('Estado inválido');
+
+  const { data: application } = await supabase
+    .from('ops_job_applications')
+    .select('id, email, full_name, status, discipline, ops_job_postings(title, slug)')
+    .eq('id', applicationId)
+    .maybeSingle();
+
+  if (!application) throw new Error('Postulación no encontrada');
+
+  const posting = Array.isArray(application.ops_job_postings)
+    ? application.ops_job_postings[0]
+    : application.ops_job_postings;
+
+  if (!can(staff, 'team')) {
     if (
       !isTesterPipelineItem({
         postingSlug: posting?.slug,
-        discipline: application?.discipline,
+        discipline: application.discipline,
       })
     ) {
       throw new Error('No tienes permiso para esta postulación');
     }
   }
-  const status = String(formData.get('status') || '').trim();
-  if (!isJobApplicationStatus(status)) throw new Error('Estado inválido');
 
   const { error } = await supabase
     .from('ops_job_applications')
@@ -231,11 +238,34 @@ export async function updateJobApplicationStatus(applicationId: string, formData
 
   if (error) throw new Error(error.message);
 
+  const jobTitle = applicationRoleLabel({
+    postingTitle: posting?.title,
+    discipline: application.discipline,
+  });
+  const notify =
+    formData.get('notify_candidate') === '1' &&
+    application.status !== status &&
+    Boolean(application.email) &&
+    Boolean(jobTitle);
+
+  if (notify) {
+    const email = application.email;
+    const name = application.full_name;
+    after(() =>
+      notifyCandidateApplicationStatus({
+        email,
+        name,
+        jobTitle,
+        status,
+      })
+    );
+  }
+
   await logActivity({
     entityType: 'job_application',
     entityId: applicationId,
     action: 'status_updated',
-    metadata: { status },
+    metadata: { status, notified: Boolean(notify) },
     actorId: user.id,
   });
 

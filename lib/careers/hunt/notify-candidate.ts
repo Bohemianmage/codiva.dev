@@ -1,5 +1,10 @@
 import { sendClientEmail } from '@/lib/ops/email';
-import { templateCareerHuntPartTwo, templateCareerApplyReady, templateCareerHuntNudge } from '@/lib/ops/email-templates';
+import {
+  templateCareerHuntPartTwo,
+  templateCareerApplyReady,
+  templateCareerHuntNudge,
+  templateCareerCvNudge,
+} from '@/lib/ops/email-templates';
 import {
   careerDisciplineLabel,
   publicCareerHuntUrl,
@@ -17,6 +22,12 @@ async function postingSlug(jobPostingId: string): Promise<string | null> {
     .eq('id', jobPostingId)
     .maybeSingle();
   return data?.slug ? String(data.slug) : null;
+}
+
+function applyHref(slug: string, discipline: string | null): string {
+  return discipline
+    ? `${publicCareerUrl(slug)}?discipline=${encodeURIComponent(discipline)}`
+    : publicCareerUrl(slug);
 }
 
 export async function notifyCandidateHuntPartTwo(input: {
@@ -57,9 +68,7 @@ export async function notifyCandidateApplyReady(input: {
     subject: 'Ya puedes postular a Codiva.dev',
     html: templateCareerApplyReady({
       name: input.name,
-      applyHref: discipline
-        ? `${publicCareerUrl(slug)}?discipline=${encodeURIComponent(discipline)}`
-        : publicCareerUrl(slug),
+      applyHref: applyHref(slug, discipline),
     }),
   }).catch(() => {});
 }
@@ -81,6 +90,26 @@ export async function notifyCandidateHuntNudge(input: {
       name: input.name,
       pruebaHref: publicCareerPruebaUrl(slug, discipline),
       huntHref: publicCareerHuntUrl(discipline),
+    }),
+  }).catch(() => {});
+}
+
+export async function notifyCandidateCvNudge(input: {
+  email: string;
+  name: string;
+  catalogKey: string;
+  jobPostingId: string;
+}): Promise<void> {
+  if (!huntRequiredForCatalog(input.catalogKey)) return;
+  const discipline = disciplineFromCatalogKey(input.catalogKey);
+  const slug = await postingSlug(input.jobPostingId);
+  if (!slug) return;
+  await sendClientEmail({
+    to: input.email,
+    subject: 'Falta tu CV para postular',
+    html: templateCareerCvNudge({
+      name: input.name,
+      applyHref: applyHref(slug, discipline),
     }),
   }).catch(() => {});
 }

@@ -5,19 +5,19 @@ import { Menu, PanelLeft, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import OpsSidebar from '@/components/ops/OpsSidebar';
 import { writeOpsSidebarOpenCookie } from '@/lib/ops/sidebar-pref';
-import type { StaffRole } from '@/lib/ops/permissions';
+import type { PermissionSubject } from '@/lib/ops/permissions';
 
 const TOGGLE_BTN_CLASS =
   'pointer-events-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-800 shadow-sm transition hover:bg-zinc-50';
 
 export default function OpsStaffShell({
   staffName,
-  staffRole,
+  staffPermissions,
   initialSidebarOpen,
   children,
 }: {
   staffName: string;
-  staffRole?: StaffRole | string;
+  staffPermissions?: PermissionSubject;
   initialSidebarOpen: boolean;
   children: React.ReactNode;
 }) {
@@ -93,7 +93,7 @@ export default function OpsStaffShell({
 
         <OpsSidebar
           staffName={staffName}
-          staffRole={staffRole}
+          staffPermissions={staffPermissions}
           onHide={toggleDesktop}
           onNavigate={closeMobile}
         />

@@ -6,6 +6,7 @@ import {
   JOB_EMPLOYMENT_TYPES,
   careerOpsLabels,
   careerDisciplineLabels,
+  applicationRoleLabel,
   isCareerDiscipline,
   publicCareerListUrl,
   publicCareerUrl,
@@ -107,6 +108,7 @@ function postingTone(status: string) {
 function applicationTone(status: string) {
   if (status === 'hired') return 'success' as const;
   if (status === 'rejected') return 'danger' as const;
+  if (status === 'interview') return 'info' as const;
   if (status === 'reviewed') return 'info' as const;
   return 'warning' as const;
 }
@@ -129,17 +131,6 @@ function attemptStatusLabel(
   if (status === 'expired') return t('ops.careers.attemptExpired');
   if (status === 'started') return t('ops.careers.attemptStarted');
   return status;
-}
-
-function postingTitle(
-  row: OpsJobApplicationRow,
-  disciplineLabels: Record<string, string>
-): string {
-  const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
-  const discipline =
-    row.discipline && isCareerDiscipline(row.discipline) ? disciplineLabels[row.discipline] : null;
-  if (discipline && posting?.title) return `${posting.title} · ${discipline}`;
-  return discipline || posting?.title || EMPTY_LABEL;
 }
 
 function emailKey(value: string) {
@@ -648,17 +639,26 @@ export default async function OpsCareersPanel({
           <ul className="space-y-3">
             {applicationsRanked.map((row) => {
               const hunt = huntForCandidate(huntReports, row.email, row.discipline);
+              const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
+              const role = applicationRoleLabel({
+                postingTitle: posting?.title,
+                discipline: row.discipline,
+                locale: t.locale,
+              });
               return (
               <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium">{row.full_name}</p>
+                    {role ? (
+                      <p className="text-sm font-medium text-codiva-primary">{role}</p>
+                    ) : null}
                     <p className="text-sm text-zinc-500">
                       {row.email}
                       {row.phone ? ` · ${row.phone}` : ''}
                     </p>
                     <p className="mt-1 text-xs text-zinc-400">
-                      {postingTitle(row, DISCIPLINE_LABELS)} · {formatDate(row.created_at)}
+                      {formatDate(row.created_at)}
                       {row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)?.score_pct != null
                         ? ` · ${t('ops.careers.testScore', { pct: attemptById.get(row.assessment_attempt_id)?.score_pct })}`
                         : ''}
@@ -733,7 +733,7 @@ export default async function OpsCareersPanel({
                       'use server';
                       await updateJobApplicationStatus(row.id, fd);
                     }}
-                    className="flex items-center gap-2"
+                    className="flex flex-wrap items-center gap-2"
                   >
                     <select
                       name="status"
@@ -746,6 +746,16 @@ export default async function OpsCareersPanel({
                         </option>
                       ))}
                     </select>
+                    <label className="flex items-center gap-1.5 text-sm text-zinc-600">
+                      <input
+                        type="checkbox"
+                        name="notify_candidate"
+                        value="1"
+                        defaultChecked
+                        className="rounded border-zinc-300"
+                      />
+                      {t('ops.careers.notifyCandidate')}
+                    </label>
                     <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
                       {t('ops.team.save')}
                     </button>

@@ -23,7 +23,7 @@ export default async function PortalUserDetailPage({
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
   const admin = createAdminClient();
-  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff));
 
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);
   if (userError || !authUser.user) notFound();

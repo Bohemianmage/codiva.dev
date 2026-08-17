@@ -10,7 +10,7 @@ export default async function TicketsPage() {
   const { supabase, user, staff } = await requireCapability('tickets');
   const t = await getT();
   const { EMPTY_LABEL, TICKET_STATUS_LABELS, TICKET_PRIORITY_LABELS, formatDate } = labelsFor(t.locale);
-  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff.role));
+  const visibleIds = projectIdInFilter(await listVisibleProjectIds(supabase, user.id, staff));
   let ticketsQuery = supabase
     .from('tickets')
     .select('id, title, priority, status, reporter_name, reporter_email, assigned_to, created_at, projects(name)')

@@ -1,11 +1,12 @@
 import type { createClient } from '@/lib/supabase/server';
-import { can, canAny } from '@/lib/ops/permissions';
-import { careerDisciplineLabel, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
+import { can, canAny, type PermissionSubject } from '@/lib/ops/permissions';
+import { applicationRoleLabel, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import { asProject } from '@/lib/ops/tickets';
+import { isInboxLane, type InboxLane } from '@/lib/ops/inbox-lane';
 
 type OpsClient = Awaited<ReturnType<typeof createClient>>;
 
-export const INBOUND_FILTERS = ['all', 'contact', 'lead', 'ticket', 'career'] as const;
+export const INBOUND_FILTERS = ['all', 'contact', 'test', 'other', 'lead', 'ticket', 'career'] as const;
 export type InboundFilter = (typeof INBOUND_FILTERS)[number];
 
 export const INBOUND_KINDS = ['contact', 'lead', 'ticket', 'application', 'hunt'] as const;
@@ -17,6 +18,8 @@ export type InboundContact = {
   email: string;
   message: string;
   status: string;
+  lane: InboxLane;
+  lane_reason: string | null;
   lead_id: string | null;
   created_at: string;
 };
@@ -52,41 +55,50 @@ export function parseInboundFilter(value: string | string[] | undefined): Inboun
   return 'all';
 }
 
-export function inboundFiltersFor(role: string): InboundFilter[] {
+export function inboundFiltersFor(permissions: PermissionSubject): InboundFilter[] {
   const filters: InboundFilter[] = ['all'];
-  if (can(role, 'inbox')) filters.push('contact');
-  if (can(role, 'leads')) filters.push('lead');
-  if (can(role, 'tickets')) filters.push('ticket');
-  if (canAny(role, ['team', 'careers_review'])) filters.push('career');
+  if (can(permissions, 'inbox')) filters.push('contact', 'test', 'other');
+  if (can(permissions, 'leads')) filters.push('lead');
+  if (can(permissions, 'tickets')) filters.push('ticket');
+  if (canAny(permissions, ['team', 'careers_review'])) filters.push('career');
   return filters;
 }
 
 function wantsKind(filter: InboundFilter, kind: InboundKind): boolean {
   if (filter === 'all') return true;
   if (filter === 'career') return kind === 'application' || kind === 'hunt';
+  if (filter === 'test' || filter === 'other') return kind === 'contact';
   return filter === kind;
+}
+
+function contactLaneFor(filter: InboundFilter): InboxLane | 'pending' | null {
+  if (filter === 'contact') return 'real';
+  if (filter === 'test' || filter === 'other') return filter;
+  if (filter === 'all') return 'pending';
+  return null;
 }
 
 export async function loadInboundItems({
   supabase,
-  role,
+  permissions,
   filter = 'all',
   perKind = 50,
   maxItems,
   visibleProjectIds = null,
 }: {
   supabase: OpsClient;
-  role: string;
+  permissions: PermissionSubject;
   filter?: InboundFilter;
   perKind?: number;
   maxItems?: number;
   visibleProjectIds?: string[] | null;
 }): Promise<InboundItem[]> {
-  const showContact = can(role, 'inbox') && wantsKind(filter, 'contact');
-  const showLeads = can(role, 'leads') && wantsKind(filter, 'lead');
-  const showTickets = can(role, 'tickets') && wantsKind(filter, 'ticket');
-  const showCareer = canAny(role, ['team', 'careers_review']) && (filter === 'all' || filter === 'career');
-  const careerTestersOnly = showCareer && !can(role, 'team');
+  const showContact = can(permissions, 'inbox') && wantsKind(filter, 'contact');
+  const contactLane = contactLaneFor(filter);
+  const showLeads = can(permissions, 'leads') && wantsKind(filter, 'lead');
+  const showTickets = can(permissions, 'tickets') && wantsKind(filter, 'ticket');
+  const showCareer = canAny(permissions, ['team', 'careers_review']) && (filter === 'all' || filter === 'career');
+  const careerTestersOnly = showCareer && !can(permissions, 'team');
   const ticketProjectIds =
     visibleProjectIds === null
       ? null
@@ -97,12 +109,17 @@ export async function loadInboundItems({
   const empty = { data: [] as never[] };
   const [contacts, leads, tickets, applications, hunts] = await Promise.all([
     showContact
-      ? supabase
-          .from('inbox_messages')
-          .select('id, name, email, message, status, lead_id, created_at')
-          .neq('status', 'archived')
-          .order('created_at', { ascending: false })
-          .limit(perKind)
+      ? (() => {
+          let query = supabase
+            .from('inbox_messages')
+            .select('id, name, email, message, status, lane, lane_reason, lead_id, created_at')
+            .neq('status', 'archived')
+            .order('created_at', { ascending: false })
+            .limit(perKind);
+          if (contactLane === 'pending') query = query.neq('lane', 'test');
+          else if (contactLane) query = query.eq('lane', contactLane);
+          return query;
+        })()
       : Promise.resolve(empty),
     showLeads
       ? supabase
@@ -145,6 +162,7 @@ export async function loadInboundItems({
   const items: InboundItem[] = [];
 
   for (const row of contacts.data ?? []) {
+    const lane = isInboxLane(row.lane) ? row.lane : 'real';
     items.push({
       key: `contact:${row.id}`,
       kind: 'contact',
@@ -152,9 +170,9 @@ export async function loadInboundItems({
       title: row.name,
       subtitle: row.email,
       snippet: clip(row.message),
-      href: '/inbox',
+      href: lane === 'real' ? '/inbox' : `/inbox?kind=${lane}`,
       status: row.status,
-      contact: row,
+      contact: { ...row, lane },
     });
   }
 
@@ -192,14 +210,17 @@ export async function loadInboundItems({
     ) {
       continue;
     }
-    const discipline = careerDisciplineLabel(row.discipline);
+    const role = applicationRoleLabel({
+      postingTitle: posting?.title,
+      discipline: row.discipline,
+    });
     items.push({
       key: `application:${row.id}`,
       kind: 'application',
       createdAt: row.created_at,
       title: row.full_name,
-      subtitle: row.email,
-      snippet: clip([posting?.title, discipline].filter(Boolean).join(' · ')),
+      subtitle: role || row.email,
+      snippet: role ? clip(row.email) : '',
       href: '/team?tab=bolsa',
     });
   }
