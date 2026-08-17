@@ -41,9 +41,10 @@ function tabClass(active: boolean) {
 export default async function TeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; signal?: string; origin?: string }>;
+  searchParams: Promise<{ tab?: string; signal?: string; origin?: string; stage?: string; app?: string }>;
 }) {
-  const { tab: tabParam, signal: signalParam, origin: originParam } = await searchParams;
+  const { tab: tabParam, signal: signalParam, origin: originParam, stage: stageParam, app: appParam } =
+    await searchParams;
   const { supabase, staff, user } = await requireStaff();
   if (!canAny(staff, ['team', 'careers_review'])) {
     redirect('/dashboard?error=forbidden');
@@ -410,6 +411,8 @@ export default async function TeamPage({
           huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
           signal={signalParam || ''}
           origin={originParam || ''}
+          stage={stageParam || ''}
+          app={appParam || ''}
           canManage={canManageTeam}
         />
       ) : (
