@@ -55,6 +55,7 @@ export default function OpsStaffCapabilityFields({
   const extraSet = useMemo(() => new Set(extra), [extra]);
   const visibleTotal = ALL_CAPABILITIES.length - 1;
   const visibleCount = Math.max(0, selectedList.filter((cap) => cap !== 'settings_profile').length);
+  const [open, setOpen] = useState(defaultOpen);
 
   function isLocked(cap: Capability) {
     return cap === 'settings_profile' || (cap === 'team' && lockTeam && selected.has('team'));
@@ -117,7 +118,8 @@ export default function OpsStaffCapabilityFields({
 
       <details
         className="group rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white"
-        defaultOpen={defaultOpen}
+        open={open}
+        onToggle={(e) => setOpen(e.currentTarget.open)}
       >
         <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
           <div className="min-w-0 flex-1">
