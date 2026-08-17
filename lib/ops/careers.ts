@@ -22,6 +22,16 @@ export function isDiscardedApplicationStatus(status: string) {
   return status === 'rejected';
 }
 
+/** Outside the active bolsa queue (discarded board or already hired). */
+export function isClosedApplicationStatus(status: string) {
+  return status === 'rejected' || status === 'hired';
+}
+
+/** Offer already in hire flow: hide matching attempts from En prueba / Listos. */
+export function isSettledPersonnelOfferStatus(status: string) {
+  return status === 'sent' || status === 'accepted';
+}
+
 export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
   draft: 'Borrador',
   published: 'Publicada',

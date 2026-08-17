@@ -10,8 +10,10 @@ import {
   careerDisciplineLabels,
   applicationRoleLabel,
   isCareerDiscipline,
+  isClosedApplicationStatus,
   isDiscardedApplicationStatus,
   isJobApplicationStatus,
+  isSettledPersonnelOfferStatus,
   publicCareerListUrl,
   publicCareerUrl,
   type JobApplicationStatus,
@@ -102,6 +104,12 @@ export type OpsJobAttemptRow = {
   attempt_number: number | null;
   ip_hash?: string | null;
   user_agent?: string | null;
+};
+
+export type OpsPersonnelOfferLink = {
+  email: string | null;
+  career_email?: string | null;
+  status: string;
 };
 
 function postingHint(status: string, t: Translator) {
@@ -620,6 +628,7 @@ export default async function OpsCareersPanel({
   applications,
   attempts = [],
   huntReports = [],
+  offers = [],
   signal = '',
   origin = '',
   stage = '',
@@ -630,6 +639,7 @@ export default async function OpsCareersPanel({
   applications: OpsJobApplicationRow[];
   attempts?: OpsJobAttemptRow[];
   huntReports?: OpsHuntReportRow[];
+  offers?: OpsPersonnelOfferLink[];
   signal?: string;
   origin?: string;
   stage?: string;
@@ -708,7 +718,7 @@ export default async function OpsCareersPanel({
       if (diff) return diff;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  const activeApplications = applications.filter((row) => !isDiscardedApplicationStatus(row.status));
+  const activeApplications = applications.filter((row) => !isClosedApplicationStatus(row.status));
   const applicationsRanked = rankApplications(activeApplications).filter((row) => {
     if (appFilter && appFilter !== 'rejected' && row.status !== appFilter) return false;
     return matchesApplicationSignal(row);
@@ -718,6 +728,13 @@ export default async function OpsCareersPanel({
     applications.filter((row) => isDiscardedApplicationStatus(row.status) && matchesApplicationSignal(row))
   );
   const appliedEmails = new Set(applications.map((row) => emailKey(row.email)));
+  const settledOfferEmails = new Set<string>();
+  for (const row of offers) {
+    if (!isSettledPersonnelOfferStatus(row.status)) continue;
+    if (row.career_email) settledOfferEmails.add(emailKey(row.career_email));
+    if (row.email) settledOfferEmails.add(emailKey(row.email));
+  }
+  const leftActiveQueueEmails = new Set([...appliedEmails, ...settledOfferEmails]);
   const claimedFindingEmails = new Set([
     ...appliedEmails,
     ...attempts.map((row) => emailKey(row.email)),
@@ -731,7 +748,7 @@ export default async function OpsCareersPanel({
         row.email,
         disciplineFromCatalogKey(row.catalog_key)
       );
-      if (!candidateReadyForCv(row, hunt, appliedEmails)) return false;
+      if (!candidateReadyForCv(row, hunt, leftActiveQueueEmails)) return false;
       if (signalFilter && hunt.score.consideration !== signalFilter) return false;
       return true;
     })
@@ -745,7 +762,7 @@ export default async function OpsCareersPanel({
   const readyEmails = new Set(readyForCv.map((row) => emailKey(row.email)));
   const attemptsActive = attemptsRanked.filter((row) => {
     const key = emailKey(row.email);
-    return !appliedEmails.has(key) && !readyEmails.has(key);
+    return !leftActiveQueueEmails.has(key) && !readyEmails.has(key);
   });
   const effectiveStage =
     stageFilter === 'discarded' || appFilter === 'rejected'

@@ -5,6 +5,7 @@ import OpsCareersPanel, {
   type OpsJobApplicationRow,
   type OpsJobAttemptRow,
   type OpsJobPostingRow,
+  type OpsPersonnelOfferLink,
 } from '@/components/ops/OpsCareersPanel';
 import { requireStaff } from '@/lib/ops/auth';
 import {
@@ -87,7 +88,10 @@ export default async function TeamPage({
             'id, full_name, email, career_email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at, staff_id'
           )
           .order('created_at', { ascending: false })
-      : Promise.resolve(empty),
+      : supabase
+          .from('ops_personnel_offers')
+          .select('email, career_email, status')
+          .order('created_at', { ascending: false }),
     supabase
       .from('ops_job_postings')
       .select('id, slug, title, location, employment_type, status, updated_at')
@@ -421,6 +425,7 @@ export default async function TeamPage({
           applications={(visibleApplications ?? []) as OpsJobApplicationRow[]}
           attempts={(visibleAttempts ?? []) as OpsJobAttemptRow[]}
           huntReports={(huntReports ?? []) as OpsHuntReportRow[]}
+          offers={(offers ?? []) as OpsPersonnelOfferLink[]}
           signal={signalParam || ''}
           origin={originParam || ''}
           stage={stageParam || ''}
