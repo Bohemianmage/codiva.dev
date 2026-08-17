@@ -2252,6 +2252,7 @@ export async function createPersonnelOffer(formData: FormData) {
 
   const fullName = String(formData.get('fullName') || '').trim();
   const email = String(formData.get('email') || '').trim().toLowerCase() || null;
+  const careerEmail = String(formData.get('careerEmail') || '').trim().toLowerCase() || null;
   const positionTitle = String(formData.get('positionTitle') || '').trim();
   const opsRole = String(formData.get('opsRole') || 'pm');
   const monthlyCompensation = Number(formData.get('monthlyCompensation'));
@@ -2283,6 +2284,7 @@ export async function createPersonnelOffer(formData: FormData) {
     .insert({
       full_name: fullName,
       email,
+      career_email: careerEmail,
       position_title: positionTitle,
       ops_role: opsRole,
       monthly_compensation: monthlyCompensation,
@@ -2312,6 +2314,7 @@ export async function updatePersonnelOffer(offerId: string, formData: FormData) 
 
   const fullName = String(formData.get('fullName') || '').trim();
   const email = String(formData.get('email') || '').trim().toLowerCase() || null;
+  const careerEmail = String(formData.get('careerEmail') || '').trim().toLowerCase() || null;
   const positionTitle = String(formData.get('positionTitle') || '').trim();
   const opsRole = String(formData.get('opsRole') || 'pm');
   const monthlyCompensation = Number(formData.get('monthlyCompensation'));
@@ -2343,6 +2346,7 @@ export async function updatePersonnelOffer(offerId: string, formData: FormData) 
     .update({
       full_name: fullName,
       email,
+      career_email: careerEmail,
       position_title: positionTitle,
       ops_role: opsRole,
       monthly_compensation: monthlyCompensation,

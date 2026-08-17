@@ -18,6 +18,10 @@ export type JobEmploymentType = (typeof JOB_EMPLOYMENT_TYPES)[number];
 export const JOB_APPLICATION_STATUSES = ['new', 'reviewed', 'interview', 'hired', 'rejected'] as const;
 export type JobApplicationStatus = (typeof JOB_APPLICATION_STATUSES)[number];
 
+export function isDiscardedApplicationStatus(status: string) {
+  return status === 'rejected';
+}
+
 export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
   draft: 'Borrador',
   published: 'Publicada',

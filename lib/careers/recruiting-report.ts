@@ -18,6 +18,9 @@ import {
   disciplineFromCatalogKey,
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
+import {
+  jobApplicationStatusLabel,
+} from '@/lib/ops/careers';
 
 const BRAND = BRAND_EMAIL;
 const FONT_BODY = `'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
@@ -33,6 +36,32 @@ export type RecruitingFinding = {
   evidenceCount: number;
   createdAt: string;
 };
+
+function toRecruitingFinding(
+  row: {
+    title: string;
+    page_url: string;
+    description: string | null;
+    expected: string | null;
+    matched_seed_id: string | null;
+    evidence_paths: unknown;
+    created_at: string;
+  },
+  discipline: CareerDiscipline | null
+): RecruitingFinding {
+  const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
+  const counts = discipline ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline) : Boolean(seed);
+  return {
+    title: row.title,
+    pageUrl: row.page_url,
+    description: String(row.description || '').slice(0, 1400),
+    expected: row.expected,
+    counts,
+    difficultyLabel: counts && seed ? huntDifficultyLabel(seed.difficulty, 'es') : null,
+    evidenceCount: Array.isArray(row.evidence_paths) ? row.evidence_paths.length : 0,
+    createdAt: row.created_at,
+  };
+}
 
 export type RecruitingDossier = {
   attemptId: string;
@@ -58,6 +87,21 @@ export type RecruitingDossier = {
   competencies: { name: string; ok: boolean }[];
   findings: RecruitingFinding[];
   trail: HuntTrailQuality;
+};
+
+export type RecruitingDiscardedApplication = {
+  applicationId: string;
+  fullName: string;
+  email: string;
+  vacancy: string;
+  craft: string | null;
+  statusLabel: string;
+  appliedAt: string;
+  passed: boolean | null;
+  scorePct: number | null;
+  considerationLabel: string;
+  craftHits: number;
+  findingsTotal: number;
 };
 
 export type RecruitingPipelineRow = {
@@ -131,12 +175,12 @@ export async function loadRecruitingDossier(attemptId: string): Promise<Recruiti
     admin.from('ops_job_applications').select('id').eq('assessment_attempt_id', attempt.id).maybeSingle(),
     admin
       .from('ops_hunt_reports')
-      .select('id, page_url, title, description, expected, matched_seed_id, evidence_paths, created_at')
+      .select('id, page_url, title, description, expected, matched_seed_id, evidence_paths, created_at, review_status')
       .eq('assessment_attempt_id', attempt.id)
       .order('created_at', { ascending: false }),
     admin
       .from('ops_hunt_reports')
-      .select('id, page_url, title, description, expected, matched_seed_id, evidence_paths, created_at')
+      .select('id, page_url, title, description, expected, matched_seed_id, evidence_paths, created_at, review_status')
       .ilike('email', attempt.email)
       .order('created_at', { ascending: false })
       .limit(40),
@@ -162,20 +206,7 @@ export async function loadRecruitingDossier(attemptId: string): Promise<Recruiti
     : { byQuestion: {} as Record<string, boolean> };
   const review = catalog ? reviewRowsForAttempt(catalog, questionIds, answers, scored.byQuestion) : [];
 
-  const findings: RecruitingFinding[] = huntReports.map((row) => {
-    const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
-    const counts = discipline ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline) : Boolean(seed);
-    return {
-      title: row.title,
-      pageUrl: row.page_url,
-      description: String(row.description || '').slice(0, 1400),
-      expected: row.expected,
-      counts,
-      difficultyLabel: counts && seed ? huntDifficultyLabel(seed.difficulty, 'es') : null,
-      evidenceCount: Array.isArray(row.evidence_paths) ? row.evidence_paths.length : 0,
-      createdAt: row.created_at,
-    };
-  });
+  const findings = huntReports.map((row) => toRecruitingFinding(row, discipline));
 
   const trail = summarizeHuntTrail({
     passedAt: attempt.completed_at,
@@ -214,6 +245,7 @@ export async function loadRecruitingDossier(attemptId: string): Promise<Recruiti
 export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
   vacancy: string;
   rows: RecruitingPipelineRow[];
+  discardedApplications: RecruitingDiscardedApplication[];
 }> {
   const admin = createAdminClient();
   let attemptQuery = admin
@@ -224,13 +256,49 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
     .order('created_at', { ascending: false })
     .limit(80);
   if (jobPostingId) attemptQuery = attemptQuery.eq('job_posting_id', jobPostingId);
-  const { data: attempts } = await attemptQuery;
+  let rejectedQuery = admin
+    .from('ops_job_applications')
+    .select(
+      'id, full_name, email, discipline, status, created_at, assessment_attempt_id, job_posting_id, ops_job_postings(title)'
+    )
+    .eq('status', 'rejected')
+    .order('created_at', { ascending: false })
+    .limit(80);
+  if (jobPostingId) rejectedQuery = rejectedQuery.eq('job_posting_id', jobPostingId);
 
-  const postingIds = [...new Set((attempts ?? []).map((row) => row.job_posting_id))];
-  const emails = [...new Set((attempts ?? []).map((row) => row.email.toLowerCase()))];
+  const [{ data: attempts }, { data: rejectedApplicationsRaw }] = await Promise.all([
+    attemptQuery,
+    rejectedQuery,
+  ]);
+
+  const postingIds = [
+    ...new Set([
+      ...(attempts ?? []).map((row) => row.job_posting_id),
+      ...(rejectedApplicationsRaw ?? []).map((row) => row.job_posting_id),
+    ]),
+  ];
+  const emails = [
+    ...new Set([
+      ...(attempts ?? []).map((row) => row.email.toLowerCase()),
+      ...(rejectedApplicationsRaw ?? []).map((row) => row.email.toLowerCase()),
+    ]),
+  ];
   const attemptIds = (attempts ?? []).map((row) => row.id);
+  const linkedAttemptIds = [
+    ...new Set(
+      (rejectedApplicationsRaw ?? [])
+        .map((row) => row.assessment_attempt_id)
+        .filter((id): id is string => Boolean(id) && !attemptIds.includes(id))
+    ),
+  ];
 
-  const [{ data: postings }, { data: applications }, { data: huntReports }, { data: huntEvents }] = await Promise.all([
+  const [
+    { data: postings },
+    { data: applications },
+    { data: huntReports },
+    { data: huntEvents },
+    { data: linkedAttempts },
+  ] = await Promise.all([
     postingIds.length
       ? admin.from('ops_job_postings').select('id, title').in('id', postingIds)
       : Promise.resolve({ data: [] as { id: string; title: string }[] }),
@@ -240,9 +308,17 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
     emails.length
       ? admin
           .from('ops_hunt_reports')
-          .select('email, matched_seed_id, page_url, created_at')
+          .select('email, matched_seed_id, page_url, created_at, review_status')
           .limit(400)
-      : Promise.resolve({ data: [] as { email: string; matched_seed_id: string | null; page_url: string; created_at: string }[] }),
+      : Promise.resolve({
+          data: [] as {
+            email: string;
+            matched_seed_id: string | null;
+            page_url: string;
+            created_at: string;
+            review_status: string | null;
+          }[],
+        }),
     attemptIds.length
       ? admin
           .from('ops_hunt_events')
@@ -259,7 +335,35 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
             created_at: string;
           }[],
         }),
+    linkedAttemptIds.length
+      ? admin
+          .from('ops_job_assessment_attempts')
+          .select('id, email, passed, score_pct, catalog_key, started_at')
+          .in('id', linkedAttemptIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            email: string;
+            passed: boolean | null;
+            score_pct: number | null;
+            catalog_key: string | null;
+            started_at: string;
+          }[],
+        }),
   ]);
+
+  const attemptById = new Map(
+    [...(attempts ?? []), ...(linkedAttempts ?? [])].map((row) => [row.id, row] as const)
+  );
+  type AttemptRow = NonNullable<typeof attempts>[number];
+  const attemptByEmail = new Map<string, AttemptRow>();
+  for (const row of [...(attempts ?? []), ...(linkedAttempts ?? [])] as AttemptRow[]) {
+    const key = row.email.toLowerCase();
+    const current = attemptByEmail.get(key);
+    if (!current || new Date(row.started_at) > new Date(current.started_at)) {
+      attemptByEmail.set(key, row);
+    }
+  }
 
   const postingTitle = new Map((postings ?? []).map((row) => [row.id, row.title]));
   const applied = new Set((applications ?? []).map((row) => row.assessment_attempt_id));
@@ -298,6 +402,34 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
     };
   });
 
+  const discardedApplications: RecruitingDiscardedApplication[] = (rejectedApplicationsRaw ?? []).map((row) => {
+    const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
+    const discipline =
+      row.discipline && row.discipline in CAREER_DISCIPLINE_LABELS
+        ? (row.discipline as CareerDiscipline)
+        : null;
+    const attempt =
+      (row.assessment_attempt_id ? attemptById.get(row.assessment_attempt_id) : null) ||
+      attemptByEmail.get(row.email.toLowerCase()) ||
+      null;
+    const reports = (huntReports ?? []).filter((item) => item.email.toLowerCase() === row.email.toLowerCase());
+    const score = scoreHuntReports(reports, discipline);
+    return {
+      applicationId: row.id,
+      fullName: row.full_name,
+      email: row.email,
+      vacancy: posting?.title || postingTitle.get(row.job_posting_id) || 'Vacante',
+      craft: discipline ? CAREER_DISCIPLINE_LABELS[discipline] : null,
+      statusLabel: jobApplicationStatusLabel(row.status, 'es'),
+      appliedAt: row.created_at,
+      passed: attempt?.passed ?? null,
+      scorePct: attempt?.score_pct ?? null,
+      considerationLabel: huntConsiderationLabel(score.consideration, 'es'),
+      craftHits: score.craftHits,
+      findingsTotal: reports.length,
+    };
+  });
+
   const vacancy =
     jobPostingId && rows[0]?.vacancy
       ? rows[0].vacancy
@@ -305,7 +437,7 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<{
         ? postingTitle.get(postingIds[0]!) || 'Bolsa Codiva.dev'
         : 'Bolsa Codiva.dev';
 
-  return { vacancy, rows };
+  return { vacancy, rows, discardedApplications };
 }
 
 function trailCopy(trail: HuntTrailQuality): string {
@@ -330,6 +462,24 @@ function resultCopy(d: RecruitingDossier): string {
   return d.status;
 }
 
+function findingArticles(rows: RecruitingFinding[], empty: string): string {
+  if (!rows.length) return empty ? `<p style="color:${BRAND.muted};">${escapeHtml(empty)}</p>` : '';
+  return rows
+    .map((row) => {
+      const badge = row.counts
+        ? `Cuenta para el oficio${row.difficultyLabel ? ` · dificultad ${escapeHtml(row.difficultyLabel)}` : ''}`
+        : 'No cuenta para la prueba';
+      return `<article style="margin:0 0 16px;padding:14px 16px;border:1px solid ${BRAND.border};border-radius:12px;">
+            <p style="margin:0 0 6px;font-weight:600;">${escapeHtml(row.title)}</p>
+            <p style="margin:0 0 8px;font-size:12px;color:${BRAND.muted};">${escapeHtml(row.pageUrl)} · ${escapeHtml(formatWhen(row.createdAt))}${row.evidenceCount ? ` · ${row.evidenceCount} captura(s)` : ''}</p>
+            <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:${row.counts ? BRAND.primary : BRAND.muted};">${badge}</p>
+            <p style="margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;">${escapeHtml(row.description)}</p>
+            ${row.expected ? `<p style="margin:8px 0 0;font-size:13px;color:${BRAND.muted};"><strong>Esperado:</strong> ${escapeHtml(row.expected)}</p>` : ''}
+          </article>`;
+    })
+    .join('');
+}
+
 export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
   const competencies = d.competencies
     .map(
@@ -340,23 +490,6 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
         </tr>`
     )
     .join('');
-
-  const findings = d.findings.length
-    ? d.findings
-        .map((row) => {
-          const badge = row.counts
-            ? `Cuenta para el oficio${row.difficultyLabel ? ` · dificultad ${escapeHtml(row.difficultyLabel)}` : ''}`
-            : 'No cuenta para la prueba';
-          return `<article style="margin:0 0 16px;padding:14px 16px;border:1px solid ${BRAND.border};border-radius:12px;">
-            <p style="margin:0 0 6px;font-weight:600;">${escapeHtml(row.title)}</p>
-            <p style="margin:0 0 8px;font-size:12px;color:${BRAND.muted};">${escapeHtml(row.pageUrl)} · ${escapeHtml(formatWhen(row.createdAt))}${row.evidenceCount ? ` · ${row.evidenceCount} captura(s)` : ''}</p>
-            <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:${row.counts ? BRAND.primary : BRAND.muted};">${badge}</p>
-            <p style="margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;">${escapeHtml(row.description)}</p>
-            ${row.expected ? `<p style="margin:8px 0 0;font-size:13px;color:${BRAND.muted};"><strong>Esperado:</strong> ${escapeHtml(row.expected)}</p>` : ''}
-          </article>`;
-        })
-        .join('')
-    : `<p style="color:${BRAND.muted};">Todavía no reportó hallazgos.</p>`;
 
   return documentShell({
     title: `Candidato · ${d.fullName}`,
@@ -371,7 +504,7 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
         <tr><th>Criterio</th><td>${escapeHtml(resultCopy(d))}${d.scoreCorrect != null ? ` · ${d.scoreCorrect}/${d.scoreTotal} pts` : ''} · intento ${d.attemptNumber}</td></tr>
         <tr><th>Tiempo</th><td>${escapeHtml(d.durationLabel)} · ${d.blurCount ? `${d.blurCount} salidas de ventana` : 'sin salidas de ventana'}</td></tr>
         <tr><th>Fechas</th><td>Inicio ${escapeHtml(formatWhen(d.startedAt))}${d.completedAt ? ` · cierre ${escapeHtml(formatWhen(d.completedAt))}` : ''}</td></tr>
-        <tr><th>Cacería</th><td>${d.craftHits} hallazgo(s) del oficio · señal ${escapeHtml(d.considerationLabel)} · ${d.findingsTotal} reporte(s) en total</td></tr>
+        <tr><th>Cacería</th><td>${d.craftHits} hallazgo(s) del oficio · señal ${escapeHtml(d.considerationLabel)} · ${d.findingsTotal} reporte(s)</td></tr>
         <tr><th>CV</th><td>${d.applied ? 'Ya postuló' : 'No ha postulado'}</td></tr>
       </table>
       <h2>Cómo cazó</h2>
@@ -385,12 +518,30 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
       }
       <h2>Hallazgos reportados</h2>
       <p class="note">En las palabras del candidato. Solo cuenta un hallazgo alineado al oficio. Lo demás queda visible y no suma.</p>
-      ${findings}
+      ${findingArticles(d.findings, 'Todavía no reportó hallazgos.')}
     `,
   });
 }
 
-export function renderRecruitingPipelineHtml(input: { vacancy: string; rows: RecruitingPipelineRow[] }): string {
+function discardedApplicationArticles(rows: RecruitingDiscardedApplication[]): string {
+  if (!rows.length) return '';
+  return rows
+    .map(
+      (row) => `<article style="margin:0 0 16px;padding:14px 16px;border:1px solid ${BRAND.border};border-radius:12px;">
+            <p style="margin:0 0 6px;font-weight:600;">${escapeHtml(row.fullName)}</p>
+            <p style="margin:0 0 8px;font-size:12px;color:${BRAND.muted};">${escapeHtml(row.email)} · ${escapeHtml(row.vacancy)}${row.craft ? ` · ${escapeHtml(row.craft)}` : ''}</p>
+            <p style="margin:0 0 8px;font-size:12px;color:${BRAND.muted};">Postuló ${escapeHtml(formatWhen(row.appliedAt))} · ${escapeHtml(row.statusLabel)}</p>
+            <p style="margin:0;font-size:14px;line-height:1.55;">Criterio: ${row.passed ? 'Aprobó' : row.passed === false ? 'No aprobó' : '—'}${row.scorePct != null ? ` · ${row.scorePct}%` : ''} · Cacería: ${row.craftHits} hallazgo(s) del oficio · señal ${escapeHtml(row.considerationLabel)} · ${row.findingsTotal} reporte(s)</p>
+          </article>`
+    )
+    .join('');
+}
+
+export function renderRecruitingPipelineHtml(input: {
+  vacancy: string;
+  rows: RecruitingPipelineRow[];
+  discardedApplications: RecruitingDiscardedApplication[];
+}): string {
   const bodyRows = input.rows
     .map(
       (row) => `<tr>
@@ -404,6 +555,14 @@ export function renderRecruitingPipelineHtml(input: { vacancy: string; rows: Rec
       </tr>`
     )
     .join('');
+
+  const discardedSection = input.discardedApplications.length
+    ? `
+      <h2>Postulaciones descartadas</h2>
+      <p class="note">Fuera de la cola activa de la bolsa. Se incluyen para que la agencia vea quién ya fue descartado y con qué perfil.</p>
+      ${discardedApplicationArticles(input.discardedApplications)}
+    `
+    : '';
 
   return documentShell({
     title: `Pipeline · ${input.vacancy}`,
@@ -429,6 +588,7 @@ export function renderRecruitingPipelineHtml(input: { vacancy: string; rows: Rec
             </table>`
           : `<p style="color:${BRAND.muted};">Todavía no hay intentos.</p>`
       }
+      ${discardedSection}
     `,
   });
 }

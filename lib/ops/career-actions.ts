@@ -299,6 +299,7 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
   const positionTitle =
     discipline && discipline !== 'other' ? disciplineLabel || posting?.title || 'Colaborador' : posting?.title || 'Colaborador';
   const isPm = posting?.slug === 'project-manager';
+  const careerEmail = application.email.toLowerCase();
   const notes = [
     `Origen: bolsa de trabajo (${posting?.slug || 'vacante'}).`,
     disciplineLabel ? `Oficio: ${disciplineLabel}.` : null,
@@ -307,11 +308,40 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
     .filter(Boolean)
     .join('\n\n');
 
+  const { data: existing } = await supabase
+    .from('ops_personnel_offers')
+    .select('id, career_email')
+    .or(`career_email.ilike."${careerEmail}",email.ilike."${careerEmail}"`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    if (!existing.career_email) {
+      await supabase.from('ops_personnel_offers').update({ career_email: careerEmail }).eq('id', existing.id);
+    }
+    await supabase
+      .from('ops_job_applications')
+      .update({ status: 'hired', personnel_offer_id: existing.id })
+      .eq('id', applicationId);
+    await logActivity({
+      entityType: 'job_application',
+      entityId: applicationId,
+      action: 'hired',
+      metadata: { offerId: existing.id, linkedExisting: true },
+      actorId: user.id,
+    });
+    revalidatePath('/team');
+    revalidatePath(`/team/ofertas/${existing.id}`);
+    redirect(`/team/ofertas/${existing.id}`);
+  }
+
   const { data: offer, error: offerError } = await supabase
     .from('ops_personnel_offers')
     .insert({
       full_name: application.full_name,
       email: application.email,
+      career_email: careerEmail,
       position_title: positionTitle,
       ops_role: isPm ? 'pm' : 'dev',
       monthly_compensation: 1200,
@@ -375,8 +405,10 @@ export async function updateHuntReportReview(reportId: string, formData: FormDat
   });
 
   const attemptId = String(formData.get('attempt_id') || '').trim();
+  const offerId = String(formData.get('offer_id') || '').trim();
   revalidatePath('/team');
   if (attemptId) revalidatePath(`/team/intentos/${attemptId}`);
+  if (offerId) revalidatePath(`/team/ofertas/${offerId}`);
   revalidatePath('/inbox');
   revalidatePath('/dashboard');
 }
