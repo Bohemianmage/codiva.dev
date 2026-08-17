@@ -39,23 +39,39 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Ruta de CV inválida' }, { status: 400 });
   }
 
-  const admin = createAdminClient();
-  const { data: signed, error: signErr } = await admin.storage
-    .from(CAREER_CV_BUCKET)
-    .createSignedUrl(application.cv_storage_path, 60 * 5);
+  const asDownload = searchParams.get('download') === '1';
 
-  if (signErr || !signed?.signedUrl) {
-    return NextResponse.json({ error: 'No se pudo firmar el CV' }, { status: 500 });
+  const admin = createAdminClient();
+  const { data: file, error: fileErr } = await admin.storage
+    .from(CAREER_CV_BUCKET)
+    .download(application.cv_storage_path);
+
+  if (fileErr || !file) {
+    return NextResponse.json({ error: 'No se pudo abrir el CV' }, { status: 500 });
   }
 
   const audit = requestAuditFromHeaders(request.headers);
   await logActivity({
     entityType: 'job_application',
     entityId: application.id,
-    action: 'cv_downloaded',
+    action: asDownload ? 'cv_downloaded' : 'cv_viewed',
     metadata: { ip: audit.ip, userAgent: audit.userAgent },
     actorId: user.id,
   });
 
-  return NextResponse.redirect(signed.signedUrl);
+  const rawName = String(application.original_filename || 'cv.pdf').replace(/[\r\n"]/g, '');
+  const filename = rawName.slice(0, 180) || 'cv.pdf';
+  const asciiName = filename.replace(/[^\x20-\x7E]/g, '_') || 'cv.pdf';
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const mime = file.type && file.type !== 'application/octet-stream' ? file.type : 'application/pdf';
+
+  return new NextResponse(bytes, {
+    status: 200,
+    headers: {
+      'Content-Type': mime,
+      'Content-Disposition': `${asDownload ? 'attachment' : 'inline'}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
 }
