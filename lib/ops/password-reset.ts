@@ -13,7 +13,7 @@ import { getT } from '@/i18n/locale';
 import { tSync } from '@/i18n/translate';
 import type { Locale } from '@/i18n/config';
 import { getRequestAudit } from '@/lib/ops/request-audit';
-import { PUBLIC_RL_AUTH, consumeRateLimit } from '@/lib/rate-limit';
+import { PUBLIC_RL_AUTH, STAFF_RL_PASSWORD_CHANGE, consumeRateLimit } from '@/lib/rate-limit';
 
 type ResetResult =
   | { ok: true; message: string }
@@ -289,4 +289,73 @@ export async function updatePassword(newPassword: string): Promise<ResetResult> 
   }
 
   return { ok: true, message: t('auth.updated') };
+}
+
+/** Cambio de contraseña desde el perfil de staff (requiere la actual). */
+export async function changeStaffPassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<ResetResult> {
+  const t = await getT();
+  if (!currentPassword) {
+    return { ok: false, message: t('ops.settings.currentPasswordWrong') };
+  }
+  if (!newPassword || newPassword.length < 8) {
+    return { ok: false, message: t('auth.minLength') };
+  }
+  if (currentPassword === newPassword) {
+    return { ok: false, message: t('ops.settings.passwordSame') };
+  }
+
+  const { createClient } = await import('@/lib/supabase/server');
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { ok: false, message: t('ops.settings.passwordSessionExpired') };
+  }
+
+  const { data: staff } = await supabase
+    .from('staff_profiles')
+    .select('id')
+    .eq('id', user.id)
+    .eq('active', true)
+    .maybeSingle();
+
+  if (!staff) {
+    return { ok: false, message: t('ops.settings.passwordSessionExpired') };
+  }
+
+  const audit = await getRequestAudit();
+  const ip = audit.ip || 'unknown';
+  const ipRl = consumeRateLimit(
+    `auth_change_ip:${ip}`,
+    STAFF_RL_PASSWORD_CHANGE.windowMs,
+    STAFF_RL_PASSWORD_CHANGE.max
+  );
+  const userRl = consumeRateLimit(
+    `auth_change_user:${user.id}`,
+    STAFF_RL_PASSWORD_CHANGE.windowMs,
+    STAFF_RL_PASSWORD_CHANGE.max
+  );
+  if (!ipRl.ok || !userRl.ok) {
+    return { ok: false, message: t('auth.rateLimited'), code: 'rate_limited' };
+  }
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (verifyError) {
+    return { ok: false, message: t('ops.settings.currentPasswordWrong') };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  return { ok: true, message: t('ops.settings.passwordUpdated') };
 }
