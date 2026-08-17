@@ -211,6 +211,7 @@ function CareersTag({
     </span>
   );
   return <HoverTip text={title}>{control}</HoverTip>;
+}
 
 function huntForCandidate(
   reports: OpsHuntReportRow[],
