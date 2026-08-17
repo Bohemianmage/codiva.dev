@@ -70,9 +70,10 @@ export default async function LeadDetailPage({
 
   const activeTab = tab === 'cotizaciones' && canQuotes ? 'cotizaciones' : 'resumen';
   const tabs = [
-    { key: 'resumen', label: 'Resumen' },
-    ...(canQuotes ? [{ key: 'cotizaciones', label: 'Cotizaciones' }] : []),
+    { key: 'resumen', labelKey: 'ops.leadDetail.tabResumen' },
+    ...(canQuotes ? [{ key: 'cotizaciones', labelKey: 'ops.leadDetail.tabQuotes' }] : []),
   ];
+  const convertedMsg = t('ops.leadDetail.converted');
 
   async function onStatus(formData: FormData) {
     'use server';
@@ -88,7 +89,7 @@ export default async function LeadDetailPage({
     'use server';
     const result = await convertLeadToProject(id);
     const { redirectWithToast } = await import('@/lib/ops/toast');
-    redirectWithToast(`/projects/${result.projectId}`, 'Lead convertido a proyecto');
+    redirectWithToast(`/projects/${result.projectId}`, convertedMsg);
   }
 
   const displayTitle =
@@ -98,12 +99,12 @@ export default async function LeadDetailPage({
     <div>
       <OpsPageHeader
         title={displayTitle}
-        description={`${LEAD_SOURCE_LABELS[lead.source] || lead.source}${lead.partner_company ? ` · vía ${lead.partner_company}` : ''}`}
+        description={`${LEAD_SOURCE_LABELS[lead.source] || lead.source}${lead.partner_company ? t('ops.leadDetail.via', { company: lead.partner_company }) : ''}`}
         actions={
           lead.status !== 'converted' ? (
-            <ToastForm success="Convertido" action={onConvert}>
+            <ToastForm success={t('ops.leadDetail.convertToast')} action={onConvert}>
               <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-                Convertir a proyecto
+                {t('ops.leadDetail.convert')}
               </button>
             </ToastForm>
           ) : lead.converted_project_id ? (
@@ -111,7 +112,7 @@ export default async function LeadDetailPage({
               href={`/projects/${lead.converted_project_id}`}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium"
             >
-              Ver proyecto
+              {t('ops.leadDetail.viewProject')}
             </Link>
           ) : null
         }
@@ -123,24 +124,24 @@ export default async function LeadDetailPage({
       </div>
 
       <nav className="mb-8 flex flex-wrap gap-2 border-b border-zinc-200 pb-3">
-        {tabs.map((t) => (
+        {tabs.map((tabItem) => (
           <Link
-            key={t.key}
-            href={`/leads/${id}?tab=${t.key}`}
+            key={tabItem.key}
+            href={`/leads/${id}?tab=${tabItem.key}`}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              activeTab === t.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
+              activeTab === tabItem.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
             }`}
           >
-            {t.label}
+            {t(tabItem.labelKey)}
           </Link>
         ))}
       </nav>
 
       {activeTab === 'resumen' && (
         <div className="space-y-8">
-          <ToastForm success="Guardado" action={onStatus} className="flex items-end gap-3">
+          <ToastForm success={t('ops.leadDetail.saved')} action={onStatus} className="flex items-end gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Estado</label>
+              <label className="mb-1 block text-sm font-medium">{t('ops.leadDetail.status')}</label>
               <select name="status" defaultValue={lead.status} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
                 {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
@@ -148,70 +149,70 @@ export default async function LeadDetailPage({
               </select>
             </div>
             <button type="submit" className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50">
-              Actualizar estado
+              {t('ops.leadDetail.updateStatus')}
             </button>
           </ToastForm>
 
-          <ToastForm success="Guardado" action={onUpdateDetails} className="max-w-3xl space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 className="font-semibold">Datos del lead</h2>
+          <ToastForm success={t('ops.leadDetail.saved')} action={onUpdateDetails} className="max-w-3xl space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
+            <h2 className="font-semibold">{t('ops.leadDetail.dataTitle')}</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <input name="name" defaultValue={lead.name} placeholder="Nombre contacto" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-              <input name="company" defaultValue={lead.company} placeholder="Empresa" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-              <input name="email" type="email" defaultValue={lead.email} placeholder="Email" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-              <input name="phone" defaultValue={lead.phone ?? ''} placeholder="Teléfono" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="name" defaultValue={lead.name} placeholder={t('ops.leadDetail.contactName')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="company" defaultValue={lead.company} placeholder={t('ops.leadDetail.company')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="email" type="email" defaultValue={lead.email} placeholder={t('ops.leadDetail.email')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+              <input name="phone" defaultValue={lead.phone ?? ''} placeholder={t('ops.leadDetail.phone')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium">Asignado a</label>
+                <label className="mb-1 block text-sm font-medium">{t('ops.leadDetail.assignedTo')}</label>
                 <select name="assignedTo" defaultValue={lead.assigned_to ?? ''} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                  <option value="">Sin asignar</option>
+                  <option value="">{t('ops.leadDetail.unassigned')}</option>
                   {(staffList ?? []).map((s) => (
                     <option key={s.id} value={s.id}>{s.full_name || s.id.slice(0, 8)}</option>
                   ))}
                 </select>
               </div>
             </div>
-            <textarea name="need" rows={4} defaultValue={lead.need ?? ''} placeholder="Necesidad" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+            <textarea name="need" rows={4} defaultValue={lead.need ?? ''} placeholder={t('ops.leadDetail.need')} className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
 
             <div className="border-t border-zinc-100 pt-5">
-              <h3 className="mb-3 font-semibold">Intermediario (partner)</h3>
+              <h3 className="mb-3 font-semibold">{t('ops.leadDetail.partner')}</h3>
               <div className="grid gap-4 md:grid-cols-2">
-                <input name="partnerName" defaultValue={lead.partner_name ?? ''} placeholder="Nombre" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-                <input name="partnerCompany" defaultValue={lead.partner_company ?? ''} placeholder="Empresa / agencia" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-                <input name="partnerEmail" type="email" defaultValue={lead.partner_email ?? ''} placeholder="Email (destino de cotización)" className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="partnerName" defaultValue={lead.partner_name ?? ''} placeholder={t('ops.leadDetail.partnerName')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="partnerCompany" defaultValue={lead.partner_company ?? ''} placeholder={t('ops.leadDetail.partnerCompany')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="partnerEmail" type="email" defaultValue={lead.partner_email ?? ''} placeholder={t('ops.leadDetail.partnerEmail')} className="md:col-span-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               </div>
             </div>
 
             <div className="border-t border-zinc-100 pt-5">
-              <h3 className="mb-3 font-semibold">Cliente final (opcional)</h3>
+              <h3 className="mb-3 font-semibold">{t('ops.leadDetail.endClient')}</h3>
               <div className="grid gap-4 md:grid-cols-2">
-                <input name="endClientName" defaultValue={lead.end_client_name ?? ''} placeholder="Nombre" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-                <input name="endClientCompany" defaultValue={lead.end_client_company ?? ''} placeholder="Empresa" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="endClientName" defaultValue={lead.end_client_name ?? ''} placeholder={t('ops.leadDetail.endClientName')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
+                <input name="endClientCompany" defaultValue={lead.end_client_company ?? ''} placeholder={t('ops.leadDetail.endClientCompany')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
               </div>
             </div>
 
             <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-              Guardar
+              {t('ops.leadDetail.save')}
             </button>
           </ToastForm>
 
           <div className="grid gap-6 md:grid-cols-2">
             <section className="rounded-xl border border-zinc-200 bg-white p-5">
-              <h2 className="mb-4 font-semibold">Referencia comercial</h2>
+              <h2 className="mb-4 font-semibold">{t('ops.leadDetail.commercial')}</h2>
               <dl className="space-y-2 text-sm">
-                <div><dt className="text-zinc-500">Presupuesto referencia</dt><dd>{formatCurrency(lead.budget)}</dd></div>
-                <div><dt className="text-zinc-500">Entrega deseada</dt><dd>{formatDate(lead.delivery_date)}</dd></div>
-                <div><dt className="text-zinc-500">Sitio referencia</dt><dd>{lead.reference_site || EMPTY_LABEL}</dd></div>
+                <div><dt className="text-zinc-500">{t('ops.leadDetail.budget')}</dt><dd>{formatCurrency(lead.budget)}</dd></div>
+                <div><dt className="text-zinc-500">{t('ops.leadDetail.delivery')}</dt><dd>{formatDate(lead.delivery_date)}</dd></div>
+                <div><dt className="text-zinc-500">{t('ops.leadDetail.reference')}</dt><dd>{lead.reference_site || EMPTY_LABEL}</dd></div>
               </dl>
             </section>
             <section className="rounded-xl border border-zinc-200 bg-white p-5">
-              <h2 className="mb-4 font-semibold">Detalle solicitado</h2>
+              <h2 className="mb-4 font-semibold">{t('ops.leadDetail.requested')}</h2>
               {Array.isArray(lead.sections) && lead.sections.length > 0 && (
-                <p className="text-sm"><span className="text-zinc-500">Secciones:</span> {lead.sections.join(', ')}</p>
+                <p className="text-sm"><span className="text-zinc-500">{t('ops.leadDetail.sections')}</span> {lead.sections.join(', ')}</p>
               )}
               {Array.isArray(lead.functionalities) && lead.functionalities.length > 0 && (
-                <p className="mt-2 text-sm"><span className="text-zinc-500">Funcionalidades:</span> {lead.functionalities.join(', ')}</p>
+                <p className="mt-2 text-sm"><span className="text-zinc-500">{t('ops.leadDetail.functionalities')}</span> {lead.functionalities.join(', ')}</p>
               )}
               {!lead.sections?.length && !lead.functionalities?.length && (
-                <p className="text-sm text-zinc-500">Sin detalle estructurado</p>
+                <p className="text-sm text-zinc-500">{t('ops.leadDetail.noStructured')}</p>
               )}
             </section>
           </div>
@@ -221,8 +222,8 @@ export default async function LeadDetailPage({
       {activeTab === 'cotizaciones' && canQuotes && (
         <div className="space-y-6">
           <OpsQuoteForm
-            title="Nueva cotización (pre-proyecto)"
-            defaultTitle={`Propuesta - ${displayTitle}`}
+            title={t('ops.leadDetail.newQuote')}
+            defaultTitle={t('ops.leadDetail.proposalTitle', { name: displayTitle })}
             action={async (formData) => {
               'use server';
               await createLeadQuote(id, formData);
@@ -235,7 +236,7 @@ export default async function LeadDetailPage({
                 <StatusBadge label={QUOTE_STATUS_LABELS[q.status]} tone={q.status === 'accepted' ? 'success' : 'info'} />
               </div>
               <p className="text-sm font-medium">{formatCurrency(q.total_amount, q.currency)}</p>
-              {q.sent_at && <p className="mt-1 text-xs text-zinc-500">Enviada {formatDate(q.sent_at)}</p>}
+              {q.sent_at && <p className="mt-1 text-xs text-zinc-500">{t('ops.leadDetail.sentOn', { date: formatDate(q.sent_at) })}</p>}
               {publicLinks[q.id] && (
                 <p className="mt-2 text-sm">
                   <a href={publicLinks[q.id]} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">
@@ -248,26 +249,26 @@ export default async function LeadDetailPage({
                   href={`/quotes/${q.id}`}
                   className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
                 >
-                  Editar en Ops
+                  {t('ops.leadDetail.editInOps')}
                 </Link>
                 <Link
                   href={`/quotes/${q.id}/preview`}
                   target="_blank"
                   className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 >
-                  Vista previa
+                  {t('ops.leadDetail.preview')}
                 </Link>
                 {q.status === 'draft' && (
-                  <ToastForm success="Cotización enviada" action={async () => { 'use server'; await sendLeadQuote(q.id, id); }}>
+                  <ToastForm success={t('ops.leadDetail.quoteSent')} action={async () => { 'use server'; await sendLeadQuote(q.id, id); }}>
                     <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                      Enviar al intermediario / contacto
+                      {t('ops.leadDetail.sendQuote')}
                     </button>
                   </ToastForm>
                 )}
               </div>
             </article>
           ))}
-          {!quotes?.length && <p className="text-sm text-zinc-500">Sin cotizaciones. Crea la primera arriba.</p>}
+          {!quotes?.length && <p className="text-sm text-zinc-500">{t('ops.leadDetail.noQuotes')}</p>}
         </div>
       )}
     </div>

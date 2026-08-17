@@ -28,7 +28,7 @@ export default async function QuoteEditorPage({
   if (!quote) notFound();
 
   let backHref = '/leads';
-  let backLabel = 'Volver a leads';
+  let backLabel = t('ops.quotePage.backLeads');
   let lead = null;
   let project = null;
   let projectSlug: string | null = null;
@@ -37,7 +37,7 @@ export default async function QuoteEditorPage({
     const { data } = await supabase.from('leads').select('*').eq('id', quote.lead_id).single();
     lead = data;
     backHref = `/leads/${quote.lead_id}?tab=cotizaciones`;
-    backLabel = 'Volver al lead';
+    backLabel = t('ops.quotePage.backLead');
   } else if (quote.project_id) {
     const { data } = await supabase
       .from('projects')
@@ -55,7 +55,7 @@ export default async function QuoteEditorPage({
         organizations: Array.isArray(org) ? org[0] ?? null : org,
       };
       backHref = `/projects/${quote.project_id}?tab=cotizaciones`;
-      backLabel = 'Volver al proyecto';
+      backLabel = t('ops.quotePage.backProject');
     }
   }
 
@@ -66,7 +66,7 @@ export default async function QuoteEditorPage({
     <div className="space-y-6">
       <OpsPageHeader
         title={quote.title}
-        description={`Versión ${quote.version} · el cliente ve este documento en Cotización`}
+        description={t('ops.quotePage.versionClient', { version: quote.version })}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge
@@ -84,7 +84,7 @@ export default async function QuoteEditorPage({
                 href={staffPortalPreviewPath(projectSlug, '/cotizacion')}
                 className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
               >
-                Ver como el cliente
+                {t('ops.quotePage.viewAsClient')}
               </Link>
             )}
           </div>
@@ -114,10 +114,10 @@ export default async function QuoteEditorPage({
       />
 
       <div>
-        <p className="mb-2 text-sm font-medium text-zinc-700">Documento que ve el cliente</p>
+        <p className="mb-2 text-sm font-medium text-zinc-700">{t('ops.quotePage.clientDoc')}</p>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
           <iframe
-            title="Vista previa cotización"
+            title={t('ops.quotePage.iframeTitle')}
             srcDoc={html}
             className="h-[min(80vh,900px)] w-full border-0"
             sandbox="allow-same-origin"

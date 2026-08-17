@@ -5,7 +5,7 @@ import {
   updateSiteAccess,
 } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
-import { getLocale } from '@/i18n/locale';
+import { getT } from '@/i18n/locale';
 import ToastForm from '@/components/ops/ToastForm';
 
 type SiteAccessRow = {
@@ -31,19 +31,19 @@ export default async function OpsProjectSiteAccess({
   siteProductionUrl: string | null;
   items: SiteAccessRow[];
 }) {
-  const { SITE_ACCESS_KIND_LABELS } = labelsFor(await getLocale());
+  const t = await getT();
+  const { SITE_ACCESS_KIND_LABELS } = labelsFor(t.locale);
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">
         <div>
-          <h3 className="font-semibold">Sitio del cliente</h3>
+          <h3 className="font-semibold">{t('ops.siteAccess.title')}</h3>
           <p className="mt-1 text-sm text-zinc-600">
-            URLs del desarrollo y accesos que el cliente verá en <strong>Tu sitio</strong>. No pegues
-            secretos de terceros si basta con invitarlos a Vercel o 1Password. Si algo se filtra,
-            rótalo.
+            {t('ops.siteAccess.hintPrefix')} <strong>{t('ops.siteAccess.hintStrong')}</strong>
+            {t('ops.siteAccess.hintSuffix')}
           </p>
         </div>
-        <ToastForm success="URLs guardadas"
+        <ToastForm success={t('ops.siteAccess.urlsSaved')}
           action={async (fd) => {
             'use server';
             await updateProjectSiteUrls(projectId, fd);
@@ -51,7 +51,7 @@ export default async function OpsProjectSiteAccess({
           className="space-y-3"
         >
           <label className="block space-y-1 text-sm">
-            <span className="font-medium text-zinc-700">URL preview / staging</span>
+            <span className="font-medium text-zinc-700">{t('ops.siteAccess.previewUrl')}</span>
             <input
               name="sitePreviewUrl"
               type="url"
@@ -61,7 +61,7 @@ export default async function OpsProjectSiteAccess({
             />
           </label>
           <label className="block space-y-1 text-sm">
-            <span className="font-medium text-zinc-700">URL producción</span>
+            <span className="font-medium text-zinc-700">{t('ops.siteAccess.productionUrl')}</span>
             <input
               name="siteProductionUrl"
               type="url"
@@ -71,23 +71,23 @@ export default async function OpsProjectSiteAccess({
             />
           </label>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-            Guardar URLs
+            {t('ops.siteAccess.saveUrls')}
           </button>
         </ToastForm>
       </div>
 
-      <ToastForm success="Acceso creado"
+      <ToastForm success={t('ops.siteAccess.created')}
         action={async (fd) => {
           'use server';
           await createSiteAccess(projectId, fd);
         }}
         className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3"
       >
-        <h3 className="font-semibold">Agregar acceso</h3>
+        <h3 className="font-semibold">{t('ops.siteAccess.add')}</h3>
         <input
           name="label"
           required
-          placeholder="Ej. Preview Vercel, Admin CMS"
+          placeholder={t('ops.siteAccess.labelPlaceholder')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <select name="kind" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm" defaultValue="preview">
@@ -100,40 +100,40 @@ export default async function OpsProjectSiteAccess({
         <input
           name="url"
           type="url"
-          placeholder="URL del acceso (opcional)"
+          placeholder={t('ops.siteAccess.urlOptional')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <input
           name="username"
-          placeholder="Usuario (opcional)"
+          placeholder={t('ops.siteAccess.usernameOptional')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           autoComplete="off"
         />
         <input
           name="secret"
           type="password"
-          placeholder="Contraseña / token (opcional)"
+          placeholder={t('ops.siteAccess.secretOptional')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           autoComplete="new-password"
         />
         <textarea
           name="notes"
           rows={2}
-          placeholder="Notas (ej. te invitamos a Vercel Protection)"
+          placeholder={t('ops.siteAccess.notesPlaceholder')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="visibleToClient" defaultChecked /> Visible al cliente
+          <input type="checkbox" name="visibleToClient" defaultChecked /> {t('ops.siteAccess.visibleClient')}
         </label>
         <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-          Crear acceso
+          {t('ops.siteAccess.create')}
         </button>
       </ToastForm>
 
       <ul className="space-y-3">
         {items.map((item) => (
           <li key={item.id} className="rounded-xl border border-zinc-200 bg-white p-5 space-y-3">
-            <ToastForm success="Acceso actualizado"
+            <ToastForm success={t('ops.siteAccess.updated')}
               action={async (fd) => {
                 'use server';
                 await updateSiteAccess(item.id, projectId, fd);
@@ -143,8 +143,8 @@ export default async function OpsProjectSiteAccess({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   {SITE_ACCESS_KIND_LABELS[item.kind] ?? item.kind}
-                  {!item.visible_to_client ? ' · oculto' : ''}
-                  {item.secret ? ' · tiene secreto' : ''}
+                  {!item.visible_to_client ? t('ops.siteAccess.hidden') : ''}
+                  {item.secret ? t('ops.siteAccess.hasSecret') : ''}
                 </p>
               </div>
               <input
@@ -168,27 +168,26 @@ export default async function OpsProjectSiteAccess({
                 name="url"
                 type="url"
                 defaultValue={item.url ?? ''}
-                placeholder="URL"
+                placeholder={t('ops.siteAccess.url')}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <input
                 name="username"
                 defaultValue={item.username ?? ''}
-                placeholder="Usuario"
+                placeholder={t('ops.siteAccess.username')}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 autoComplete="off"
               />
               <input
                 name="secret"
                 type="password"
-                placeholder={item.secret ? 'Nueva contraseña (deja vacío para conservar)' : 'Contraseña / token'}
+                placeholder={item.secret ? t('ops.siteAccess.secretReplace') : t('ops.siteAccess.secretNew')}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                 autoComplete="new-password"
               />
               {item.secret ? (
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="keepSecret" defaultChecked /> Conservar secreto actual si el
-                  campo queda vacío
+                  <input type="checkbox" name="keepSecret" defaultChecked /> {t('ops.siteAccess.keepSecret')}
                 </label>
               ) : null}
               <textarea
@@ -199,15 +198,15 @@ export default async function OpsProjectSiteAccess({
               />
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="visibleToClient" defaultChecked={item.visible_to_client} />{' '}
-                Visible al cliente
+                {t('ops.siteAccess.visibleClient')}
               </label>
               <div className="flex flex-wrap gap-2">
                 <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-                  Guardar
+                  {t('ops.siteAccess.save')}
                 </button>
               </div>
             </ToastForm>
-            <ToastForm success="Eliminado"
+            <ToastForm success={t('ops.siteAccess.deleted')}
               action={async () => {
                 'use server';
                 await deleteSiteAccess(item.id, projectId);
@@ -217,13 +216,13 @@ export default async function OpsProjectSiteAccess({
                 type="submit"
                 className="rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
               >
-                Eliminar acceso
+                {t('ops.siteAccess.delete')}
               </button>
             </ToastForm>
           </li>
         ))}
         {!items.length && (
-          <p className="text-sm text-zinc-500">Sin ítems de acceso. Las URLs del proyecto bastan si no hay login.</p>
+          <p className="text-sm text-zinc-500">{t('ops.siteAccess.empty')}</p>
         )}
       </ul>
     </div>

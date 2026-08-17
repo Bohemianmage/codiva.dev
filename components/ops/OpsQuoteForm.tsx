@@ -1,5 +1,6 @@
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import ToastForm from '@/components/ops/ToastForm';
+import { getT } from '@/i18n/locale';
 
 export const DEFAULT_QUOTE_LINE_ITEMS = JSON.stringify(
   [
@@ -24,27 +25,28 @@ type OpsQuoteFormProps = {
   submitLabel?: string;
 };
 
-export default function OpsQuoteForm({
+export default async function OpsQuoteForm({
   action,
   title,
   heading,
-  defaultTitle = 'Propuesta comercial',
-  submitLabel = 'Crear borrador',
+  defaultTitle,
+  submitLabel,
 }: OpsQuoteFormProps) {
+  const t = await getT();
   return (
-    <ToastForm success="Cotización creada" action={action} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
+    <ToastForm success={t('ops.quoteForm.created')} action={action} className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
       <h3 className="font-semibold">{heading || title}</h3>
       <div className="grid gap-3 md:grid-cols-2">
         <input
           name="title"
-          defaultValue={defaultTitle}
+          defaultValue={defaultTitle ?? t('ops.quoteForm.defaultTitle')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <select name="serviceType" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
           <option value="PWA">PWA</option>
           <option value="Web">Web</option>
           <option value="App">App</option>
-          <option value="Platform">Platform / Ops</option>
+          <option value="Platform">{t('ops.quoteEditor.platform')}</option>
           <option value="E-Shop">E-Shop</option>
           <option value="LMS">LMS</option>
           <option value="Pentesting">Pentesting</option>
@@ -57,30 +59,30 @@ export default function OpsQuoteForm({
       </div>
       <textarea
         name="scope"
-        placeholder="Alcance del servicio"
+        placeholder={t('ops.quoteEditor.scope')}
         rows={5}
         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
       />
       <textarea
         name="deliverables"
-        placeholder="Entregables (uno por línea, puedes usar •)"
+        placeholder={t('ops.quoteEditor.deliverables')}
         rows={4}
         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
       />
       <textarea
         name="considerations"
-        placeholder="Consideraciones"
+        placeholder={t('ops.quoteEditor.considerations')}
         rows={3}
         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
       />
       <textarea
         name="optionalExtras"
-        placeholder="Extras opcionales (no incluidos)"
+        placeholder={t('ops.quoteEditor.extras')}
         rows={3}
         className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
       />
       <div>
-        <label className="mb-1 block text-xs font-medium text-zinc-500">Módulos / estimación (JSON)</label>
+        <label className="mb-1 block text-xs font-medium text-zinc-500">{t('ops.quoteForm.lineItemsJson')}</label>
         <textarea
           name="lineItems"
           defaultValue={DEFAULT_QUOTE_LINE_ITEMS}
@@ -93,7 +95,7 @@ export default function OpsQuoteForm({
           name="totalAmount"
           type="number"
           step="0.01"
-          placeholder="Monto total"
+          placeholder={t('ops.quoteEditor.total')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <select name="currency" defaultValue="MXN" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm">
@@ -103,7 +105,7 @@ export default function OpsQuoteForm({
         <input name="validUntil" type="date" className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
       </div>
       <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-        {submitLabel}
+        {submitLabel ?? t('ops.quoteForm.createDraft')}
       </button>
     </ToastForm>
   );

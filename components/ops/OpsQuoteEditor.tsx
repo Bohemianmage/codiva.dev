@@ -3,12 +3,13 @@ import OpsQuoteLineItems from '@/components/ops/OpsQuoteLineItems';
 import OpsQuotePhases from '@/components/ops/OpsQuotePhases';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import type { QuoteLineItem, QuotePhase } from '@/lib/ops/quote-document';
+import { getT } from '@/i18n/locale';
 
 const SERVICE_TYPES = ['PWA', 'Web', 'App', 'Platform', 'E-Shop', 'LMS', 'Pentesting'];
 
-export default function OpsQuoteEditor({
+export default async function OpsQuoteEditor({
   action,
-  submitLabel = 'Guardar en Ops',
+  submitLabel,
   values,
 }: {
   action: (formData: FormData) => Promise<void>;
@@ -29,12 +30,12 @@ export default function OpsQuoteEditor({
     status?: string;
   };
 }) {
+  const t = await getT();
   return (
-    <ToastForm success="Cotización guardada" action={action} className="space-y-4">
+    <ToastForm success={t('ops.quoteEditor.saved')} action={action} className="space-y-4">
       {values.status && values.status !== 'draft' && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Esta cotización ya está {values.status === 'accepted' ? 'aceptada' : 'enviada'}. Los cambios
-          actualizan el documento que ve el cliente.
+          {values.status === 'accepted' ? t('ops.quoteEditor.alreadyAccepted') : t('ops.quoteEditor.alreadySent')}
         </p>
       )}
       <div className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-5 md:grid-cols-2">
@@ -42,7 +43,7 @@ export default function OpsQuoteEditor({
           name="title"
           required
           defaultValue={values.title}
-          placeholder="Título"
+          placeholder={t('ops.quoteEditor.title')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <select
@@ -52,7 +53,7 @@ export default function OpsQuoteEditor({
         >
           {SERVICE_TYPES.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {type === 'Platform' ? t('ops.quoteEditor.platform') : type}
             </option>
           ))}
         </select>
@@ -64,28 +65,28 @@ export default function OpsQuoteEditor({
         <textarea
           name="scope"
           defaultValue={values.scope}
-          placeholder="Alcance del servicio"
+          placeholder={t('ops.quoteEditor.scope')}
           rows={5}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <textarea
           name="deliverables"
           defaultValue={values.deliverables}
-          placeholder="Entregables (uno por línea, puedes usar •)"
+          placeholder={t('ops.quoteEditor.deliverables')}
           rows={4}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <textarea
           name="considerations"
           defaultValue={values.considerations}
-          placeholder="Consideraciones"
+          placeholder={t('ops.quoteEditor.considerations')}
           rows={3}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <textarea
           name="optionalExtras"
           defaultValue={values.optionalExtras}
-          placeholder="Extras opcionales (no incluidos)"
+          placeholder={t('ops.quoteEditor.extras')}
           rows={3}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
@@ -100,7 +101,7 @@ export default function OpsQuoteEditor({
           type="number"
           step="0.01"
           defaultValue={values.totalAmount ?? ''}
-          placeholder="Monto total"
+          placeholder={t('ops.quoteEditor.total')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <select
@@ -119,7 +120,7 @@ export default function OpsQuoteEditor({
         />
       </div>
       <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-        {submitLabel}
+        {submitLabel ?? t('ops.quoteEditor.save')}
       </button>
     </ToastForm>
   );

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ToastForm from '@/components/ops/ToastForm';
 
 const KIND_OPTIONS = [
-  { value: 'architecture', label: 'Arquitectura' },
-  { value: 'mvp', label: 'MVP / alcance' },
-  { value: 'proposal', label: 'Propuesta / identidad' },
+  { value: 'architecture', labelKey: 'ops.architecture.kindArchitecture' },
+  { value: 'mvp', labelKey: 'ops.architecture.kindMvp' },
+  { value: 'proposal', labelKey: 'ops.architecture.kindProposal' },
 ] as const;
 
 type ArchitectureEditorValues = {
@@ -26,6 +27,7 @@ export default function OpsArchitectureEditor({
   action: (formData: FormData) => Promise<void>;
   values: ArchitectureEditorValues;
 }) {
+  const { t } = useTranslation();
   const [html, setHtml] = useState(values.initialHtml);
   const [preview, setPreview] = useState(values.initialHtml);
 
@@ -36,13 +38,13 @@ export default function OpsArchitectureEditor({
 
   const sourceLabel =
     values.source === 'ops'
-      ? 'Fuente: Ops. El cliente ve este documento en Propuesta cuando está visible.'
+      ? t('ops.archEditor.sourceOps')
       : values.source === 'pack'
-        ? 'Aún vive en un pack estático. Al guardar, Ops pasa a ser la fuente y el cliente verá esta versión.'
-        : 'Documento nuevo. Al guardar queda en Ops y puedes publicarlo al cliente.';
+        ? t('ops.archEditor.sourcePack')
+        : t('ops.archEditor.sourceStarter');
 
   return (
-    <ToastForm success="Arquitectura guardada" action={action} className="space-y-4">
+    <ToastForm success={t('ops.archEditor.saved')} action={action} className="space-y-4">
       <p className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-600">
         {sourceLabel}
       </p>
@@ -51,7 +53,7 @@ export default function OpsArchitectureEditor({
           name="title"
           required
           defaultValue={values.title}
-          placeholder="Título"
+          placeholder={t('ops.archEditor.title')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <select
@@ -61,7 +63,7 @@ export default function OpsArchitectureEditor({
         >
           {KIND_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {t(option.labelKey)}
             </option>
           ))}
         </select>
@@ -69,24 +71,24 @@ export default function OpsArchitectureEditor({
           name="sortOrder"
           type="number"
           defaultValue={values.sortOrder}
-          placeholder="Orden"
+          placeholder={t('ops.archEditor.order')}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
         <textarea
           name="description"
           defaultValue={values.description}
-          placeholder="Descripción (visible en el portal)"
+          placeholder={t('ops.archEditor.desc')}
           rows={2}
           className="rounded-lg border border-zinc-300 px-3 py-2 text-sm md:col-span-2"
         />
         <label className="flex items-center gap-2 text-sm md:col-span-2">
           <input type="checkbox" name="visibleToClient" defaultChecked={values.visibleToClient} />
-          Visible al cliente en Propuesta
+          {t('ops.archEditor.visibleProposal')}
         </label>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="min-w-0">
-          <label className="mb-2 block text-sm font-medium text-zinc-700">HTML</label>
+          <label className="mb-2 block text-sm font-medium text-zinc-700">{t('ops.archEditor.html')}</label>
           <textarea
             name="bodyHtml"
             value={html}
@@ -96,9 +98,9 @@ export default function OpsArchitectureEditor({
           />
         </div>
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-zinc-700">Vista previa</p>
+          <p className="mb-2 text-sm font-medium text-zinc-700">{t('ops.archEditor.preview')}</p>
           <iframe
-            title="Vista previa arquitectura"
+            title={t('ops.archEditor.iframeTitle')}
             srcDoc={preview}
             className="h-[min(70vh,820px)] w-full rounded-xl border border-zinc-200 bg-white"
             sandbox="allow-scripts allow-same-origin allow-downloads"
@@ -107,7 +109,7 @@ export default function OpsArchitectureEditor({
         </div>
       </div>
       <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
-        Guardar en Ops
+        {t('ops.archEditor.save')}
       </button>
     </ToastForm>
   );

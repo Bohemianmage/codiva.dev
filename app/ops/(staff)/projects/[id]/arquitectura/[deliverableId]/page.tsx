@@ -7,6 +7,7 @@ import { updateArchitectureCanvas, hydrateArchitectureFromPacks } from '@/lib/op
 import { can } from '@/lib/ops/permissions';
 import { resolveArchitectureHtml } from '@/lib/ops/architecture';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
+import { getT } from '@/i18n/locale';
 
 export default async function ArchitectureEditorPage({
   params,
@@ -37,25 +38,26 @@ export default async function ArchitectureEditorPage({
   if (!project || !deliverable) notFound();
 
   const { html, source } = await resolveArchitectureHtml(deliverable);
+  const t = await getT();
 
   return (
     <div>
       <OpsPageHeader
         title={deliverable.title}
-        description={`${project.name} · editar arquitectura en Ops`}
+        description={t('ops.architecture.pageDesc', { project: project.name })}
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/projects/${id}?tab=arquitectura`}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Volver
+              {t('ops.architecture.back')}
             </Link>
             <Link
               href={staffPortalPreviewPath(project.slug, '/propuesta')}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
-              Ver propuesta del cliente
+              {t('ops.architecture.viewProposal')}
             </Link>
           </div>
         }
