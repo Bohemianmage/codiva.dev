@@ -35,8 +35,15 @@ async function requireTeamStaff() {
   return { user, staff };
 }
 
+function toBodyInit(body: string | Uint8Array): BodyInit {
+  if (typeof body === 'string') return body;
+  const copy = new Uint8Array(body.byteLength);
+  copy.set(body);
+  return copy;
+}
+
 function asDownload(body: string | Uint8Array, filename: string, pdf: boolean) {
-  return new NextResponse(body, {
+  return new NextResponse(toBodyInit(body), {
     status: 200,
     headers: {
       'Content-Type': pdf ? 'application/pdf' : 'text/html; charset=utf-8',
