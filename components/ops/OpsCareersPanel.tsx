@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import ToastForm from '@/components/ops/ToastForm';
-import StatusBadge from '@/components/ops/StatusBadge';
 import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
+import CareerCvLightbox from '@/components/ops/CareerCvLightbox';
+import OpsReportLightbox from '@/components/ops/OpsReportLightbox';
 import {
   JOB_EMPLOYMENT_TYPES,
   careerOpsLabels,
@@ -101,6 +102,12 @@ export type OpsJobAttemptRow = {
   user_agent?: string | null;
 };
 
+function postingHint(status: string, t: Translator) {
+  if (status === 'published') return t('ops.careers.postingHintPublished');
+  if (status === 'closed') return t('ops.careers.postingHintClosed');
+  return t('ops.careers.postingHintDraft');
+}
+
 function postingTone(status: string) {
   if (status === 'published') return 'success' as const;
   if (status === 'closed') return 'neutral' as const;
@@ -197,7 +204,14 @@ function CareersTag({
     href.startsWith('mailto:') ||
     href.startsWith('tel:') ||
     href.startsWith('http') ? (
-      <a href={href} aria-label={title ? `${label}. ${title}` : undefined} className={className}>
+      <a
+        href={href}
+        aria-label={title ? `${label}. ${title}` : undefined}
+        className={className}
+        {...(href.startsWith('/api/') || href.startsWith('http')
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
+      >
         {label}
       </a>
     ) : (
@@ -253,7 +267,20 @@ function HuntFindingEmbed({
         <div>
           <p className="text-sm text-zinc-800">{row.title}</p>
           <p className="mt-1 text-xs text-zinc-400">
-            {row.page_url} · {formatDate(row.created_at)}
+            {row.page_url ? (
+              <>
+                <a
+                  href={row.page_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-codiva-primary hover:underline"
+                >
+                  {row.page_url}
+                </a>
+                {' · '}
+              </>
+            ) : null}
+            {formatDate(row.created_at)}
             {seed
               ? ` · ${t('ops.careers.difficulty', {
                   label: huntDifficultyLabel(seed.difficulty, locale),
@@ -261,7 +288,7 @@ function HuntFindingEmbed({
               : ''}
           </p>
         </div>
-        <StatusBadge
+        <CareersTag
           label={
             seed
               ? countsForCraft
@@ -270,11 +297,21 @@ function HuntFindingEmbed({
               : t('ops.careers.noMatch')
           }
           tone={seed ? (countsForCraft ? 'success' : 'info') : 'neutral'}
+          title={
+            seed
+              ? countsForCraft
+                ? t('ops.careers.seedCountsHint')
+                : t('ops.careers.seedOtherHint')
+              : t('ops.careers.noMatchHint')
+          }
         />
       </div>
       {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : (
         <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
       )}
+      {row.description?.trim() ? (
+        <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{row.description.trim()}</p>
+      ) : null}
       {(row.evidence_paths ?? []).length ? (
         <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
       ) : null}
@@ -521,12 +558,19 @@ export default async function OpsCareersPanel({
   return (
     <div className="max-w-6xl space-y-10">
       {canManage ? (
+      <details
+        className="group rounded-xl border border-zinc-200 bg-white open:bg-white"
+        {...(!postings.length ? { open: true } : {})}
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 [&::-webkit-details-marker]:hidden">
+          {t('ops.careers.createTitle')}
+          <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+        </summary>
       <ToastForm
         success={t('ops.careers.created')}
         action={onCreate}
-        className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
+        className="space-y-3 border-t border-zinc-200 px-5 pb-5 pt-4"
       >
-        <h2 className="font-semibold">{t('ops.careers.createTitle')}</h2>
         <p className="text-sm text-zinc-500">
           {t('ops.careers.createHint')}{' '}
           <a href={publicCareerListUrl()} className="text-codiva-primary hover:underline">
@@ -615,6 +659,7 @@ export default async function OpsCareersPanel({
           {t('ops.careers.createSubmit')}
         </button>
       </ToastForm>
+      </details>
       ) : null}
 
       <section className="space-y-3">
@@ -627,50 +672,46 @@ export default async function OpsCareersPanel({
           <ul className="space-y-3">
             {postings.map((row) => (
               <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{row.title}</p>
-                    <p className="text-sm text-zinc-500">
-                      {row.slug}
-                      {row.location ? ` · ${row.location}` : ''}
-                      {row.employment_type
-                        ? ` · ${JOB_EMPLOYMENT_LABELS[row.employment_type as JobEmploymentType] ?? row.employment_type}`
-                        : ''}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-400">{t('ops.careers.updated', { date: formatDate(row.updated_at) })}</p>
-                  </div>
-                  <StatusBadge
+                <p className="font-medium">
+                  {canManage ? (
+                    <Link href={`/team/vacantes/${row.id}`} className="hover:text-codiva-primary hover:underline">
+                      {row.title}
+                    </Link>
+                  ) : (
+                    row.title
+                  )}
+                </p>
+                <p className="text-sm text-zinc-500">
+                  {row.slug}
+                  {row.location ? ` · ${row.location}` : ''}
+                  {row.employment_type
+                    ? ` · ${JOB_EMPLOYMENT_LABELS[row.employment_type as JobEmploymentType] ?? row.employment_type}`
+                    : ''}
+                  {` · ${t('ops.careers.updated', { date: formatDate(row.updated_at) })}`}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <CareersTag
                     label={JOB_POSTING_STATUS_LABELS[row.status as JobPostingStatus] ?? row.status}
                     tone={postingTone(row.status)}
+                    title={postingHint(row.status, t)}
                   />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
                   {canManage ? (
-                    <Link
-                      href={`/team/vacantes/${row.id}`}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                      {t('ops.careers.edit')}
-                    </Link>
+                    <CareersTag label={t('ops.careers.edit')} href={`/team/vacantes/${row.id}`} />
                   ) : null}
                   {row.status === 'published' ? (
-                    <a
+                    <CareersTag
+                      label={t('ops.careers.viewPublic')}
                       href={publicCareerUrl(row.slug)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                      {t('ops.careers.viewPublic')}
-                    </a>
+                      title={t('ops.careers.viewPublicHint')}
+                    />
                   ) : null}
-                  <a
-                    href={`/api/ops/careers/recruiting-report?pipeline=1&job=${row.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                  >
-                    {t('ops.careers.pipelineHtml')}
-                  </a>
+                  <OpsReportLightbox
+                    title={t('ops.careers.pipelineTitleJob', { title: row.title })}
+                    htmlSrc={`/api/ops/careers/recruiting-report?pipeline=1&job=${row.id}`}
+                    downloadHref={`/api/ops/careers/recruiting-report?pipeline=1&job=${row.id}&format=pdf`}
+                    triggerLabel={t('ops.careers.pipelineHtml')}
+                    triggerHint={t('ops.careers.pipelineHint')}
+                  />
                   {canManage && row.status === 'draft' ? (
                     <ToastForm
                       success={t('ops.careers.deleted')}
@@ -679,7 +720,10 @@ export default async function OpsCareersPanel({
                         await deleteDraftJobPosting(row.id);
                       }}
                     >
-                      <button type="submit" className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50">
+                      <button
+                        type="submit"
+                        className="inline-flex max-w-full items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-800 transition hover:bg-red-100"
+                      >
                         {t('ops.careers.deleteDraft')}
                       </button>
                     </ToastForm>
@@ -698,20 +742,14 @@ export default async function OpsCareersPanel({
             <p className="text-sm text-zinc-500">{t('ops.careers.peopleHint')}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a
-              href="/api/ops/careers/recruiting-report?pipeline=1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-            >
-              {t('ops.careers.pipelineHtml')}
-            </a>
-            <a
-              href="/api/ops/careers/recruiting-report?pipeline=1&format=pdf"
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-            >
-              {t('ops.careers.pipelinePdf')}
-            </a>
+            <OpsReportLightbox
+              title={t('ops.careers.pipelineTitle')}
+              htmlSrc="/api/ops/careers/recruiting-report?pipeline=1"
+              downloadHref="/api/ops/careers/recruiting-report?pipeline=1&format=pdf"
+              triggerLabel={t('ops.careers.pipelineHtml')}
+              triggerHint={t('ops.careers.pipelineHint')}
+              trigger="button"
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -723,36 +761,48 @@ export default async function OpsCareersPanel({
               ['test', t('ops.careers.stageTest'), attemptsActive.length],
             ] as const
           ).map(([value, label, count]) => (
-            <Link
+            <HoverTip
               key={value || 'all'}
-              href={bolsaHref({
-                stageValue: (value ? effectiveStage === value : !effectiveStage) ? '' : value,
-                appValue: '',
-              })}
-              title={t('ops.careers.tagStageHint')}
-              className={
-                (value ? effectiveStage === value : !effectiveStage)
-                  ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
-                  : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50'
+              text={
+                value === 'ready'
+                  ? t('ops.careers.stageHintReady')
+                  : value === 'applied'
+                    ? t('ops.careers.stageHintApplied')
+                    : value === 'test'
+                      ? t('ops.careers.stageHintTest')
+                      : t('ops.careers.stageHintAll')
               }
             >
-              {t('ops.careers.stageCount', { label, count })}
-            </Link>
+              <Link
+                href={bolsaHref({
+                  stageValue: (value ? effectiveStage === value : !effectiveStage) ? '' : value,
+                  appValue: '',
+                })}
+                className={
+                  (value ? effectiveStage === value : !effectiveStage)
+                    ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
+                    : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50'
+                }
+              >
+                {t('ops.careers.stageCount', { label, count })}
+              </Link>
+            </HoverTip>
           ))}
-          <Link
-            href={bolsaHref({ originValue: originFilter ? '' : 'shared' })}
-            title={t('ops.careers.tagOriginHint', { count: sharedOriginCount, code: '' })}
-            className={
-              originFilter
-                ? 'rounded-full bg-amber-700 px-3 py-1 text-xs font-semibold text-white'
-                : 'rounded-full border border-amber-300 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50'
-            }
-          >
-            {t('ops.careers.stageCount', {
-              label: t('ops.careers.tagOrigin'),
-              count: sharedOriginCount,
-            })}
-          </Link>
+          <HoverTip text={t('ops.careers.tagOriginHint', { count: sharedOriginCount, code: '' })}>
+            <Link
+              href={bolsaHref({ originValue: originFilter ? '' : 'shared' })}
+              className={
+                originFilter
+                  ? 'rounded-full bg-amber-700 px-3 py-1 text-xs font-semibold text-white'
+                  : 'rounded-full border border-amber-300 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50'
+              }
+            >
+              {t('ops.careers.stageCount', {
+                label: t('ops.careers.tagOrigin'),
+                count: sharedOriginCount,
+              })}
+            </Link>
+          </HoverTip>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-zinc-500">{t('ops.careers.signalGroup')}</span>
@@ -973,9 +1023,14 @@ export default async function OpsCareersPanel({
                             {` · ${formatDate(row.created_at)}`}
                           </p>
                           {row.cover_letter?.trim() ? (
-                            <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm text-zinc-600">
-                              {row.cover_letter.trim()}
-                            </p>
+                            <details className="group mt-2">
+                              <summary className="cursor-pointer list-none text-sm font-medium text-zinc-700 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+                                {t('ops.careers.coverLetter')}
+                              </summary>
+                              <p className="mt-1 whitespace-pre-line text-sm text-zinc-600">
+                                {row.cover_letter.trim()}
+                              </p>
+                            </details>
                           ) : null}
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             <CareersTag
@@ -1020,12 +1075,7 @@ export default async function OpsCareersPanel({
                               title={considerationHint(hunt.score.consideration, t)}
                               active={signalFilter === hunt.score.consideration}
                             />
-                            {row.original_filename ? (
-                              <CareersTag
-                                label={t('ops.careers.downloadCv')}
-                                href={`/api/ops/careers/cv?id=${row.id}`}
-                              />
-                            ) : null}
+                            <CareerCvLightbox applicationId={row.id} name={row.full_name} />
                             {canManage && row.personnel_offer_id ? (
                               <CareersTag
                                 label={t('ops.careers.viewOffer')}

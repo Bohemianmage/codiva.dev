@@ -14,6 +14,7 @@ import {
 import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trail';
 import HuntTrailMap from '@/components/ops/HuntTrailMap';
 import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
+import OpsReportLightbox from '@/components/ops/OpsReportLightbox';
 import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import {
@@ -218,18 +219,14 @@ export default async function AssessmentAttemptPage({
           </>
         ) : null}
         {' · '}
-        <a
-          href={`/api/ops/careers/recruiting-report?attempt=${attempt.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-codiva-primary hover:underline"
-        >
-          {t('ops.attempt.reportHtml')}
-        </a>
-        {' · '}
-        <a href={`/api/ops/careers/recruiting-report?attempt=${attempt.id}&format=pdf`} className="text-codiva-primary hover:underline">
-          {t('ops.attempt.reportPdf')}
-        </a>
+        <OpsReportLightbox
+          title={t('ops.attempt.reportHtml')}
+          htmlSrc={`/api/ops/careers/recruiting-report?attempt=${attempt.id}`}
+          downloadHref={`/api/ops/careers/recruiting-report?attempt=${attempt.id}&format=pdf`}
+          triggerLabel={t('ops.attempt.reportHtml')}
+          downloadLabel={t('ops.attempt.reportPdf')}
+          trigger="link"
+        />
       </p>
 
       <section className="grid gap-3 sm:grid-cols-3">
