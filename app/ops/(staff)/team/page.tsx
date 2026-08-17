@@ -81,17 +81,12 @@ export default async function TeamPage({
           .select('id, full_name, role, active, created_at, capabilities')
           .order('created_at', { ascending: true })
       : Promise.resolve(empty),
-    canManageTeam
-      ? supabase
-          .from('ops_personnel_offers')
-          .select(
-            'id, full_name, email, career_email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at, staff_id'
-          )
-          .order('created_at', { ascending: false })
-      : supabase
-          .from('ops_personnel_offers')
-          .select('email, career_email, status')
-          .order('created_at', { ascending: false }),
+    supabase
+      .from('ops_personnel_offers')
+      .select(
+        'id, full_name, email, career_email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at, staff_id'
+      )
+      .order('created_at', { ascending: false }),
     supabase
       .from('ops_job_postings')
       .select('id, slug, title, location, employment_type, status, updated_at')
