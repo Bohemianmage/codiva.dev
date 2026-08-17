@@ -6,6 +6,7 @@ import { parseAnswers } from '@/lib/careers/assessments/server';
 import { reviewRowsForAttempt, scoreAnswers } from '@/lib/careers/assessments/engine';
 import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
+import { splitHuntReports } from '@/lib/careers/hunt/review';
 import {
   huntConsiderationLabel,
   huntDifficultyLabel,
@@ -26,6 +27,7 @@ import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
 import { dateLocale } from '@/i18n/config';
 import { getT, type Translator } from '@/i18n/locale';
+import { findPersonnelOfferIdForEmail } from '@/lib/ops/offer-career-file';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -165,10 +167,11 @@ export default async function AssessmentAttemptPage({
   const huntReports = [...huntById.values()].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
-  const craftHits = huntReports.filter((row) =>
+  const { active: huntScoring } = splitHuntReports(huntReports);
+  const craftHits = huntScoring.filter((row) =>
     discipline ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline) : Boolean(row.matched_seed_id)
   ).length;
-  const huntScore = scoreHuntReports(huntReports, discipline);
+  const huntScore = scoreHuntReports(huntScoring, discipline);
   const locale = t.locale === 'en' ? 'en' : 'es';
   const trail = summarizeHuntTrail({
     passedAt: attempt.completed_at,
@@ -181,6 +184,7 @@ export default async function AssessmentAttemptPage({
   const device = deviceLabelFromUserAgent(attempt.user_agent);
   const originPeers = sameOrigin ?? [];
   const originIdentities = distinctOriginEmails([{ email: attempt.email }, ...originPeers]);
+  const linkedOfferId = await findPersonnelOfferIdForEmail(attempt.email);
 
   const timeOnQuestion = new Map<string, number>();
   let lastView: { id: string; at: number } | null = null;
@@ -227,6 +231,14 @@ export default async function AssessmentAttemptPage({
           downloadLabel={t('ops.attempt.reportPdf')}
           trigger="link"
         />
+        {linkedOfferId ? (
+          <>
+            {' · '}
+            <Link href={`/team/ofertas/${linkedOfferId}`} className="text-codiva-primary hover:underline">
+              {t('ops.offer.careerFile')}
+            </Link>
+          </>
+        ) : null}
       </p>
 
       <section className="grid gap-3 sm:grid-cols-3">

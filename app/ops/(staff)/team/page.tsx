@@ -84,7 +84,7 @@ export default async function TeamPage({
       ? supabase
           .from('ops_personnel_offers')
           .select(
-            'id, full_name, email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at'
+            'id, full_name, email, career_email, position_title, ops_role, monthly_compensation, currency, work_modality, status, issued_at, created_at, staff_id'
           )
           .order('created_at', { ascending: false })
       : Promise.resolve(empty),
@@ -148,10 +148,14 @@ export default async function TeamPage({
         (row) => isTesterCatalogKey(row.catalog_key) || testerPostingIds.has(row.job_posting_id)
       );
   const assignmentsByStaff = new Map<string, { project_id: string; role_on_project: string }[]>();
+  const offerByStaff = new Map<string, string>();
   for (const row of staffAssignments ?? []) {
     const list = assignmentsByStaff.get(row.staff_id) ?? [];
     list.push({ project_id: row.project_id, role_on_project: row.role_on_project });
     assignmentsByStaff.set(row.staff_id, list);
+  }
+  for (const row of offers ?? []) {
+    if (row.staff_id) offerByStaff.set(row.staff_id, row.id);
   }
   const projectLabel = new Map(
     (allProjects ?? []).map((p) => {
@@ -271,6 +275,14 @@ export default async function TeamPage({
                         <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                           {t('ops.team.permissionsCustom')}
                         </span>
+                      ) : null}
+                      {offerByStaff.get(row.id) ? (
+                        <Link
+                          href={`/team/ofertas/${offerByStaff.get(row.id)}`}
+                          className="rounded-full bg-codiva-primary/10 px-2.5 py-0.5 text-xs font-medium text-codiva-primary hover:underline"
+                        >
+                          {t('ops.offer.careerFile')}
+                        </Link>
                       ) : null}
                     </div>
                   </div>
@@ -435,7 +447,13 @@ export default async function TeamPage({
               <input
                 name="email"
                 type="email"
-                placeholder="correo@ejemplo.com"
+                placeholder="nombre@codiva.dev"
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2"
+              />
+              <input
+                name="careerEmail"
+                type="email"
+                placeholder={t('ops.offer.careerEmail')}
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2"
               />
               <input

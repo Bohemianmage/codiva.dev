@@ -1,12 +1,15 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
+import OpsOfferCareerFile from '@/components/ops/OpsOfferCareerFile';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { convertPersonnelOfferToStaff, updatePersonnelOffer, updatePersonnelOfferStatus, uploadStaffContract } from '@/lib/ops/actions';
+import { loadOfferCareerFile, offerCareerEmails } from '@/lib/ops/offer-career-file';
 import {
   offerLabelsFor,
   renderOfferLetterHtml,
   rowToOfferLetterData,
 } from '@/lib/ops/offer-letter';
+import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -29,6 +32,8 @@ export default async function TeamOfferDetailPage({
   if (!offer) notFound();
   const t = await getT();
   const { OFFER_STATUS_LABELS, OPS_ROLE_LABELS, WORK_MODALITY_LABELS } = offerLabelsFor(t.locale);
+  const { formatDate } = labelsFor(t.locale);
+  const careerFile = await loadOfferCareerFile(offerCareerEmails(offer));
 
   const { data: contracts } = offer.staff_id
     ? await supabase
@@ -103,6 +108,17 @@ export default async function TeamOfferDetailPage({
                 placeholder="correo@ejemplo.com"
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2"
               />
+              <label className="text-sm text-zinc-600 sm:col-span-2">
+                {t('ops.offer.careerEmail')}
+                <input
+                  name="careerEmail"
+                  type="email"
+                  defaultValue={offer.career_email ?? ''}
+                  placeholder="correo@gmail.com"
+                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <span className="mt-1 block text-xs text-zinc-400">{t('ops.offer.careerEmailHint')}</span>
+              </label>
               <input
                 name="positionTitle"
                 required
@@ -316,8 +332,17 @@ export default async function TeamOfferDetailPage({
           </ToastForm>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
-          <iframe title={t('ops.offer.previewTitle')} srcDoc={html} className="h-[min(80vh,900px)] w-full bg-white" />
+        <div className="space-y-4">
+          <OpsOfferCareerFile
+            offerId={id}
+            file={careerFile}
+            t={t}
+            locale={t.locale === 'en' ? 'en' : 'es'}
+            formatDate={formatDate}
+          />
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+            <iframe title={t('ops.offer.previewTitle')} srcDoc={html} className="h-[min(80vh,900px)] w-full bg-white" />
+          </div>
         </div>
       </div>
     </div>

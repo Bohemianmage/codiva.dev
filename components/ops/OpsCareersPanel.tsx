@@ -10,6 +10,7 @@ import {
   careerDisciplineLabels,
   applicationRoleLabel,
   isCareerDiscipline,
+  isDiscardedApplicationStatus,
   isJobApplicationStatus,
   publicCareerListUrl,
   publicCareerUrl,
@@ -26,6 +27,7 @@ import {
 } from '@/lib/ops/career-actions';
 import { huntRequiredForCatalog, huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
+import { splitHuntReports } from '@/lib/careers/hunt/review';
 import {
   huntConsiderationLabel,
   huntDifficultyLabel,
@@ -233,12 +235,13 @@ function huntForCandidate(
   discipline?: string | null
 ) {
   const rows = reports.filter((row) => emailKey(row.email) === emailKey(email));
-  const craftHits = rows.filter((row) =>
+  const { active } = splitHuntReports(rows);
+  const craftHits = active.filter((row) =>
     discipline && isCareerDiscipline(discipline)
       ? matchedSeedCountsForDiscipline(row.matched_seed_id, discipline)
       : Boolean(row.matched_seed_id)
   );
-  return { rows, total: rows.length, craftHits: craftHits.length, score: scoreHuntReports(rows, discipline) };
+  return { rows, total: rows.length, craftHits: craftHits.length, score: scoreHuntReports(active, discipline) };
 }
 
 function HuntFindingEmbed({
@@ -248,6 +251,7 @@ function HuntFindingEmbed({
   formatDate,
   locale,
   disciplineLabels,
+  showAttemptLink = false,
 }: {
   row: OpsHuntReportRow;
   discipline?: string | null;
@@ -255,6 +259,7 @@ function HuntFindingEmbed({
   formatDate: (date: string | null | undefined) => string;
   locale: Locale;
   disciplineLabels: Record<string, string>;
+  showAttemptLink?: boolean;
 }) {
   const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
   const craftDiscipline = discipline && isCareerDiscipline(discipline) ? discipline : null;
@@ -312,8 +317,24 @@ function HuntFindingEmbed({
       {row.description?.trim() ? (
         <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{row.description.trim()}</p>
       ) : null}
+      {row.expected?.trim() ? (
+        <p className="mt-2 text-sm text-zinc-600">
+          <span className="font-medium text-zinc-800">{t('ops.attempt.expected')}</span>
+          {row.expected.trim()}
+        </p>
+      ) : null}
       {(row.evidence_paths ?? []).length ? (
         <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
+      ) : null}
+      {showAttemptLink && row.assessment_attempt_id ? (
+        <p className="mt-2">
+          <Link
+            href={`/team/intentos/${row.assessment_attempt_id}`}
+            className="text-xs font-medium text-codiva-primary hover:underline"
+          >
+            {t('ops.careers.viewCandidateTest')}
+          </Link>
+        </p>
       ) : null}
       {!seed ? (
         <ToastForm
@@ -343,7 +364,7 @@ function HuntFindingEmbed({
   );
 }
 
-function HuntFindingsBlock({
+export function HuntFindingsBlock({
   rows,
   discipline,
   t,
@@ -351,6 +372,7 @@ function HuntFindingsBlock({
   locale,
   disciplineLabels,
   heading = true,
+  showAttemptLink = false,
 }: {
   rows: OpsHuntReportRow[];
   discipline?: string | null;
@@ -359,6 +381,7 @@ function HuntFindingsBlock({
   locale: Locale;
   disciplineLabels: Record<string, string>;
   heading?: boolean;
+  showAttemptLink?: boolean;
 }) {
   if (!rows.length) return null;
   return (
@@ -377,6 +400,7 @@ function HuntFindingsBlock({
           formatDate={formatDate}
           locale={locale}
           disciplineLabels={disciplineLabels}
+          showAttemptLink={showAttemptLink}
         />
       ))}
     </div>
@@ -392,6 +416,203 @@ function candidateReadyForCv(
   if (!row.passed) return false;
   if (huntRequiredForCatalog(row.catalog_key) && hunt.craftHits < 1) return false;
   return true;
+}
+
+type BolsaHref = (next: {
+  signalValue?: string;
+  originValue?: string;
+  stageValue?: string;
+  appValue?: string;
+}) => string;
+
+function ApplicationCard({
+  row,
+  hunt,
+  linkedAttempt,
+  t,
+  formatDate,
+  locale,
+  disciplineLabels,
+  statusLabels,
+  canManage,
+  bolsaHref,
+  effectiveStage,
+  appFilter,
+  signalFilter,
+}: {
+  row: OpsJobApplicationRow;
+  hunt: ReturnType<typeof huntForCandidate>;
+  linkedAttempt: OpsJobAttemptRow | null;
+  t: Translator;
+  formatDate: (date: string | null | undefined) => string;
+  locale: Locale;
+  disciplineLabels: Record<string, string>;
+  statusLabels: Record<JobApplicationStatus, string>;
+  canManage: boolean;
+  bolsaHref: BolsaHref;
+  effectiveStage: string;
+  appFilter: string;
+  signalFilter: string;
+}) {
+  const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
+  const role = applicationRoleLabel({
+    postingTitle: posting?.title,
+    discipline: row.discipline,
+    locale: t.locale,
+  });
+  const discarded = isDiscardedApplicationStatus(row.status);
+  return (
+    <li className="rounded-xl border border-zinc-200 bg-white p-4">
+      <p className="font-medium">
+        {linkedAttempt ? (
+          <Link href={`/team/intentos/${linkedAttempt.id}`} className="hover:text-codiva-primary hover:underline">
+            {row.full_name}
+          </Link>
+        ) : (
+          row.full_name
+        )}
+      </p>
+      {role ? <p className="text-sm font-medium text-codiva-primary">{role}</p> : null}
+      <p className="text-sm text-zinc-500">
+        <a href={`mailto:${row.email}`} className="hover:text-codiva-primary hover:underline">
+          {row.email}
+        </a>
+        {row.phone ? (
+          <>
+            {' · '}
+            <a href={`tel:${row.phone}`} className="hover:text-codiva-primary hover:underline">
+              {row.phone}
+            </a>
+          </>
+        ) : null}
+        {` · ${formatDate(row.created_at)}`}
+      </p>
+      {row.cover_letter?.trim() ? (
+        <details className="group mt-2">
+          <summary className="cursor-pointer list-none text-sm font-medium text-zinc-700 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+            {t('ops.careers.coverLetter')}
+          </summary>
+          <p className="mt-1 whitespace-pre-line text-sm text-zinc-600">{row.cover_letter.trim()}</p>
+        </details>
+      ) : null}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <CareersTag
+          label={discarded ? t('ops.careers.stageDiscarded') : t('ops.careers.stageApplied')}
+          tone={discarded ? 'danger' : 'info'}
+          href={bolsaHref({
+            stageValue: discarded
+              ? effectiveStage === 'discarded'
+                ? ''
+                : 'discarded'
+              : effectiveStage === 'applied'
+                ? ''
+                : 'applied',
+            appValue: '',
+          })}
+          title={t('ops.careers.tagStageHint')}
+          active={discarded ? effectiveStage === 'discarded' : effectiveStage === 'applied' && !appFilter}
+        />
+        <CareersTag
+          label={statusLabels[row.status as JobApplicationStatus] ?? row.status}
+          tone={applicationTone(row.status)}
+          href={bolsaHref({
+            stageValue: discarded ? 'discarded' : 'applied',
+            appValue: discarded ? '' : appFilter === row.status ? '' : row.status,
+          })}
+          title={t('ops.careers.tagStatusHint')}
+          active={discarded ? effectiveStage === 'discarded' : appFilter === row.status}
+        />
+        {linkedAttempt?.score_pct != null ? (
+          <CareersTag
+            label={t('ops.careers.testScore', { pct: linkedAttempt.score_pct })}
+            tone={linkedAttempt.passed ? 'success' : 'neutral'}
+            href={`/team/intentos/${linkedAttempt.id}`}
+            title={t('ops.careers.tagTestHint')}
+          />
+        ) : null}
+        <CareersTag
+          label={t('ops.careers.tagSignal', {
+            label: huntConsiderationLabel(hunt.score.consideration, locale),
+          })}
+          tone={considerationTone(hunt.score.consideration)}
+          href={bolsaHref({
+            signalValue: signalFilter === hunt.score.consideration ? '' : hunt.score.consideration,
+          })}
+          title={considerationHint(hunt.score.consideration, t)}
+          active={signalFilter === hunt.score.consideration}
+        />
+        <CareerCvLightbox applicationId={row.id} name={row.full_name} />
+        {canManage && row.personnel_offer_id ? (
+          <CareersTag
+            label={t('ops.careers.viewOffer')}
+            tone="success"
+            href={`/team/ofertas/${row.personnel_offer_id}`}
+          />
+        ) : null}
+      </div>
+      {canManage ? (
+        <details className="group mt-3 rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
+            {t('ops.careers.manageApplication')}
+            <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 px-3 py-3">
+            {!row.personnel_offer_id ? (
+              <ToastForm
+                success={t('ops.careers.offerCreated')}
+                loading={t('ops.careers.creating')}
+                action={async () => {
+                  'use server';
+                  await createPersonnelOfferFromApplication(row.id);
+                }}
+              >
+                <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
+                  {t('ops.careers.hire')}
+                </button>
+              </ToastForm>
+            ) : null}
+            <ToastForm
+              success={t('ops.careers.statusUpdated')}
+              action={async (fd) => {
+                'use server';
+                await updateJobApplicationStatus(row.id, fd);
+              }}
+              className="flex flex-wrap items-center gap-2"
+            >
+              <select name="status" defaultValue={row.status} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center gap-1.5 text-sm text-zinc-600">
+                <input
+                  type="checkbox"
+                  name="notify_candidate"
+                  value="1"
+                  defaultChecked
+                  className="rounded border-zinc-300"
+                />
+                {t('ops.careers.notifyCandidate')}
+              </label>
+              <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                {t('ops.team.save')}
+              </button>
+            </ToastForm>
+          </div>
+        </details>
+      ) : null}
+      <HuntFindingsBlock
+        rows={hunt.rows}
+        discipline={row.discipline}
+        t={t}
+        formatDate={formatDate}
+        locale={locale}
+        disciplineLabels={disciplineLabels}
+      />
+    </li>
+  );
 }
 
 export default async function OpsCareersPanel({
@@ -438,7 +659,8 @@ export default async function OpsCareersPanel({
   const signalFilter =
     signal === 'strong' || signal === 'solid' || signal === 'minimum' || signal === 'none' ? signal : '';
   const originFilter = origin === 'shared';
-  const stageFilter = stage === 'ready' || stage === 'applied' || stage === 'test' ? stage : '';
+  const stageFilter =
+    stage === 'ready' || stage === 'applied' || stage === 'test' || stage === 'discarded' ? stage : '';
   const appFilter = isJobApplicationStatus(app) ? app : '';
   const sharedOriginCount = sharedOriginAttemptCount(attempts);
   const originSize = new Map<string, number>();
@@ -474,23 +696,27 @@ export default async function OpsCareersPanel({
       );
     });
 
-  const applicationsRanked = [...applications]
-    .sort((a, b) => {
+  const matchesApplicationSignal = (row: OpsJobApplicationRow) => {
+    if (!signalFilter) return true;
+    return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
+  };
+  const rankApplications = (rows: OpsJobApplicationRow[]) =>
+    [...rows].sort((a, b) => {
       const ha = huntForCandidate(huntReports, a.email, a.discipline);
       const hb = huntForCandidate(huntReports, b.email, b.discipline);
       const diff = considerationRank(hb.score.consideration) - considerationRank(ha.score.consideration);
       if (diff) return diff;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    })
-    .filter((row) => {
-      if (appFilter && row.status !== appFilter) return false;
-      if (!signalFilter) return true;
-      return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
     });
-  const applicationsForStage = [...applications].filter((row) => {
-    if (!signalFilter) return true;
-    return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
+  const activeApplications = applications.filter((row) => !isDiscardedApplicationStatus(row.status));
+  const applicationsRanked = rankApplications(activeApplications).filter((row) => {
+    if (appFilter && appFilter !== 'rejected' && row.status !== appFilter) return false;
+    return matchesApplicationSignal(row);
   });
+  const applicationsForStage = activeApplications.filter(matchesApplicationSignal);
+  const discardedApplications = rankApplications(
+    applications.filter((row) => isDiscardedApplicationStatus(row.status) && matchesApplicationSignal(row))
+  );
   const appliedEmails = new Set(applications.map((row) => emailKey(row.email)));
   const claimedFindingEmails = new Set([
     ...appliedEmails,
@@ -521,10 +747,16 @@ export default async function OpsCareersPanel({
     const key = emailKey(row.email);
     return !appliedEmails.has(key) && !readyEmails.has(key);
   });
-  const effectiveStage = appFilter ? 'applied' : stageFilter;
-  const showReady = !effectiveStage || effectiveStage === 'ready';
-  const showApplied = !effectiveStage || effectiveStage === 'applied';
-  const showTest = !effectiveStage || effectiveStage === 'test';
+  const effectiveStage =
+    stageFilter === 'discarded' || appFilter === 'rejected'
+      ? 'discarded'
+      : appFilter
+        ? 'applied'
+        : stageFilter;
+  const showDiscarded = effectiveStage === 'discarded';
+  const showReady = !showDiscarded && (!effectiveStage || effectiveStage === 'ready');
+  const showApplied = !showDiscarded && (!effectiveStage || effectiveStage === 'applied');
+  const showTest = !showDiscarded && (!effectiveStage || effectiveStage === 'test');
   const peopleEmpty =
     (showReady ? readyForCv.length : 0) +
       (showApplied ? applicationsRanked.length : 0) +
@@ -759,6 +991,7 @@ export default async function OpsCareersPanel({
               ['ready', t('ops.careers.stageReady'), readyForCv.length],
               ['applied', t('ops.careers.stageApplied'), applicationsForStage.length],
               ['test', t('ops.careers.stageTest'), attemptsActive.length],
+              ['discarded', t('ops.careers.stageDiscarded'), discardedApplications.length],
             ] as const
           ).map(([value, label, count]) => (
             <HoverTip
@@ -770,7 +1003,9 @@ export default async function OpsCareersPanel({
                     ? t('ops.careers.stageHintApplied')
                     : value === 'test'
                       ? t('ops.careers.stageHintTest')
-                      : t('ops.careers.stageHintAll')
+                      : value === 'discarded'
+                        ? t('ops.careers.stageHintDiscarded')
+                        : t('ops.careers.stageHintAll')
               }
             >
               <Link
@@ -828,7 +1063,42 @@ export default async function OpsCareersPanel({
             </HoverTip>
           ))}
         </div>
-        {peopleEmpty ? (
+        {showDiscarded ? (
+          discardedApplications.length ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-zinc-800">{t('ops.careers.discardedTitle')}</h3>
+              <p className="text-sm text-zinc-500">{t('ops.careers.discardedHint')}</p>
+              <ul className="space-y-3">
+                {discardedApplications.map((row) => (
+                  <ApplicationCard
+                    key={row.id}
+                    row={row}
+                    hunt={huntForCandidate(huntReports, row.email, row.discipline)}
+                    linkedAttempt={
+                      (row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)) ||
+                      attemptByEmail.get(emailKey(row.email)) ||
+                      null
+                    }
+                    t={t}
+                    formatDate={formatDate}
+                    locale={locale}
+                    disciplineLabels={DISCIPLINE_LABELS}
+                    statusLabels={JOB_APPLICATION_STATUS_LABELS}
+                    canManage={canManage}
+                    bolsaHref={bolsaHref}
+                    effectiveStage={effectiveStage}
+                    appFilter={appFilter}
+                    signalFilter={signalFilter}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+              {t('ops.careers.discardedEmpty')}
+            </p>
+          )
+        ) : peopleEmpty ? (
           <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.careers.peopleEmpty')}
           </p>
@@ -979,188 +1249,28 @@ export default async function OpsCareersPanel({
                   ) : null
                 ) : (
                   <ul className="space-y-3">
-                    {applicationsRanked.map((row) => {
-                      const hunt = huntForCandidate(huntReports, row.email, row.discipline);
-                      const posting = Array.isArray(row.ops_job_postings)
-                        ? row.ops_job_postings[0]
-                        : row.ops_job_postings;
-                      const role = applicationRoleLabel({
-                        postingTitle: posting?.title,
-                        discipline: row.discipline,
-                        locale: t.locale,
-                      });
-                      const linkedAttempt =
-                        (row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)) ||
-                        attemptByEmail.get(emailKey(row.email)) ||
-                        null;
-                      return (
-                        <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
-                          <p className="font-medium">
-                            {linkedAttempt ? (
-                              <Link
-                                href={`/team/intentos/${linkedAttempt.id}`}
-                                className="hover:text-codiva-primary hover:underline"
-                              >
-                                {row.full_name}
-                              </Link>
-                            ) : (
-                              row.full_name
-                            )}
-                          </p>
-                          {role ? <p className="text-sm font-medium text-codiva-primary">{role}</p> : null}
-                          <p className="text-sm text-zinc-500">
-                            <a href={`mailto:${row.email}`} className="hover:text-codiva-primary hover:underline">
-                              {row.email}
-                            </a>
-                            {row.phone ? (
-                              <>
-                                {' · '}
-                                <a href={`tel:${row.phone}`} className="hover:text-codiva-primary hover:underline">
-                                  {row.phone}
-                                </a>
-                              </>
-                            ) : null}
-                            {` · ${formatDate(row.created_at)}`}
-                          </p>
-                          {row.cover_letter?.trim() ? (
-                            <details className="group mt-2">
-                              <summary className="cursor-pointer list-none text-sm font-medium text-zinc-700 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
-                                {t('ops.careers.coverLetter')}
-                              </summary>
-                              <p className="mt-1 whitespace-pre-line text-sm text-zinc-600">
-                                {row.cover_letter.trim()}
-                              </p>
-                            </details>
-                          ) : null}
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            <CareersTag
-                              label={t('ops.careers.stageApplied')}
-                              tone="info"
-                              href={bolsaHref({
-                                stageValue: effectiveStage === 'applied' ? '' : 'applied',
-                                appValue: '',
-                              })}
-                              title={t('ops.careers.tagStageHint')}
-                              active={effectiveStage === 'applied' && !appFilter}
-                            />
-                            <CareersTag
-                              label={
-                                JOB_APPLICATION_STATUS_LABELS[row.status as JobApplicationStatus] ?? row.status
-                              }
-                              tone={applicationTone(row.status)}
-                              href={bolsaHref({
-                                stageValue: 'applied',
-                                appValue: appFilter === row.status ? '' : row.status,
-                              })}
-                              title={t('ops.careers.tagStatusHint')}
-                              active={appFilter === row.status}
-                            />
-                            {linkedAttempt?.score_pct != null ? (
-                              <CareersTag
-                                label={t('ops.careers.testScore', { pct: linkedAttempt.score_pct })}
-                                tone={linkedAttempt.passed ? 'success' : 'neutral'}
-                                href={`/team/intentos/${linkedAttempt.id}`}
-                                title={t('ops.careers.tagTestHint')}
-                              />
-                            ) : null}
-                            <CareersTag
-                              label={t('ops.careers.tagSignal', {
-                                label: huntConsiderationLabel(hunt.score.consideration, locale),
-                              })}
-                              tone={considerationTone(hunt.score.consideration)}
-                              href={bolsaHref({
-                                signalValue:
-                                  signalFilter === hunt.score.consideration ? '' : hunt.score.consideration,
-                              })}
-                              title={considerationHint(hunt.score.consideration, t)}
-                              active={signalFilter === hunt.score.consideration}
-                            />
-                            <CareerCvLightbox applicationId={row.id} name={row.full_name} />
-                            {canManage && row.personnel_offer_id ? (
-                              <CareersTag
-                                label={t('ops.careers.viewOffer')}
-                                tone="success"
-                                href={`/team/ofertas/${row.personnel_offer_id}`}
-                              />
-                            ) : null}
-                          </div>
-                          {canManage ? (
-                            <details className="group mt-3 rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
-                                {t('ops.careers.manageApplication')}
-                                <ChevronDown
-                                  className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180"
-                                  aria-hidden
-                                />
-                              </summary>
-                              <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 px-3 py-3">
-                                {!row.personnel_offer_id ? (
-                                  <ToastForm
-                                    success={t('ops.careers.offerCreated')}
-                                    loading={t('ops.careers.creating')}
-                                    action={async () => {
-                                      'use server';
-                                      await createPersonnelOfferFromApplication(row.id);
-                                    }}
-                                  >
-                                    <button
-                                      type="submit"
-                                      className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white"
-                                    >
-                                      {t('ops.careers.hire')}
-                                    </button>
-                                  </ToastForm>
-                                ) : null}
-                                <ToastForm
-                                  success={t('ops.careers.statusUpdated')}
-                                  action={async (fd) => {
-                                    'use server';
-                                    await updateJobApplicationStatus(row.id, fd);
-                                  }}
-                                  className="flex flex-wrap items-center gap-2"
-                                >
-                                  <select
-                                    name="status"
-                                    defaultValue={row.status}
-                                    className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-                                  >
-                                    {Object.entries(JOB_APPLICATION_STATUS_LABELS).map(([value, label]) => (
-                                      <option key={value} value={value}>
-                                        {label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <label className="flex items-center gap-1.5 text-sm text-zinc-600">
-                                    <input
-                                      type="checkbox"
-                                      name="notify_candidate"
-                                      value="1"
-                                      defaultChecked
-                                      className="rounded border-zinc-300"
-                                    />
-                                    {t('ops.careers.notifyCandidate')}
-                                  </label>
-                                  <button
-                                    type="submit"
-                                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                                  >
-                                    {t('ops.team.save')}
-                                  </button>
-                                </ToastForm>
-                              </div>
-                            </details>
-                          ) : null}
-                          <HuntFindingsBlock
-                            rows={hunt.rows}
-                            discipline={row.discipline}
-                            t={t}
-                            formatDate={formatDate}
-                            locale={locale}
-                            disciplineLabels={DISCIPLINE_LABELS}
-                          />
-                        </li>
-                      );
-                    })}
+                    {applicationsRanked.map((row) => (
+                      <ApplicationCard
+                        key={row.id}
+                        row={row}
+                        hunt={huntForCandidate(huntReports, row.email, row.discipline)}
+                        linkedAttempt={
+                          (row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)) ||
+                          attemptByEmail.get(emailKey(row.email)) ||
+                          null
+                        }
+                        t={t}
+                        formatDate={formatDate}
+                        locale={locale}
+                        disciplineLabels={DISCIPLINE_LABELS}
+                        statusLabels={JOB_APPLICATION_STATUS_LABELS}
+                        canManage={canManage}
+                        bolsaHref={bolsaHref}
+                        effectiveStage={effectiveStage}
+                        appFilter={appFilter}
+                        signalFilter={signalFilter}
+                      />
+                    ))}
                   </ul>
                 )}
               </div>
@@ -1316,7 +1426,7 @@ export default async function OpsCareersPanel({
         )}
       </section>
 
-      {orphanFindings.length ? (
+      {orphanFindings.length && !showDiscarded ? (
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.careers.findingsOrphanTitle')}</h2>
         <p className="text-sm text-zinc-500">{t('ops.careers.findingsOrphanHint')}</p>
