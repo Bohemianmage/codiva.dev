@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
 import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
@@ -21,7 +22,7 @@ import {
   updateHuntReportReview,
   updateJobApplicationStatus,
 } from '@/lib/ops/career-actions';
-import { huntSeedById } from '@/lib/careers/hunt/seeds';
+import { huntRequiredForCatalog, huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
 import {
   huntConsiderationLabel,
@@ -38,7 +39,7 @@ import {
   sharedOriginAttemptCount,
 } from '@/lib/careers/assessments/origin';
 import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
-import { getT } from '@/i18n/locale';
+import { getT, type Translator, type Locale } from '@/i18n/locale';
 
 export type OpsJobPostingRow = {
   id: string;
@@ -61,6 +62,7 @@ export type OpsJobApplicationRow = {
   personnel_offer_id: string | null;
   original_filename: string | null;
   assessment_attempt_id?: string | null;
+  cover_letter?: string | null;
   ops_job_postings: { title: string; slug: string } | { title: string; slug: string }[] | null;
 };
 
@@ -165,6 +167,132 @@ function huntForCandidate(
   return { rows, total: rows.length, craftHits: craftHits.length, score: scoreHuntReports(rows, discipline) };
 }
 
+function HuntFindingEmbed({
+  row,
+  discipline,
+  t,
+  formatDate,
+  locale,
+  disciplineLabels,
+}: {
+  row: OpsHuntReportRow;
+  discipline?: string | null;
+  t: Translator;
+  formatDate: (date: string | null | undefined) => string;
+  locale: Locale;
+  disciplineLabels: Record<string, string>;
+}) {
+  const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
+  const craftDiscipline = discipline && isCareerDiscipline(discipline) ? discipline : null;
+  const countsForCraft = Boolean(
+    seed && craftDiscipline && matchedSeedCountsForDiscipline(seed.id, craftDiscipline)
+  );
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-sm text-zinc-800">{row.title}</p>
+          <p className="mt-1 text-xs text-zinc-400">
+            {row.page_url} · {formatDate(row.created_at)}
+            {seed
+              ? ` · ${t('ops.careers.difficulty', {
+                  label: huntDifficultyLabel(seed.difficulty, locale),
+                })}`
+              : ''}
+          </p>
+        </div>
+        <StatusBadge
+          label={
+            seed
+              ? countsForCraft
+                ? t('ops.careers.seedCounts')
+                : t('ops.careers.seed', { craft: disciplineLabels[seed.craft] })
+              : t('ops.careers.noMatch')
+          }
+          tone={seed ? (countsForCraft ? 'success' : 'info') : 'neutral'}
+        />
+      </div>
+      {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : (
+        <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
+      )}
+      {(row.evidence_paths ?? []).length ? (
+        <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
+      ) : null}
+      {!seed ? (
+        <ToastForm
+          success={t('ops.careers.reviewSaved')}
+          action={async (fd) => {
+            'use server';
+            await updateHuntReportReview(row.id, fd);
+          }}
+          className="mt-3 flex flex-wrap items-center gap-2"
+        >
+          <input type="hidden" name="attempt_id" value={row.assessment_attempt_id || ''} />
+          <select
+            name="review_status"
+            defaultValue={row.review_status || 'open'}
+            className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+          >
+            <option value="open">{t('ops.careers.reviewOpen')}</option>
+            <option value="noted">{t('ops.careers.reviewNoted')}</option>
+            <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
+          </select>
+          <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+            {t('ops.team.save')}
+          </button>
+        </ToastForm>
+      ) : null}
+    </div>
+  );
+}
+
+function HuntFindingsBlock({
+  rows,
+  discipline,
+  t,
+  formatDate,
+  locale,
+  disciplineLabels,
+}: {
+  rows: OpsHuntReportRow[];
+  discipline?: string | null;
+  t: Translator;
+  formatDate: (date: string | null | undefined) => string;
+  locale: Locale;
+  disciplineLabels: Record<string, string>;
+}) {
+  if (!rows.length) return null;
+  return (
+    <div className="mt-4 space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        {t('ops.careers.findingsTitle')}
+      </p>
+      {rows.map((report) => (
+        <HuntFindingEmbed
+          key={report.id}
+          row={report}
+          discipline={discipline}
+          t={t}
+          formatDate={formatDate}
+          locale={locale}
+          disciplineLabels={disciplineLabels}
+        />
+      ))}
+    </div>
+  );
+}
+
+function candidateReadyForCv(
+  row: OpsJobAttemptRow,
+  hunt: ReturnType<typeof huntForCandidate>,
+  applied: Set<string>
+) {
+  if (applied.has(emailKey(row.email))) return false;
+  if (!row.passed) return false;
+  if (huntRequiredForCatalog(row.catalog_key) && hunt.craftHits < 1) return false;
+  return true;
+}
+
 export default async function OpsCareersPanel({
   postings,
   applications,
@@ -255,6 +383,37 @@ export default async function OpsCareersPanel({
       if (!signalFilter) return true;
       return huntForCandidate(huntReports, row.email, row.discipline).score.consideration === signalFilter;
     });
+  const appliedEmails = new Set(applications.map((row) => emailKey(row.email)));
+  const claimedFindingEmails = new Set([
+    ...appliedEmails,
+    ...attempts.map((row) => emailKey(row.email)),
+  ]);
+  const orphanFindings = huntReports.filter((row) => !claimedFindingEmails.has(emailKey(row.email)));
+  const readyForCv = [...attemptByEmail.values()]
+    .filter((row) => {
+      if (originFilter && (originSize.get(String(row.ip_hash || '').trim()) || 0) < 2) return false;
+      const hunt = huntForCandidate(
+        huntReports,
+        row.email,
+        disciplineFromCatalogKey(row.catalog_key)
+      );
+      if (!candidateReadyForCv(row, hunt, appliedEmails)) return false;
+      if (signalFilter && hunt.score.consideration !== signalFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const ha = huntForCandidate(huntReports, a.email, disciplineFromCatalogKey(a.catalog_key));
+      const hb = huntForCandidate(huntReports, b.email, disciplineFromCatalogKey(b.catalog_key));
+      const diff = considerationRank(hb.score.consideration) - considerationRank(ha.score.consideration);
+      if (diff) return diff;
+      return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+    });
+  const readyEmails = new Set(readyForCv.map((row) => emailKey(row.email)));
+  const attemptsActive = attemptsRanked.filter((row) => {
+    const key = emailKey(row.email);
+    return !appliedEmails.has(key) && !readyEmails.has(key);
+  });
+  const attemptsApplied = attemptsRanked.filter((row) => appliedEmails.has(emailKey(row.email)));
 
   const bolsaHref = ({ signalValue, originValue }: { signalValue?: string; originValue?: string }) => {
     const params = new URLSearchParams({ tab: 'bolsa' });
@@ -439,6 +598,306 @@ export default async function OpsCareersPanel({
         )}
       </section>
 
+      <div className="flex flex-wrap gap-2">
+        {[
+          ['', t('ops.careers.signalAll')],
+          ['strong', huntConsiderationLabel('strong', locale)],
+          ['solid', huntConsiderationLabel('solid', locale)],
+          ['minimum', huntConsiderationLabel('minimum', locale)],
+          ['none', huntConsiderationLabel('none', locale)],
+        ].map(([value, label]) => (
+          <Link
+            key={value || 'all'}
+            href={bolsaHref({ signalValue: value })}
+            className={
+              signalFilter === value
+                ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
+                : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50'
+            }
+          >
+            {label}
+          </Link>
+        ))}
+        <Link
+          href={bolsaHref({ originValue: originFilter ? '' : 'shared' })}
+          className={
+            originFilter
+              ? 'rounded-full bg-amber-700 px-3 py-1 text-xs font-semibold text-white'
+              : 'rounded-full border border-amber-300 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50'
+          }
+        >
+          {t('ops.careers.originShared')}
+        </Link>
+      </div>
+      {readyForCv.length ? (
+      <section className="space-y-3">
+        <h2 className="font-semibold">{t('ops.careers.readyTitle')}</h2>
+        <p className="text-sm text-zinc-500">{t('ops.careers.readyHint')}</p>
+        <ul className="space-y-3">
+          {readyForCv.map((row) => {
+            const posting = postings.find((p) => p.id === row.job_posting_id);
+            const discipline = disciplineFromCatalogKey(row.catalog_key);
+            const hunt = huntForCandidate(huntReports, row.email, discipline);
+            const role = applicationRoleLabel({
+              postingTitle: posting?.title,
+              discipline,
+              locale: t.locale,
+            });
+            const peers = attemptsSharingOrigin(attempts, row.ip_hash).filter((peer) => peer.id !== row.id);
+            const fingerprint = originFingerprint(row.ip_hash);
+            const identities = distinctOriginEmails([row, ...peers]);
+            return (
+              <li
+                key={row.id}
+                className={`rounded-xl border bg-white p-4 ${
+                  peers.length ? 'border-amber-300' : 'border-zinc-200'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">{row.full_name}</p>
+                    {role ? (
+                      <p className="text-sm font-medium text-codiva-primary">{role}</p>
+                    ) : null}
+                    <p className="text-sm text-zinc-500">{row.email}</p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {posting?.title || t('ops.careers.vacancy')} · {formatDate(row.started_at)}
+                      {row.score_pct != null ? ` · ${t('ops.careers.testScore', { pct: row.score_pct })}` : ''}
+                      {hunt.total
+                        ? ` · ${t('ops.careers.findingsCount', { count: hunt.total })}${
+                            hunt.craftHits ? ` ${t('ops.careers.craftHits', { count: hunt.craftHits })}` : ''
+                          }`
+                        : ''}
+                    </p>
+                    {peers.length ? (
+                      <p className="mt-1 text-xs text-amber-800">
+                        {t('ops.careers.sameOrigin', { count: peers.length + 1 })}
+                        {identities > 1
+                          ? ` · ${t('ops.careers.sameOriginIdentities', { count: identities })}`
+                          : ''}
+                        {fingerprint ? ` · ${t('ops.careers.originCode', { code: fingerprint })}` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge
+                      label={
+                        row.score_pct != null
+                          ? `${attemptStatusLabel(row.status, row.passed, t)} · ${row.score_pct}%`
+                          : attemptStatusLabel(row.status, row.passed, t)
+                      }
+                      tone="success"
+                    />
+                    {hunt.score.consideration !== 'none' ? (
+                      <StatusBadge
+                        label={t('ops.careers.consideration', {
+                          label: huntConsiderationLabel(hunt.score.consideration, locale),
+                        })}
+                        tone={considerationTone(hunt.score.consideration)}
+                      />
+                    ) : null}
+                    {peers.length ? (
+                      <StatusBadge
+                        label={t('ops.careers.sameOrigin', { count: peers.length + 1 })}
+                        tone="warning"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/team/intentos/${row.id}`}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                  >
+                    {t('ops.careers.viewProgress')}
+                  </Link>
+                  <a
+                    href={`/api/ops/careers/recruiting-report?attempt=${row.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                  >
+                    {t('ops.careers.reportHtml')}
+                  </a>
+                </div>
+                <HuntFindingsBlock
+                  rows={hunt.rows}
+                  discipline={discipline}
+                  t={t}
+                  formatDate={formatDate}
+                  locale={locale}
+                  disciplineLabels={DISCIPLINE_LABELS}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+      ) : null}
+      <section className="space-y-3">
+        <h2 className="font-semibold">{t('ops.careers.appsTitle')}</h2>
+        <p className="text-sm text-zinc-500">{t('ops.careers.appsHint')}</p>
+        {!applicationsRanked.length ? (
+          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.careers.appsEmpty')}
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {applicationsRanked.map((row) => {
+              const hunt = huntForCandidate(huntReports, row.email, row.discipline);
+              const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
+              const role = applicationRoleLabel({
+                postingTitle: posting?.title,
+                discipline: row.discipline,
+                locale: t.locale,
+              });
+              return (
+              <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">{row.full_name}</p>
+                    {role ? (
+                      <p className="text-sm font-medium text-codiva-primary">{role}</p>
+                    ) : null}
+                    <p className="text-sm text-zinc-500">
+                      {row.email}
+                      {row.phone ? ` · ${row.phone}` : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {formatDate(row.created_at)}
+                      {row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)?.score_pct != null
+                        ? ` · ${t('ops.careers.testScore', { pct: attemptById.get(row.assessment_attempt_id)?.score_pct })}`
+                        : ''}
+                      {hunt.total
+                        ? ` · ${t('ops.careers.findingsCount', { count: hunt.total })}${
+                            hunt.craftHits ? ` ${t('ops.careers.craftHits', { count: hunt.craftHits })}` : ''
+                          }`
+                        : ''}
+                    </p>
+                    {row.cover_letter?.trim() ? (
+                      <p className="mt-2 line-clamp-4 whitespace-pre-line text-sm text-zinc-600">
+                        {row.cover_letter.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                  <StatusBadge
+                    label={JOB_APPLICATION_STATUS_LABELS[row.status as JobApplicationStatus] ?? row.status}
+                    tone={applicationTone(row.status)}
+                  />
+                  {hunt.score.consideration !== 'none' ? (
+                    <StatusBadge
+                      label={t('ops.careers.consideration', {
+                        label: huntConsiderationLabel(hunt.score.consideration, locale),
+                      })}
+                      tone={considerationTone(hunt.score.consideration)}
+                    />
+                  ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <a
+                    href={`/api/ops/careers/cv?id=${row.id}`}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                  >
+                    {t('ops.careers.downloadCv')}
+                  </a>
+                  {row.assessment_attempt_id ? (
+                    <Link
+                      href={`/team/intentos/${row.assessment_attempt_id}`}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.viewTest')}
+                    </Link>
+                  ) : hunt.total && attemptByEmail.get(emailKey(row.email)) ? (
+                    <Link
+                      href={`/team/intentos/${attemptByEmail.get(emailKey(row.email))!.id}`}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.viewTest')}
+                    </Link>
+                  ) : null}
+                  {canManage && row.personnel_offer_id ? (
+                    <Link
+                      href={`/team/ofertas/${row.personnel_offer_id}`}
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
+                    >
+                      {t('ops.careers.viewOffer')}
+                    </Link>
+                  ) : null}
+                </div>
+                {canManage ? (
+                  <details className="group mt-3 rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
+                      {t('ops.careers.manageApplication')}
+                      <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+                    </summary>
+                    <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 px-3 py-3">
+                      {!row.personnel_offer_id ? (
+                        <ToastForm
+                          success={t('ops.careers.offerCreated')}
+                          loading={t('ops.careers.creating')}
+                          action={async () => {
+                            'use server';
+                            await createPersonnelOfferFromApplication(row.id);
+                          }}
+                        >
+                          <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
+                            {t('ops.careers.hire')}
+                          </button>
+                        </ToastForm>
+                      ) : null}
+                      <ToastForm
+                        success={t('ops.careers.statusUpdated')}
+                        action={async (fd) => {
+                          'use server';
+                          await updateJobApplicationStatus(row.id, fd);
+                        }}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <select
+                          name="status"
+                          defaultValue={row.status}
+                          className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+                        >
+                          {Object.entries(JOB_APPLICATION_STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="flex items-center gap-1.5 text-sm text-zinc-600">
+                          <input
+                            type="checkbox"
+                            name="notify_candidate"
+                            value="1"
+                            defaultChecked
+                            className="rounded border-zinc-300"
+                          />
+                          {t('ops.careers.notifyCandidate')}
+                        </label>
+                        <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                          {t('ops.team.save')}
+                        </button>
+                      </ToastForm>
+                    </div>
+                  </details>
+                ) : null}
+                <HuntFindingsBlock
+                  rows={hunt.rows}
+                  discipline={row.discipline}
+                  t={t}
+                  formatDate={formatDate}
+                  locale={locale}
+                  disciplineLabels={DISCIPLINE_LABELS}
+                />
+              </li>
+            );
+            })}
+          </ul>
+        )}
+      </section>
+
       <section className="space-y-3">
         <h2 className="font-semibold">{t('ops.careers.testsTitle')}</h2>
         <p className="text-sm text-zinc-500">{t('ops.careers.testsHint')}</p>
@@ -458,37 +917,6 @@ export default async function OpsCareersPanel({
             {t('ops.careers.pipelinePdf')}
           </a>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            ['', t('ops.careers.signalAll')],
-            ['strong', huntConsiderationLabel('strong', locale)],
-            ['solid', huntConsiderationLabel('solid', locale)],
-            ['minimum', huntConsiderationLabel('minimum', locale)],
-            ['none', huntConsiderationLabel('none', locale)],
-          ].map(([value, label]) => (
-            <Link
-              key={value || 'all'}
-              href={bolsaHref({ signalValue: value })}
-              className={
-                signalFilter === value
-                  ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
-                  : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50'
-              }
-            >
-              {label}
-            </Link>
-          ))}
-          <Link
-            href={bolsaHref({ originValue: originFilter ? '' : 'shared' })}
-            className={
-              originFilter
-                ? 'rounded-full bg-amber-700 px-3 py-1 text-xs font-semibold text-white'
-                : 'rounded-full border border-amber-300 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-50'
-            }
-          >
-            {t('ops.careers.originShared')}
-          </Link>
-        </div>
         <div className="grid gap-3 sm:grid-cols-5">
           {[
             [t('ops.careers.started'), started],
@@ -503,13 +931,15 @@ export default async function OpsCareersPanel({
             </div>
           ))}
         </div>
-        {!attemptsRanked.length ? (
+        {!attemptsActive.length && !attemptsApplied.length ? (
           <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.careers.testsEmpty')}
           </p>
         ) : (
+          <>
+          {attemptsActive.length ? (
           <ul className="space-y-3">
-            {attemptsRanked.slice(0, 40).map((row) => {
+            {attemptsActive.slice(0, 40).map((row) => {
               const posting = postings.find((p) => p.id === row.job_posting_id);
               const hunt = huntForCandidate(
                 huntReports,
@@ -622,254 +1052,89 @@ export default async function OpsCareersPanel({
                       {t('ops.careers.reportPdf')}
                     </a>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-semibold">{t('ops.careers.appsTitle')}</h2>
-        {!applicationsRanked.length ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-            {t('ops.careers.appsEmpty')}
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {applicationsRanked.map((row) => {
-              const hunt = huntForCandidate(huntReports, row.email, row.discipline);
-              const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
-              const role = applicationRoleLabel({
-                postingTitle: posting?.title,
-                discipline: row.discipline,
-                locale: t.locale,
-              });
-              return (
-              <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{row.full_name}</p>
-                    {role ? (
-                      <p className="text-sm font-medium text-codiva-primary">{role}</p>
-                    ) : null}
-                    <p className="text-sm text-zinc-500">
-                      {row.email}
-                      {row.phone ? ` · ${row.phone}` : ''}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-400">
-                      {formatDate(row.created_at)}
-                      {row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)?.score_pct != null
-                        ? ` · ${t('ops.careers.testScore', { pct: attemptById.get(row.assessment_attempt_id)?.score_pct })}`
-                        : ''}
-                      {hunt.total
-                        ? ` · ${t('ops.careers.findingsCount', { count: hunt.total })}${
-                            hunt.craftHits ? ` ${t('ops.careers.craftHits', { count: hunt.craftHits })}` : ''
-                          }`
-                        : ''}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                  <StatusBadge
-                    label={JOB_APPLICATION_STATUS_LABELS[row.status as JobApplicationStatus] ?? row.status}
-                    tone={applicationTone(row.status)}
+                  <HuntFindingsBlock
+                    rows={
+                      attemptByEmail.get(emailKey(row.email))?.id === row.id ? hunt.rows : []
+                    }
+                    discipline={disciplineFromCatalogKey(row.catalog_key)}
+                    t={t}
+                    formatDate={formatDate}
+                    locale={locale}
+                    disciplineLabels={DISCIPLINE_LABELS}
                   />
-                  {hunt.score.consideration !== 'none' ? (
-                    <StatusBadge
-                      label={t('ops.careers.consideration', {
-                        label: huntConsiderationLabel(hunt.score.consideration, locale),
-                      })}
-                      tone={considerationTone(hunt.score.consideration)}
-                    />
-                  ) : null}
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <a
-                    href={`/api/ops/careers/cv?id=${row.id}`}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                  >
-                    {t('ops.careers.downloadCv')}
-                  </a>
-                  {row.assessment_attempt_id ? (
-                    <Link
-                      href={`/team/intentos/${row.assessment_attempt_id}`}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                      {t('ops.careers.viewTest')}
-                    </Link>
-                  ) : hunt.total && attemptByEmail.get(emailKey(row.email)) ? (
-                    <Link
-                      href={`/team/intentos/${attemptByEmail.get(emailKey(row.email))!.id}`}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                      {t('ops.careers.viewTest')}
-                    </Link>
-                  ) : null}
-                  {canManage && row.personnel_offer_id ? (
-                    <Link
-                      href={`/team/ofertas/${row.personnel_offer_id}`}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                      {t('ops.careers.viewOffer')}
-                    </Link>
-                  ) : canManage ? (
-                    <ToastForm
-                      success={t('ops.careers.offerCreated')}
-                      loading={t('ops.careers.creating')}
-                      action={async () => {
-                        'use server';
-                        await createPersonnelOfferFromApplication(row.id);
-                      }}
-                    >
-                      <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                        {t('ops.careers.hire')}
-                      </button>
-                    </ToastForm>
-                  ) : null}
-                  <ToastForm
-                    success={t('ops.careers.statusUpdated')}
-                    action={async (fd) => {
-                      'use server';
-                      await updateJobApplicationStatus(row.id, fd);
-                    }}
-                    className="flex flex-wrap items-center gap-2"
-                  >
-                    <select
-                      name="status"
-                      defaultValue={row.status}
-                      className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-                    >
-                      {Object.entries(JOB_APPLICATION_STATUS_LABELS).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                    <label className="flex items-center gap-1.5 text-sm text-zinc-600">
-                      <input
-                        type="checkbox"
-                        name="notify_candidate"
-                        value="1"
-                        defaultChecked
-                        className="rounded border-zinc-300"
-                      />
-                      {t('ops.careers.notifyCandidate')}
-                    </label>
-                    <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                      {t('ops.team.save')}
-                    </button>
-                  </ToastForm>
-                </div>
-              </li>
-            );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-semibold">{t('ops.careers.findingsTitle')}</h2>
-        <p className="text-sm text-zinc-500">{t('ops.careers.findingsHint')}</p>
-        {!huntReports.length ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 bg-white px-4 py-8 text-center text-sm text-zinc-500">
-            {t('ops.careers.findingsEmpty')}
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {huntReports.slice(0, 40).map((row) => {
-              const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
-              const craftLabel =
-                row.discipline && isCareerDiscipline(row.discipline)
-                  ? DISCIPLINE_LABELS[row.discipline]
-                  : seed
-                    ? DISCIPLINE_LABELS[seed.craft]
-                    : null;
-              const linkedAttempt =
-                (row.assessment_attempt_id && attemptById.get(row.assessment_attempt_id)) ||
-                attemptByEmail.get(emailKey(row.email)) ||
-                null;
-              const countsForLinked =
-                seed &&
-                linkedAttempt &&
-                (() => {
-                  const discipline = disciplineFromCatalogKey(linkedAttempt.catalog_key);
-                  return discipline ? matchedSeedCountsForDiscipline(seed.id, discipline) : false;
-                })();
-              return (
-                <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium">{row.full_name}</p>
-                      <p className="text-sm text-zinc-500">{row.email}</p>
-                      <p className="mt-1 text-sm text-zinc-800">{row.title}</p>
-                      <p className="mt-1 text-xs text-zinc-400">
-                        {row.page_url} · {formatDate(row.created_at)}
-                        {craftLabel ? ` · ${craftLabel}` : ''}
-                        {seed
-                          ? ` · ${t('ops.careers.difficulty', {
-                              label: huntDifficultyLabel(seed.difficulty, locale),
-                            })}`
-                          : ''}
-                      </p>
-                    </div>
-                    <StatusBadge
-                      label={
-                        seed
-                          ? countsForLinked
-                            ? t('ops.careers.seedCounts')
-                            : t('ops.careers.seed', { craft: DISCIPLINE_LABELS[seed.craft] })
-                          : t('ops.careers.noMatch')
-                      }
-                      tone={seed ? (countsForLinked ? 'success' : 'info') : 'neutral'}
-                    />
-                  </div>
-                  {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : (
-                    <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
-                  )}
-                  {(row.evidence_paths ?? []).length ? (
-                    <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
-                  ) : null}
-                  {!seed ? (
-                    <ToastForm
-                      success={t('ops.careers.reviewSaved')}
-                      action={async (fd) => {
-                        'use server';
-                        await updateHuntReportReview(row.id, fd);
-                      }}
-                      className="mt-3 flex flex-wrap items-center gap-2"
-                    >
-                      <input type="hidden" name="attempt_id" value={row.assessment_attempt_id || ''} />
-                      <select
-                        name="review_status"
-                        defaultValue={row.review_status || 'open'}
-                        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-                      >
-                        <option value="open">{t('ops.careers.reviewOpen')}</option>
-                        <option value="noted">{t('ops.careers.reviewNoted')}</option>
-                        <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
-                      </select>
-                      <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                        {t('ops.team.save')}
-                      </button>
-                    </ToastForm>
-                  ) : null}
-                  {linkedAttempt ? (
-                    <div className="mt-3">
-                      <Link
-                        href={`/team/intentos/${linkedAttempt.id}`}
-                        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                      >
-                        {t('ops.careers.viewCandidateTest')}
-                      </Link>
-                    </div>
-                  ) : null}
                 </li>
               );
             })}
           </ul>
+          ) : null}
+          {attemptsApplied.length ? (
+            <details className="group rounded-xl border border-zinc-200 bg-zinc-50 open:bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
+                <span>
+                  {t('ops.careers.testsAppliedTitle', { count: attemptsApplied.length })}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="space-y-2 border-t border-zinc-200 px-4 py-3">
+                <p className="text-xs text-zinc-500">{t('ops.careers.testsAppliedHint')}</p>
+                <ul className="space-y-2">
+                  {attemptsApplied.slice(0, 40).map((row) => {
+                    const posting = postings.find((p) => p.id === row.job_posting_id);
+                    return (
+                      <li
+                        key={row.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-zinc-700">{row.full_name}</p>
+                          <p className="text-xs text-zinc-400">
+                            {row.email}
+                            {posting?.title ? ` · ${posting.title}` : ''}
+                            {` · ${formatDate(row.started_at)}`}
+                            {row.score_pct != null ? ` · ${row.score_pct}%` : ''}
+                          </p>
+                        </div>
+                        <Link
+                          href={`/team/intentos/${row.id}`}
+                          className="text-sm text-zinc-600 hover:underline"
+                        >
+                          {t('ops.careers.viewProgress')}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </details>
+          ) : null}
+          </>
         )}
       </section>
+
+      {orphanFindings.length ? (
+      <section className="space-y-3">
+        <h2 className="font-semibold">{t('ops.careers.findingsOrphanTitle')}</h2>
+        <p className="text-sm text-zinc-500">{t('ops.careers.findingsOrphanHint')}</p>
+        <ul className="space-y-3">
+          {orphanFindings.slice(0, 40).map((row) => (
+            <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
+              <p className="font-medium">{row.full_name}</p>
+              <p className="text-sm text-zinc-500">{row.email}</p>
+              <div className="mt-3">
+                <HuntFindingEmbed
+                  row={row}
+                  discipline={row.discipline}
+                  t={t}
+                  formatDate={formatDate}
+                  locale={locale}
+                  disciplineLabels={DISCIPLINE_LABELS}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+      ) : null}
     </div>
   );
 }

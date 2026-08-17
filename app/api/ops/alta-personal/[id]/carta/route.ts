@@ -71,7 +71,9 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const pdf = await htmlToPdf(html);
     const filename = offerLetterFilename(offer.full_name, 'pdf');
-    return new NextResponse(new Uint8Array(pdf), {
+    const body = new Uint8Array(pdf.byteLength);
+    body.set(pdf);
+    return new NextResponse(body, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
