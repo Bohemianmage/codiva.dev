@@ -204,15 +204,16 @@
   </p>
   <p>Flujo núcleo (actualizado):</p>
   <pre class="mono">Vacante → Aplicaciones → Pool (score por labor / afinidad)
-  → Convocatoria auto (criterios) → Ofertas FCFS → Confirmado + QR
-  → Check-in QR → INE → Contrato adhesión (ENTRADA) → Alta IDSE PRO
-  → Check-out → Baja IDSE + Stripe → Contabilidad → Disposal
+  → Convocatoria auto (criterios) → Ofertas FCFS → Confirmado + QR (app)
+  → Tableta kiosk escanea QR → INE si falta → Adhesión 1 firmante → Alta IDSE (async)
+  → Trabajando → Check-out → Baja IDSE + Stripe → Contabilidad → Disposal
 Backoffice: vacantes · aplicaciones · pools · validaciones · convocatorias · finanzas</pre>
 
   <div class="info">
     <strong>IMSS:</strong> adapter <strong>IDSE PRO</strong> (integración vía proveedor autorizado).
-    <strong>Contrato de adhesión:</strong> se firma a la <em>entrada</em>, no a la salida.
-    <strong>Check-in:</strong> QR en zona de trabajo + geocerca.
+    <strong>Contrato de adhesión:</strong> firma <em>solo el trabajador</em> a la <em>entrada</em>, en <strong>tableta kiosk</strong>
+    (idle → escanea QR del empleado → firma → idle). La alta IMSS corre <em>en paralelo</em>; la tableta no espera IDSE.
+    <strong>Check-out:</strong> baja IDSE + Stripe.
   </div>
 
   <!-- 2 -->
@@ -303,12 +304,12 @@ flowchart LR
     <tbody>
       <tr><td>Super Admin</td><td>Configuración global</td></tr>
       <tr><td>Admin Nacional / Regional</td><td>Multi-sitio, métricas</td></tr>
-      <tr><td>Admin de Sitio</td><td>Check-in / check-out, incidencias</td></tr>
+      <tr><td>Admin de Sitio</td><td>Kiosk tableta (entrada), check-out, incidencias</td></tr>
       <tr><td>Reclutador</td><td>ATS y pipeline</td></tr>
       <tr><td>RH</td><td>Expediente, validaciones</td></tr>
       <tr><td>Contabilidad</td><td>Asientos, conciliación</td></tr>
       <tr><td>Auditor</td><td>Solo lectura + export auditoría</td></tr>
-      <tr><td>Personal</td><td>Firma contrato, carga INE, consulta pagos</td></tr>
+      <tr><td>Personal</td><td>Presenta QR al kiosk; carga INE; consulta pagos</td></tr>
     </tbody>
   </table>
 
@@ -316,11 +317,11 @@ flowchart LR
   <table>
     <thead><tr><th>Evento</th><th>Consumidores</th></tr></thead>
     <tbody>
-      <tr><td><code>EmployeeCheckedIn</code></td><td>Alta IDSE, notificaciones, contabilidad provisional</td></tr>
-      <tr><td><code>ImssAltaAccepted</code></td><td>FSM → Trabajando</td></tr>
-      <tr><td><code>EmployeeCheckedOut</code></td><td>Contrato, OCR, notificaciones</td></tr>
-      <tr><td><code>IdentityVerified</code></td><td>Habilita firma</td></tr>
-      <tr><td><code>ContractSigned</code></td><td>Baja IDSE, pago Stripe</td></tr>
+      <tr><td><code>EmployeeCheckedIn</code></td><td>Kiosk validó QR; inicia adhesión</td></tr>
+      <tr><td><code>ImssAltaAccepted</code></td><td>FSM → Trabajando (con ContractSigned)</td></tr>
+      <tr><td><code>EmployeeCheckedOut</code></td><td>Baja IDSE + pago Stripe</td></tr>
+      <tr><td><code>IdentityVerified</code></td><td>INE documental listo; habilita firma en kiosk</td></tr>
+      <tr><td><code>ContractSigned</code></td><td>Alta IDSE; tableta puede volver a idle</td></tr>
       <tr><td><code>PaymentCompleted</code></td><td>Contabilidad, comprobante</td></tr>
       <tr><td><code>PaymentFailed</code></td><td>Alertas, reintento controlado</td></tr>
     </tbody>
@@ -343,11 +344,11 @@ flowchart LR
   B --> T[Banco talento]
   T --> C
   C --> D[Asignado]
-  D --> Q[QR]
-  Q --> F[Check-in QR]
+  D --> Q[QR app]
+  Q --> F[Kiosk escanea]
   F --> K[INE]
-  K --> L[Adhesión ENTRADA]
-  L --> G[Alta IDSE]
+  K --> L[Adhesión tableta]
+  L --> G[Alta IDSE async]
   G --> H[Trabajando]
   H --> I[Check-out]
   I --> M[Baja IDSE]
@@ -357,16 +358,17 @@ flowchart LR
   </div>
 
   <!-- 5 -->
-  <h2 id="evento">5. Flujo: día del evento (QR + adhesión entrada)</h2>
+  <h2 id="evento">5. Flujo: día del evento (kiosk + adhesión)</h2>
   <div class="mermaid">
 flowchart LR
   A[Abrir evento] --> B[Asignar IDSE-ready]
-  B --> C[Emitir QR]
-  C --> E[Scan en zona]
-  E --> E2[GPS]
+  B --> C[Emitir QR app]
+  C --> E[Tableta idle]
+  E --> E2[Escanea QR + GPS]
   E2 --> K[INE si falta]
-  K --> L[Firma adhesión]
-  L --> F[Alta IDSE]
+  K --> L[Firma adhesión 1]
+  L --> IDLE[Tableta idle]
+  L --> F[Alta IDSE async]
   F --> G[Trabajando]
   G --> H[Check-out]
   H --> M[Baja]
@@ -388,20 +390,25 @@ flowchart LR
   <p class="meta">Campos de alta alineados al contrato IDSE PRO · RFC/CLABE/INE siguen en expediente/contrato aunque no vayan en el payload de alta.</p>
 
   <!-- 6 -->
-  <h2 id="post">6. Flujo: entrada (firma) y salida (baja + pago)</h2>
+  <h2 id="post">6. Flujo: entrada (kiosk) y salida (baja + pago)</h2>
   <div class="mermaid">
 sequenceDiagram
   autonumber
   participant Pers as Personal
+  participant Tab as Tableta
   participant API as NIRC API
   participant Cin as Cincel
   participant Q as BullMQ
   participant IDSE as IDSE PRO
   participant Str as Stripe
-  Pers->>API: Scan QR geocerca
-  API->>Cin: Contrato adhesión ENTRADA
-  Cin-->>Pers: Firma
-  Cin->>API: Webhook Firmado
+  Note over Tab: idle
+  Pers->>Tab: Presenta QR
+  Tab->>API: Scan + geocerca
+  API->>Cin: Adhesión 1 firmante
+  Cin-->>Tab: UI firma
+  Pers->>Tab: Firma
+  Cin->>API: Firmado
+  API->>Tab: idle
   API->>Q: Alta IDSE tipo 8
   Q->>IDSE: smart_movements
   Note over Pers,Str: Jornada...
@@ -415,9 +422,9 @@ sequenceDiagram
 
   <h3>Gates</h3>
   <ol>
-    <li>QR/check-in - asignación + geocerca + token</li>
-    <li>Contrato adhesión - firma en <strong>entrada</strong></li>
-    <li>Alta IDSE - tras contrato + merge candidato/patrón</li>
+    <li>Kiosk - tableta escanea QR empleado + geocerca + token</li>
+    <li>Contrato adhesión - 1 firmante (trabajador) en tableta; luego idle</li>
+    <li>Alta IDSE - async tras ContractSigned (tableta no espera)</li>
     <li>Check-out - baja + Stripe (sin contrato)</li>
     <li>Disposal LFPDPPP - retención / borrado</li>
   </ol>
@@ -472,8 +479,8 @@ flowchart LR
   <table>
     <thead><tr><th>Cola</th><th>Trigger</th><th>Acción</th></tr></thead>
     <tbody>
-      <tr><td>imss.alta</td><td>EmployeeCheckedIn</td><td>Validar → submit alta</td></tr>
-      <tr><td>imss.baja</td><td>ContractSigned</td><td>Validar → submit baja</td></tr>
+      <tr><td>imss.alta</td><td>ContractSigned</td><td>Validar → submit alta tipo 8</td></tr>
+      <tr><td>imss.baja</td><td>EmployeeCheckedOut</td><td>Validar → submit baja tipo 2</td></tr>
       <tr><td>imss.reconcile</td><td>Cron</td><td>Polling pendientes</td></tr>
       <tr><td>imss.webhook</td><td>HTTP webhook</td><td>Idempotencia por event_id</td></tr>
     </tbody>

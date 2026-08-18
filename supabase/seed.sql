@@ -20,17 +20,21 @@ INSERT INTO projects (
     'a0000001-0001-4000-8000-00000000000b',
     'NIRC MVP Fase 1',
     'nirc',
-    'quoting',
-    'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas. Hosting e integraciones de terceros se presupuestan aparte.',
-    NULL, '2026-12-31', 5, true
+    'active',
+    E'Workforce eventual · Track A arquitectura en curso (desde 17 ago 2026).\n\nFlujo de entrada: tableta kiosk escanea QR del empleado → contrato de adhesión (solo firma el trabajador) → tableta idle; alta IMSS en paralelo. Baja IMSS y pago al check-out.\n\nSandboxes: Cincel y Stripe listos; IDSE PRO pendiente de proveedor. Políticas de montos/SDI a cargo de NIRC (no bloquean el diseño).',
+    '2026-08-17', '2026-11-09', 8, true
   )
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE projects SET
   portal_show_quote = false,
   portal_show_costs = false,
+  status = 'active',
+  start_date = '2026-08-17',
+  target_delivery_date = '2026-11-09',
+  progress_percent = 8,
   name = 'NIRC MVP Fase 1',
-  description = 'Workforce eventual: pool FCFS, entrada dura (Cincel+IDSE), Stripe Connect y privacy. Alcance técnico en 18 semanas. Hosting e integraciones de terceros se presupuestan aparte.'
+  description = E'Workforce eventual · Track A arquitectura en curso (desde 17 ago 2026).\n\nFlujo de entrada: tableta kiosk escanea QR del empleado → contrato de adhesión (solo firma el trabajador) → tableta idle; alta IMSS en paralelo. Baja IMSS y pago al check-out.\n\nSandboxes: Cincel y Stripe listos; IDSE PRO pendiente de proveedor. Políticas de montos/SDI a cargo de NIRC (no bloquean el diseño).'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 INSERT INTO leads (
@@ -99,15 +103,21 @@ WHERE id = 'e0000001-0001-4000-8000-00000000000b'
    OR token = 'demo-kaucho-eshop-2026';
 
 INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date) VALUES
-  ('f0000001-0001-4000-8000-00000000000b', 'b0000001-0001-4000-8000-00000000000b', 'Kickoff y sandboxes', 'Accesos IDSE/Cincel/Stripe, catálogo RP.', 'pending', 1, '2026-08-20'),
-  ('f0000001-0001-4000-8000-00000000000c', 'b0000001-0001-4000-8000-00000000000b', 'Fundaciones', 'Auth, backoffice y carga masiva.', 'pending', 2, '2026-09-17'),
-  ('f0000001-0001-4000-8000-00000000000d', 'b0000001-0001-4000-8000-00000000000b', 'Pool + FCFS staging', 'Convocatorias y waitlist en staging.', 'pending', 3, '2026-10-15'),
-  ('f0000001-0001-4000-8000-00000000000e', 'b0000001-0001-4000-8000-00000000000b', 'Entrada dura staging', 'Cincel + IDSE alta con gate.', 'pending', 4, '2026-11-12'),
-  ('f0000001-0001-4000-8000-00000000000f', 'b0000001-0001-4000-8000-00000000000b', 'UAT / go-live', 'Pruebas punta a punta y producción.', 'pending', 5, '2026-12-17')
+  ('f0000001-0001-4000-8000-00000000000b', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — arranque', E'Inicio Track A (17 ago 2026). Decisiones: adhesión 1 firmante en tableta kiosk; baja IMSS en check-out; INE documental; IDV Cincel off. Cincel+Stripe sandbox OK; IDSE sandbox pendiente.', 'in_progress', 1, '2026-09-14'),
+  ('f0000001-0001-4000-8000-00000000000c', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — fundaciones', 'ADRs base, trazabilidad, catálogo P0 de entrada/kiosk y ownership congelado (fin Bloque I).', 'pending', 2, '2026-09-14'),
+  ('f0000001-0001-4000-8000-00000000000d', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — dominios', 'Specs por dominio (pool/FCFS, QR/kiosk, Cincel, IDSE, Stripe) + fixtures.', 'pending', 3, '2026-10-12'),
+  ('f0000001-0001-4000-8000-00000000000e', 'b0000001-0001-4000-8000-00000000000b', 'Architecture freeze', 'Paquete certificado + handoff a build. Objetivo ~9 nov 2026.', 'pending', 4, '2026-11-09'),
+  ('f0000001-0001-4000-8000-00000000000f', 'b0000001-0001-4000-8000-00000000000b', 'Build MVP — UAT / go-live', 'Tras freeze: implementación 18 semanas, UAT y producción (hitos de build).', 'pending', 5, '2027-03-15')
 ON CONFLICT (id) DO NOTHING;
 
-UPDATE milestones SET title = 'Fundaciones', description = 'Auth, backoffice y carga masiva.'
+UPDATE milestones SET
+  title = 'Arquitectura — fundaciones',
+  description = 'ADRs base, trazabilidad, catálogo P0 de entrada/kiosk y ownership congelado (fin Bloque I).'
 WHERE id = 'f0000001-0001-4000-8000-00000000000c';
+
+UPDATE deliverables
+SET description = 'Dominios, kiosk de entrada (adhesión 1 firmante), IDSE/Cincel/Stripe y flujos operativos.'
+WHERE id = '92000001-0001-4000-8000-000000000001';
 
 INSERT INTO deliverables (
   id, project_id, title, description, url, kind, sort_order, visible_to_client
