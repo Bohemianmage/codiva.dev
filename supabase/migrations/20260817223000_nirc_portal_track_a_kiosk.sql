@@ -64,3 +64,11 @@ UPDATE public.deliverables
 SET
   description = 'Dominios, kiosk de entrada (adhesión 1 firmante), IDSE/Cincel/Stripe y flujos operativos.'
 WHERE id = '92000001-0001-4000-8000-000000000001';
+
+UPDATE public.milestones
+SET
+  title = 'Documentación base (Fase 0)',
+  description = 'Arquitectura, flujos y MVP documentados en repo. Completado antes del Track A.',
+  status = 'completed',
+  due_date = '2026-08-17'
+WHERE id = 'f0000001-0001-4000-8000-00000000000a';
