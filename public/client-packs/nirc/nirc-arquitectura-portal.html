@@ -206,14 +206,15 @@
   <pre class="mono">Vacante → Aplicaciones → Pool (score por labor / afinidad)
   → Convocatoria auto (criterios) → Ofertas FCFS → Confirmado + QR (app)
   → Tableta kiosk escanea QR → INE si falta → Adhesión 1 firmante → Alta IDSE (async)
-  → Trabajando → Check-out → Baja IDSE + Stripe → Contabilidad → Disposal
+  → Trabajando → Check-out → Baja IDSE ∥ Stripe (paralelo) → Contabilidad → Disposal
 Backoffice: vacantes · aplicaciones · pools · validaciones · convocatorias · finanzas</pre>
 
   <div class="info">
     <strong>IMSS:</strong> adapter <strong>IDSE PRO</strong> (integración vía proveedor autorizado).
     <strong>Contrato de adhesión:</strong> firma <em>solo el trabajador</em> a la <em>entrada</em>, en <strong>tableta kiosk</strong>
     (idle → escanea QR del empleado → firma → idle). La alta IMSS corre <em>en paralelo</em>; la tableta no espera IDSE.
-    <strong>Check-out:</strong> baja IDSE + Stripe.
+    <strong>Check-out:</strong> baja IDSE y pago Stripe <em>en paralelo</em> (SPEI solo como respaldo si el pago no completó al cierre del día).
+    <strong>Estado:</strong> arquitectura certificada (freeze 17 ago 2026); siguiente fase = implementación.
   </div>
 
   <!-- 2 -->
