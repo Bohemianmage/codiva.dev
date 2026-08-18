@@ -27,6 +27,7 @@ import {
   deleteProjectCharge,
 } from '@/lib/ops/actions';
 import OpsProjectSiteAccess from '@/components/ops/OpsProjectSiteAccess';
+import OpsProjectReleases from '@/components/ops/OpsProjectReleases';
 import OpsProjectSprints from '@/components/ops/OpsProjectSprints';
 import OpsProjectStaff from '@/components/ops/OpsProjectStaff';
 import OpsProjectHours from '@/components/ops/OpsProjectHours';
@@ -93,6 +94,8 @@ export default async function ProjectDetailPage({
     { data: docRequests },
     { data: charges },
     { data: siteAccess },
+    { data: releaseSettings },
+    { data: releaseRequests },
     { data: siblingProjects },
     { data: projectStaffRows },
     { data: sprints },
@@ -125,6 +128,15 @@ export default async function ProjectDetailPage({
       .select('id, label, kind, url, username, secret, notes, visible_to_client, sort_order')
       .eq('project_id', id)
       .order('sort_order', { ascending: true }),
+    supabase.from('project_release_settings').select('*').eq('project_id', id).maybeSingle(),
+    supabase
+      .from('project_release_requests')
+      .select(
+        'id, project_id, status, preview_url, production_url, notes, error_message, github_run_url, requested_by_kind, created_at, updated_at, completed_at'
+      )
+      .eq('project_id', id)
+      .order('created_at', { ascending: false })
+      .limit(20),
     project.organization_id
       ? supabase
           .from('projects')
@@ -1161,6 +1173,14 @@ export default async function ProjectDetailPage({
             sitePreviewUrl={project.site_preview_url}
             siteProductionUrl={project.site_production_url}
             items={siteAccess ?? []}
+          />
+
+          <OpsProjectReleases
+            projectId={id}
+            sitePreviewUrl={project.site_preview_url}
+            siteProductionUrl={project.site_production_url}
+            settings={releaseSettings}
+            requests={releaseRequests ?? []}
           />
         </div>
       )}

@@ -270,6 +270,23 @@
       "url": "URL: ",
       "user": "Usuario: "
     },
+    "releases": {
+      "title": "Releases / producción",
+      "hint": "El flujo es preview → aprobación de Codiva (admin/PM) → promote a producción vía CI. El estado de abajo es solo lectura.",
+      "stepPreview": "Validar el preview / staging",
+      "stepApprove": "Admin o PM de Codiva aprueba el promote",
+      "stepPromote": "Se publica el mismo artefacto en producción",
+      "history": "Historial",
+      "empty": "Aún no hay solicitudes de promote.",
+      "status": {
+        "pending": "Pendiente de aprobación",
+        "approved": "Aprobado",
+        "dispatching": "Despachando CI…",
+        "succeeded": "Promovido / CI disparado",
+        "failed": "Falló",
+        "cancelled": "Cancelado"
+      }
+    },
     "proposal": {
       "title": "Propuesta",
       "hint": "Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o descargar el PDF cuando exista.",
@@ -1471,6 +1488,47 @@
       "deleted": "Eliminado",
       "delete": "Eliminar acceso",
       "empty": "Sin ítems de acceso. Las URLs del proyecto bastan si no hay login."
+    },
+    "releases": {
+      "title": "Releases (preview → producción)",
+      "hint": "Pipeline: CI en preview, promote manual a producción. Solo admin o PM pueden crear, aprobar y despachar. El cliente solo ve el estado.",
+      "adminPmOnly": "Solo lectura: crear, aprobar y despachar requieren admin o PM.",
+      "tokenOk": "Token GitHub configurado en el entorno (GITHUB_RELEASES_TOKEN).",
+      "tokenMissing": "Sin GITHUB_RELEASES_TOKEN: puedes registrar solicitudes y marcar promote manual; el dispatch automático no correrá.",
+      "settingsSaved": "Configuración de releases guardada",
+      "enable": "Activar panel de releases en portal / Ops",
+      "githubOwner": "GitHub owner",
+      "githubRepo": "GitHub repo",
+      "workflow": "Workflow de promote (archivo)",
+      "ref": "Ref / branch",
+      "inputName": "Nombre del input (deployment URL)",
+      "requireStaffApproval": "Requiere aprobación staff antes de despachar",
+      "notesPlaceholder": "Notas internas (opcional)",
+      "saveSettings": "Guardar pipeline",
+      "newRequest": "Nueva solicitud de promote",
+      "productionOptional": "URL producción (opcional)",
+      "requestNotes": "Notas",
+      "createRequest": "Crear solicitud",
+      "requestCreated": "Solicitud creada",
+      "history": "Historial de promotes",
+      "emptyHistory": "Sin solicitudes todavía.",
+      "approve": "Aprobar",
+      "approved": "Aprobado",
+      "promote": "Despachar promote (CI)",
+      "dispatched": "Workflow despachado",
+      "cancel": "Cancelar",
+      "cancelled": "Cancelado",
+      "markManual": "Marcar promovido a mano",
+      "manualOk": "Marcado como promovido",
+      "viewWorkflow": "Ver workflow en GitHub",
+      "status": {
+        "pending": "Pendiente de aprobación",
+        "approved": "Aprobado",
+        "dispatching": "Despachando…",
+        "succeeded": "OK / despachado",
+        "failed": "Falló",
+        "cancelled": "Cancelado"
+      }
     },
     "leadDetail": {
       "via": " · vía {{company}}",

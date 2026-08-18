@@ -270,6 +270,23 @@
       "url": "URL: ",
       "user": "User: "
     },
+    "releases": {
+      "title": "Releases / production",
+      "hint": "Flow is preview → Codiva (admin/PM) approval → promote to production via GitHub CI. Status below is read-only.",
+      "stepPreview": "Validate preview / staging",
+      "stepApprove": "Codiva admin or PM approves the promote",
+      "stepPromote": "The same artifact is published to production",
+      "history": "History",
+      "empty": "No promote requests yet.",
+      "status": {
+        "pending": "Pending approval",
+        "approved": "Approved",
+        "dispatching": "Dispatching CI…",
+        "succeeded": "Promoted / CI dispatched",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      }
+    },
     "proposal": {
       "title": "Proposal",
       "hint": "Proposal materials and project identity. You can open fullscreen or download the PDF when available.",
@@ -1471,6 +1488,47 @@
       "deleted": "Deleted",
       "delete": "Delete access",
       "empty": "No access items. Project URLs are enough if there is no login."
+    },
+    "releases": {
+      "title": "Releases (preview → production)",
+      "hint": "Pipeline: CI on preview, manual promote to production. Only admin or PM can create, approve, and dispatch. Clients see status only.",
+      "adminPmOnly": "View only: create, approve, and dispatch require admin or PM.",
+      "tokenOk": "GitHub token configured in the environment (GITHUB_RELEASES_TOKEN).",
+      "tokenMissing": "No GITHUB_RELEASES_TOKEN: you can still log requests and mark manual promotes; auto-dispatch will not run.",
+      "settingsSaved": "Release settings saved",
+      "enable": "Enable releases panel in portal / Ops",
+      "githubOwner": "GitHub owner",
+      "githubRepo": "GitHub repo",
+      "workflow": "Promote workflow (file)",
+      "ref": "Ref / branch",
+      "inputName": "Input name (deployment URL)",
+      "requireStaffApproval": "Require staff approval before dispatch",
+      "notesPlaceholder": "Internal notes (optional)",
+      "saveSettings": "Save pipeline",
+      "newRequest": "New promote request",
+      "productionOptional": "Production URL (optional)",
+      "requestNotes": "Notes",
+      "createRequest": "Create request",
+      "requestCreated": "Request created",
+      "history": "Promote history",
+      "emptyHistory": "No requests yet.",
+      "approve": "Approve",
+      "approved": "Approved",
+      "promote": "Dispatch promote (CI)",
+      "dispatched": "Workflow dispatched",
+      "cancel": "Cancel",
+      "cancelled": "Cancelled",
+      "markManual": "Mark promoted manually",
+      "manualOk": "Marked as promoted",
+      "viewWorkflow": "View workflow on GitHub",
+      "status": {
+        "pending": "Pending approval",
+        "approved": "Approved",
+        "dispatching": "Dispatching…",
+        "succeeded": "OK / dispatched",
+        "failed": "Failed",
+        "cancelled": "Cancelled"
+      }
     },
     "leadDetail": {
       "via": " · via {{company}}",
