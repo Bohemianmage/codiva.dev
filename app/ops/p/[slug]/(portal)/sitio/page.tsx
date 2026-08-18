@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
 import SecretReveal from '@/components/ops/SecretReveal';
+import PortalReleasesPanel from '@/components/ops/PortalReleasesPanel';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
@@ -29,18 +30,31 @@ export default async function PortalSitioPage({
   const t = await getT();
   const { SITE_ACCESS_KIND_LABELS } = labelsFor(t.locale);
 
-  const { data: accessItems } = await supabase
-    .from('project_site_access')
-    .select('id, label, kind, url, username, secret, notes, sort_order')
-    .eq('project_id', project.id)
-    .eq('visible_to_client', true)
-    .order('sort_order', { ascending: true });
+  const [{ data: accessItems }, { data: releaseSettings }, { data: releaseRequests }] =
+    await Promise.all([
+      supabase
+        .from('project_site_access')
+        .select('id, label, kind, url, username, secret, notes, sort_order')
+        .eq('project_id', project.id)
+        .eq('visible_to_client', true)
+        .order('sort_order', { ascending: true }),
+      supabase.from('project_release_settings').select('*').eq('project_id', project.id).maybeSingle(),
+      supabase
+        .from('project_release_requests')
+        .select(
+          'id, project_id, status, preview_url, production_url, notes, error_message, github_run_url, requested_by_kind, created_at, updated_at, completed_at'
+        )
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: false })
+        .limit(15),
+    ]);
 
   const previewUrl = project.site_preview_url?.trim() || null;
   const productionUrl = project.site_production_url?.trim() || null;
   const hasUrls = Boolean(previewUrl || productionUrl);
   const items = accessItems ?? [];
-  const empty = !hasUrls && items.length === 0;
+  const releasesEnabled = Boolean(releaseSettings?.enabled);
+  const empty = !hasUrls && items.length === 0 && !releasesEnabled;
 
   return (
     <div className="space-y-8">
@@ -89,6 +103,8 @@ export default async function PortalSitioPage({
               </ul>
             </section>
           )}
+
+          <PortalReleasesPanel settings={releaseSettings} requests={releaseRequests ?? []} />
 
           {items.length > 0 && (
             <section className="space-y-3">
