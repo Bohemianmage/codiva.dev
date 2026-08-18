@@ -18,13 +18,14 @@ function milestoneTone(status: string) {
   return map[status] ?? 'neutral';
 }
 
-/** Current milestone plus the most recent completed ones (never a stale prefix of the plan). */
-function recentMilestonesForHome<T extends { status: string }>(items: T[], limit = 5): T[] {
+/** Last completed + current + upcoming — the live slice of the plan, not a stale prefix. */
+function recentMilestonesForHome<T extends { status: string }>(items: T[], limit = 6): T[] {
   if (items.length <= limit) return items;
   const currentIdx = items.findIndex((m) => m.status !== 'completed');
   if (currentIdx === -1) return items.slice(-limit);
-  const start = Math.max(0, currentIdx - (limit - 1));
-  return items.slice(start, currentIdx + 1);
+  const start = Math.max(0, currentIdx - 1);
+  const end = Math.min(items.length, start + limit);
+  return items.slice(Math.max(0, end - limit), end);
 }
 
 function quoteCardSubtitle(
@@ -81,7 +82,7 @@ export default async function PortalHomePage({
     await Promise.all([
     supabase
       .from('milestones')
-      .select('id, title, status, due_date')
+      .select('id, title, description, status, due_date')
       .eq('project_id', project.id)
       .eq('visible_to_client', true)
       .order('sort_order'),
@@ -252,10 +253,15 @@ export default async function PortalHomePage({
             </Link>
           )}
         </div>
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {recentMilestones.map((m) => (
-            <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
-              <span>{m.title}</span>
+            <li key={m.id} className="flex items-start justify-between gap-3 text-sm">
+              <div className="min-w-0">
+                <p>{m.title}</p>
+                {m.description ? (
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{m.description}</p>
+                ) : null}
+              </div>
               <StatusBadge label={MILESTONE_STATUS_LABELS[m.status]} tone={milestoneTone(m.status)} />
             </li>
           ))}
