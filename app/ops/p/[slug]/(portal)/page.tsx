@@ -18,6 +18,15 @@ function milestoneTone(status: string) {
   return map[status] ?? 'neutral';
 }
 
+/** Current milestone plus the most recent completed ones (never a stale prefix of the plan). */
+function recentMilestonesForHome<T extends { status: string }>(items: T[], limit = 5): T[] {
+  if (items.length <= limit) return items;
+  const currentIdx = items.findIndex((m) => m.status !== 'completed');
+  if (currentIdx === -1) return items.slice(-limit);
+  const start = Math.max(0, currentIdx - (limit - 1));
+  return items.slice(start, currentIdx + 1);
+}
+
 function quoteCardSubtitle(
   t: Translator,
   formatDate: (date: string | null | undefined) => string,
@@ -118,6 +127,7 @@ export default async function PortalHomePage({
   ]);
 
   const nextMilestone = milestones?.find((m) => m.status !== 'completed');
+  const recentMilestones = recentMilestonesForHome(milestones ?? []);
   const quote =
     quotes?.find((q) => q.status === 'accepted') ??
     quotes?.find((q) => q.status === 'sent') ??
@@ -234,15 +244,22 @@ export default async function PortalHomePage({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <h2 className="mb-4 font-semibold">{t('portal.home.recentMilestones')}</h2>
+        <div className="mb-4 flex items-baseline justify-between gap-3">
+          <h2 className="font-semibold">{t('portal.home.recentMilestones')}</h2>
+          {recentMilestones.length > 0 && (
+            <Link href={`/p/${slug}/timeline`} className="text-sm font-medium text-codiva-primary hover:underline">
+              {t('portal.home.viewTimeline')}
+            </Link>
+          )}
+        </div>
         <ul className="space-y-3">
-          {(milestones ?? []).slice(0, 5).map((m) => (
+          {recentMilestones.map((m) => (
             <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
               <span>{m.title}</span>
               <StatusBadge label={MILESTONE_STATUS_LABELS[m.status]} tone={milestoneTone(m.status)} />
             </li>
           ))}
-          {!milestones?.length && <p className="text-sm text-zinc-500">{t('portal.home.noMilestones')}</p>}
+          {!recentMilestones.length && <p className="text-sm text-zinc-500">{t('portal.home.noMilestones')}</p>}
         </ul>
       </section>
     </div>
