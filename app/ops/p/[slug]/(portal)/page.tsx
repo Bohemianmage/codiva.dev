@@ -145,11 +145,13 @@ export default async function PortalHomePage({
       {visibility.showCosts && <PortalRenewalNotices slug={slug} notices={renewalNotices} />}
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <StatusBadge label={PROJECT_STATUS_LABELS[project.status]} tone={projectTone(project.status)} />
           <span className="text-sm text-zinc-500">{t('portal.home.projectStatus')}</span>
         </div>
-        {project.description && <p className="mt-4 text-sm text-zinc-600">{project.description}</p>}
+        {project.description && (
+          <p className="mt-4 text-sm leading-relaxed text-zinc-600 whitespace-pre-line">{project.description}</p>
+        )}
         <div className="mt-6">
           <div className="mb-2 flex justify-between text-sm">
             <span className="font-medium">{t('portal.home.progress')}</span>
@@ -255,9 +257,9 @@ export default async function PortalHomePage({
         </div>
         <ul className="space-y-4">
           {recentMilestones.map((m) => (
-            <li key={m.id} className="flex items-start justify-between gap-3 text-sm">
-              <div className="min-w-0">
-                <p>{m.title}</p>
+            <li key={m.id} className="flex items-start justify-between gap-4 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-zinc-900">{m.title}</p>
                 {m.description ? (
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{m.description}</p>
                 ) : null}

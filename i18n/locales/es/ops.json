@@ -389,7 +389,7 @@
       },
       "milestoneStatus": {
         "pending": "Pendiente",
-        "in_progress": "En progreso",
+        "in_progress": "En curso",
         "completed": "Completado",
         "blocked": "Bloqueado"
       },
