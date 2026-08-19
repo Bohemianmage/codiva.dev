@@ -1,6 +1,9 @@
 -- Codiva Ops: seed mínimo para local (NIRC + Inquilia).
 -- Clientes vivos adicionales (p. ej. BYD) se crean por Ops, no por seed.
 --
+-- Packs: public/client-packs/{slug}/arquitectura-portal.html (cliente)
+-- y arquitectura-completa.html (staff). El portal lee deliverables.body_html.
+--
 -- Ejecutar después de migraciones y de tener al menos un usuario staff en staff_profiles.
 -- Supabase SQL Editor: pegar y ejecutar todo el archivo.
 -- Local: supabase db reset (si config.toml incluye seed) o psql -f supabase/seed.sql
@@ -21,8 +24,8 @@ INSERT INTO projects (
     'NIRC MVP Fase 1',
     'nirc',
     'active',
-    E'Workforce eventual · Track A arquitectura en curso (desde 17 ago 2026).\n\nFlujo de entrada: tableta kiosk escanea QR del empleado → contrato de adhesión (solo firma el trabajador) → tableta idle; alta IMSS en paralelo. Baja IMSS y pago al check-out.\n\nSandboxes: Cincel y Stripe listos; IDSE PRO pendiente de proveedor. Políticas de montos/SDI a cargo de NIRC (no bloquean el diseño).',
-    '2026-08-17', '2026-11-09', 8, true
+    E'Personal eventual · Arquitectura certificada el 17 ago 2026.\n\nEstamos en la implementación del producto. El plan completo (~18 semanas) está en el timeline.\n\nEn operación:\n• Entrada en sitio con tableta, firma de adhesión y alta ante el IMSS antes de empezar a trabajar.\n• Salida al terminar la jornada, con baja ante el IMSS y pago al personal.\n\nPendiente de NIRC: accesos de prueba con los proveedores de firma electrónica, IMSS y pagos, más las políticas comerciales.',
+    '2026-08-17', '2026-12-21', 32, true
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -31,10 +34,10 @@ UPDATE projects SET
   portal_show_costs = false,
   status = 'active',
   start_date = '2026-08-17',
-  target_delivery_date = '2026-11-09',
-  progress_percent = 8,
+  target_delivery_date = '2026-12-21',
+  progress_percent = 32,
   name = 'NIRC MVP Fase 1',
-  description = E'Workforce eventual · Track A arquitectura en curso (desde 17 ago 2026).\n\nFlujo de entrada: tableta kiosk escanea QR del empleado → contrato de adhesión (solo firma el trabajador) → tableta idle; alta IMSS en paralelo. Baja IMSS y pago al check-out.\n\nSandboxes: Cincel y Stripe listos; IDSE PRO pendiente de proveedor. Políticas de montos/SDI a cargo de NIRC (no bloquean el diseño).'
+  description = E'Personal eventual · Arquitectura certificada el 17 ago 2026.\n\nEstamos en la implementación del producto. El plan completo (~18 semanas) está en el timeline.\n\nEn operación:\n• Entrada en sitio con tableta, firma de adhesión y alta ante el IMSS antes de empezar a trabajar.\n• Salida al terminar la jornada, con baja ante el IMSS y pago al personal.\n\nPendiente de NIRC: accesos de prueba con los proveedores de firma electrónica, IMSS y pagos, más las políticas comerciales.'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 INSERT INTO leads (
@@ -102,22 +105,48 @@ DELETE FROM quote_access_tokens
 WHERE id = 'e0000001-0001-4000-8000-00000000000b'
    OR token = 'demo-kaucho-eshop-2026';
 
-INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date) VALUES
-  ('f0000001-0001-4000-8000-00000000000b', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — arranque', E'Inicio Track A (17 ago 2026). Decisiones: adhesión 1 firmante en tableta kiosk; baja IMSS en check-out; INE documental; IDV Cincel off. Cincel+Stripe sandbox OK; IDSE sandbox pendiente.', 'in_progress', 1, '2026-09-14'),
-  ('f0000001-0001-4000-8000-00000000000c', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — fundaciones', 'ADRs base, trazabilidad, catálogo P0 de entrada/kiosk y ownership congelado (fin Bloque I).', 'pending', 2, '2026-09-14'),
-  ('f0000001-0001-4000-8000-00000000000d', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura — dominios', 'Specs por dominio (pool/FCFS, QR/kiosk, Cincel, IDSE, Stripe) + fixtures.', 'pending', 3, '2026-10-12'),
-  ('f0000001-0001-4000-8000-00000000000e', 'b0000001-0001-4000-8000-00000000000b', 'Architecture freeze', 'Paquete certificado + handoff a build. Objetivo ~9 nov 2026.', 'pending', 4, '2026-11-09'),
-  ('f0000001-0001-4000-8000-00000000000f', 'b0000001-0001-4000-8000-00000000000b', 'Build MVP — UAT / go-live', 'Tras freeze: implementación 18 semanas, UAT y producción (hitos de build).', 'pending', 5, '2027-03-15')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO milestones (id, project_id, title, description, status, sort_order, due_date, visible_to_client) VALUES
+  ('f0000001-0001-4000-8000-00000000000a', 'b0000001-0001-4000-8000-00000000000b', 'Documentación inicial', 'Arquitectura, flujos y alcance del MVP documentados.', 'completed', 1, '2026-08-17', true),
+  ('f0000001-0001-4000-8000-00000000000b', 'b0000001-0001-4000-8000-00000000000b', 'Operación en sitio', 'Entrada en tableta kiosk (QR → adhesión → idle) y baja IMSS al check-out. Sandboxes Cincel y Stripe listos.', 'completed', 2, '2026-08-17', true),
+  ('f0000001-0001-4000-8000-00000000000c', 'b0000001-0001-4000-8000-00000000000b', 'Principios de arquitectura', 'Reglas de diseño, trazabilidad y responsabilidades entre operación, cumplimiento y pagos.', 'completed', 3, '2026-08-17', true),
+  ('f0000001-0001-4000-8000-00000000000d', 'b0000001-0001-4000-8000-00000000000b', 'Módulos e integraciones', 'Diseño de pool y convocatoria, kiosk, Cincel, IDSE, Stripe, contabilidad y privacidad.', 'completed', 4, '2026-08-17', true),
+  ('f0000001-0001-4000-8000-00000000000e', 'b0000001-0001-4000-8000-00000000000b', 'Arquitectura certificada', 'Paquete de arquitectura firmado el 17 ago 2026. Listo para implementación.', 'completed', 5, '2026-08-17', true),
+  ('f0000001-0001-4000-8000-00000000000f', 'b0000001-0001-4000-8000-00000000000b', 'Arranque de implementación', 'Semana 1. Preparación del entorno de trabajo, accesos de prueba con proveedores, catálogo de registro patronal y plantilla de adhesión.', 'in_progress', 6, '2026-08-24', true),
+  ('f0000001-0001-4000-8000-000000000010', 'b0000001-0001-4000-8000-00000000000b', 'Plataforma base', 'Semanas 2-5. Accesos y permisos, panel de administración, expediente del personal, carga masiva y consentimientos.', 'pending', 7, '2026-09-21', true),
+  ('f0000001-0001-4000-8000-000000000011', 'b0000001-0001-4000-8000-00000000000b', 'Bolsa y convocatoria', 'Semanas 6-9. Labores, afinidad, vacantes, convocatoria automática, ofertas por orden de llegada, lista de espera y reemplazos.', 'pending', 8, '2026-10-19', true),
+  ('f0000001-0001-4000-8000-000000000012', 'b0000001-0001-4000-8000-00000000000b', 'Entrada en sitio', 'Semanas 10-13. Tableta en sitio, código QR, ubicación, identificación, firma de adhesión y alta ante el IMSS. Nadie empieza a trabajar sin alta aceptada.', 'pending', 9, '2026-11-16', true),
+  ('f0000001-0001-4000-8000-000000000013', 'b0000001-0001-4000-8000-00000000000b', 'Salida y pago', 'Semanas 14-16. Salida de jornada, baja ante el IMSS, pago al personal y registro contable sencillo.', 'pending', 10, '2026-12-07', true),
+  ('f0000001-0001-4000-8000-000000000014', 'b0000001-0001-4000-8000-00000000000b', 'Pruebas y go-live', 'Semanas 17-18. Recorrido punta a punta, capacitación al equipo NIRC y arranque asistido en producción.', 'pending', 11, '2026-12-21', true)
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  status = EXCLUDED.status,
+  sort_order = EXCLUDED.sort_order,
+  due_date = EXCLUDED.due_date,
+  visible_to_client = EXCLUDED.visible_to_client;
 
-UPDATE milestones SET
-  title = 'Arquitectura — fundaciones',
-  description = 'ADRs base, trazabilidad, catálogo P0 de entrada/kiosk y ownership congelado (fin Bloque I).'
-WHERE id = 'f0000001-0001-4000-8000-00000000000c';
-
-UPDATE deliverables
-SET description = 'Dominios, kiosk de entrada (adhesión 1 firmante), IDSE/Cincel/Stripe y flujos operativos.'
-WHERE id = '92000001-0001-4000-8000-000000000001';
+INSERT INTO milestone_updates (id, milestone_id, body, created_at) VALUES
+  (
+    'f1000001-0001-4000-8000-000000000001',
+    'f0000001-0001-4000-8000-00000000000b',
+    E'17 ago 2026 — Operación en sitio definida.\n• Firma: adhesión solo del trabajador en tableta (idle → QR → firma → idle); IMSS en paralelo.\n• Baja IMSS al check-out.\n• Sandboxes Cincel y Stripe listos; IDSE pendiente de proveedor.',
+    '2026-08-17T18:00:00Z'
+  ),
+  (
+    'f1000001-0001-4000-8000-000000000002',
+    'f0000001-0001-4000-8000-00000000000e',
+    E'17 ago 2026 — Arquitectura certificada.\n• Decisiones de entrada, salida, pagos y cumplimiento cerradas.\n• Check-out: baja IMSS y pago Stripe en paralelo; SPEI solo como respaldo.\n• Siguiente fase: implementación del MVP.\n• Pendiente operativo: sandbox IDSE PRO; política de abandono a confirmar con NIRC.',
+    '2026-08-18T03:00:00Z'
+  ),
+  (
+    'f1000001-0001-4000-8000-000000000003',
+    'f0000001-0001-4000-8000-00000000000f',
+    E'18 ago 2026 — Arranque de implementación.\n• Arquitectura certificada; el plan de 18 semanas ya está visible en el portal.\n• Semana 1: preparación del entorno, accesos de prueba y plantilla de adhesión.\n• Pendiente de NIRC: acceso de prueba del proveedor IMSS y política de abandono.',
+    '2026-08-18T04:00:00Z'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  body = EXCLUDED.body,
+  created_at = EXCLUDED.created_at;
 
 INSERT INTO deliverables (
   id, project_id, title, description, url, kind, sort_order, visible_to_client
@@ -126,9 +155,17 @@ INSERT INTO deliverables (
     '92000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
     'Arquitectura',
-    'Dominios, stack, integraciones IDSE/Cincel/Stripe y flujos operativos.',
-    '/client-packs/nirc/nirc-arquitectura-portal.html',
+    'Arquitectura certificada + infra cloud + plan de dominio en Vercel y marca. Sigue build MVP.',
+    '/client-packs/nirc/arquitectura-portal.html',
     'architecture', 1, true
+  ),
+  (
+    '92000001-0001-4000-8000-000000000002',
+    'b0000001-0001-4000-8000-00000000000b',
+    'Arquitectura completa',
+    'Inventario interno: ADRs, economics, hosting y deuda. Solo staff.',
+    '/client-packs/nirc/arquitectura-completa.html',
+    'architecture', 2, false
   ),
   (
     '92000001-0001-4000-8000-000000000003',
@@ -138,7 +175,13 @@ INSERT INTO deliverables (
     '/client-packs/nirc/mvp-fase1.html',
     'mvp', 3, false
   )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  kind = EXCLUDED.kind,
+  sort_order = EXCLUDED.sort_order,
+  visible_to_client = EXCLUDED.visible_to_client;
 
 INSERT INTO documents (
   id, project_id, type, title, file_path, file_url, signed, visible_to_client, source, notes
@@ -214,6 +257,45 @@ INSERT INTO document_requests (
     'other', 'text', 'open', false, 60, true
   )
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO project_release_settings (
+  project_id,
+  enabled,
+  github_owner,
+  github_repo,
+  promote_workflow,
+  promote_ref,
+  deployment_url_input,
+  vercel_project_id,
+  vercel_team_id,
+  client_can_request,
+  require_staff_approval,
+  notes,
+  updated_at
+) VALUES (
+  'b0000001-0001-4000-8000-00000000000b',
+  true,
+  'Codiva-dev',
+  'nirc',
+  'promote-production.yml',
+  'main',
+  'deployment_url',
+  'prj_GGlesi8OSxDAxabWGHH53coejcRC',
+  'team_nI1wrmMTcj7XhYTUDwjy5Ak3',
+  false,
+  true,
+  'GitHub CI → preview Vercel → QA Codiva → promote. Cliente solo lectura.',
+  now()
+)
+ON CONFLICT (project_id) DO UPDATE SET
+  enabled = EXCLUDED.enabled,
+  github_owner = EXCLUDED.github_owner,
+  github_repo = EXCLUDED.github_repo,
+  vercel_project_id = EXCLUDED.vercel_project_id,
+  vercel_team_id = EXCLUDED.vercel_team_id,
+  client_can_request = false,
+  notes = EXCLUDED.notes,
+  updated_at = now();
 
 -- ---------------------------------------------------------------------------
 -- Inquilia (plataforma LegalTech en producción)

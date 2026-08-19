@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Codiva.dev
 
-## Getting Started
-
-First, run the development server:
+Sitio de Codiva, Ops interno, portal de clientes y bolsa de trabajo. Un solo repo Next.js; el host decide la superficie ([`docs/HOSTS.md`](./docs/HOSTS.md)).
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Local: [http://localhost:3000](http://localhost:3000). Hosts opcionales (`ops.localhost`, `portal.localhost`, etc.) en `docs/HOSTS.md`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Árbol
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Ruta | Qué es |
+|------|--------|
+| `app/(marketing)` | Sitio público (`codiva.dev`) |
+| `app/ops` | Staff, portal cliente (`/p/[slug]`), login, cotizaciones `/q` |
+| `app/empleos` | Bolsa (`career.codiva.dev`) |
+| `app/ticket` | Formulario de tickets |
+| `lib/ops` | Dominio Ops (auth, portal, quotes, architecture, releases) |
+| `lib/careers` | Bolsa, assessments, cacería |
+| `components/ops` · `components/careers` | UI de esas superficies |
+| `sections/` | Bloques del marketing (legado jsx) |
+| `supabase/migrations` | Schema y copy de portal que ya está en producción |
+| `supabase/seed.sql` | NIRC + Inquilia para local (`db reset`) |
+| `public/client-packs/{slug}/` | Semilla de canvas / documentos de cliente |
 
-## Learn More
+## Packs de cliente
 
-To learn more about Next.js, take a look at the following resources:
+Convención (Inquilia es el modelo):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+public/client-packs/{slug}/
+  arquitectura-portal.html      # canvas del cliente
+  arquitectura-completa.html    # staff (opcional)
+  …cotización, NDA, etc.        # otros artefactos, nombres propios
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+No prefixes el archivo con el slug: la carpeta ya lo nombra. El portal **no** sirve estos HTML en público (`/client-packs` se reescribe). Ops copia el pack a `deliverables.body_html` y ese HTML es lo que ve el cliente.
 
-## Deploy on Vercel
+Seeds y migraciones deben apuntar a esas rutas. No dejes SQL one-shot en `docs/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`docs/HOSTS.md`](./docs/HOSTS.md) — DNS, env, Auth, smoke test
+- [`docs/OPS_SECURITY.md`](./docs/OPS_SECURITY.md) — storage, retención, crons
+- [`docs/BRAND.md`](./docs/BRAND.md) — marca
+- [`docs/RELEASES_PORTAL.md`](./docs/RELEASES_PORTAL.md) — CI → preview → promote
+- [`docs/workflows/`](./docs/workflows/) — plantillas GitHub Actions para repos de cliente
