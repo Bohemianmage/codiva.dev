@@ -8,7 +8,7 @@ export type DbLikeError = {
   hint?: string;
 } | null | undefined;
 
-/** Loguea el error de Postgres/Supabase y lanza copy segura para el toast. */
+/** Loguea el error de Postgres/Supabase y lanza copy segura para el toast. Use `throw await throwDb(...)`. */
 export async function throwDb(error: DbLikeError, fallback?: string): Promise<never> {
   console.error('[ops db]', error);
   const t = await getT();

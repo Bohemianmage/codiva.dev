@@ -137,7 +137,7 @@ export async function upsertReleaseSettings(projectId: string, formData: FormDat
   const { error } = await supabase.from('project_release_settings').upsert(payload, {
     onConflict: 'project_id',
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project',
@@ -253,7 +253,7 @@ export async function decideGithubPull(projectId: string, formData: FormData) {
 
   if (decision === 'merge') {
     const result = await mergePullRequest({ owner, repo, number });
-    if (!result.ok) await throwExternal(result.error, 'ops.releases.errGithub');
+    if (!result.ok) throw await throwExternal(result.error, 'ops.releases.errGithub');
   } else {
     const review = await reviewPullRequest({
       owner,
@@ -272,7 +272,7 @@ export async function decideGithubPull(projectId: string, formData: FormData) {
       });
     }
     const closed = await closePullRequest({ owner, repo, number });
-    if (!closed.ok) await throwExternal(closed.error, 'ops.releases.errGithub');
+    if (!closed.ok) throw await throwExternal(closed.error, 'ops.releases.errGithub');
   }
 
   await logActivity({
@@ -321,7 +321,7 @@ export async function acceptAndPromoteIncoming(projectId: string, formData: Form
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !data) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_release_request',
@@ -347,7 +347,7 @@ export async function approveReleaseRequest(requestId: string, projectId: string
     .eq('id', requestId)
     .eq('project_id', projectId)
     .eq('status', 'pending_approval');
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_release_request',
@@ -373,7 +373,7 @@ export async function cancelReleaseRequest(requestId: string, projectId: string)
     .eq('id', requestId)
     .eq('project_id', projectId)
     .in('status', ['pending_approval', 'approved', 'failed']);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_release_request',
@@ -395,7 +395,7 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     .eq('id', requestId)
     .eq('project_id', projectId)
     .maybeSingle();
-  if (reqErr) await throwDb(reqErr);
+  if (reqErr) throw await throwDb(reqErr);
   if (!req) await throwPublic('ops.releases.errRequest');
   if (!['approved', 'failed'].includes(req.status)) {
     await throwPublic('ops.releases.errNotDispatchable');
@@ -486,7 +486,7 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     });
 
     revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
-    await throwExternal(result.error, 'ops.releases.errGithub');
+    throw await throwExternal(result.error, 'ops.releases.errGithub');
   }
 
   await supabase
@@ -536,7 +536,7 @@ export async function markReleaseSucceededManually(requestId: string, projectId:
     })
     .eq('id', requestId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_release_request',

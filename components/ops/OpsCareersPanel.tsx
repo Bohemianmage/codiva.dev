@@ -44,7 +44,7 @@ import {
   originFingerprint,
   sharedOriginAttemptCount,
 } from '@/lib/careers/assessments/origin';
-import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
+import { labelsFor } from '@/lib/ops/labels';
 import { getT, type Translator, type Locale } from '@/i18n/locale';
 import { usageUrlLabel } from '@/lib/ops/host';
 

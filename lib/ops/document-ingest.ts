@@ -67,9 +67,9 @@ export async function ingestProjectDocument(opts: {
     .select('id, content_sha256, scan_status, retain_until, organization_id')
     .single();
 
-  if (error) {
+  if (error || !doc) {
     await deleteOpsFile(uploaded.path).catch(() => undefined);
-    await throwDb(error);
+    throw await throwDb(error);
   }
 
   return {
@@ -138,9 +138,9 @@ export async function ingestOrgDocument(opts: {
     .select('id, content_sha256, scan_status, retain_until, organization_id')
     .single();
 
-  if (error) {
+  if (error || !doc) {
     await deleteOpsFile(uploaded.path).catch(() => undefined);
-    await throwDb(error);
+    throw await throwDb(error);
   }
 
   return {
