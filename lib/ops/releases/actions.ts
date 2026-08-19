@@ -9,10 +9,16 @@ import {
 import { logActivity } from '@/lib/ops/activity';
 import {
   attachCiStatuses,
+  closePullRequest,
   dispatchPromoteWorkflow,
   listGitHubPreviews,
+  listOpenPulls,
+  matchPullToPreview,
+  mergePullRequest,
   releasesTokenConfigured,
+  reviewPullRequest,
   type CiStatus,
+  type GitHubPull,
 } from '@/lib/ops/releases/github';
 import {
   listVercelPreviews,
@@ -76,10 +82,12 @@ export type IncomingPreview = {
   branch: string | null;
   createdAt: string;
   ci: CiStatus | null;
+  pull: GitHubPull | null;
 };
 
 export type IncomingPreviewsResult = {
   items: IncomingPreview[];
+  pulls: GitHubPull[];
   error: string | null;
   hint: string | null;
 };
@@ -150,33 +158,49 @@ export async function loadIncomingPreviews(
   settings: ReleaseSettingsRow | null
 ): Promise<IncomingPreviewsResult> {
   if (!settings?.enabled) {
-    return { items: [], error: null, hint: 'disabled' };
+    return { items: [], pulls: [], error: null, hint: 'disabled' };
   }
 
   let items: IncomingPreview[] = [];
   let error: string | null = null;
+  let pulls: GitHubPull[] = [];
+
+  if (settings.github_owner && settings.github_repo && releasesTokenConfigured()) {
+    const listed = await listOpenPulls({
+      owner: settings.github_owner,
+      repo: settings.github_repo,
+    });
+    pulls = listed.items;
+    if (listed.error) error = listed.error;
+  }
 
   if (settings.vercel_project_id && vercelTokenConfigured()) {
     const listed = await listVercelPreviews({
       projectId: settings.vercel_project_id,
       teamId: settings.vercel_team_id,
     });
-    items = listed.items.map((item) => ({ source: 'vercel' as const, ci: null, ...item }));
-    error = listed.error;
+    items = listed.items.map((item) => ({
+      ...item,
+      source: 'vercel' as const,
+      ci: null,
+      pull: matchPullToPreview(pulls, item),
+    }));
+    error = listed.error || error;
   } else if (settings.github_owner && settings.github_repo && releasesTokenConfigured()) {
     const listed = await listGitHubPreviews({
       owner: settings.github_owner,
       repo: settings.github_repo,
     });
     items = listed.items.map((item) => ({
+      ...item,
       source: 'github' as const,
       deploymentId: null,
       ci: null,
-      ...item,
+      pull: matchPullToPreview(pulls, item),
     }));
-    error = listed.error;
-  } else {
-    return { items: [], error: null, hint: 'misconfigured' };
+    error = listed.error || error;
+  } else if (!pulls.length) {
+    return { items: [], pulls: [], error: null, hint: 'misconfigured' };
   }
 
   if (
@@ -196,7 +220,63 @@ export async function loadIncomingPreviews(
     }));
   }
 
-  return { items, error, hint: null };
+  const attached = new Set(items.flatMap((item) => (item.pull ? [item.pull.number] : [])));
+  pulls = pulls.filter((p) => !attached.has(p.number));
+
+  return { items, pulls, error, hint: null };
+}
+
+export async function decideGithubPull(projectId: string, formData: FormData) {
+  const { supabase, user } = await assertReleaseOps(projectId);
+  const decision = String(formData.get('decision') || '').trim();
+  const number = Number(formData.get('pullNumber'));
+  if (!Number.isInteger(number) || number < 1) throw new Error('pull_required');
+  if (decision !== 'merge' && decision !== 'reject') throw new Error('decision_invalid');
+
+  const { data: settings } = await supabase
+    .from('project_release_settings')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle();
+
+  if (!settings?.enabled) throw new Error('releases_disabled');
+  const owner = settings.github_owner?.trim();
+  const repo = settings.github_repo?.trim();
+  if (!owner || !repo) throw new Error('github_repo_required');
+
+  if (decision === 'merge') {
+    const result = await mergePullRequest({ owner, repo, number });
+    if (!result.ok) throw new Error(result.error);
+  } else {
+    const review = await reviewPullRequest({
+      owner,
+      repo,
+      number,
+      event: 'REQUEST_CHANGES',
+      body: 'Rechazado desde Codiva Ops. Cerrado sin merge.',
+    });
+    if (!review.ok) {
+      await reviewPullRequest({
+        owner,
+        repo,
+        number,
+        event: 'COMMENT',
+        body: 'Rechazado desde Codiva Ops. Cerrado sin merge.',
+      });
+    }
+    const closed = await closePullRequest({ owner, repo, number });
+    if (!closed.ok) throw new Error(closed.error);
+  }
+
+  await logActivity({
+    entityType: 'project',
+    entityId: projectId,
+    action: decision === 'merge' ? 'release_pr_merged' : 'release_pr_rejected',
+    actorId: user.id,
+    metadata: { project_id: projectId, pull: number, owner, repo },
+  });
+
+  revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
 }
 
 export async function acceptAndPromoteIncoming(projectId: string, formData: FormData) {

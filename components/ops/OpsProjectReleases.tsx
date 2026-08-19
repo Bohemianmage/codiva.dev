@@ -6,6 +6,7 @@ import {
   acceptAndPromoteIncoming,
   approveReleaseRequest,
   cancelReleaseRequest,
+  decideGithubPull,
   dispatchReleasePromote,
   loadIncomingPreviews,
   markReleaseSucceededManually,
@@ -15,6 +16,7 @@ import {
   type ReleaseRequestRow,
   type ReleaseSettingsRow,
 } from '@/lib/ops/releases/actions';
+import type { GitHubPull } from '@/lib/ops/releases/github';
 
 const STATUS_KEYS: Record<string, string> = {
   pending_approval: 'pending',
@@ -38,6 +40,79 @@ function releaseStatusTone(status: string): 'success' | 'warning' | 'danger' | '
   if (status === 'approved') return 'info';
   if (status === 'failed' || status === 'cancelled') return 'danger';
   return 'neutral';
+}
+
+function PullDecisions({
+  projectId,
+  pull,
+  labels,
+}: {
+  projectId: string;
+  pull: GitHubPull;
+  labels: {
+    open: string;
+    merge: string;
+    reject: string;
+    mergeTitle: string;
+    mergeConfirm: string;
+    rejectTitle: string;
+    rejectConfirm: string;
+    merged: string;
+    rejected: string;
+  };
+}) {
+  return (
+    <>
+      <a
+        href={pull.url}
+        target="_blank"
+        rel="noreferrer"
+        className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+      >
+        {labels.open}
+      </a>
+      <ToastForm
+        success={labels.merged}
+        confirmTitle={labels.mergeTitle}
+        confirmMessage={labels.mergeConfirm}
+        confirmLabel={labels.merge}
+        confirmTone="primary"
+        action={async (fd) => {
+          'use server';
+          await decideGithubPull(projectId, fd);
+        }}
+      >
+        <input type="hidden" name="pullNumber" value={String(pull.number)} />
+        <input type="hidden" name="decision" value="merge" />
+        <button
+          type="submit"
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+        >
+          {labels.merge}
+        </button>
+      </ToastForm>
+      <ToastForm
+        success={labels.rejected}
+        confirmTitle={labels.rejectTitle}
+        confirmMessage={labels.rejectConfirm}
+        confirmLabel={labels.reject}
+        confirmTone="danger"
+        action={async (fd) => {
+          'use server';
+          await decideGithubPull(projectId, fd);
+        }}
+      >
+        <input type="hidden" name="pullNumber" value={String(pull.number)} />
+        <input type="hidden" name="decision" value="reject" />
+        <button
+          type="submit"
+          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-50"
+        >
+          {labels.reject}
+        </button>
+      </ToastForm>
+    </>
+  );
 }
 
 export default async function OpsProjectReleases({
@@ -69,6 +144,17 @@ export default async function OpsProjectReleases({
     },
     { ok: Boolean(settings?.vercel_project_id), label: t('ops.releases.setupVercelProject') },
   ].filter((item) => !item.ok);
+  const pullLabels = {
+    open: t('ops.releases.openPr'),
+    merge: t('ops.releases.mergePr'),
+    reject: t('ops.releases.rejectPr'),
+    mergeTitle: t('ops.releases.mergeConfirmTitle'),
+    mergeConfirm: t('ops.releases.mergeConfirm'),
+    rejectTitle: t('ops.releases.rejectConfirmTitle'),
+    rejectConfirm: t('ops.releases.rejectConfirm'),
+    merged: t('ops.releases.prMerged'),
+    rejected: t('ops.releases.prRejected'),
+  };
 
   return (
     <div className="space-y-6">
@@ -222,7 +308,7 @@ export default async function OpsProjectReleases({
             {t('ops.releases.incomingMisconfigured')}
           </p>
         ) : null}
-        {!incoming.items.length && !incoming.error && !incoming.hint ? (
+        {!incoming.items.length && !incoming.pulls.length && !incoming.error && !incoming.hint ? (
           <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.releases.incomingEmpty')}
           </p>
@@ -255,6 +341,9 @@ export default async function OpsProjectReleases({
                         ) : (
                           <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
                         )}
+                        {item.pull ? (
+                          <StatusBadge label={`PR #${item.pull.number}`} tone="info" />
+                        ) : null}
                       </div>
                       <p className="text-xs text-zinc-500">
                         {[item.author, item.sha ? item.sha.slice(0, 7) : null, item.branch]
@@ -272,6 +361,9 @@ export default async function OpsProjectReleases({
                       >
                         {t('ops.releases.openPreview')}
                       </a>
+                      {canManage && item.pull ? (
+                        <PullDecisions projectId={projectId} pull={item.pull} labels={pullLabels} />
+                      ) : null}
                       {canManage ? (
                         <ToastForm
                           success={t('ops.releases.promoted')}
@@ -302,6 +394,28 @@ export default async function OpsProjectReleases({
                 </li>
               );
             })}
+          </ul>
+        ) : null}
+        {incoming.pulls.length ? (
+          <ul className="space-y-3">
+            {incoming.pulls.map((pull) => (
+              <li key={pull.number} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-zinc-900">{pull.title}</p>
+                      <StatusBadge label={`PR #${pull.number}`} tone="info" />
+                    </div>
+                    <p className="text-xs text-zinc-500">{pull.branch}</p>
+                  </div>
+                  {canManage ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <PullDecisions projectId={projectId} pull={pull} labels={pullLabels} />
+                    </div>
+                  ) : null}
+                </div>
+              </li>
+            ))}
           </ul>
         ) : null}
       </section>
