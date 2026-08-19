@@ -249,3 +249,143 @@ export async function listGitHubPreviews(input: {
 
   return { items, error: null };
 }
+
+export type GitHubPull = {
+  number: number;
+  title: string;
+  url: string;
+  branch: string;
+  sha: string | null;
+  draft: boolean;
+};
+
+function normRef(ref: string | null | undefined): string {
+  return (ref ?? '').replace(/^refs\/heads\//, '').trim();
+}
+
+export function matchPullToPreview(
+  pulls: GitHubPull[],
+  input: { branch?: string | null; sha?: string | null }
+): GitHubPull | null {
+  const branch = normRef(input.branch);
+  const sha = input.sha?.trim() ?? '';
+  return (
+    pulls.find((p) => sha && p.sha && p.sha === sha) ||
+    pulls.find((p) => branch && p.branch === branch) ||
+    null
+  );
+}
+
+export async function listOpenPulls(input: {
+  owner: string;
+  repo: string;
+}): Promise<{ items: GitHubPull[]; error: string | null }> {
+  const token = githubToken();
+  if (!token) return { items: [], error: null };
+
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const res = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=20`,
+    { headers: githubHeaders(token), cache: 'no-store' }
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    return {
+      items: [],
+      error: `GitHub PRs falló (${res.status}): ${body.slice(0, 300) || res.statusText}`,
+    };
+  }
+
+  const rows = (await res.json()) as Array<{
+    number: number;
+    title?: string;
+    html_url?: string;
+    draft?: boolean;
+    head?: { ref?: string; sha?: string };
+  }>;
+
+  return {
+    items: rows.map((p) => ({
+      number: p.number,
+      title: p.title?.trim() || `#${p.number}`,
+      url: p.html_url || `https://github.com/${input.owner}/${input.repo}/pull/${p.number}`,
+      branch: normRef(p.head?.ref),
+      sha: p.head?.sha ?? null,
+      draft: Boolean(p.draft),
+    })),
+    error: null,
+  };
+}
+
+async function githubJson(
+  path: string,
+  init?: RequestInit
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const token = githubToken();
+  if (!token) return { ok: false, status: 0, body: 'Falta GITHUB_RELEASES_TOKEN.' };
+  const res = await fetch(`https://api.github.com${path}`, {
+    ...init,
+    headers: {
+      ...githubHeaders(token),
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers ?? {}),
+    },
+    cache: 'no-store',
+  });
+  const body = await res.text().catch(() => '');
+  return { ok: res.ok, status: res.status, body };
+}
+
+export async function reviewPullRequest(input: {
+  owner: string;
+  repo: string;
+  number: number;
+  event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+  body: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const res = await githubJson(`/repos/${owner}/${repo}/pulls/${input.number}/reviews`, {
+    method: 'POST',
+    body: JSON.stringify({ event: input.event, body: input.body }),
+  });
+  if (!res.ok) {
+    return { ok: false, error: `GitHub review falló (${res.status}): ${res.body.slice(0, 300)}` };
+  }
+  return { ok: true };
+}
+
+export async function closePullRequest(input: {
+  owner: string;
+  repo: string;
+  number: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const res = await githubJson(`/repos/${owner}/${repo}/pulls/${input.number}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ state: 'closed' }),
+  });
+  if (!res.ok) {
+    return { ok: false, error: `GitHub close falló (${res.status}): ${res.body.slice(0, 300)}` };
+  }
+  return { ok: true };
+}
+
+export async function mergePullRequest(input: {
+  owner: string;
+  repo: string;
+  number: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const res = await githubJson(`/repos/${owner}/${repo}/pulls/${input.number}/merge`, {
+    method: 'PUT',
+    body: JSON.stringify({ merge_method: 'squash' }),
+  });
+  if (!res.ok) {
+    return { ok: false, error: `GitHub merge falló (${res.status}): ${res.body.slice(0, 300)}` };
+  }
+  return { ok: true };
+}
