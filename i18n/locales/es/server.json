@@ -1,13 +1,15 @@
 {
   "email": {
     "ctaFallback": "Si el botón no funciona, copia este enlace:",
+    "ctaMailtoFallback": "Si el botón no funciona, escribe a:",
     "hello": "Hola",
     "lead": {
       "subject": "Hemos recibido tu solicitud en {{brand}}",
       "preview": "Recibimos tu solicitud de cotización en {{brand}}",
       "title": "Recibimos tu solicitud",
       "body1": "Gracias por contactarnos. Hemos recibido tu solicitud de cotización y nuestro equipo la revisará pronto.",
-      "body2": "Te responderemos a la brevedad. Si necesitas escribirnos, usa",
+      "body2": "Te responderemos a la brevedad. Si necesitas escribirnos, usa el botón.",
+      "cta": "Escribirnos",
       "footer": "Mensaje automático de Codiva.dev. Las respuestas a noreply no se monitorean; escribe a hello@codiva.dev."
     },
     "ticket": {
@@ -15,7 +17,8 @@
       "preview": "Ticket recibido: {{title}}",
       "title": "Ticket de soporte recibido",
       "body1": "Hemos registrado tu solicitud de soporte:",
-      "body2": "Te contactaremos pronto con novedades."
+      "body2": "Te contactaremos pronto con novedades.",
+      "cta": "Escribirnos"
     },
     "recovery": {
       "preview": "Restablece tu contraseña de Codiva.dev",
@@ -125,19 +128,22 @@
       "title": "Sigue en proceso",
       "body1": "Recibimos tu postulación a {{jobTitle}} y ya la estamos viendo.",
       "body2": "Somos un equipo chico y lo tomamos con calma. Cuando haya un siguiente paso, te escribimos.",
-      "body3": "Por ahora no tienes que enviar nada más. Si quieres contarnos algo, responde este correo.",
+      "body3": "Por ahora no tienes que enviar nada más. Si quieres contarnos algo, usa el botón.",
       "signoff": "Un saludo,",
-      "team": "El equipo de Codiva.dev"
+      "team": "El equipo de Codiva.dev",
+      "cta": "Escribirnos"
     },
     "careerInterview": {
       "subject": "Entrevista para {{jobTitle}}",
-      "preview": "Nos gustaría conversar. Responde con tu disponibilidad.",
+      "preview": "Nos gustaría conversar. Cuéntanos tu disponibilidad.",
       "title": "Agendemos una conversación",
       "body1": "Nos gustaría entrevistarte para {{jobTitle}}.",
-      "body2": "Responde este correo con tu disponibilidad y coordinamos día y hora.",
-      "body3": "Si en estos días se te complica, avísanos por aquí.",
+      "body2": "Cuéntanos tu disponibilidad y coordinamos día y hora.",
+      "body3": "Si en estos días se te complica, avísanos.",
       "signoff": "Un saludo,",
-      "team": "El equipo de Codiva.dev"
+      "team": "El equipo de Codiva.dev",
+      "cta": "Enviar disponibilidad",
+      "replyBody": "Hola,\n\nMi disponibilidad es:\n\n"
     },
     "careerHired": {
       "subject": "Queremos que te unas como {{jobTitle}}",
@@ -145,9 +151,10 @@
       "title": "Queremos que te unas",
       "body1": "Queremos que te unas al equipo como {{jobTitle}}.",
       "body2": "En los próximos días te compartimos la oferta y cómo sigue la incorporación.",
-      "body3": "Si tienes alguna duda, responde este correo.",
+      "body3": "Si tienes alguna duda, escríbenos.",
       "signoff": "Un saludo,",
-      "team": "El equipo de Codiva.dev"
+      "team": "El equipo de Codiva.dev",
+      "cta": "Escribirnos"
     }
   },
   "quoteDoc": {

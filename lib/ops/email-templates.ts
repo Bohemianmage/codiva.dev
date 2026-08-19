@@ -22,12 +22,39 @@ type LayoutOptions = {
   locale?: Locale;
 };
 
+function mailtoHref(to: string, params?: { subject?: string; body?: string }): string {
+  const q: string[] = [];
+  if (params?.subject) q.push(`subject=${encodeURIComponent(params.subject)}`);
+  if (params?.body) q.push(`body=${encodeURIComponent(params.body)}`);
+  return `mailto:${to}${q.length ? `?${q.join('&')}` : ''}`;
+}
+
+function mailtoAddressFromHref(href: string): string {
+  const rest = href.replace(/^mailto:/i, '').split('?')[0] ?? '';
+  try {
+    return decodeURIComponent(rest);
+  } catch {
+    return rest;
+  }
+}
+
+function contactMailtoHref(params?: { subject?: string; body?: string }): string {
+  return mailtoHref(CONTACT_EMAIL, params);
+}
+
 function emailLayout({ preview, title, bodyHtml, footerNote, cta, locale = DEFAULT_LOCALE }: LayoutOptions): string {
+  const isMailtoCta = Boolean(cta?.href.startsWith('mailto:'));
+  const ctaTarget = isMailtoCta ? '' : ' target="_blank" rel="noopener noreferrer"';
+  const ctaFallbackHref = isMailtoCta ? mailtoHref(mailtoAddressFromHref(cta!.href)) : cta?.href;
+  const ctaFallbackLabel = isMailtoCta ? mailtoAddressFromHref(cta!.href) : cta?.href;
+  const ctaFallbackHint = isMailtoCta
+    ? tSync(locale, 'email.ctaMailtoFallback')
+    : tSync(locale, 'email.ctaFallback');
   const ctaBlock = cta
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
         <tr>
           <td style="border-radius:${CTA_RADIUS};background:${BRAND.primary};">
-            <a href="${cta.href}" target="_blank" rel="noopener noreferrer"
+            <a href="${escapeHtml(cta.href)}"${ctaTarget}
                style="display:inline-block;padding:14px 28px;font-family:${FONT_BODY};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:${CTA_RADIUS};">
               ${escapeHtml(cta.label)}
             </a>
@@ -35,8 +62,8 @@ function emailLayout({ preview, title, bodyHtml, footerNote, cta, locale = DEFAU
         </tr>
       </table>
       <p style="margin:12px 0 0;font-family:${FONT_BODY};font-size:12px;line-height:1.5;color:${BRAND.muted};word-break:break-all;">
-        ${escapeHtml(tSync(locale, 'email.ctaFallback'))}<br/>
-        <a href="${cta.href}" style="color:${BRAND.primary};">${escapeHtml(cta.href)}</a>
+        ${escapeHtml(ctaFallbackHint)}<br/>
+        <a href="${escapeHtml(ctaFallbackHref ?? '')}" style="color:${BRAND.primary};">${escapeHtml(ctaFallbackLabel ?? '')}</a>
       </p>`
     : '';
 
@@ -123,8 +150,12 @@ export function templateLeadConfirmation(name: string, locale: Locale = DEFAULT_
     bodyHtml: `
       ${greeting(name, locale)}
       <p style="margin:0 0 12px;">${tSync(locale, 'email.lead.body1')}</p>
-      <p style="margin:0;">${tSync(locale, 'email.lead.body2')} <a href="mailto:${CONTACT_EMAIL}" style="color:${BRAND.primary};">${CONTACT_EMAIL}</a>.</p>
+      <p style="margin:0;">${tSync(locale, 'email.lead.body2')}</p>
     `,
+    cta: {
+      label: tSync(locale, 'email.lead.cta'),
+      href: contactMailtoHref({ subject: tSync(locale, 'email.lead.subject', { brand: BRAND_NAME }) }),
+    },
     footerNote: tSync(locale, 'email.lead.footer'),
   });
 }
@@ -146,6 +177,10 @@ export function templateTicketConfirmation(
       </p>
       <p style="margin:0;">${tSync(locale, 'email.ticket.body2')}</p>
     `,
+    cta: {
+      label: tSync(locale, 'email.ticket.cta'),
+      href: contactMailtoHref({ subject: tSync(locale, 'email.ticket.subject', { title: ticketTitle }) }),
+    },
   });
 }
 
@@ -707,6 +742,7 @@ export function templateCareerApplicationPhaseChanged({
 }): string {
   const prefix =
     kind === 'hired' ? 'email.careerHired' : kind === 'interview' ? 'email.careerInterview' : 'email.careerReviewed';
+  const subject = tSync(locale, `${prefix}.subject`, { jobTitle });
   return emailLayout({
     preview: tSync(locale, `${prefix}.preview`, { jobTitle }),
     title: tSync(locale, `${prefix}.title`),
@@ -719,6 +755,13 @@ export function templateCareerApplicationPhaseChanged({
       <p style="margin:0;">${escapeHtml(tSync(locale, `${prefix}.signoff`))}<br/>
         ${escapeHtml(tSync(locale, `${prefix}.team`))}</p>
     `,
+    cta: {
+      label: tSync(locale, `${prefix}.cta`),
+      href: contactMailtoHref({
+        subject,
+        body: kind === 'interview' ? tSync(locale, 'email.careerInterview.replyBody') : undefined,
+      }),
+    },
     footerNote: tSync(locale, 'email.lead.footer'),
   });
 }

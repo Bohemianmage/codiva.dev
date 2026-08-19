@@ -1,13 +1,15 @@
 {
   "email": {
     "ctaFallback": "If the button does not work, copy this link:",
+    "ctaMailtoFallback": "If the button does not work, write to:",
     "hello": "Hi",
     "lead": {
       "subject": "We received your request at {{brand}}",
       "preview": "We received your quote request at {{brand}}",
       "title": "We received your request",
       "body1": "Thanks for reaching out. We received your quote request and our team will review it soon.",
-      "body2": "We will get back to you shortly. If you need to write to us, use",
+      "body2": "We will get back to you shortly. If you need to write to us, use the button.",
+      "cta": "Write to us",
       "footer": "Automatic message from Codiva.dev. Replies to noreply are not monitored; write to hello@codiva.dev."
     },
     "ticket": {
@@ -15,7 +17,8 @@
       "preview": "Ticket received: {{title}}",
       "title": "Support ticket received",
       "body1": "We registered your support request:",
-      "body2": "We will contact you soon with updates."
+      "body2": "We will contact you soon with updates.",
+      "cta": "Write to us"
     },
     "recovery": {
       "preview": "Reset your Codiva.dev password",
@@ -125,19 +128,22 @@
       "title": "Still in process",
       "body1": "We received your application for {{jobTitle}} and we are looking at it.",
       "body2": "We are a small team and we take this at a steady pace. When there is a next step, we will write to you.",
-      "body3": "You do not need to send anything else for now. If you want to tell us something, reply to this email.",
+      "body3": "You do not need to send anything else for now. If you want to tell us something, use the button.",
       "signoff": "Take care,",
-      "team": "The Codiva.dev team"
+      "team": "The Codiva.dev team",
+      "cta": "Write to us"
     },
     "careerInterview": {
       "subject": "Interview for {{jobTitle}}",
-      "preview": "We would like to talk. Reply with your availability.",
+      "preview": "We would like to talk. Share your availability.",
       "title": "Let's set up a conversation",
       "body1": "We would like to interview you for {{jobTitle}}.",
-      "body2": "Reply to this email with your availability and we will set a day and time.",
-      "body3": "If the next few days get tight, let us know here.",
+      "body2": "Share your availability and we will set a day and time.",
+      "body3": "If the next few days get tight, let us know.",
       "signoff": "Take care,",
-      "team": "The Codiva.dev team"
+      "team": "The Codiva.dev team",
+      "cta": "Send availability",
+      "replyBody": "Hi,\n\nMy availability is:\n\n"
     },
     "careerHired": {
       "subject": "We want you to join as {{jobTitle}}",
@@ -145,9 +151,10 @@
       "title": "We want you to join",
       "body1": "We want you on the team as {{jobTitle}}.",
       "body2": "In the next few days we will share the offer and how onboarding continues.",
-      "body3": "If you have a question, reply to this email.",
+      "body3": "If you have a question, write to us.",
       "signoff": "Take care,",
-      "team": "The Codiva.dev team"
+      "team": "The Codiva.dev team",
+      "cta": "Write to us"
     }
   },
   "quoteDoc": {
