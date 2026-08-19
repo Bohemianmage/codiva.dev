@@ -1,0 +1,114 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  formatVercelApiError,
+  isVercelProductionTarget,
+  promoteVercelDeployment,
+} from './vercel';
+
+function jsonResponse(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+describe('isVercelProductionTarget', () => {
+  it('only treats production as alias-eligible', () => {
+    expect(isVercelProductionTarget('production')).toBe(true);
+    expect(isVercelProductionTarget(null)).toBe(false);
+    expect(isVercelProductionTarget('preview')).toBe(false);
+  });
+});
+
+describe('formatVercelApiError', () => {
+  it('extracts the Vercel error message', () => {
+    expect(
+      formatVercelApiError(
+        422,
+        '{"error":{"code":"unprocessable_entity","message":"Resource cannot be processed."}}',
+        'Vercel alias promote'
+      )
+    ).toBe('Vercel alias promote (422): Resource cannot be processed.');
+  });
+});
+
+describe('promoteVercelDeployment', () => {
+  const prevToken = process.env.VERCEL_RELEASES_TOKEN;
+
+  beforeEach(() => {
+    process.env.VERCEL_RELEASES_TOKEN = 'tok';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (prevToken === undefined) delete process.env.VERCEL_RELEASES_TOKEN;
+    else process.env.VERCEL_RELEASES_TOKEN = prevToken;
+  });
+
+  it('rebuilds a preview as a new production deployment', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/v13/deployments/dpl_preview') && !init?.method) {
+        return jsonResponse(200, { uid: 'dpl_preview', name: 'nirc', target: 'preview' });
+      }
+      if (url.includes('/v13/deployments') && init?.method === 'POST') {
+        expect(url).toContain('forceNew=1');
+        expect(url).toContain('teamId=team_abc');
+        const body = JSON.parse(String(init.body));
+        expect(body).toMatchObject({
+          name: 'nirc',
+          project: 'prj_nirc',
+          deploymentId: 'dpl_preview',
+          target: 'production',
+          meta: { action: 'promote' },
+        });
+        return jsonResponse(200, {
+          uid: 'dpl_prod',
+          inspectorUrl: 'https://vercel.com/codiva/nirc/dpl_prod',
+        });
+      }
+      throw new Error(`unexpected fetch ${init?.method ?? 'GET'} ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await promoteVercelDeployment({
+      projectId: 'prj_nirc',
+      deploymentId: 'dpl_preview',
+      teamId: 'team_abc',
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      mode: 'rebuild',
+      deploymentId: 'dpl_prod',
+      inspectUrl: 'https://vercel.com/codiva/nirc/dpl_prod',
+    });
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/v10/projects/'))).toBe(
+      false
+    );
+  });
+
+  it('alias-promotes an existing production deployment without rebuilding', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/v13/deployments/dpl_live') && !init?.method) {
+        return jsonResponse(200, { uid: 'dpl_live', name: 'nirc', target: 'production' });
+      }
+      if (url.includes('/v10/projects/prj_nirc/promote/dpl_live') && init?.method === 'POST') {
+        expect(init.body).toBe('{}');
+        return new Response(null, { status: 201 });
+      }
+      throw new Error(`unexpected fetch ${init?.method ?? 'GET'} ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await promoteVercelDeployment({
+      projectId: 'prj_nirc',
+      deploymentId: 'dpl_live',
+      teamId: 'team_abc',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.mode).toBe('alias');
+  });
+});

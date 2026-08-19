@@ -1538,10 +1538,11 @@
       "errRequest": "No encontramos esa solicitud de release.",
       "errNotDispatchable": "Esa solicitud no se puede despachar ahora.",
       "errGithub": "GitHub no pudo completar la acción.",
+      "errVercel": "Vercel no pudo publicar en producción.",
       "untitledCommit": "Sin mensaje",
       "promoteNow": "A producción",
       "promoteConfirmTitle": "¿Publicar en producción?",
-      "promoteConfirm": "Este preview pasa a producción (sin rebuild).",
+      "promoteConfirm": "Vercel reconstruye este commit con variables de Production y lo publica.",
       "promoteConfirmCiFailed": "CI falló. ¿Publicar de todos modos?",
       "promoteConfirmCiPending": "CI aún corre. ¿Publicar ahora?",
       "ci": {
@@ -1551,7 +1552,7 @@
         "error": "CI error",
         "unknown": "CI —"
       },
-      "promoted": "En producción",
+      "promoted": "Publicación iniciada",
       "manualUrl": "URL manual",
       "productionOptional": "URL producción (opcional)",
       "requestNotes": "Notas",
@@ -1567,7 +1568,7 @@
       "cancelled": "Cancelado",
       "markManual": "Marcar a mano",
       "manualOk": "Marcado",
-      "viewWorkflow": "Ver en GitHub",
+      "viewWorkflow": "Ver publicación",
       "status": {
         "pending": "Pendiente",
         "approved": "Aprobado",

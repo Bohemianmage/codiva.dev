@@ -453,7 +453,11 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     }
   }
 
-  let result: { ok: true; runUrl: string | null } | { ok: false; error: string; missingToken?: boolean };
+  type DispatchResult =
+    | { ok: true; runUrl: string | null; deploymentId?: string }
+    | { ok: false; error: string; missingToken?: boolean; source: 'vercel' | 'github' | 'config' };
+
+  let result: DispatchResult;
 
   if (vercelProjectId && deploymentId && vercelTokenConfigured()) {
     const promoted = await promoteVercelDeployment({
@@ -462,10 +466,10 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
       teamId: vercelTeamId,
     });
     result = promoted.ok
-      ? { ok: true, runUrl: promoted.inspectUrl }
-      : { ok: false, error: promoted.error, missingToken: promoted.missingToken };
+      ? { ok: true, runUrl: promoted.inspectUrl, deploymentId: promoted.deploymentId }
+      : { ok: false, error: promoted.error, missingToken: promoted.missingToken, source: 'vercel' };
   } else if (settings.github_owner && settings.github_repo) {
-    result = await dispatchPromoteWorkflow({
+    const dispatched = await dispatchPromoteWorkflow({
       owner: settings.github_owner,
       repo: settings.github_repo,
       workflow: settings.promote_workflow,
@@ -473,9 +477,13 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
       deploymentUrlInput: settings.deployment_url_input,
       previewUrl: req.preview_url,
     });
+    result = dispatched.ok
+      ? { ok: true, runUrl: dispatched.runUrl }
+      : { ok: false, error: dispatched.error, missingToken: dispatched.missingToken, source: 'github' };
   } else {
     result = {
       ok: false,
+      source: 'config',
       error:
         'Configura Vercel project ID (promote directo) o GitHub owner/repo + workflow (dispatch).',
     };
@@ -501,7 +509,11 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     });
 
     revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
-    throw await throwExternal(result.error, 'ops.releases.errGithub');
+    if (result.source === 'config') await throwPublic('ops.releases.incomingMisconfigured');
+    throw await throwExternal(
+      result.error,
+      result.source === 'vercel' ? 'ops.releases.errVercel' : 'ops.releases.errGithub'
+    );
   }
 
   await supabase
@@ -509,6 +521,7 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     .update({
       status: 'succeeded',
       github_run_url: result.runUrl,
+      vercel_deployment_id: result.deploymentId ?? deploymentId,
       error_message: null,
       updated_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
