@@ -174,6 +174,14 @@ INSERT INTO deliverables (
     'Alcance, unit economics, hosting, plan 18 semanas e inversión de desarrollo.',
     '/client-packs/nirc/mvp-fase1.html',
     'mvp', 3, false
+  ),
+  (
+    '92000001-0001-4000-8000-000000000004',
+    'b0000001-0001-4000-8000-00000000000b',
+    'Avance de construcción — agosto 2026',
+    'Construcción en curso al 19 de agosto de 2026. Software en demo guiada; arquitectura ya entregada.',
+    '/client-packs/nirc/avance-build.html',
+    'proposal', 4, true
   )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
