@@ -8,16 +8,22 @@ const SAME_ORIGIN_EMBED_PATHS = [
   '/api/ops/careers/recruiting-report',
 ] as const;
 
+/** Portal / staff preview iframe for deliverables.body_html (Mermaid on jsDelivr). */
+export const PORTAL_CANVAS_HEADER_SOURCE = '/p/:slug/canvas/:id';
+const PORTAL_CANVAS_EXCLUDE = 'p/[^/]+/canvas/';
+const MERMAID_CDN = 'https://cdn.jsdelivr.net';
+
 export function contentSecurityPolicy(
   isDev: boolean,
-  options: { frameAncestors?: 'none' | 'self' } = {}
+  options: { frameAncestors?: 'none' | 'self'; extraScriptSrc?: string } = {}
 ) {
   const scriptEval = isDev ? " 'unsafe-eval'" : '';
+  const extraScripts = options.extraScriptSrc ? ` ${options.extraScriptSrc}` : '';
   const frameAncestors =
     options.frameAncestors === 'self' ? "frame-ancestors 'self'" : "frame-ancestors 'none'";
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${scriptEval} ${ANALYTICS} ${VERCEL_LIVE}`,
+    `script-src 'self' 'unsafe-inline'${scriptEval} ${ANALYTICS} ${VERCEL_LIVE}${extraScripts}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
@@ -33,7 +39,8 @@ export function contentSecurityPolicy(
 
 function baseSecurityHeaders(
   isDev: boolean,
-  frame: 'deny' | 'sameorigin'
+  frame: 'deny' | 'sameorigin',
+  extraScriptSrc?: string
 ): { key: string; value: string }[] {
   return [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -45,6 +52,7 @@ function baseSecurityHeaders(
       key: 'Content-Security-Policy',
       value: contentSecurityPolicy(isDev, {
         frameAncestors: frame === 'sameorigin' ? 'self' : 'none',
+        extraScriptSrc,
       }),
     },
   ];
@@ -58,8 +66,15 @@ export function sameOriginEmbedHeaders(isDev = process.env.NODE_ENV !== 'product
   return baseSecurityHeaders(isDev, 'sameorigin');
 }
 
+export function portalCanvasHeaders(isDev = process.env.NODE_ENV !== 'production') {
+  return baseSecurityHeaders(isDev, 'sameorigin', MERMAID_CDN);
+}
+
 export function nextSecurityHeaderSources(isDev = process.env.NODE_ENV !== 'production') {
-  const excluded = SAME_ORIGIN_EMBED_PATHS.map((path) => `${path.replace(/^\//, '')}$`).join('|');
+  const excluded = [
+    ...SAME_ORIGIN_EMBED_PATHS.map((path) => `${path.replace(/^\//, '')}$`),
+    PORTAL_CANVAS_EXCLUDE,
+  ].join('|');
   return [
     {
       source: `/((?!${excluded}).*)`,
@@ -69,5 +84,9 @@ export function nextSecurityHeaderSources(isDev = process.env.NODE_ENV !== 'prod
       source,
       headers: sameOriginEmbedHeaders(isDev),
     })),
+    {
+      source: PORTAL_CANVAS_HEADER_SOURCE,
+      headers: portalCanvasHeaders(isDev),
+    },
   ];
 }
