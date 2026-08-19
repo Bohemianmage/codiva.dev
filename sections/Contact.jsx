@@ -14,11 +14,13 @@ export default function Contact() {
   const inView = useInView(sectionRef, { triggerOnce: false, threshold: 0.6 });
 
   const validationSchema = Yup.object({
-    name: Yup.string().required(t('common.validation.required')),
+    name: Yup.string().trim().required(t('common.validation.required')),
     email: Yup.string()
-      .email(t('common.validation.invalidEmail'))
-      .required(t('common.validation.required')),
+      .trim()
+      .required(t('common.validation.required'))
+      .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, t('common.validation.invalidEmail')),
     message: Yup.string()
+      .trim()
       .min(10, t('common.validation.tooShort'))
       .required(t('common.validation.required')),
   });
@@ -57,11 +59,20 @@ export default function Contact() {
               const response = await fetch('/api/inbox', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
+                body: JSON.stringify({
+                  name: values.name.trim(),
+                  email: values.email.trim(),
+                  message: values.message.trim(),
+                }),
               });
 
               if (response.status === 429) {
                 toast.error(t('common.status.rateLimited'), { id: toastId });
+                return;
+              }
+
+              if (response.status === 400) {
+                toast.error(t('common.status.invalidFields'), { id: toastId });
                 return;
               }
 
@@ -91,6 +102,7 @@ export default function Contact() {
                 >
                   <label htmlFor="name" className="block text-sm font-medium mb-1">
                     {t('common.fields.name')}
+                    <span className="text-codiva-primary" aria-hidden="true"> *</span>
                   </label>
                   <Field
                     id="name"
@@ -115,6 +127,7 @@ export default function Contact() {
                 >
                   <label htmlFor="email" className="block text-sm font-medium mb-1">
                     {t('common.fields.email')}
+                    <span className="text-codiva-primary" aria-hidden="true"> *</span>
                   </label>
                   <Field
                     id="email"
@@ -140,6 +153,7 @@ export default function Contact() {
                 >
                   <label htmlFor="message" className="block text-sm font-medium mb-1">
                     {t('common.fields.message')}
+                    <span className="text-codiva-primary" aria-hidden="true"> *</span>
                   </label>
                   <Field
                     id="message"

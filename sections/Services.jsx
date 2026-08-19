@@ -69,7 +69,7 @@ export default function Services() {
 
           <motion.div
             variants={containerVariants}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left"
+            className="grid grid-cols-1 items-start md:grid-cols-3 gap-8 text-left"
           >
             {services.map((service, index) => {
               const isExpanded = expandedIndex === index;
@@ -84,7 +84,7 @@ export default function Services() {
                   transition={{ duration: 0.5 }}
                   className={`relative border ${
                     service.badge ? 'border-codiva-primary/30 bg-codiva-primary/5' : 'border-zinc-100'
-                  } rounded-xl p-6 shadow-sm hover:shadow-md hover:scale-[1.015] transition-transform duration-300 flex flex-col justify-between`}
+                  } rounded-xl p-6 shadow-sm hover:shadow-md hover:scale-[1.015] transition-transform duration-300 flex flex-col justify-start`}
                 >
                   {service.badge && (
                     <span className="text-[11px] md:text-xs font-medium text-white bg-codiva-primary px-3 py-1 rounded-full absolute -top-2 -right-2 shadow-sm">

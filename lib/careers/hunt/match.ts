@@ -4,6 +4,7 @@ import {
   type CareerDiscipline,
 } from '@/lib/ops/career-disciplines';
 import { HUNT_SEEDS, huntSeedById, type HuntDifficulty, type HuntSeed, type HuntSurface } from './seeds';
+import { careerBaseUrl } from '@/lib/ops/host';
 
 function fold(value: string): string {
   return String(value || '')
@@ -16,7 +17,7 @@ function parseUrl(raw: string): URL | null {
   const value = String(raw || '').trim();
   if (!value) return null;
   try {
-    return value.includes('://') ? new URL(value) : new URL(value, 'https://career.codiva.dev');
+    return value.includes('://') ? new URL(value) : new URL(value, `${careerBaseUrl()}/`);
   } catch {
     return null;
   }

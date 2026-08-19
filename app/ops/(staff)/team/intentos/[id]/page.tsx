@@ -1,22 +1,15 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
-import ToastForm from '@/components/ops/ToastForm';
 import { requireCareersReview } from '@/lib/ops/auth';
 import { getAssessmentCatalog } from '@/lib/careers/assessments/catalog';
 import { parseAnswers } from '@/lib/careers/assessments/server';
 import { reviewRowsForAttempt, scoreAnswers } from '@/lib/careers/assessments/engine';
-import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
 import { splitHuntReports } from '@/lib/careers/hunt/review';
-import {
-  huntConsiderationLabel,
-  huntDifficultyLabel,
-  scoreHuntReports,
-} from '@/lib/careers/hunt/score';
+import { huntConsiderationLabel, scoreHuntReports } from '@/lib/careers/hunt/score';
 import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trail';
 import HuntTrailMap from '@/components/ops/HuntTrailMap';
-import HuntEvidenceLightbox from '@/components/ops/HuntEvidenceLightbox';
+import { HuntFindingsBlock } from '@/components/ops/OpsCareersPanel';
 import OpsReportLightbox from '@/components/ops/OpsReportLightbox';
-import { updateHuntReportReview } from '@/lib/ops/career-actions';
 import { careerDisciplineLabels, disciplineFromCatalogKey, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import {
   deviceLabelFromUserAgent,
@@ -370,76 +363,16 @@ export default async function AssessmentAttemptPage({
             {t('ops.attempt.findingsEmpty')}
           </p>
         ) : (
-          <ul className="space-y-3">
-            {huntReports.map((row) => {
-              const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
-              const counts =
-                discipline && seed ? matchedSeedCountsForDiscipline(seed.id, discipline) : false;
-              return (
-                <li key={row.id} className="rounded-xl border border-zinc-200 bg-white p-4">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-zinc-900">{row.title}</p>
-                    <span
-                      className={`text-xs font-semibold ${
-                        counts ? 'text-codiva-primary' : seed ? 'text-zinc-600' : 'text-amber-700'
-                      }`}
-                    >
-                      {counts
-                        ? t('ops.attempt.countsForCraft')
-                        : seed
-                          ? t('ops.attempt.seedCraft', { craft: DISCIPLINE_LABELS[seed.craft] })
-                          : t('ops.attempt.noSeed')}
-                      {seed
-                        ? ` · ${t('ops.careers.difficulty', {
-                            label: huntDifficultyLabel(seed.difficulty, locale),
-                          })}`
-                        : ''}
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-400">
-                    {row.page_url} · {formatDate(row.created_at)}
-                  </p>
-                  {seed ? <p className="mt-1 text-xs text-zinc-500">{seed.title}</p> : (
-                    <p className="mt-1 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
-                  )}
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-700">{row.description}</p>
-                  {row.expected ? (
-                    <p className="mt-2 text-sm text-zinc-600">
-                      <span className="font-medium text-zinc-800">{t('ops.attempt.expected')}</span>
-                      {row.expected}
-                    </p>
-                  ) : null}
-                  {(row.evidence_paths ?? []).length ? (
-                    <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
-                  ) : null}
-                  {!seed ? (
-                    <ToastForm
-                      success={t('ops.careers.reviewSaved')}
-                      action={async (fd) => {
-                        'use server';
-                        await updateHuntReportReview(row.id, fd);
-                      }}
-                      className="mt-3 flex flex-wrap items-center gap-2"
-                    >
-                      <input type="hidden" name="attempt_id" value={attempt.id} />
-                      <select
-                        name="review_status"
-                        defaultValue={row.review_status || 'open'}
-                        className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-                      >
-                        <option value="open">{t('ops.careers.reviewOpen')}</option>
-                        <option value="noted">{t('ops.careers.reviewNoted')}</option>
-                        <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
-                      </select>
-                      <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                        {t('ops.team.save')}
-                      </button>
-                    </ToastForm>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+          <HuntFindingsBlock
+            rows={huntReports}
+            discipline={discipline}
+            t={t}
+            formatDate={formatDate}
+            locale={locale}
+            disciplineLabels={DISCIPLINE_LABELS}
+            heading={false}
+            reviewAttemptId={attempt.id}
+          />
         )}
       </section>
 

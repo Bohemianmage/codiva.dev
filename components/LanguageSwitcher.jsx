@@ -81,7 +81,7 @@ export default function LanguageSwitcher() {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768);
+      setIsDesktop(window.innerWidth >= 1024);
     };
     handleResize();
     window.addEventListener('resize', handleResize);

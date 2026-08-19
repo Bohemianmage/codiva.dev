@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { scrollToSectionCenter } from '../utils/scrollToSection';
 import HuntBeacon from '../components/careers/HuntBeacon';
 import Navbar from '../components/Navbar';
-import { Toaster } from 'react-hot-toast';
+import CodivaToaster from '@/components/ui/CodivaToaster';
 
 const Footer = dynamic(() => import('../components/Footer'));
 const FloatingQuoteButton = dynamic(() => import('../components/FloatingQuoteButton'), {
@@ -54,7 +54,7 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
   const showQuote = !isSatellite;
 
   return (
-    <div className="bg-neutral-50 text-zinc-900 font-sans antialiased">
+    <div className="bg-codiva-background text-zinc-900 font-sans antialiased">
       {/* Microdatos JSON-LD */}
       <script type="application/ld+json">
         {JSON.stringify(schemaOrgJsonLd)}
@@ -76,13 +76,7 @@ export default function LayoutClient({ children, variant = 'marketing' }) {
 
       {showQuote && <FloatingQuoteButton />}
 
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          className: 'font-inter text-sm',
-        }}
-      />
+      <CodivaToaster />
 
       {isTicket ? null : <HuntBeacon />}
 

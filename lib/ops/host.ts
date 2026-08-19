@@ -87,6 +87,14 @@ export function careerBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_CAREER_URL ?? 'https://career.codiva.dev').replace(/\/$/, '');
 }
 
+export function careerHostName(): string {
+  try {
+    return new URL(careerBaseUrl()).hostname;
+  } catch {
+    return 'career.codiva.dev';
+  }
+}
+
 /**
  * Path interno de la bolsa según el host.
  * En career.* las URLs públicas no llevan /empleos (rewrite en middleware).
@@ -120,16 +128,36 @@ export function portalHomeUrl(): string {
   return `${portalBaseUrl()}/proyectos`;
 }
 
+/** href http(s) usable: agrega https si pegaron solo el host. */
+export function asHttpHref(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+/** Etiqueta de uso: host + path, sin protocolo (lo que se copia/comparte). */
+export function usageUrlLabel(url: string): string {
+  const href = asHttpHref(url);
+  try {
+    const parsed = new URL(href);
+    const path = parsed.pathname.replace(/\/+$/, '');
+    const rest = `${path === '/' ? '' : path}${parsed.search}${parsed.hash}`;
+    return `${parsed.host}${rest}`;
+  } catch {
+    return url.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  }
+}
+
 /** URL absoluta al portal de un proyecto (host portal - clientes). */
 export function projectPortalUrl(slug: string, path = ''): string {
   const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
   return `${portalBaseUrl()}/p/${slug}${suffix}`;
 }
 
-/** Etiqueta corta para UI staff (sin protocolo). */
+/** Etiqueta de uso para UI staff: portal.codiva.dev/p/{slug}. */
 export function projectPortalShortLabel(slug: string, path = ''): string {
-  const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
-  return `portal/p/${slug}${suffix}`;
+  return usageUrlLabel(projectPortalUrl(slug, path));
 }
 
 /**

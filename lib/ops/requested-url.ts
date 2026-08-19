@@ -22,3 +22,10 @@ export function normalizeRequestedUrl(raw: string): string {
 export function isHttpUrl(value: string | null | undefined): boolean {
   return Boolean(value && HTTP_URL_RE.test(value.trim()));
 }
+
+/** Vacío → null; si hay valor, normaliza a http(s). */
+export function optionalHttpUrl(raw: string | null | undefined): string | null {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed) return null;
+  return normalizeRequestedUrl(trimmed);
+}

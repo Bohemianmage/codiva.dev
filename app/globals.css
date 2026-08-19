@@ -49,11 +49,6 @@ a {
   @apply text-codiva-primary underline-offset-2 hover:underline transition;
 }
 
-/* Botón primario reutilizable */
-.button-primary {
-  @apply bg-codiva-primary text-white px-5 py-2 rounded-xl hover:bg-codiva-primary-dark transition;
-}
-
 /* Ping animado rápido */
 @keyframes ping-fast {
   0%, 100% { transform: scale(1); opacity: 1; }
@@ -144,12 +139,54 @@ a {
   animation: hero-cta-in 0.5s ease-out 0.12s both;
 }
 
+@keyframes codiva-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, -6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes codiva-toast-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(10px, -4px, 0);
+  }
+}
+
+.codiva-toast {
+  box-shadow:
+    0 8px 28px -10px rgba(16, 78, 78, 0.22),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.codiva-toast-in {
+  animation: codiva-toast-in 0.32s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+.codiva-toast-out {
+  animation: codiva-toast-out 0.2s ease-in both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-left,
   .animate-scroll-right,
   .case-orbit,
-  .hero-cta {
+  .hero-cta,
+  .codiva-toast-in,
+  .codiva-toast-out {
     animation: none;
+  }
+
+  .codiva-toast-out {
+    opacity: 0;
   }
 }
 

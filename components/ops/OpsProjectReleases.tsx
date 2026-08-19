@@ -1,3 +1,4 @@
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import StatusBadge from '@/components/ops/StatusBadge';
 import ToastForm from '@/components/ops/ToastForm';
 import { getT } from '@/i18n/locale';
@@ -351,6 +352,7 @@ export default async function OpsProjectReleases({
                           .join(' · ')}
                         {item.createdAt ? ` · ${new Date(item.createdAt).toLocaleString()}` : ''}
                       </p>
+                      <CopyableUrl href={item.previewUrl} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <a
@@ -443,14 +445,7 @@ export default async function OpsProjectReleases({
                   {r.commit_sha ? (
                     <p className="text-xs text-zinc-500">{r.commit_sha.slice(0, 7)}</p>
                   ) : null}
-                  <a
-                    href={r.preview_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all text-codiva-primary hover:underline"
-                  >
-                    {r.preview_url}
-                  </a>
+                  <CopyableUrl href={r.preview_url} />
                   {r.error_message ? (
                     <p className="text-xs text-red-700 whitespace-pre-wrap">{r.error_message}</p>
                   ) : null}

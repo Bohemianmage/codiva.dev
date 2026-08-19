@@ -1,3 +1,4 @@
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { getT } from '@/i18n/locale';
 import type { ReleaseRequestRow, ReleaseSettingsRow } from '@/lib/ops/releases/actions';
@@ -50,14 +51,9 @@ export default async function PortalReleasesPanel({
                 {r.commit_message ? (
                   <p className="mt-2 font-medium text-zinc-900">{r.commit_message}</p>
                 ) : null}
-                <a
-                  href={r.preview_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 block break-all text-codiva-primary hover:underline"
-                >
-                  {r.preview_url}
-                </a>
+                <div className="mt-1">
+                  <CopyableUrl href={r.preview_url} />
+                </div>
               </li>
             );
           })}

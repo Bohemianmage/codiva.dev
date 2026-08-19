@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { marketingBaseUrl } from '@/lib/ops/host';
+import { toUserErrorMessage } from '@/lib/user-error';
 
 export default function PartnerRequestForm() {
   const { t } = useTranslation();
@@ -30,7 +31,9 @@ export default function PartnerRequestForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const msg =
-          res.status === 429 || data.error === 'rate_limited' ? t('partner.rateLimited') : data.error || t('partner.sendError');
+          res.status === 429 || data.error === 'rate_limited'
+            ? t('partner.rateLimited')
+            : toUserErrorMessage(data.error, t('partner.sendError'));
         setError(msg);
         toast.error(msg, { id: toastId });
         return;
@@ -165,9 +168,9 @@ export default function PartnerRequestForm() {
 
       <p className="text-center text-sm text-zinc-500">
         {t('partner.directClient')}{' '}
-        <Link href="https://codiva.dev/cotiza" className="text-codiva-primary hover:underline">
+        <a href={`${marketingBaseUrl()}/cotiza`} className="text-codiva-primary hover:underline">
           {t('partner.quoteOnSite')}
-        </Link>
+        </a>
       </p>
     </form>
   );

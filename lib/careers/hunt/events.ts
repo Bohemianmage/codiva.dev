@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashCareerIp } from '@/lib/ops/careers';
-import { isOpsHost, isPortalHost, isTicketHost } from '@/lib/ops/host';
+import { isOpsHost, isPortalHost, isTicketHost, marketingBaseUrl } from '@/lib/ops/host';
 import {
   huntCookieHostname,
   huntCookieSecure,
@@ -46,7 +46,7 @@ export function sanitizeHuntReferrer(raw: string): string | null {
   const value = String(raw || '').trim();
   if (!value) return null;
   try {
-    const url = value.includes('://') ? new URL(value) : new URL(value, 'https://codiva.dev');
+    const url = value.includes('://') ? new URL(value) : new URL(value, `${marketingBaseUrl()}/`);
     const host = sanitizeHuntHost(url.hostname);
     const path = sanitizeHuntPath(url.pathname);
     if (!host || isOpsHost(host) || isPortalHost(host) || isTicketHost(host)) return null;

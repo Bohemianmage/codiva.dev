@@ -12,6 +12,7 @@ import { findUserIdByEmail } from '@/lib/ops/auth-users';
 import { getT } from '@/i18n/locale';
 import { tSync } from '@/i18n/translate';
 import type { Locale } from '@/i18n/config';
+import { authErrorMessage } from '@/lib/user-error';
 import { getRequestAudit } from '@/lib/ops/request-audit';
 import { PUBLIC_RL_AUTH, STAFF_RL_PASSWORD_CHANGE, consumeRateLimit } from '@/lib/rate-limit';
 
@@ -52,7 +53,7 @@ async function sendSupabaseRecoveryEmail(
   const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) {
     console.error('resetPasswordForEmail:', error);
-    return { ok: false, message: error.message };
+    return { ok: false, message: authErrorMessage(error.message, (key) => tSync(locale, key)) };
   }
   return {
     ok: true,
@@ -83,7 +84,7 @@ async function sendRecoveryEmail(
       ok: false,
       message: error.message.includes('redirect')
         ? t('auth.redirectNotAllowed')
-        : t('auth.generateFailed', { error: error.message }),
+        : t('auth.generateFailed'),
     };
   }
 
@@ -118,7 +119,7 @@ async function sendRecoveryEmail(
 
   return {
     ok: false,
-    message: t('auth.sendFailed', { error: mail.error ?? t('auth.unknownError') }),
+    message: t('auth.sendFailed'),
   };
 }
 
@@ -285,7 +286,7 @@ export async function updatePassword(newPassword: string): Promise<ResetResult> 
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) {
-    return { ok: false, message: error.message };
+    return { ok: false, message: authErrorMessage(error.message, t) };
   }
 
   return { ok: true, message: t('auth.updated') };
@@ -354,7 +355,7 @@ export async function changeStaffPassword(
 
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) {
-    return { ok: false, message: error.message };
+    return { ok: false, message: authErrorMessage(error.message, t) };
   }
 
   return { ok: true, message: t('ops.settings.passwordUpdated') };

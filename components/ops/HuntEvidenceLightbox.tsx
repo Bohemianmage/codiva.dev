@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Button from '@/components/ui/Button';
+import Modal, { ModalHeader } from '@/components/ui/Modal';
 
 export default function HuntEvidenceLightbox({
   reportId,
@@ -29,106 +30,84 @@ export default function HuntEvidenceLightbox({
     });
   }, [count]);
 
-  useEffect(() => {
-    if (openIndex == null) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-      } else if (event.key === 'ArrowLeft') {
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
         event.preventDefault();
         showPrev();
       } else if (event.key === 'ArrowRight') {
         event.preventDefault();
         showNext();
       }
-    }
-    document.addEventListener('keydown', onKey);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [openIndex, close, showPrev, showNext]);
+    },
+    [showPrev, showNext]
+  );
 
   if (count < 1) return null;
 
-  const dialog =
-    openIndex != null && typeof document !== 'undefined'
-      ? createPortal(
-          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-            <button
-              type="button"
-              className="absolute inset-0 bg-zinc-900/70"
-              aria-label={t('ops.careers.evidenceClose')}
-              onClick={close}
-            />
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={titleId}
-              className="relative flex max-h-[min(92vh,900px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
-            >
-              <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
-                <p id={titleId} className="text-sm font-semibold text-zinc-900">
-                  {t('ops.careers.evidenceTitle', { n: openIndex + 1, total: count })}
-                </p>
-                <button
-                  type="button"
-                  onClick={close}
-                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-                >
-                  {t('ops.careers.evidenceClose')}
-                </button>
-              </div>
-              <div className="relative flex min-h-0 flex-1 items-center justify-center bg-zinc-950 p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/api/ops/careers/hunt-file?id=${reportId}&n=${openIndex}`}
-                  alt={t('ops.careers.evidence', { n: openIndex + 1 })}
-                  className="max-h-[min(78vh,820px)] max-w-full object-contain"
-                />
-              </div>
-              {count > 1 ? (
-                <div className="flex items-center justify-between gap-2 border-t border-zinc-200 px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={showPrev}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                  >
-                    {t('ops.careers.evidencePrev')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={showNext}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                  >
-                    {t('ops.careers.evidenceNext')}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
+  const title =
+    openIndex != null ? t('ops.careers.evidenceTitle', { n: openIndex + 1, total: count }) : '';
+  const closeLabel = t('ops.careers.evidenceClose');
 
   return (
     <>
       <div className="mt-3 flex flex-wrap gap-2">
         {Array.from({ length: count }, (_, index) => (
-          <button
+          <Button
             key={`${reportId}-${index}`}
             type="button"
+            variant="secondary"
+            size="xs"
             onClick={() => setOpenIndex(index)}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
           >
             {t('ops.careers.evidence', { n: index + 1 })}
-          </button>
+          </Button>
         ))}
       </div>
-      {dialog}
+      <Modal
+        open={openIndex != null}
+        onClose={close}
+        title={title}
+        titleId={titleId}
+        size="frameLg"
+        closeLabel={closeLabel}
+        backdrop="dark"
+        onKeyDown={onKeyDown}
+        header={
+          <ModalHeader
+            title={title}
+            titleId={titleId}
+            actions={
+              <Button type="button" variant="secondary" size="xs" onClick={close}>
+                {closeLabel}
+              </Button>
+            }
+          />
+        }
+        footer={
+          count > 1 ? (
+            <div className="flex items-center justify-between gap-2 border-t border-zinc-200 px-4 py-3">
+              <Button type="button" variant="secondary" size="xs" onClick={showPrev}>
+                {t('ops.careers.evidencePrev')}
+              </Button>
+              <Button type="button" variant="secondary" size="xs" onClick={showNext}>
+                {t('ops.careers.evidenceNext')}
+              </Button>
+            </div>
+          ) : null
+        }
+      >
+        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-zinc-950 p-3">
+          {openIndex != null ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/ops/careers/hunt-file?id=${reportId}&n=${openIndex}`}
+              alt={t('ops.careers.evidence', { n: openIndex + 1 })}
+              className="max-h-[min(78vh,820px)] max-w-full object-contain"
+            />
+          ) : null}
+        </div>
+      </Modal>
     </>
   );
 }

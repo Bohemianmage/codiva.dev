@@ -1,3 +1,4 @@
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import ToastForm from '@/components/ops/ToastForm';
@@ -45,6 +46,7 @@ import {
 } from '@/lib/careers/assessments/origin';
 import { labelsFor, EMPTY_LABEL } from '@/lib/ops/labels';
 import { getT, type Translator, type Locale } from '@/i18n/locale';
+import { usageUrlLabel } from '@/lib/ops/host';
 
 export type OpsJobPostingRow = {
   id: string;
@@ -113,7 +115,9 @@ export type OpsPersonnelOfferLink = {
 };
 
 function postingHint(status: string, t: Translator) {
-  if (status === 'published') return t('ops.careers.postingHintPublished');
+  if (status === 'published') {
+    return t('ops.careers.postingHintPublished', { host: usageUrlLabel(publicCareerListUrl()) });
+  }
   if (status === 'closed') return t('ops.careers.postingHintClosed');
   return t('ops.careers.postingHintDraft');
 }
@@ -260,6 +264,8 @@ function HuntFindingEmbed({
   locale,
   disciplineLabels,
   showAttemptLink = false,
+  reviewAttemptId,
+  reviewOfferId,
 }: {
   row: OpsHuntReportRow;
   discipline?: string | null;
@@ -268,107 +274,126 @@ function HuntFindingEmbed({
   locale: Locale;
   disciplineLabels: Record<string, string>;
   showAttemptLink?: boolean;
+  reviewAttemptId?: string;
+  reviewOfferId?: string;
 }) {
   const seed = row.matched_seed_id ? huntSeedById(row.matched_seed_id) : null;
   const craftDiscipline = discipline && isCareerDiscipline(discipline) ? discipline : null;
   const countsForCraft = Boolean(
     seed && craftDiscipline && matchedSeedCountsForDiscipline(seed.id, craftDiscipline)
   );
+  const reviewStatus = row.review_status || 'open';
+  const reviewLabel =
+    reviewStatus === 'noted'
+      ? t('ops.careers.reviewNoted')
+      : reviewStatus === 'discarded'
+        ? t('ops.careers.reviewDiscarded')
+        : null;
   return (
-    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
+    <details className="group rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-2 px-3 py-2.5 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
           <p className="text-sm text-zinc-800">{row.title}</p>
-          <p className="mt-1 text-xs text-zinc-400">
-            {row.page_url ? (
-              <>
-                <a
-                  href={row.page_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-codiva-primary hover:underline"
-                >
-                  {row.page_url}
-                </a>
-                {' · '}
-              </>
-            ) : null}
+          <p className="mt-0.5 text-xs text-zinc-400">
             {formatDate(row.created_at)}
             {seed
               ? ` · ${t('ops.careers.difficulty', {
                   label: huntDifficultyLabel(seed.difficulty, locale),
                 })}`
               : ''}
+            {reviewLabel ? ` · ${reviewLabel}` : ''}
           </p>
         </div>
-        <CareersTag
-          label={
-            seed
-              ? countsForCraft
-                ? t('ops.careers.seedCounts')
-                : t('ops.careers.seed', { craft: disciplineLabels[seed.craft] })
-              : t('ops.careers.noMatch')
-          }
-          tone={seed ? (countsForCraft ? 'success' : 'info') : 'neutral'}
-          title={
-            seed
-              ? countsForCraft
-                ? t('ops.careers.seedCountsHint')
-                : t('ops.careers.seedOtherHint')
-              : t('ops.careers.noMatchHint')
-          }
-        />
+        <div className="flex shrink-0 items-center gap-2 pt-0.5">
+          <CareersTag
+            label={
+              seed
+                ? countsForCraft
+                  ? t('ops.careers.seedCounts')
+                  : t('ops.careers.seed', { craft: disciplineLabels[seed.craft] })
+                : t('ops.careers.noMatch')
+            }
+            tone={seed ? (countsForCraft ? 'success' : 'info') : 'neutral'}
+            title={
+              seed
+                ? countsForCraft
+                  ? t('ops.careers.seedCountsHint')
+                  : t('ops.careers.seedOtherHint')
+                : t('ops.careers.noMatchHint')
+            }
+          />
+          <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+        </div>
+      </summary>
+      <div className="space-y-2 border-t border-zinc-200 px-3 pb-3 pt-2">
+        {row.page_url ? (
+          <p className="text-xs text-zinc-400">
+            <a
+              href={row.page_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all hover:text-codiva-primary hover:underline"
+            >
+              {row.page_url}
+            </a>
+          </p>
+        ) : null}
+        {seed ? <p className="text-xs text-zinc-500">{seed.title}</p> : (
+          <p className="text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
+        )}
+        {row.description?.trim() ? (
+          <p className="whitespace-pre-line text-sm text-zinc-700">{row.description.trim()}</p>
+        ) : null}
+        {row.expected?.trim() ? (
+          <p className="text-sm text-zinc-600">
+            <span className="font-medium text-zinc-800">{t('ops.attempt.expected')}</span>
+            {row.expected.trim()}
+          </p>
+        ) : null}
+        {(row.evidence_paths ?? []).length ? (
+          <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
+        ) : null}
+        {showAttemptLink && row.assessment_attempt_id ? (
+          <p>
+            <Link
+              href={`/team/intentos/${row.assessment_attempt_id}`}
+              className="text-xs font-medium text-codiva-primary hover:underline"
+            >
+              {t('ops.careers.viewCandidateTest')}
+            </Link>
+          </p>
+        ) : null}
+        {!seed ? (
+          <ToastForm
+            success={t('ops.careers.reviewSaved')}
+            action={async (fd) => {
+              'use server';
+              await updateHuntReportReview(row.id, fd);
+            }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <input
+              type="hidden"
+              name="attempt_id"
+              value={reviewAttemptId || row.assessment_attempt_id || ''}
+            />
+            {reviewOfferId ? <input type="hidden" name="offer_id" value={reviewOfferId} /> : null}
+            <select
+              name="review_status"
+              defaultValue={reviewStatus}
+              className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            >
+              <option value="open">{t('ops.careers.reviewOpen')}</option>
+              <option value="noted">{t('ops.careers.reviewNoted')}</option>
+              <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
+            </select>
+            <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+              {t('ops.team.save')}
+            </button>
+          </ToastForm>
+        ) : null}
       </div>
-      {seed ? <p className="mt-2 text-xs text-zinc-500">{seed.title}</p> : (
-        <p className="mt-2 text-xs text-zinc-500">{t('ops.careers.noMatchHint')}</p>
-      )}
-      {row.description?.trim() ? (
-        <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{row.description.trim()}</p>
-      ) : null}
-      {row.expected?.trim() ? (
-        <p className="mt-2 text-sm text-zinc-600">
-          <span className="font-medium text-zinc-800">{t('ops.attempt.expected')}</span>
-          {row.expected.trim()}
-        </p>
-      ) : null}
-      {(row.evidence_paths ?? []).length ? (
-        <HuntEvidenceLightbox reportId={row.id} count={(row.evidence_paths ?? []).length} />
-      ) : null}
-      {showAttemptLink && row.assessment_attempt_id ? (
-        <p className="mt-2">
-          <Link
-            href={`/team/intentos/${row.assessment_attempt_id}`}
-            className="text-xs font-medium text-codiva-primary hover:underline"
-          >
-            {t('ops.careers.viewCandidateTest')}
-          </Link>
-        </p>
-      ) : null}
-      {!seed ? (
-        <ToastForm
-          success={t('ops.careers.reviewSaved')}
-          action={async (fd) => {
-            'use server';
-            await updateHuntReportReview(row.id, fd);
-          }}
-          className="mt-3 flex flex-wrap items-center gap-2"
-        >
-          <input type="hidden" name="attempt_id" value={row.assessment_attempt_id || ''} />
-          <select
-            name="review_status"
-            defaultValue={row.review_status || 'open'}
-            className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-          >
-            <option value="open">{t('ops.careers.reviewOpen')}</option>
-            <option value="noted">{t('ops.careers.reviewNoted')}</option>
-            <option value="discarded">{t('ops.careers.reviewDiscarded')}</option>
-          </select>
-          <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-            {t('ops.team.save')}
-          </button>
-        </ToastForm>
-      ) : null}
-    </div>
+    </details>
   );
 }
 
@@ -381,6 +406,8 @@ export function HuntFindingsBlock({
   disciplineLabels,
   heading = true,
   showAttemptLink = false,
+  reviewAttemptId,
+  reviewOfferId,
 }: {
   rows: OpsHuntReportRow[];
   discipline?: string | null;
@@ -390,6 +417,8 @@ export function HuntFindingsBlock({
   disciplineLabels: Record<string, string>;
   heading?: boolean;
   showAttemptLink?: boolean;
+  reviewAttemptId?: string;
+  reviewOfferId?: string;
 }) {
   if (!rows.length) return null;
   return (
@@ -409,6 +438,8 @@ export function HuntFindingsBlock({
           locale={locale}
           disciplineLabels={disciplineLabels}
           showAttemptLink={showAttemptLink}
+          reviewAttemptId={reviewAttemptId}
+          reviewOfferId={reviewOfferId}
         />
       ))}
     </div>
@@ -823,7 +854,7 @@ export default async function OpsCareersPanel({
         <p className="text-sm text-zinc-500">
           {t('ops.careers.createHint')}{' '}
           <a href={publicCareerListUrl()} className="text-codiva-primary hover:underline">
-            career.codiva.dev
+            {usageUrlLabel(publicCareerListUrl())}
           </a>
           {t('ops.careers.createHintEnd')}
         </p>
@@ -948,11 +979,14 @@ export default async function OpsCareersPanel({
                     <CareersTag label={t('ops.careers.edit')} href={`/team/vacantes/${row.id}`} />
                   ) : null}
                   {row.status === 'published' ? (
-                    <CareersTag
-                      label={t('ops.careers.viewPublic')}
-                      href={publicCareerUrl(row.slug)}
-                      title={t('ops.careers.viewPublicHint')}
-                    />
+                    <>
+                      <CareersTag
+                        label={t('ops.careers.viewPublic')}
+                        href={publicCareerUrl(row.slug)}
+                        title={t('ops.careers.viewPublicHint')}
+                      />
+                      <CopyableUrl href={publicCareerUrl(row.slug)} />
+                    </>
                   ) : null}
                   <OpsReportLightbox
                     title={t('ops.careers.pipelineTitleJob', { title: row.title })}

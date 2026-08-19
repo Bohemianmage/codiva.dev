@@ -3,6 +3,8 @@ import DashboardFinance from '@/components/ops/DashboardFinance';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import PortalClientUrl from '@/components/ops/PortalClientUrl';
 import StatusBadge, { leadTone, projectTone, ticketTone } from '@/components/ops/StatusBadge';
+import Card, { CardHeader } from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
 import { listVisibleProjectIds, projectIdInFilter, requireStaff } from '@/lib/ops/auth';
 import { buildFinanceSummary, type FinanceFilters } from '@/lib/ops/finance';
 import { can } from '@/lib/ops/permissions';
@@ -154,13 +156,15 @@ export default async function DashboardPage({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {!showCommercial && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">{t('ops.pages.mySprintItems')}</h2>
-              <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
-                {t('ops.pages.viewProjects')}
-              </Link>
-            </div>
+          <Card as="section" className="lg:col-span-2">
+            <CardHeader
+              title={t('ops.pages.mySprintItems')}
+              action={
+                <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
+                  {t('ops.pages.viewProjects')}
+                </Link>
+              }
+            />
             <ul className="space-y-3">
               {(mySprintItems ?? []).map((item) => {
                 const sprint = item.project_sprints as {
@@ -190,20 +194,22 @@ export default async function DashboardPage({
                 );
               })}
               {!(mySprintItems ?? []).length && (
-                <p className="text-sm text-zinc-500">{t('ops.dashboard.noSprintItems')}</p>
+                <EmptyState>{t('ops.dashboard.noSprintItems')}</EmptyState>
               )}
             </ul>
-          </section>
+          </Card>
         )}
 
         {showCommercial && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">{t('ops.dashboard.newLeads')}</h2>
-              <Link href="/leads" className="text-sm text-codiva-primary hover:underline">
-                {t('ops.dashboard.viewAll')}
-              </Link>
-            </div>
+          <Card as="section">
+            <CardHeader
+              title={t('ops.dashboard.newLeads')}
+              action={
+                <Link href="/leads" className="text-sm text-codiva-primary hover:underline">
+                  {t('ops.dashboard.viewAll')}
+                </Link>
+              }
+            />
             <ul className="space-y-3">
               {(leads ?? []).map((l) => (
                 <li key={l.id} className="flex items-center justify-between gap-3 text-sm">
@@ -213,20 +219,22 @@ export default async function DashboardPage({
                   <StatusBadge label={LEAD_STATUS_LABELS[l.status]} tone={leadTone(l.status)} />
                 </li>
               ))}
-              {!leads?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noNewLeads')}</p>}
+              {!leads?.length && <EmptyState>{t('ops.dashboard.noNewLeads')}</EmptyState>}
             </ul>
-          </section>
+          </Card>
         )}
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">{t('ops.inbox.pending')}</h2>
-            {can(staff, 'inbox') ? (
-              <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
-                {t('ops.inbox.viewInbox')}
-              </Link>
-            ) : null}
-          </div>
+        <Card as="section">
+          <CardHeader
+            title={t('ops.inbox.pending')}
+            action={
+              can(staff, 'inbox') ? (
+                <Link href="/inbox" className="text-sm text-codiva-primary hover:underline">
+                  {t('ops.inbox.viewInbox')}
+                </Link>
+              ) : null
+            }
+          />
           <ul className="space-y-3">
             {inbound.map((item) => (
               <li key={item.key} className="text-sm">
@@ -238,17 +246,19 @@ export default async function DashboardPage({
                 </p>
               </li>
             ))}
-            {!inbound.length && <p className="text-sm text-zinc-500">{t('ops.inbox.caughtUp')}</p>}
+            {!inbound.length && <EmptyState>{t('ops.inbox.caughtUp')}</EmptyState>}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">{t('ops.dashboard.openTickets')}</h2>
-            <Link href="/tickets" className="text-sm text-codiva-primary hover:underline">
-              {t('ops.dashboard.viewTickets')}
-            </Link>
-          </div>
+        <Card as="section">
+          <CardHeader
+            title={t('ops.dashboard.openTickets')}
+            action={
+              <Link href="/tickets" className="text-sm text-codiva-primary hover:underline">
+                {t('ops.dashboard.viewTickets')}
+              </Link>
+            }
+          />
           <ul className="space-y-3">
             {(tickets ?? []).map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 text-sm">
@@ -258,17 +268,19 @@ export default async function DashboardPage({
                 <StatusBadge label={TICKET_STATUS_LABELS[t.status]} tone={ticketTone(t.status)} />
               </li>
             ))}
-            {!tickets?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noOpenTickets')}</p>}
+            {!tickets?.length && <EmptyState>{t('ops.dashboard.noOpenTickets')}</EmptyState>}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">{t('ops.dashboard.activeProjects')}</h2>
-            <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
-              {t('ops.pages.viewProjects')}
-            </Link>
-          </div>
+        <Card as="section">
+          <CardHeader
+            title={t('ops.dashboard.activeProjects')}
+            action={
+              <Link href="/projects" className="text-sm text-codiva-primary hover:underline">
+                {t('ops.pages.viewProjects')}
+              </Link>
+            }
+          />
           <ul className="space-y-3">
             {(projects ?? []).map((p) => (
               <li key={p.id} className="text-sm">
@@ -288,9 +300,9 @@ export default async function DashboardPage({
                 </div>
               </li>
             ))}
-            {!projects?.length && <p className="text-sm text-zinc-500">{t('ops.dashboard.noActiveProjects')}</p>}
+            {!projects?.length && <EmptyState>{t('ops.dashboard.noActiveProjects')}</EmptyState>}
           </ul>
-        </section>
+        </Card>
       </div>
     </div>
   );

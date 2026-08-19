@@ -49,6 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${copy.title} · Codiva.dev`,
       url: publicCareerUrl(posting.slug),
     },
+    alternates: { canonical: publicCareerUrl(posting.slug) },
   };
 }
 

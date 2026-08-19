@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatBytes } from '@/lib/format-bytes';
 
 type Props = {
   name?: string;
@@ -10,12 +11,6 @@ type Props = {
   hint?: string;
   className?: string;
 };
-
-function formatBytes(size: number) {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default function BrandedFileInput({
   name = 'file',

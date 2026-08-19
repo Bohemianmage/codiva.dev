@@ -24,14 +24,26 @@
       "send": "Enviar mensaje",
       "submit": "Enviar",
       "seeMore": "Ver más",
-      "hide": "Ocultar detalles"
+      "hide": "Ocultar detalles",
+      "close": "Cerrar"
+    },
+    "toast": {
+      "success": "Éxito",
+      "error": "Error",
+      "loading": "En curso",
+      "info": "Aviso"
     },
     "status": {
       "loading": "Enviando mensaje...",
       "success": "¡Mensaje enviado correctamente!",
       "error": "Ocurrió un error. Intenta de nuevo más tarde.",
+      "invalidFields": "Revisa el nombre, el correo o el mensaje e inténtalo de nuevo.",
       "rateLimited": "Demasiados envíos. Espera un momento e inténtalo de nuevo.",
-      "actionFailed": "No se pudo completar la acción."
+      "actionFailed": "No se pudo completar la acción.",
+      "alreadyExists": "Ese registro ya existe.",
+      "inUse": "No se puede completar: hay datos vinculados.",
+      "forbidden": "No tienes permiso para esta acción.",
+      "fileRejected": "Este archivo no se puede subir. Prueba con otro."
     }
   },
   "hero": {
@@ -276,6 +288,7 @@
   "validation": {
     "required": "Requerido",
     "invalidEmail": "Email inválido",
+    "invalidPhone": "Usa un número de teléfono (dígitos, con lada si aplica)",
     "invalidUrl": "URL inválida"
   },
   "status": {

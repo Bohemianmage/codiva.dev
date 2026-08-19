@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import StatusBadge from '@/components/ops/StatusBadge';
 import ToastForm from '@/components/ops/ToastForm';
+import Button from '@/components/ui/Button';
+import Card, { SectionTitle } from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
+import Input, { Select } from '@/components/ui/Input';
 import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { invitePortalUser } from '@/lib/ops/actions';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
@@ -84,23 +89,20 @@ export default async function PortalUsersPage() {
       />
 
       <div className="max-w-3xl space-y-8">
-        <ToastForm
-          success={t('ops.portalUsers.inviteSent')}
-          action={onInvite}
-          className="space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
-        >
-          <h2 className="font-semibold">{t('ops.portalUsers.inviteTitle')}</h2>
-          <input
+        <ToastForm success={t('ops.portalUsers.inviteSent')} action={onInvite} className="space-y-3">
+          <Card className="space-y-3">
+            <SectionTitle>{t('ops.portalUsers.inviteTitle')}</SectionTitle>
+          <Input
             name="email"
             type="email"
             required
             placeholder={t('ops.portalUsers.emailPlaceholder')}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            size="sm"
           />
-          <select name="role" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+          <Select name="role" size="sm">
             <option value="viewer">{t('ops.portalUsers.roleViewer')}</option>
             <option value="approver">{t('ops.portalUsers.roleApprover')}</option>
-          </select>
+          </Select>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-zinc-700">{t('ops.portalUsers.projects')}</legend>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 p-3">
@@ -122,48 +124,40 @@ export default async function PortalUsersPage() {
               )}
             </div>
           </fieldset>
-          <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
+          <Button type="submit" size="sm">
             {t('ops.portalUsers.sendAccess')}
-          </button>
+          </Button>
+          </Card>
         </ToastForm>
 
         <section className="space-y-3">
-          <h2 className="font-semibold">{t('ops.portalUsers.listTitle')}</h2>
+          <SectionTitle>{t('ops.portalUsers.listTitle')}</SectionTitle>
           <ul className="space-y-2">
             {[...byUser.entries()].map(([userId, info]) => (
               <li key={userId}>
                 <Link
                   href={`/users/${userId}`}
-                  className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-codiva-primary/30"
+                  className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 no-underline hover:border-codiva-primary/30 hover:no-underline"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="font-medium">{emails.get(userId) ?? userId.slice(0, 8)}</p>
+                      <p className="font-medium text-zinc-900">{emails.get(userId) ?? userId.slice(0, 8)}</p>
                       <p className="text-sm text-zinc-500">
                         {info.projects.map((p) => p.name).join(' · ') || t('ops.portalUsers.noProjects')}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-zinc-700">
-                        {[...info.roles].join(', ')}
-                      </span>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 font-medium ${
-                          info.allComplete
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-amber-50 text-amber-800'
-                        }`}
-                      >
-                        {info.allComplete ? t('ops.portalUsers.legalOk') : t('ops.portalUsers.legalPending')}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge label={[...info.roles].join(', ')} />
+                      <StatusBadge
+                        label={info.allComplete ? t('ops.portalUsers.legalOk') : t('ops.portalUsers.legalPending')}
+                        tone={info.allComplete ? 'success' : 'warning'}
+                      />
                     </div>
                   </div>
                 </Link>
               </li>
             ))}
-            {!byUser.size && (
-              <p className="text-sm text-zinc-500">{t('ops.portalUsers.empty')}</p>
-            )}
+            {!byUser.size && <EmptyState>{t('ops.portalUsers.empty')}</EmptyState>}
           </ul>
         </section>
       </div>
