@@ -18,6 +18,29 @@ export type JobEmploymentType = (typeof JOB_EMPLOYMENT_TYPES)[number];
 export const JOB_APPLICATION_STATUSES = ['new', 'reviewed', 'interview', 'hired', 'rejected'] as const;
 export type JobApplicationStatus = (typeof JOB_APPLICATION_STATUSES)[number];
 
+export const JOB_INTERVIEW_KINDS = ['screening', 'technical', 'culture', 'final', 'other'] as const;
+export type JobInterviewKind = (typeof JOB_INTERVIEW_KINDS)[number];
+
+export const DEFAULT_INTERVIEW_ROUND_KINDS = ['screening', 'technical', 'culture'] as const;
+
+export const JOB_INTERVIEW_ROUND_STATUSES = ['planned', 'done', 'skipped'] as const;
+export type JobInterviewRoundStatus = (typeof JOB_INTERVIEW_ROUND_STATUSES)[number];
+
+export const JOB_INTERVIEW_OUTCOMES = ['advance', 'hold', 'reject'] as const;
+export type JobInterviewOutcome = (typeof JOB_INTERVIEW_OUTCOMES)[number];
+
+export function isJobInterviewKind(value: string): value is JobInterviewKind {
+  return (JOB_INTERVIEW_KINDS as readonly string[]).includes(value);
+}
+
+export function isJobInterviewRoundStatus(value: string): value is JobInterviewRoundStatus {
+  return (JOB_INTERVIEW_ROUND_STATUSES as readonly string[]).includes(value);
+}
+
+export function isJobInterviewOutcome(value: string): value is JobInterviewOutcome {
+  return (JOB_INTERVIEW_OUTCOMES as readonly string[]).includes(value);
+}
+
 export function isDiscardedApplicationStatus(status: string) {
   return status === 'rejected';
 }

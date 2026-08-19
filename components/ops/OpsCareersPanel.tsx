@@ -21,6 +21,11 @@ import {
   type JobEmploymentType,
   type JobPostingStatus,
 } from '@/lib/ops/careers';
+import OpsApplicationInterviews, {
+  type OpsInterviewCommentRow,
+  type OpsInterviewRoundRow,
+  type OpsInterviewStaff,
+} from '@/components/ops/OpsApplicationInterviews';
 import {
   createJobPosting,
   createPersonnelOfferFromApplication,
@@ -478,6 +483,11 @@ function ApplicationCard({
   effectiveStage,
   appFilter,
   signalFilter,
+  interviewRounds,
+  interviewComments,
+  interviewStaff,
+  currentUserId,
+  canTeam,
 }: {
   row: OpsJobApplicationRow;
   hunt: ReturnType<typeof huntForCandidate>;
@@ -492,6 +502,11 @@ function ApplicationCard({
   effectiveStage: string;
   appFilter: string;
   signalFilter: string;
+  interviewRounds: OpsInterviewRoundRow[];
+  interviewComments: OpsInterviewCommentRow[];
+  interviewStaff: OpsInterviewStaff[];
+  currentUserId: string;
+  canTeam: boolean;
 }) {
   const posting = Array.isArray(row.ops_job_postings) ? row.ops_job_postings[0] : row.ops_job_postings;
   const role = applicationRoleLabel({
@@ -561,6 +576,16 @@ function ApplicationCard({
           title={t('ops.careers.tagStatusHint')}
           active={discarded ? effectiveStage === 'discarded' : appFilter === row.status}
         />
+        {interviewRounds.length ? (
+          <CareersTag
+            label={t('ops.careers.interviewProgress', {
+              done: String(interviewRounds.filter((item) => item.status === 'done').length),
+              total: String(interviewRounds.filter((item) => item.status !== 'skipped').length || interviewRounds.length),
+            })}
+            tone="info"
+            title={t('ops.careers.interviewTagHint')}
+          />
+        ) : null}
         {linkedAttempt?.score_pct != null ? (
           <CareersTag
             label={t('ops.careers.testScore', { pct: linkedAttempt.score_pct })}
@@ -589,59 +614,67 @@ function ApplicationCard({
           />
         ) : null}
       </div>
-      {canManage ? (
-        <details className="group mt-3 rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
-            {t('ops.careers.manageApplication')}
-            <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
-          </summary>
-          <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 px-3 py-3">
-            {!row.personnel_offer_id ? (
-              <ToastForm
-                success={t('ops.careers.offerCreated')}
-                loading={t('ops.careers.creating')}
-                action={async () => {
-                  'use server';
-                  await createPersonnelOfferFromApplication(row.id);
-                }}
-              >
-                <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
-                  {t('ops.careers.hire')}
-                </button>
-              </ToastForm>
-            ) : null}
+      <details className="group mt-3 rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100/80 [&::-webkit-details-marker]:hidden">
+          {t('ops.careers.manageApplication')}
+          <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 px-3 py-3">
+          {canManage && !row.personnel_offer_id ? (
             <ToastForm
-              success={t('ops.careers.statusUpdated')}
-              action={async (fd) => {
+              success={t('ops.careers.offerCreated')}
+              loading={t('ops.careers.creating')}
+              action={async () => {
                 'use server';
-                await updateJobApplicationStatus(row.id, fd);
+                await createPersonnelOfferFromApplication(row.id);
               }}
-              className="flex flex-wrap items-center gap-2"
             >
-              <select name="status" defaultValue={row.status} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <label className="flex items-center gap-1.5 text-sm text-zinc-600">
-                <input
-                  type="checkbox"
-                  name="notify_candidate"
-                  value="1"
-                  defaultChecked
-                  className="rounded border-zinc-300"
-                />
-                {t('ops.careers.notifyCandidate')}
-              </label>
-              <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
-                {t('ops.team.save')}
+              <button type="submit" className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm text-white">
+                {t('ops.careers.hire')}
               </button>
             </ToastForm>
-          </div>
-        </details>
-      ) : null}
+          ) : null}
+          <ToastForm
+            success={t('ops.careers.statusUpdated')}
+            action={async (fd) => {
+              'use server';
+              await updateJobApplicationStatus(row.id, fd);
+            }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <select name="status" defaultValue={row.status} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <label className="flex items-center gap-1.5 text-sm text-zinc-600">
+              <input
+                type="checkbox"
+                name="notify_candidate"
+                value="1"
+                defaultChecked
+                className="rounded border-zinc-300"
+              />
+              {t('ops.careers.notifyCandidate')}
+            </label>
+            <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+              {t('ops.team.save')}
+            </button>
+          </ToastForm>
+        </div>
+      </details>
+      <OpsApplicationInterviews
+        applicationId={row.id}
+        rounds={interviewRounds}
+        comments={interviewComments}
+        staff={interviewStaff}
+        currentUserId={currentUserId}
+        canTeam={canTeam}
+        t={t}
+        formatDate={formatDate}
+      />
       <HuntFindingsBlock
         rows={hunt.rows}
         discipline={row.discipline}
@@ -665,6 +698,10 @@ export default async function OpsCareersPanel({
   stage = '',
   app = '',
   canManage = true,
+  interviewRounds = [],
+  interviewComments = [],
+  interviewStaff = [],
+  currentUserId = '',
 }: {
   postings: OpsJobPostingRow[];
   applications: OpsJobApplicationRow[];
@@ -676,6 +713,10 @@ export default async function OpsCareersPanel({
   stage?: string;
   app?: string;
   canManage?: boolean;
+  interviewRounds?: OpsInterviewRoundRow[];
+  interviewComments?: OpsInterviewCommentRow[];
+  interviewStaff?: OpsInterviewStaff[];
+  currentUserId?: string;
 }) {
   const t = await getT();
   const { formatDate } = labelsFor(t.locale);
@@ -683,6 +724,21 @@ export default async function OpsCareersPanel({
     careerOpsLabels(t.locale);
   const DISCIPLINE_LABELS = careerDisciplineLabels(t.locale);
   const locale = t.locale === 'en' ? 'en' : 'es';
+  const interviewRoundsByApp = new Map<string, OpsInterviewRoundRow[]>();
+  for (const round of interviewRounds) {
+    const list = interviewRoundsByApp.get(round.application_id) ?? [];
+    list.push(round);
+    interviewRoundsByApp.set(round.application_id, list);
+  }
+  const roundApplicationId = new Map(interviewRounds.map((row) => [row.id, row.application_id]));
+  const interviewCommentsByApp = new Map<string, OpsInterviewCommentRow[]>();
+  for (const comment of interviewComments) {
+    const applicationId = roundApplicationId.get(comment.round_id);
+    if (!applicationId) continue;
+    const list = interviewCommentsByApp.get(applicationId) ?? [];
+    list.push(comment);
+    interviewCommentsByApp.set(applicationId, list);
+  }
   async function onCreate(formData: FormData) {
     'use server';
     await createJobPosting(formData);
@@ -1140,6 +1196,11 @@ export default async function OpsCareersPanel({
                     effectiveStage={effectiveStage}
                     appFilter={appFilter}
                     signalFilter={signalFilter}
+                    interviewRounds={interviewRoundsByApp.get(row.id) ?? []}
+                    interviewComments={interviewCommentsByApp.get(row.id) ?? []}
+                    interviewStaff={interviewStaff}
+                    currentUserId={currentUserId}
+                    canTeam={canManage}
                   />
                 ))}
               </ul>
@@ -1320,6 +1381,11 @@ export default async function OpsCareersPanel({
                         effectiveStage={effectiveStage}
                         appFilter={appFilter}
                         signalFilter={signalFilter}
+                        interviewRounds={interviewRoundsByApp.get(row.id) ?? []}
+                        interviewComments={interviewCommentsByApp.get(row.id) ?? []}
+                        interviewStaff={interviewStaff}
+                        currentUserId={currentUserId}
+                        canTeam={canManage}
                       />
                     ))}
                   </ul>

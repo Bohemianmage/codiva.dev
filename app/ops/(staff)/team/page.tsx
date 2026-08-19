@@ -141,6 +141,31 @@ export default async function TeamPage({
     : (attempts ?? []).filter(
         (row) => isTesterCatalogKey(row.catalog_key) || testerPostingIds.has(row.job_posting_id)
       );
+
+  const loadInterviews = tab === 'bolsa';
+  const applicationIds = loadInterviews ? (visibleApplications ?? []).map((row) => row.id) : [];
+  const [{ data: interviewRounds }, { data: interviewStaff }] = await Promise.all([
+    applicationIds.length
+      ? supabase
+          .from('ops_job_interview_rounds')
+          .select(
+            'id, application_id, sort_order, kind, title, status, outcome, interviewer_id, conducted_at, created_at'
+          )
+          .in('application_id', applicationIds)
+          .order('sort_order', { ascending: true })
+      : Promise.resolve({ data: [] as never[] }),
+    loadInterviews
+      ? supabase.from('staff_profiles').select('id, full_name').eq('active', true).order('full_name')
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+  const roundIds = (interviewRounds ?? []).map((row) => row.id);
+  const { data: interviewComments } = roundIds.length
+    ? await supabase
+        .from('ops_job_interview_comments')
+        .select('id, round_id, author_id, body, created_at')
+        .in('round_id', roundIds)
+        .order('created_at', { ascending: true })
+    : { data: [] as never[] };
   const assignmentsByStaff = new Map<string, { project_id: string; role_on_project: string }[]>();
   const offerByStaff = new Map<string, string>();
   for (const row of staffAssignments ?? []) {
@@ -421,6 +446,10 @@ export default async function TeamPage({
           stage={stageParam || ''}
           app={appParam || ''}
           canManage={canManageTeam}
+          interviewRounds={interviewRounds ?? []}
+          interviewComments={interviewComments ?? []}
+          interviewStaff={interviewStaff ?? []}
+          currentUserId={user.id}
         />
       ) : (
         <div className="max-w-3xl space-y-8">

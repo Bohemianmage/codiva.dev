@@ -812,6 +812,38 @@
       "offerCreated": "Carta oferta creada",
       "statusUpdated": "Estado actualizado",
       "notifyCandidate": "Notificar por correo",
+      "interviewsTitle": "Entrevistas",
+      "interviewProgress": "Entrevista · {{done}}/{{total}}",
+      "interviewTagHint": "Fases de entrevista hechas / activas en esta postulación.",
+      "interviewsEmpty": "Todavía no hay fases. Al pasar a Entrevista se crean filtro, técnica y fit; también puedes agregar una aquí.",
+      "interviewKind": {
+        "screening": "Filtro",
+        "technical": "Técnica",
+        "culture": "Fit",
+        "final": "Final",
+        "other": "Otra"
+      },
+      "interviewRoundStatus": {
+        "planned": "Pendiente",
+        "done": "Realizada",
+        "skipped": "Omitida"
+      },
+      "interviewOutcome": {
+        "advance": "Avanzar",
+        "hold": "En espera",
+        "reject": "No continuar"
+      },
+      "interviewOutcomeNone": "Sin resultado",
+      "interviewUnassigned": "Sin entrevistador",
+      "interviewUnknownAuthor": "Staff",
+      "interviewTitlePlaceholder": "Título (opcional)",
+      "interviewAddRound": "Agregar fase",
+      "interviewRoundAdded": "Fase agregada",
+      "interviewRoundSaved": "Fase guardada",
+      "interviewCommentPlaceholder": "Qué se habló, señales, siguiente paso…",
+      "interviewCommentSubmit": "Guardar comentario",
+      "interviewCommentSaved": "Comentario guardado",
+      "interviewCommentLocked": "Solo quien entrevistó (o quien gestiona el equipo) puede comentar esta fase.",
       "findingsTitle": "Hallazgos",
       "findingsHint": "Segunda parte de la prueba. Solo una semilla del oficio cuenta. Un hallazgo sin semilla se revisa en la tarjeta y no suma.",
       "findingsEmpty": "Todavía no hay hallazgos.",
