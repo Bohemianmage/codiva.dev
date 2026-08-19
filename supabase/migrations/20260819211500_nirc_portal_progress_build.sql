@@ -4,7 +4,7 @@
 UPDATE public.projects
 SET
   progress_percent = 48,
-  description = E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl informe de avance está en Propuesta del portal.'
+  description = E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl estado de construcción está en el canvas de Arquitectura.'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b'
    OR slug = 'nirc';
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   contentSecurityPolicy,
   nextSecurityHeaderSources,
+  portalCanvasHeaders,
+  PORTAL_CANVAS_HEADER_SOURCE,
   sameOriginEmbedHeaders,
   securityHeaders,
 } from './security-headers';
@@ -28,6 +30,17 @@ describe('security headers', () => {
     expect(sources[0]).toContain('api/ops/careers/cv$');
     expect(sources).toContain('/api/ops/careers/cv');
     expect(sources).toContain('/api/ops/careers/recruiting-report');
+  });
+
+  it('allows same-origin iframes for portal architecture canvases', () => {
+    const canvas = portalCanvasHeaders(false);
+    expect(canvas.find((h) => h.key === 'X-Frame-Options')?.value).toBe('SAMEORIGIN');
+    const csp = canvas.find((h) => h.key === 'Content-Security-Policy')?.value;
+    expect(csp).toContain("frame-ancestors 'self'");
+    expect(csp).toContain('https://cdn.jsdelivr.net');
+    const sources = nextSecurityHeaderSources(false).map((row) => row.source);
+    expect(sources[0]).toContain('p/[^/]+/canvas/');
+    expect(sources).toContain(PORTAL_CANVAS_HEADER_SOURCE);
   });
 
   it('allows eval only in development for Next HMR', () => {

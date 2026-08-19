@@ -24,7 +24,7 @@ INSERT INTO projects (
     'NIRC MVP Fase 1',
     'nirc',
     'active',
-    E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl informe de avance está en Propuesta del portal.',
+    E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl estado de construcción está en el canvas de Arquitectura.',
     '2026-08-17', '2026-12-21', 48, true
   )
 ON CONFLICT (id) DO NOTHING;
@@ -37,7 +37,7 @@ UPDATE projects SET
   target_delivery_date = '2026-12-21',
   progress_percent = 48,
   name = 'NIRC MVP Fase 1',
-  description = E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl informe de avance está en Propuesta del portal.'
+  description = E'Personal eventual · Arquitectura entregada. Construcción en curso (19 ago 2026).\n\nSoftware en demo guiada: backoffice, kiosk de sitio, app de la persona y bolsa pública.\n\nFalta pulir la mesa de entrada (cámara QR, código en imagen) y pasar IMSS, firma y pagos de simulación a sandbox. IDSE PRO sigue pendiente del proveedor.\n\nEl estado de construcción está en el canvas de Arquitectura.'
 WHERE id = 'b0000001-0001-4000-8000-00000000000b';
 
 INSERT INTO leads (
@@ -161,7 +161,7 @@ INSERT INTO deliverables (
     '92000001-0001-4000-8000-000000000001',
     'b0000001-0001-4000-8000-00000000000b',
     'Arquitectura',
-    'Arquitectura certificada + infra cloud + plan de dominio en Vercel y marca. Sigue build MVP.',
+    'Arquitectura certificada + estado de construcción (19 ago 2026) en el mismo canvas. Infra cloud y plan de dominio.',
     '/client-packs/nirc/arquitectura-portal.html',
     'architecture', 1, true
   ),
@@ -180,14 +180,6 @@ INSERT INTO deliverables (
     'Alcance, unit economics, hosting, plan 18 semanas e inversión de desarrollo.',
     '/client-packs/nirc/mvp-fase1.html',
     'mvp', 3, false
-  ),
-  (
-    '92000001-0001-4000-8000-000000000004',
-    'b0000001-0001-4000-8000-00000000000b',
-    'Avance de construcción — agosto 2026',
-    'Construcción en curso al 19 de agosto de 2026. Software en demo guiada; arquitectura ya entregada.',
-    '/client-packs/nirc/avance-build.html',
-    'proposal', 4, true
   )
 ON CONFLICT (id) DO UPDATE SET
   title = EXCLUDED.title,
