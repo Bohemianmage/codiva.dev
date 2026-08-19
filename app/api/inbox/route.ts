@@ -5,6 +5,7 @@ import { logActivity } from '@/lib/ops/activity';
 import { parseHuntCookieHeader } from '@/lib/careers/hunt/cookie';
 import { classifyInboxLane, lookupInboxLaneSignals } from '@/lib/ops/inbox-lane';
 import { NextResponse } from 'next/server';
+import { reportError } from '@/lib/report-error';
 import {
   PUBLIC_RL_FORM,
   PUBLIC_RL_FORM_EMAIL,
@@ -13,16 +14,20 @@ import {
   rateLimitJsonResponse,
 } from '@/lib/rate-limit';
 
-export async function POST(request) {
+export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
-  const ipRl = consumeIpRateLimit(request, 'public_inbox', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  const ipRl = await consumeIpRateLimit(request, 'public_inbox', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
   if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
 
   try {
-    const { name, email, message } = await request.json();
+    const { name, email, message } = (await request.json()) as {
+      name?: unknown;
+      email?: unknown;
+      message?: unknown;
+    };
 
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
@@ -37,7 +42,7 @@ export async function POST(request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailKey)) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
-    const emailRl = consumeRateLimit(
+    const emailRl = await consumeRateLimit(
       `public_inbox_email:${emailKey}`,
       PUBLIC_RL_FORM_EMAIL.windowMs,
       PUBLIC_RL_FORM_EMAIL.max
@@ -46,7 +51,7 @@ export async function POST(request) {
 
     const admin = createAdminClient();
     const huntToken = parseHuntCookieHeader(request.headers.get('cookie'));
-    const signals = await lookupInboxLaneSignals(admin, { email: emailKey, huntToken });
+    const signals = await lookupInboxLaneSignals(admin as never, { email: emailKey, huntToken });
     const classified = classifyInboxLane({
       name: safeName,
       email: emailKey,
@@ -89,7 +94,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, id: inbox.id }, { status: 200 });
   } catch (err) {
-    console.error('POST /api/inbox:', err);
+    reportError(err);
     return NextResponse.json({ error: 'Error al enviar mensaje' }, { status: 500 });
   }
 }

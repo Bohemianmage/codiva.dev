@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 import StatusScreen from '@/components/ops/StatusScreen';
 import Button from '@/components/ui/Button';
+import { reportError } from '@/lib/report-error';
 
 export default function OpsError({
   error,
@@ -16,7 +17,7 @@ export default function OpsError({
 }) {
   const { t } = useTranslation();
   useEffect(() => {
-    console.error(error);
+    reportError(error);
   }, [error]);
 
   return (

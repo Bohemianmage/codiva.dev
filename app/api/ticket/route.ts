@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
-  const ipRl = consumeIpRateLimit(req, 'public_ticket', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  const ipRl = await consumeIpRateLimit(req, 'public_ticket', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
   if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
 
   try {
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     const errors = validate({ ...body, requireCompany: !body.projectId });
     if (errors.length) return NextResponse.json({ error: errors.join(' | ') }, { status: 400 });
 
-    const emailRl = consumeRateLimit(
+    const emailRl = await consumeRateLimit(
       `public_ticket_email:${body.email}`,
       PUBLIC_RL_FORM_EMAIL.windowMs,
       PUBLIC_RL_FORM_EMAIL.max

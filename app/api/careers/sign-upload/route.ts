@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(
+  const rl = await careerRateLimitConsume(
     `career_sign_upload:${ip}`,
     CAREER_RL_SIGN_UPLOAD.windowMs,
     CAREER_RL_SIGN_UPLOAD.max

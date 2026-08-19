@@ -26,9 +26,9 @@ async function enforcePasswordResetRateLimit(email: string): Promise<ResetResult
   const t = await getT();
   const audit = await getRequestAudit();
   const ip = audit.ip || 'unknown';
-  const ipRl = consumeRateLimit(`auth_reset_ip:${ip}`, PUBLIC_RL_AUTH.windowMs, PUBLIC_RL_AUTH.max);
+  const ipRl = await consumeRateLimit(`auth_reset_ip:${ip}`, PUBLIC_RL_AUTH.windowMs, PUBLIC_RL_AUTH.max);
   if (!ipRl.ok) return { ok: false, message: t('auth.rateLimited'), code: 'rate_limited' };
-  const emailRl = consumeRateLimit(
+  const emailRl = await consumeRateLimit(
     `auth_reset_email:${email}`,
     PUBLIC_RL_AUTH.emailWindowMs,
     PUBLIC_RL_AUTH.emailMax
@@ -331,12 +331,12 @@ export async function changeStaffPassword(
 
   const audit = await getRequestAudit();
   const ip = audit.ip || 'unknown';
-  const ipRl = consumeRateLimit(
+  const ipRl = await consumeRateLimit(
     `auth_change_ip:${ip}`,
     STAFF_RL_PASSWORD_CHANGE.windowMs,
     STAFF_RL_PASSWORD_CHANGE.max
   );
-  const userRl = consumeRateLimit(
+  const userRl = await consumeRateLimit(
     `auth_change_user:${user.id}`,
     STAFF_RL_PASSWORD_CHANGE.windowMs,
     STAFF_RL_PASSWORD_CHANGE.max

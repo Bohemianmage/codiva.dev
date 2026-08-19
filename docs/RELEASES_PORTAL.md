@@ -2,10 +2,10 @@
 
 ## Flujo (ya está en Codiva)
 
-1. Push / PR en el repo del cliente.
+1. Push / PR en una rama **distinta de `main`** en el repo del cliente.
 2. GitHub Actions corre tests.
-3. Si pasa, preview en Vercel.
-4. Codiva lista el preview en **Ops → Proyecto → Accesos / Releases**.
+3. Si pasa, preview en Vercel (el auto-deploy Git de Vercel está apagado).
+4. En paralelo, Codiva lista ese deploy READY en **Ops → Proyecto → Releases** (no hace falta un PR abierto).
 5. Ops prueba la URL. El badge muestra el CI.
 6. Admin / PM: **Aceptar y mandar a producción** (mismo artefacto, sin rebuild).
 
@@ -14,7 +14,7 @@ El cliente en **Portal → Tu sitio** solo ve historial.
 ## Lo que Codiva ya hace
 
 - Panel Ops (solo admin/PM) y historial de solo lectura en el portal.
-- Lista previews desde Vercel o GitHub, con commit y estado de CI.
+- Lista previews READY desde Vercel (o GitHub), con commit y estado de CI. Un PR abierto se asocia si coincide; no es un requisito para ver el preview.
 - Promote por API de Vercel, o workflow de GitHub como respaldo.
 - Migraciones de tablas `project_release_settings` y `project_release_requests`.
 - Plantillas: `docs/workflows/preview.yml` y `docs/workflows/promote-production.yml`.
@@ -66,6 +66,6 @@ NIRC Vercel: `prj_GGlesi8OSxDAxabWGHH53coejcRC` · team slug `codiva-dev` · roo
 ### 5. Probar
 
 1. Push a una rama ≠ `main` (o un PR).
-2. CI verde → preview en Vercel.
-3. En Codiva, el preview aparece en **Lo nuevo**.
+2. CI verde → job `preview` en Vercel.
+3. En Codiva Ops → Releases, el preview aparece aunque el PR ya se haya cerrado.
 4. Abrir URL, probar, **Aceptar y mandar a producción**.

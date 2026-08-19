@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import OpsToaster from '@/components/ops/OpsToaster';
+import OpsAnalytics from '@/components/ops/OpsAnalytics';
 import OpsI18n from '@/i18n/OpsI18n';
 import { getT } from '@/i18n/locale';
 
@@ -18,6 +19,7 @@ export default function OpsRootLayout({ children }: { children: React.ReactNode 
       <div className="min-h-screen bg-codiva-background font-sans text-zinc-900 antialiased">
         {children}
         <OpsToaster />
+        <OpsAnalytics />
       </div>
     </OpsI18n>
   );

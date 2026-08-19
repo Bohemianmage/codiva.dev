@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(
+  const rl = await careerRateLimitConsume(
     `career_hunt_beacon:${ip}`,
     CAREER_RL_HUNT_BEACON.windowMs,
     CAREER_RL_HUNT_BEACON.max

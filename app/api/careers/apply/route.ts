@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(`career_apply:${ip}`, CAREER_RL_APPLY.windowMs, CAREER_RL_APPLY.max);
+  const rl = await careerRateLimitConsume(`career_apply:${ip}`, CAREER_RL_APPLY.windowMs, CAREER_RL_APPLY.max);
   if (!rl.ok) {
     return NextResponse.json(
       { ok: false, error: 'rate_limited' },
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_or_invalid_contact' }, { status: 400 });
   }
 
-  const emailRl = careerRateLimitConsume(
+  const emailRl = await careerRateLimitConsume(
     `career_apply_email:${email}`,
     CAREER_RL_APPLY_EMAIL.windowMs,
     CAREER_RL_APPLY_EMAIL.max

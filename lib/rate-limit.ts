@@ -1,45 +1,85 @@
 import { NextResponse } from 'next/server';
 import { requestAuditFromHeaders } from '@/lib/ops/request-audit';
 
-type RateBucket = { count: number; resetAt: number };
-
-const rateBuckets = new Map<string, RateBucket>();
-
-function pruneRateBuckets() {
-  if (rateBuckets.size < 5000) return;
-  const now = Date.now();
-  for (const [k, v] of rateBuckets) {
-    if (v.resetAt < now) rateBuckets.delete(k);
-  }
-}
+export type RateBucket = { count: number; resetAt: number };
 
 export type RateLimitOk = { ok: true; remaining: number };
 export type RateLimitBlocked = { ok: false; retryAfterMs: number };
 export type RateLimitResult = RateLimitOk | RateLimitBlocked;
 
-export function consumeRateLimit(key: string, windowMs: number, max: number): RateLimitResult {
-  pruneRateBuckets();
-  const now = Date.now();
-  let bucket = rateBuckets.get(key);
+const memoryBuckets = new Map<string, RateBucket>();
+
+function pruneRateBuckets(store: Map<string, RateBucket>, now: number) {
+  if (store.size < 5000) return;
+  for (const [k, v] of store) {
+    if (v.resetAt < now) store.delete(k);
+  }
+}
+
+/** Algoritmo puro: tests y fallback local cuando no hay cache compartida. */
+export function consumeRateLimitMemory(
+  store: Map<string, RateBucket>,
+  key: string,
+  windowMs: number,
+  max: number,
+  now = Date.now()
+): RateLimitResult {
+  pruneRateBuckets(store, now);
+  let bucket = store.get(key);
   if (!bucket || bucket.resetAt < now) {
     bucket = { count: 0, resetAt: now + windowMs };
-    rateBuckets.set(key, bucket);
+    store.set(key, bucket);
   }
   bucket.count += 1;
   if (bucket.count <= max) return { ok: true, remaining: max - bucket.count };
   return { ok: false, retryAfterMs: Math.max(0, bucket.resetAt - now) };
 }
 
+async function consumeRateLimitShared(
+  key: string,
+  windowMs: number,
+  max: number,
+  now: number
+): Promise<RateLimitResult | null> {
+  if (!process.env.VERCEL) return null;
+  try {
+    const { getCache } = await import('@vercel/functions');
+    const cache = getCache({ namespace: 'rl' });
+    const existing = (await cache.get(key)) as RateBucket | null;
+    const bucket: RateBucket =
+      existing && existing.resetAt >= now
+        ? { count: existing.count + 1, resetAt: existing.resetAt }
+        : { count: 1, resetAt: now + windowMs };
+    const ttl = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+    await cache.set(key, bucket, { ttl, name: 'rate-limit' });
+    if (bucket.count <= max) return { ok: true, remaining: max - bucket.count };
+    return { ok: false, retryAfterMs: Math.max(0, bucket.resetAt - now) };
+  } catch {
+    return null;
+  }
+}
+
+export async function consumeRateLimit(
+  key: string,
+  windowMs: number,
+  max: number
+): Promise<RateLimitResult> {
+  const now = Date.now();
+  const shared = await consumeRateLimitShared(key, windowMs, max, now);
+  if (shared) return shared;
+  return consumeRateLimitMemory(memoryBuckets, key, windowMs, max, now);
+}
+
 export function clientIpFromRequest(request: Request): string {
   return requestAuditFromHeaders(request.headers).ip || 'unknown';
 }
 
-export function consumeIpRateLimit(
+export async function consumeIpRateLimit(
   request: Request,
   prefix: string,
   windowMs: number,
   max: number
-): RateLimitResult {
+): Promise<RateLimitResult> {
   return consumeRateLimit(`${prefix}:${clientIpFromRequest(request)}`, windowMs, max);
 }
 

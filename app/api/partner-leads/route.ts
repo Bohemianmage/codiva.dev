@@ -4,6 +4,7 @@ import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { NextResponse } from 'next/server';
+import { reportError } from '@/lib/report-error';
 import {
   PUBLIC_RL_FORM,
   PUBLIC_RL_FORM_EMAIL,
@@ -12,16 +13,16 @@ import {
   rateLimitJsonResponse,
 } from '@/lib/rate-limit';
 
-export async function POST(request) {
+export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
-  const ipRl = consumeIpRateLimit(request, 'public_partner', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  const ipRl = await consumeIpRateLimit(request, 'public_partner', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
   if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
 
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const partnerName = String(body.partnerName || '').trim();
     const partnerEmail = String(body.partnerEmail || '').trim().toLowerCase();
     const partnerCompany = String(body.partnerCompany || '').trim();
@@ -31,7 +32,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Completa los campos obligatorios' }, { status: 400 });
     }
 
-    const emailRl = consumeRateLimit(
+    const emailRl = await consumeRateLimit(
       `public_partner_email:${partnerEmail}`,
       PUBLIC_RL_FORM_EMAIL.windowMs,
       PUBLIC_RL_FORM_EMAIL.max
@@ -53,7 +54,7 @@ export async function POST(request) {
         phone: String(body.phone || '').trim(),
         need: needWithType,
         delivery_date: body.deliveryDate || null,
-        budget: body.budget ? parseFloat(body.budget) : null,
+        budget: body.budget ? parseFloat(String(body.budget)) : null,
         reference_site: body.referenceSite || null,
         partner_name: partnerName,
         partner_email: partnerEmail,
@@ -85,7 +86,7 @@ export async function POST(request) {
           `Tipo: ${serviceType}`,
           `Alcance: ${need}`,
           body.budget ? `Presupuesto ref.: ${body.budget}` : null,
-        ].filter(Boolean),
+        ].filter(Boolean) as string[],
         { ctaLabel: 'Ver lead', ctaHref: `${opsBaseUrl()}/leads/${lead.id}` }
       ),
       replyTo: partnerEmail,
@@ -93,7 +94,7 @@ export async function POST(request) {
 
     return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
   } catch (err) {
-    console.error('POST /api/partner-leads:', err);
+    reportError(err);
     return NextResponse.json({ error: 'Error al registrar solicitud' }, { status: 500 });
   }
 }

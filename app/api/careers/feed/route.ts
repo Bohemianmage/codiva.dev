@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
  * Las claves y cookies aquí son semillas, no secretos reales.
  */
 export async function GET(request: Request) {
-  const rl = consumeIpRateLimit(request, 'public_feed', PUBLIC_RL_FEED.windowMs, PUBLIC_RL_FEED.max);
+  const rl = await consumeIpRateLimit(request, 'public_feed', PUBLIC_RL_FEED.windowMs, PUBLIC_RL_FEED.max);
   if (!rl.ok) return rateLimitJsonResponse(rl.retryAfterMs);
 
   const body = JSON.stringify({

@@ -1526,7 +1526,7 @@
       "githubShort": "GitHub",
       "vercelShort": "Vercel",
       "settingsToggle": "Settings",
-      "incomingEmpty": "No open PRs or pending previews.",
+      "incomingEmpty": "No Vercel previews ready. CI on main does not deploy preview — use another branch.",
       "incomingDisabled": "Pipeline off.",
       "incomingMisconfigured": "Missing owner/repo, project ID, or token.",
       "errPull": "Provide a valid pull request.",
