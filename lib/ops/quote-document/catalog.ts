@@ -54,6 +54,7 @@ export const QUOTE_CATALOG: QuoteCatalogEntry[] = [
   { client: 'RODPIM', file: 'Cotizacion_RODPIM_WEB.docx', serviceType: 'Web', pattern: 'standard' },
   { client: 'Universidad Tollancingo', file: 'Cotizacion_Universidad_Tollancingo_LMS.docx', serviceType: 'LMS', pattern: 'standard' },
   { client: 'YOU', file: 'Cotizacion_YOU_PWA.docx', serviceType: 'PWA', pattern: 'standard' },
+  { client: 'NIRC', file: 'arquitectura-completa.html', serviceType: 'Platform', pattern: 'enterprise' },
   { client: 'NIRC', file: 'mvp-propuesta-fase1.md', serviceType: 'Platform', pattern: 'enterprise' },
 ];
 
