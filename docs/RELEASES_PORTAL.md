@@ -1,67 +1,71 @@
-# Releases en el centro de trabajo (preview → producción)
+# Releases: GitHub CI → preview Vercel → QA Codiva → producción
 
-## Qué es
+## Flujo (ya está en Codiva)
 
-Por proyecto, Codiva puede:
+1. Push / PR en el repo del cliente.
+2. GitHub Actions corre tests.
+3. Si pasa, preview en Vercel.
+4. Codiva lista el preview en **Ops → Proyecto → Accesos / Releases**.
+5. Ops prueba la URL. El badge muestra el CI.
+6. Admin / PM: **Aceptar y mandar a producción** (mismo artefacto, sin rebuild).
 
-1. Mostrar el flujo **preview → aprobación → promote**.
-2. Dejar que **admin / PM** creen, aprueben y despachen promote desde Ops.
-3. Mostrar al **cliente** solo el historial (solo lectura) en **Portal → Tu sitio**.
+El cliente en **Portal → Tu sitio** solo ve historial.
 
-El cliente **no** puede solicitar ni ejecutar promote.
+## Lo que Codiva ya hace
 
-Los secretos **no** van en la base: usa `GITHUB_RELEASES_TOKEN` (o `GITHUB_TOKEN`) en el entorno de Codiva (Vercel).
+- Panel Ops (solo admin/PM) y historial de solo lectura en el portal.
+- Lista previews desde Vercel o GitHub, con commit y estado de CI.
+- Promote por API de Vercel, o workflow de GitHub como respaldo.
+- Migraciones de tablas `project_release_settings` y `project_release_requests`.
+- Plantillas: `docs/workflows/preview.yml` y `docs/workflows/promote-production.yml`.
 
-## Setup Ops (proyecto)
+## Lo que debes hacer tú
 
-1. Proyecto → pestaña Sitio / Releases (solo **admin** o **PM** editan).
-2. Bloque **Releases**: activar, owner/repo GitHub, workflow (ej. `promote-production.yml`), ref `main`.
-3. Crear solicitud con la URL de preview validada → **Aprobar** → **Despachar promote**.
+### 1. SQL en Supabase (editor)
 
-## Workflow esperado en el repo del cliente (ej. NIRC)
+La primera migración ya es **idempotente**. Vuelve a correr, en este orden:
 
-```yaml
-# .github/workflows/promote-production.yml
-name: Promote production
-on:
-  workflow_dispatch:
-    inputs:
-      deployment_url:
-        description: Preview deployment URL to promote
-        required: true
-        type: string
-jobs:
-  promote:
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - run: npm i -g vercel@39
-      - run: vercel promote "${{ inputs.deployment_url }}" --token=${{ secrets.VERCEL_TOKEN }} --yes
-```
+1. `supabase/migrations/20260818230000_project_release_pipeline.sql`
+2. `supabase/migrations/20260819093000_release_vercel_previews.sql`
+3. `supabase/migrations/20260819101500_nirc_enable_releases.sql` (activa NIRC)
 
-GitHub Environment `production` con reviewers = gate humano extra (además de Codiva).
+### 2. Secretos en Vercel del proyecto **Codiva**
 
-## Secretos
+`GITHUB_RELEASES_TOKEN` ya está (Production + Preview).
 
-### Codiva (Vercel → Environment Variables del proyecto Codiva)
+Si el listado de CI/previews falla, el PAT necesita: **Actions Write**, **Deployments Read**, **Contents Read**, **Checks Read**.
 
-| Variable | Dónde | Valor |
-|----------|--------|--------|
-| `GITHUB_RELEASES_TOKEN` | Codiva / Vercel | Personal Access Token (classic o fine-grained) con permiso de **Actions: Write** (y acceso al/los repos de clientes a promover). Preferido frente a `GITHUB_TOKEN`. |
+**`VERCEL_RELEASES_TOKEN`:** el CLI de Vercel no puede crear tokens (403). Tú:
 
-Sin este token: el panel sigue sirviendo para auditoría; usa **Marcar promovido a mano** tras promote en Vercel/GitHub.
+1. [https://vercel.com/account/tokens](https://vercel.com/account/tokens) → Create
+2. Nombre `codiva-releases`, scope team **Codiva**
+3. `vercel env add VERCEL_RELEASES_TOKEN production preview development` en el proyecto **codiva-dev**
+4. Redeploy Codiva
 
-### Repo del cliente (GitHub → Settings → Secrets and variables → Actions)
+### 3. Repo NIRC (ya preparado en el working copy)
 
-| Secret | Dónde | Valor |
-|--------|--------|--------|
-| `VERCEL_TOKEN` | Repo del cliente (Actions secrets) | Token de Vercel con permiso para `vercel promote` en ese proyecto. |
+Archivos:
 
-Opcional: Environment `production` en GitHub con required reviewers.
+- `.github/workflows/ci.yml` — CI y, si no es `main`, preview en Vercel
+- `.github/workflows/promote-production.yml` — respaldo de promote
 
-## Tablas
+Commit + push. Luego secrets de Actions en `Codiva-dev/nirc`:
 
-- `project_release_settings`
-- `project_release_requests`
+| Secret | Valor |
+|--------|--------|
+| `VERCEL_TOKEN` | El mismo token de Vercel (o uno nuevo) |
+| `VERCEL_ORG_ID` | `codiva-dev` |
+| `VERCEL_PROJECT_ID` | `prj_GGlesi8OSxDAxabWGHH53coejcRC` |
 
-Migración: `supabase/migrations/20260818230000_project_release_pipeline.sql`
+### 4. Vercel del sitio NIRC
+
+No auto-deploy a **Production** en `main`. Producción solo desde Codiva.
+
+NIRC Vercel: `prj_GGlesi8OSxDAxabWGHH53coejcRC` · team slug `codiva-dev` · root `apps/web`.
+
+### 5. Probar
+
+1. Push a una rama ≠ `main` (o un PR).
+2. CI verde → preview en Vercel.
+3. En Codiva, el preview aparece en **Lo nuevo**.
+4. Abrir URL, probar, **Aceptar y mandar a producción**.
