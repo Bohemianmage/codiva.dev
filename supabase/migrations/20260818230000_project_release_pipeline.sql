@@ -1,7 +1,7 @@
 -- Project release pipeline: preview → approve → promote (GitHub Actions / Vercel).
--- Controlled from Codiva ops + client portal.
+-- Idempotent: safe if tables already exist.
 
-CREATE TABLE public.project_release_settings (
+CREATE TABLE IF NOT EXISTS public.project_release_settings (
   project_id uuid PRIMARY KEY REFERENCES public.projects(id) ON DELETE CASCADE,
   enabled boolean NOT NULL DEFAULT false,
   github_owner text,
@@ -9,21 +9,32 @@ CREATE TABLE public.project_release_settings (
   promote_workflow text NOT NULL DEFAULT 'promote-production.yml',
   promote_ref text NOT NULL DEFAULT 'main',
   deployment_url_input text NOT NULL DEFAULT 'deployment_url',
+  vercel_project_id text,
+  vercel_team_id text,
   client_can_request boolean NOT NULL DEFAULT false,
   require_staff_approval boolean NOT NULL DEFAULT true,
   notes text NOT NULL DEFAULT '',
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT project_release_settings_github_pair CHECK (
-    (github_owner IS NULL AND github_repo IS NULL)
-    OR (github_owner IS NOT NULL AND github_repo IS NOT NULL)
-  )
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-COMMENT ON TABLE public.project_release_settings IS
-  'CI/CD promote config per project. Secrets stay in Codiva env (GITHUB_RELEASES_TOKEN); never in this table.';
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'project_release_settings_github_pair'
+  ) THEN
+    ALTER TABLE public.project_release_settings
+      ADD CONSTRAINT project_release_settings_github_pair CHECK (
+        (github_owner IS NULL AND github_repo IS NULL)
+        OR (github_owner IS NOT NULL AND github_repo IS NOT NULL)
+      );
+  END IF;
+END $$;
 
-CREATE TABLE public.project_release_requests (
+COMMENT ON TABLE public.project_release_settings IS
+  'CI/CD promote config per project. Secrets stay in Codiva env (GITHUB_RELEASES_TOKEN, VERCEL_RELEASES_TOKEN); never in this table.';
+
+CREATE TABLE IF NOT EXISTS public.project_release_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'pending_approval'
@@ -38,6 +49,9 @@ CREATE TABLE public.project_release_requests (
   preview_url text NOT NULL,
   production_url text,
   notes text NOT NULL DEFAULT '',
+  commit_sha text,
+  commit_message text,
+  vercel_deployment_id text,
   error_message text,
   github_run_url text,
   requested_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -50,10 +64,10 @@ CREATE TABLE public.project_release_requests (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX project_release_requests_project_idx
+CREATE INDEX IF NOT EXISTS project_release_requests_project_idx
   ON public.project_release_requests (project_id, created_at DESC);
 
-CREATE INDEX project_release_requests_status_idx
+CREATE INDEX IF NOT EXISTS project_release_requests_status_idx
   ON public.project_release_requests (project_id, status);
 
 COMMENT ON TABLE public.project_release_requests IS
@@ -72,23 +86,25 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.project_release_settings TO
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.project_release_requests TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.project_release_requests TO service_role;
 
--- Settings: staff full; clients read only if pipeline enabled (to know they can request)
+DROP POLICY IF EXISTS staff_all_project_release_settings ON public.project_release_settings;
 CREATE POLICY staff_all_project_release_settings ON public.project_release_settings
   FOR ALL USING (public.is_staff()) WITH CHECK (public.is_staff());
 
+DROP POLICY IF EXISTS client_read_project_release_settings ON public.project_release_settings;
 CREATE POLICY client_read_project_release_settings ON public.project_release_settings
   FOR SELECT USING (
     enabled = true
     AND project_id IN (SELECT public.client_project_ids())
   );
 
--- Requests: staff full; clients read own project; clients insert when enabled (enforced in app too)
+DROP POLICY IF EXISTS staff_all_project_release_requests ON public.project_release_requests;
 CREATE POLICY staff_all_project_release_requests ON public.project_release_requests
   FOR ALL USING (public.is_staff()) WITH CHECK (public.is_staff());
 
+DROP POLICY IF EXISTS client_read_project_release_requests ON public.project_release_requests;
 CREATE POLICY client_read_project_release_requests ON public.project_release_requests
   FOR SELECT USING (
     project_id IN (SELECT public.client_project_ids())
   );
 
--- Clients never insert/update/delete release requests; promote is admin/PM only.
+DROP POLICY IF EXISTS client_insert_project_release_requests ON public.project_release_requests;

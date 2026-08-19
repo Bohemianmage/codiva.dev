@@ -75,3 +75,177 @@ export async function dispatchPromoteWorkflow(
 export function releasesTokenConfigured(): boolean {
   return Boolean(githubToken());
 }
+
+function githubHeaders(token: string): HeadersInit {
+  return {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${token}`,
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+export type CiStatus = {
+  state: 'success' | 'pending' | 'failure' | 'error' | 'unknown';
+  url: string | null;
+  description: string | null;
+};
+
+export type GitHubPreview = {
+  previewUrl: string;
+  inspectUrl: string | null;
+  sha: string | null;
+  message: string | null;
+  author: string | null;
+  branch: string | null;
+  createdAt: string;
+};
+
+export async function getCommitCiStatus(input: {
+  owner: string;
+  repo: string;
+  sha: string;
+}): Promise<CiStatus> {
+  const token = githubToken();
+  if (!token) return { state: 'unknown', url: null, description: null };
+
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const sha = encodeURIComponent(input.sha.trim());
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/status`, {
+    headers: githubHeaders(token),
+    cache: 'no-store',
+  });
+
+  if (res.ok) {
+    const data = (await res.json()) as {
+      state?: string;
+      total_count?: number;
+      target_url?: string | null;
+      description?: string | null;
+      statuses?: Array<{ target_url?: string | null }>;
+    };
+    const state = data.state;
+    if (state === 'success' || state === 'failure' || state === 'error' || (state === 'pending' && (data.total_count ?? 0) > 0)) {
+      return {
+        state,
+        url: data.target_url || data.statuses?.[0]?.target_url || null,
+        description: data.description ?? null,
+      };
+    }
+  }
+
+  const checksRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs`,
+    { headers: githubHeaders(token), cache: 'no-store' }
+  );
+  if (!checksRes.ok) return { state: 'unknown', url: null, description: null };
+
+  const checks = (await checksRes.json()) as {
+    check_runs?: Array<{
+      conclusion?: string | null;
+      status?: string;
+      html_url?: string | null;
+      name?: string;
+    }>;
+  };
+  const runs = checks.check_runs ?? [];
+  if (!runs.length) return { state: 'unknown', url: null, description: null };
+
+  const conclusions = runs.map((r) => r.conclusion);
+  const pending = runs.some((r) => r.status !== 'completed' || !r.conclusion);
+  const failed = conclusions.some((c) => c === 'failure' || c === 'timed_out' || c === 'cancelled' || c === 'action_required');
+  const url = runs.find((r) => r.html_url)?.html_url ?? null;
+
+  if (pending) return { state: 'pending', url, description: null };
+  if (failed) return { state: 'failure', url, description: null };
+  return { state: 'success', url, description: null };
+}
+
+export async function attachCiStatuses(
+  owner: string,
+  repo: string,
+  shas: Array<string | null | undefined>
+): Promise<Map<string, CiStatus>> {
+  const unique = [...new Set(shas.filter((s): s is string => Boolean(s?.trim())))];
+  const entries = await Promise.all(
+    unique.map(async (sha) => [sha, await getCommitCiStatus({ owner, repo, sha })] as const)
+  );
+  return new Map(entries);
+}
+
+function isProductionEnv(name: string): boolean {
+  const n = name.toLowerCase();
+  if (n.includes('preview') || n.includes('staging')) return false;
+  return n === 'production' || n.includes('prod');
+}
+
+export async function listGitHubPreviews(input: {
+  owner: string;
+  repo: string;
+}): Promise<{ items: GitHubPreview[]; error: string | null }> {
+  const token = githubToken();
+  if (!token) {
+    return { items: [], error: 'Falta GITHUB_RELEASES_TOKEN en el entorno de Codiva.' };
+  }
+
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/deployments?per_page=15`, {
+    headers: githubHeaders(token),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    return {
+      items: [],
+      error: `GitHub deployments falló (${res.status}): ${body.slice(0, 300) || res.statusText}`,
+    };
+  }
+
+  const deployments = (await res.json()) as Array<{
+    sha?: string;
+    ref?: string;
+    environment?: string;
+    created_at?: string;
+    statuses_url?: string;
+    description?: string;
+  }>;
+
+  const candidates = deployments.filter((d) => !isProductionEnv(String(d.environment || '')));
+  const settled = await Promise.all(
+    candidates.slice(0, 10).map(async (d) => {
+      if (!d.statuses_url) return null;
+      const st = await fetch(d.statuses_url, { headers: githubHeaders(token), cache: 'no-store' });
+      if (!st.ok) return null;
+      const statuses = (await st.json()) as Array<{
+        environment_url?: string;
+        target_url?: string;
+        log_url?: string;
+      }>;
+      const withUrl = statuses.find((s) => s.environment_url || s.target_url);
+      const previewUrl = withUrl?.environment_url || withUrl?.target_url;
+      if (!previewUrl) return null;
+      return {
+        previewUrl,
+        inspectUrl: withUrl?.log_url ?? null,
+        sha: d.sha ?? null,
+        message: d.description ?? null,
+        author: null,
+        branch: d.ref ?? null,
+        createdAt: d.created_at ?? new Date().toISOString(),
+      } satisfies GitHubPreview;
+    })
+  );
+
+  const items: GitHubPreview[] = [];
+  const seen = new Set<string>();
+  for (const item of settled) {
+    if (!item || seen.has(item.previewUrl)) continue;
+    seen.add(item.previewUrl);
+    items.push(item);
+    if (items.length >= 8) break;
+  }
+
+  return { items, error: null };
+}

@@ -7,7 +7,19 @@ import {
   type StaffAccess,
 } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
-import { dispatchPromoteWorkflow, releasesTokenConfigured } from '@/lib/ops/releases/github';
+import {
+  attachCiStatuses,
+  dispatchPromoteWorkflow,
+  listGitHubPreviews,
+  releasesTokenConfigured,
+  type CiStatus,
+} from '@/lib/ops/releases/github';
+import {
+  listVercelPreviews,
+  promoteVercelDeployment,
+  resolveVercelDeploymentId,
+  vercelTokenConfigured,
+} from '@/lib/ops/releases/vercel';
 
 /** Promote pipeline: admin or PM only (not client, not default for dev). */
 async function assertReleaseOps(projectId: string): Promise<StaffAccess> {
@@ -28,6 +40,8 @@ export type ReleaseSettingsRow = {
   promote_workflow: string;
   promote_ref: string;
   deployment_url_input: string;
+  vercel_project_id: string | null;
+  vercel_team_id: string | null;
   client_can_request: boolean;
   require_staff_approval: boolean;
   notes: string;
@@ -40,12 +54,33 @@ export type ReleaseRequestRow = {
   preview_url: string;
   production_url: string | null;
   notes: string;
+  commit_sha: string | null;
+  commit_message: string | null;
+  vercel_deployment_id: string | null;
   error_message: string | null;
   github_run_url: string | null;
   requested_by_kind: string;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+};
+
+export type IncomingPreview = {
+  source: 'vercel' | 'github';
+  previewUrl: string;
+  deploymentId: string | null;
+  inspectUrl: string | null;
+  sha: string | null;
+  message: string | null;
+  author: string | null;
+  branch: string | null;
+  createdAt: string;
+  ci: CiStatus | null;
+};
+
+export type IncomingPreviewsResult = {
+  items: IncomingPreview[];
+  error: string | null;
 };
 
 function revalidateReleasePaths(projectId: string, slug?: string | null) {
@@ -81,6 +116,8 @@ export async function upsertReleaseSettings(projectId: string, formData: FormDat
     promote_workflow: String(formData.get('promoteWorkflow') || 'promote-production.yml').trim(),
     promote_ref: String(formData.get('promoteRef') || 'main').trim(),
     deployment_url_input: String(formData.get('deploymentUrlInput') || 'deployment_url').trim(),
+    vercel_project_id: String(formData.get('vercelProjectId') || '').trim() || null,
+    vercel_team_id: String(formData.get('vercelTeamId') || '').trim() || null,
     client_can_request: false,
     require_staff_approval: formData.get('requireStaffApproval') === 'on',
     notes: String(formData.get('notes') || ''),
@@ -101,10 +138,108 @@ export async function upsertReleaseSettings(projectId: string, formData: FormDat
       project_id: projectId,
       enabled,
       has_github: Boolean(github_owner && github_repo),
+      has_vercel: Boolean(String(formData.get('vercelProjectId') || '').trim()),
     },
   });
 
   revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
+}
+
+export async function loadIncomingPreviews(
+  settings: ReleaseSettingsRow | null
+): Promise<IncomingPreviewsResult> {
+  if (!settings?.enabled) return { items: [], error: null };
+
+  let items: IncomingPreview[] = [];
+  let error: string | null = null;
+
+  if (settings.vercel_project_id && vercelTokenConfigured()) {
+    const listed = await listVercelPreviews({
+      projectId: settings.vercel_project_id,
+      teamId: settings.vercel_team_id,
+    });
+    items = listed.items.map((item) => ({ source: 'vercel' as const, ci: null, ...item }));
+    error = listed.error;
+  } else if (settings.github_owner && settings.github_repo && releasesTokenConfigured()) {
+    const listed = await listGitHubPreviews({
+      owner: settings.github_owner,
+      repo: settings.github_repo,
+    });
+    items = listed.items.map((item) => ({
+      source: 'github' as const,
+      deploymentId: null,
+      ci: null,
+      ...item,
+    }));
+    error = listed.error;
+  }
+
+  if (
+    settings.github_owner &&
+    settings.github_repo &&
+    releasesTokenConfigured() &&
+    items.length
+  ) {
+    const statuses = await attachCiStatuses(
+      settings.github_owner,
+      settings.github_repo,
+      items.map((item) => item.sha)
+    );
+    items = items.map((item) => ({
+      ...item,
+      ci: item.sha ? statuses.get(item.sha) ?? null : null,
+    }));
+  }
+
+  return { items, error };
+}
+
+export async function acceptAndPromoteIncoming(projectId: string, formData: FormData) {
+  const { supabase, user } = await assertReleaseOps(projectId);
+
+  const preview_url = String(formData.get('previewUrl') || '').trim();
+  if (!preview_url) throw new Error('preview_url_required');
+
+  const { data: settings } = await supabase
+    .from('project_release_settings')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle();
+
+  if (!settings?.enabled) throw new Error('releases_disabled');
+
+  const deploymentId = String(formData.get('deploymentId') || '').trim() || null;
+  const commit_sha = String(formData.get('sha') || '').trim() || null;
+  const commit_message = String(formData.get('message') || '').trim() || null;
+
+  const { data, error } = await supabase
+    .from('project_release_requests')
+    .insert({
+      project_id: projectId,
+      status: 'approved',
+      preview_url,
+      production_url: String(formData.get('productionUrl') || '').trim() || null,
+      notes: commit_message || '',
+      commit_sha,
+      commit_message,
+      vercel_deployment_id: deploymentId,
+      requested_by: user.id,
+      requested_by_kind: 'staff',
+      approved_by: user.id,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    entityType: 'project_release_request',
+    entityId: data.id,
+    action: 'approved',
+    actorId: user.id,
+    metadata: { project_id: projectId, kind: 'incoming', sha: commit_sha },
+  });
+
+  await dispatchReleasePromote(data.id, projectId);
 }
 
 export async function createReleaseRequestAsStaff(projectId: string, formData: FormData) {
@@ -225,8 +360,8 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     .eq('project_id', projectId)
     .maybeSingle();
 
-  if (!settings?.enabled || !settings.github_owner || !settings.github_repo) {
-    throw new Error('github_not_configured');
+  if (!settings?.enabled) {
+    throw new Error('releases_disabled');
   }
 
   await supabase
@@ -239,14 +374,50 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     })
     .eq('id', requestId);
 
-  const result = await dispatchPromoteWorkflow({
-    owner: settings.github_owner,
-    repo: settings.github_repo,
-    workflow: settings.promote_workflow,
-    ref: settings.promote_ref,
-    deploymentUrlInput: settings.deployment_url_input,
-    previewUrl: req.preview_url,
-  });
+  const vercelProjectId = settings.vercel_project_id as string | null | undefined;
+  const vercelTeamId = settings.vercel_team_id as string | null | undefined;
+  let deploymentId = (req.vercel_deployment_id as string | null) || null;
+
+  if (!deploymentId && vercelProjectId && vercelTokenConfigured()) {
+    deploymentId = await resolveVercelDeploymentId({
+      previewUrl: req.preview_url,
+      teamId: vercelTeamId,
+    });
+    if (deploymentId) {
+      await supabase
+        .from('project_release_requests')
+        .update({ vercel_deployment_id: deploymentId })
+        .eq('id', requestId);
+    }
+  }
+
+  let result: { ok: true; runUrl: string | null } | { ok: false; error: string; missingToken?: boolean };
+
+  if (vercelProjectId && deploymentId && vercelTokenConfigured()) {
+    const promoted = await promoteVercelDeployment({
+      projectId: vercelProjectId,
+      deploymentId,
+      teamId: vercelTeamId,
+    });
+    result = promoted.ok
+      ? { ok: true, runUrl: promoted.inspectUrl }
+      : { ok: false, error: promoted.error, missingToken: promoted.missingToken };
+  } else if (settings.github_owner && settings.github_repo) {
+    result = await dispatchPromoteWorkflow({
+      owner: settings.github_owner,
+      repo: settings.github_repo,
+      workflow: settings.promote_workflow,
+      ref: settings.promote_ref,
+      deploymentUrlInput: settings.deployment_url_input,
+      previewUrl: req.preview_url,
+    });
+  } else {
+    result = {
+      ok: false,
+      error:
+        'Configura Vercel project ID (promote directo) o GitHub owner/repo + workflow (dispatch).',
+    };
+  }
 
   if (!result.ok) {
     await supabase
@@ -319,4 +490,4 @@ export async function markReleaseSucceededManually(requestId: string, projectId:
   revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
 }
 
-export { releasesTokenConfigured };
+export { releasesTokenConfigured, vercelTokenConfigured };

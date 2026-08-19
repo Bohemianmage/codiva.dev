@@ -50,6 +50,9 @@ export default async function PortalReleasesPanel({
                       {new Date(r.created_at).toLocaleString()}
                     </span>
                   </div>
+                  {r.commit_message ? (
+                    <p className="mt-1 text-zinc-800">{r.commit_message}</p>
+                  ) : null}
                   <a
                     href={r.preview_url}
                     target="_blank"
