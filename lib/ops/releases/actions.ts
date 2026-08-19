@@ -220,6 +220,12 @@ export async function loadIncomingPreviews(
     }));
   }
 
+  // Pending work = open PRs. Closing/rejecting a PR drops its preview from Ops
+  // even if the Vercel deployment is still READY.
+  if (settings.github_owner && settings.github_repo) {
+    items = items.filter((item) => item.pull);
+  }
+
   const attached = new Set(items.flatMap((item) => (item.pull ? [item.pull.number] : [])));
   pulls = pulls.filter((p) => !attached.has(p.number));
 
