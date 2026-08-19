@@ -24,7 +24,7 @@ SELECT
   'main',
   'deployment_url',
   'prj_GGlesi8OSxDAxabWGHH53coejcRC',
-  'codiva-dev',
+  'team_nI1wrmMTcj7XhYTUDwjy5Ak3',
   false,
   true,
   'GitHub CI → preview Vercel → QA Codiva → promote. Cliente solo lectura.',
