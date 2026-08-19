@@ -35,6 +35,33 @@ function vercelHeaders(token: string): HeadersInit {
   };
 }
 
+type VercelEnvRow = { key?: string; value?: string | null };
+
+/** Protection Bypass for Automation (`VERCEL_AUTOMATION_BYPASS_SECRET`) on the client project. */
+export async function getVercelAutomationBypassSecret(input: {
+  projectId: string;
+  teamId?: string | null;
+}): Promise<string | null> {
+  const token = vercelToken();
+  const projectId = input.projectId.trim();
+  if (!token || !projectId) return null;
+
+  const qs = teamQueryPrefix(input.teamId);
+  const sep = qs.includes('?') ? '&' : '?';
+  const res = await fetch(
+    `https://api.vercel.com/v9/projects/${encodeURIComponent(projectId)}/env${qs}${sep}decrypt=true`,
+    { headers: vercelHeaders(token), cache: 'no-store' }
+  );
+  if (!res.ok) return null;
+
+  const data = (await res.json()) as { envs?: VercelEnvRow[] } | VercelEnvRow[];
+  const rows = Array.isArray(data) ? data : (data.envs ?? []);
+  const row = rows.find(
+    (env) => env.key === 'VERCEL_AUTOMATION_BYPASS_SECRET' && env.value?.trim()
+  );
+  return row?.value?.trim() || null;
+}
+
 function teamQuery(teamId: string | null | undefined): string {
   const id = teamId?.trim();
   if (!id) return '';
