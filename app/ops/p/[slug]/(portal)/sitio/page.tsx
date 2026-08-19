@@ -42,7 +42,7 @@ export default async function PortalSitioPage({
       supabase
         .from('project_release_requests')
         .select(
-          'id, project_id, status, preview_url, production_url, notes, commit_sha, commit_message, error_message, github_run_url, requested_by_kind, created_at, updated_at, completed_at'
+          'id, project_id, status, preview_url, production_url, notes, commit_sha, commit_message, vercel_deployment_id, error_message, github_run_url, requested_by_kind, created_at, updated_at, completed_at'
         )
         .eq('project_id', project.id)
         .order('created_at', { ascending: false })
