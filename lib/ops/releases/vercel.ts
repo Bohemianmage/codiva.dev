@@ -54,6 +54,38 @@ function asHttps(url: string): string {
   return `https://${trimmed}`;
 }
 
+function hostOnly(url: string): string {
+  return url.trim().replace(/^https?:\/\//, '').split('/')[0] ?? '';
+}
+
+/** Prefer branch/git aliases over the opaque deployment hostname. */
+function pickPreviewHost(deploymentHost: string, aliases: string[]): string {
+  const clean = aliases
+    .map((a) => hostOnly(a))
+    .filter(Boolean)
+    .filter((a) => a !== deploymentHost);
+  const git = clean.find((a) => /-git-/.test(a));
+  if (git) return git;
+  const stable = clean.find((a) => !/^[a-z0-9]+-[a-z0-9]{8,}-[a-z0-9-]+\.vercel\.app$/i.test(a));
+  if (stable) return stable;
+  return clean[0] || deploymentHost;
+}
+
+async function listDeploymentAliases(
+  token: string,
+  deploymentId: string,
+  teamId?: string | null
+): Promise<string[]> {
+  const qs = teamQueryPrefix(teamId);
+  const res = await fetch(
+    `https://api.vercel.com/v2/deployments/${encodeURIComponent(deploymentId)}/aliases${qs}`,
+    { headers: vercelHeaders(token), cache: 'no-store' }
+  );
+  if (!res.ok) return [];
+  const data = (await res.json()) as { aliases?: Array<{ alias?: string }> };
+  return (data.aliases ?? []).map((a) => a.alias).filter((a): a is string => Boolean(a));
+}
+
 type VercelDeployment = {
   uid?: string;
   url?: string | null;
@@ -90,25 +122,32 @@ export async function listVercelPreviews(input: {
   }
 
   const data = (await res.json()) as { deployments?: VercelDeployment[] };
-  const items: VercelPreview[] = [];
-
+  const candidates: VercelDeployment[] = [];
   for (const d of data.deployments ?? []) {
     if (d.target === 'production') continue;
     if (!d.uid || !d.url) continue;
-    const meta = d.meta ?? {};
-    const createdMs = d.createdAt ?? d.created ?? Date.now();
-    items.push({
-      deploymentId: d.uid,
-      previewUrl: asHttps(d.url),
-      inspectUrl: d.inspectorUrl ?? null,
-      sha: meta.githubCommitSha ?? null,
-      message: meta.githubCommitMessage ?? null,
-      author: meta.githubCommitAuthorName ?? null,
-      branch: meta.githubCommitRef ?? null,
-      createdAt: new Date(createdMs).toISOString(),
-    });
-    if (items.length >= 8) break;
+    candidates.push(d);
+    if (candidates.length >= 8) break;
   }
+
+  const items: VercelPreview[] = await Promise.all(
+    candidates.map(async (d) => {
+      const meta = d.meta ?? {};
+      const createdMs = d.createdAt ?? d.created ?? Date.now();
+      const deploymentHost = hostOnly(d.url!);
+      const aliases = await listDeploymentAliases(token, d.uid!, input.teamId);
+      return {
+        deploymentId: d.uid!,
+        previewUrl: asHttps(pickPreviewHost(deploymentHost, aliases)),
+        inspectUrl: d.inspectorUrl ?? null,
+        sha: meta.githubCommitSha ?? null,
+        message: meta.githubCommitMessage ?? null,
+        author: meta.githubCommitAuthorName ?? null,
+        branch: meta.githubCommitRef ?? null,
+        createdAt: new Date(createdMs).toISOString(),
+      };
+    })
+  );
 
   return { items, error: null };
 }

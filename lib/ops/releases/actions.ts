@@ -247,51 +247,6 @@ export async function acceptAndPromoteIncoming(projectId: string, formData: Form
   await dispatchReleasePromote(data.id, projectId);
 }
 
-export async function createReleaseRequestAsStaff(projectId: string, formData: FormData) {
-  const { supabase, user } = await assertReleaseOps(projectId);
-
-  const preview_url = String(formData.get('previewUrl') || '').trim();
-  if (!preview_url) throw new Error('preview_url_required');
-
-  const { data: settings } = await supabase
-    .from('project_release_settings')
-    .select('*')
-    .eq('project_id', projectId)
-    .maybeSingle();
-
-  if (!settings?.enabled) throw new Error('releases_disabled');
-
-  const requireApproval = settings.require_staff_approval !== false;
-  const status = requireApproval ? 'pending_approval' : 'approved';
-
-  const { data, error } = await supabase
-    .from('project_release_requests')
-    .insert({
-      project_id: projectId,
-      status,
-      preview_url,
-      production_url: String(formData.get('productionUrl') || '').trim() || null,
-      notes: String(formData.get('notes') || ''),
-      requested_by: user.id,
-      requested_by_kind: 'staff',
-      approved_by: requireApproval ? null : user.id,
-    })
-    .select('id')
-    .single();
-  if (error) throw new Error(error.message);
-
-  await logActivity({
-    entityType: 'project_release_request',
-    entityId: data.id,
-    action: 'created',
-    actorId: user.id,
-    metadata: { project_id: projectId, status, kind: 'staff' },
-  });
-
-  revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
-  return data.id;
-}
-
 export async function approveReleaseRequest(requestId: string, projectId: string) {
   const { supabase, user } = await assertReleaseOps(projectId);
 

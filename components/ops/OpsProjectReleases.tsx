@@ -6,7 +6,6 @@ import {
   acceptAndPromoteIncoming,
   approveReleaseRequest,
   cancelReleaseRequest,
-  createReleaseRequestAsStaff,
   dispatchReleasePromote,
   loadIncomingPreviews,
   markReleaseSucceededManually,
@@ -43,13 +42,12 @@ function releaseStatusTone(status: string): 'success' | 'warning' | 'danger' | '
 
 export default async function OpsProjectReleases({
   projectId,
-  sitePreviewUrl,
   siteProductionUrl,
   settings,
   requests,
 }: {
   projectId: string;
-  sitePreviewUrl: string | null;
+  sitePreviewUrl?: string | null;
   siteProductionUrl: string | null;
   settings: ReleaseSettingsRow | null;
   requests: ReleaseRequestRow[];
@@ -72,21 +70,11 @@ export default async function OpsProjectReleases({
     { ok: Boolean(settings?.vercel_project_id), label: t('ops.releases.setupVercelProject') },
   ].filter((item) => !item.ok);
 
-  const flowSteps = [
-    t('ops.releases.flowCi'),
-    t('ops.releases.flowPreview'),
-    t('ops.releases.flowQa'),
-    t('ops.releases.flowProd'),
-  ];
-
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.title')}</h3>
-            <p className="mt-1 max-w-2xl text-sm text-zinc-600">{t('ops.releases.hint')}</p>
-          </div>
+          <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.title')}</h3>
           <div className="flex flex-wrap gap-1.5">
             <StatusBadge
               label={t('ops.releases.githubShort')}
@@ -111,25 +99,6 @@ export default async function OpsProjectReleases({
             ))}
           </ul>
         ) : null}
-
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            {t('ops.releases.pipelineTitle')}
-          </p>
-          <ol className="mt-3 grid gap-2 sm:grid-cols-4">
-            {flowSteps.map((step, index) => (
-              <li
-                key={step}
-                className="rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700"
-              >
-                <span className="mb-1 block text-[11px] font-semibold text-zinc-400">
-                  {index + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-        </div>
 
         {canManage ? (
           <details
@@ -184,7 +153,7 @@ export default async function OpsProjectReleases({
                   <input
                     name="vercelTeamId"
                     defaultValue={settings?.vercel_team_id ?? ''}
-                    placeholder="codiva-dev"
+                    placeholder="team_… o slug"
                     className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
                   />
                 </label>
@@ -237,149 +206,105 @@ export default async function OpsProjectReleases({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.incomingTitle')}</h3>
-            <p className="mt-1 text-sm text-zinc-600">{t('ops.releases.incomingHint')}</p>
-          </div>
-          {incoming.error ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {incoming.error}
-            </p>
-          ) : null}
-          {incoming.hint === 'disabled' ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
-              {t('ops.releases.incomingDisabled')}
-            </p>
-          ) : null}
-          {incoming.hint === 'misconfigured' ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
-              {t('ops.releases.incomingMisconfigured')}
-            </p>
-          ) : null}
-          {!incoming.items.length && !incoming.error && !incoming.hint ? (
-            <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
-              {t('ops.releases.incomingEmpty')}
-            </p>
-          ) : null}
-          {incoming.items.length ? (
-            <ul className="space-y-3">
-              {incoming.items.map((item) => {
-                const ciState = item.ci?.state ?? 'unknown';
-                const confirmMessage =
-                  ciState === 'failure' || ciState === 'error'
-                    ? t('ops.releases.promoteConfirmCiFailed')
-                    : ciState === 'pending'
-                      ? t('ops.releases.promoteConfirmCiPending')
-                      : t('ops.releases.promoteConfirm');
-                return (
-                  <li
-                    key={`${item.source}-${item.deploymentId ?? item.previewUrl}`}
-                    className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-zinc-900">
-                            {item.message || t('ops.releases.untitledCommit')}
-                          </p>
-                          {item.ci?.url ? (
-                            <a href={item.ci.url} target="_blank" rel="noreferrer">
-                              <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
-                            </a>
-                          ) : (
-                            <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
-                          )}
-                        </div>
-                        <p className="text-xs text-zinc-500">
-                          {[item.author, item.sha ? item.sha.slice(0, 7) : null, item.branch]
-                            .filter(Boolean)
-                            .join(' · ')}
-                          {item.createdAt ? ` · ${new Date(item.createdAt).toLocaleString()}` : ''}
-                        </p>
-                      </div>
+        <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.incomingTitle')}</h3>
+        {incoming.error ? (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {incoming.error}
+          </p>
+        ) : null}
+        {incoming.hint === 'disabled' ? (
+          <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.releases.incomingDisabled')}
+          </p>
+        ) : null}
+        {incoming.hint === 'misconfigured' ? (
+          <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.releases.incomingMisconfigured')}
+          </p>
+        ) : null}
+        {!incoming.items.length && !incoming.error && !incoming.hint ? (
+          <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.releases.incomingEmpty')}
+          </p>
+        ) : null}
+        {incoming.items.length ? (
+          <ul className="space-y-3">
+            {incoming.items.map((item) => {
+              const ciState = item.ci?.state ?? 'unknown';
+              const confirmMessage =
+                ciState === 'failure' || ciState === 'error'
+                  ? t('ops.releases.promoteConfirmCiFailed')
+                  : ciState === 'pending'
+                    ? t('ops.releases.promoteConfirmCiPending')
+                    : t('ops.releases.promoteConfirm');
+              return (
+                <li
+                  key={`${item.source}-${item.deploymentId ?? item.previewUrl}`}
+                  className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <a
-                          href={item.previewUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
-                        >
-                          {t('ops.releases.openPreview')}
-                        </a>
-                        {canManage ? (
-                          <ToastForm
-                            success={t('ops.releases.promoted')}
-                            confirmTitle={t('ops.releases.promoteConfirmTitle')}
-                            confirmMessage={confirmMessage}
-                            confirmLabel={t('ops.releases.promoteNow')}
-                            confirmTone="primary"
-                            action={async (fd) => {
-                              'use server';
-                              await acceptAndPromoteIncoming(projectId, fd);
-                            }}
-                          >
-                            <input type="hidden" name="previewUrl" value={item.previewUrl} />
-                            <input type="hidden" name="productionUrl" value={siteProductionUrl ?? ''} />
-                            <input type="hidden" name="deploymentId" value={item.deploymentId ?? ''} />
-                            <input type="hidden" name="sha" value={item.sha ?? ''} />
-                            <input type="hidden" name="message" value={item.message ?? ''} />
-                            <button
-                              type="submit"
-                              className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white"
-                            >
-                              {t('ops.releases.promoteNow')}
-                            </button>
-                          </ToastForm>
-                        ) : null}
+                        <p className="font-medium text-zinc-900">
+                          {item.message || t('ops.releases.untitledCommit')}
+                        </p>
+                        {item.ci?.url ? (
+                          <a href={item.ci.url} target="_blank" rel="noreferrer">
+                            <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
+                          </a>
+                        ) : (
+                          <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
+                        )}
                       </div>
+                      <p className="text-xs text-zinc-500">
+                        {[item.author, item.sha ? item.sha.slice(0, 7) : null, item.branch]
+                          .filter(Boolean)
+                          .join(' · ')}
+                        {item.createdAt ? ` · ${new Date(item.createdAt).toLocaleString()}` : ''}
+                      </p>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
-        </section>
-
-      {canManage && settings?.enabled ? (
-        <details className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <summary className="cursor-pointer font-semibold text-zinc-900">
-            {t('ops.releases.manualUrl')}
-          </summary>
-          <ToastForm
-            success={t('ops.releases.requestCreated')}
-            action={async (fd) => {
-              'use server';
-              await createReleaseRequestAsStaff(projectId, fd);
-            }}
-            className="mt-4 space-y-3"
-          >
-            <input
-              name="previewUrl"
-              type="url"
-              required
-              defaultValue={sitePreviewUrl ?? ''}
-              placeholder="https://….vercel.app"
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <input
-              name="productionUrl"
-              type="url"
-              defaultValue={siteProductionUrl ?? ''}
-              placeholder={t('ops.releases.productionOptional')}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <textarea
-              name="notes"
-              rows={2}
-              placeholder={t('ops.releases.requestNotes')}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
-              {t('ops.releases.createRequest')}
-            </button>
-          </ToastForm>
-        </details>
-      ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={item.previewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                      >
+                        {t('ops.releases.openPreview')}
+                      </a>
+                      {canManage ? (
+                        <ToastForm
+                          success={t('ops.releases.promoted')}
+                          confirmTitle={t('ops.releases.promoteConfirmTitle')}
+                          confirmMessage={confirmMessage}
+                          confirmLabel={t('ops.releases.promoteNow')}
+                          confirmTone="primary"
+                          action={async (fd) => {
+                            'use server';
+                            await acceptAndPromoteIncoming(projectId, fd);
+                          }}
+                        >
+                          <input type="hidden" name="previewUrl" value={item.previewUrl} />
+                          <input type="hidden" name="productionUrl" value={siteProductionUrl ?? ''} />
+                          <input type="hidden" name="deploymentId" value={item.deploymentId ?? ''} />
+                          <input type="hidden" name="sha" value={item.sha ?? ''} />
+                          <input type="hidden" name="message" value={item.message ?? ''} />
+                          <button
+                            type="submit"
+                            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white"
+                          >
+                            {t('ops.releases.promoteNow')}
+                          </button>
+                        </ToastForm>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-3">
         <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.history')}</h3>
