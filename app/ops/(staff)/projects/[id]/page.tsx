@@ -1081,8 +1081,39 @@ export default async function ProjectDetailPage({
       )}
 
       {tab === 'accesos' && (
-        <div className="max-w-2xl space-y-10">
-          <section className="space-y-6">
+        <div className="max-w-4xl space-y-8">
+          <nav className="flex flex-wrap gap-2">
+            <a href="#releases" className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white">
+              {t('ops.project.jumpReleases')}
+            </a>
+            <a href="#sitio" className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200">
+              {t('ops.project.jumpSite')}
+            </a>
+            <a href="#portal" className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-200">
+              {t('ops.project.jumpPortal')}
+            </a>
+          </nav>
+
+          <div id="releases" className="scroll-mt-6">
+            <OpsProjectReleases
+              projectId={id}
+              sitePreviewUrl={project.site_preview_url}
+              siteProductionUrl={project.site_production_url}
+              settings={releaseSettings}
+              requests={releaseRequests ?? []}
+            />
+          </div>
+
+          <div id="sitio" className="scroll-mt-6">
+            <OpsProjectSiteAccess
+              projectId={id}
+              sitePreviewUrl={project.site_preview_url}
+              siteProductionUrl={project.site_production_url}
+              items={siteAccess ?? []}
+            />
+          </div>
+
+          <section id="portal" className="scroll-mt-6 space-y-6">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">{t('ops.project.portalCodiva')}</h3>
               <p className="mt-1 text-sm text-zinc-600">{t('ops.project.portalInviteHint')}</p>
@@ -1167,21 +1198,6 @@ export default async function ProjectDetailPage({
               )}
             </ul>
           </section>
-
-          <OpsProjectSiteAccess
-            projectId={id}
-            sitePreviewUrl={project.site_preview_url}
-            siteProductionUrl={project.site_production_url}
-            items={siteAccess ?? []}
-          />
-
-          <OpsProjectReleases
-            projectId={id}
-            sitePreviewUrl={project.site_preview_url}
-            siteProductionUrl={project.site_production_url}
-            settings={releaseSettings}
-            requests={releaseRequests ?? []}
-          />
         </div>
       )}
 

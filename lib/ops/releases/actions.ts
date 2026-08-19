@@ -81,6 +81,7 @@ export type IncomingPreview = {
 export type IncomingPreviewsResult = {
   items: IncomingPreview[];
   error: string | null;
+  hint: string | null;
 };
 
 function revalidateReleasePaths(projectId: string, slug?: string | null) {
@@ -148,7 +149,9 @@ export async function upsertReleaseSettings(projectId: string, formData: FormDat
 export async function loadIncomingPreviews(
   settings: ReleaseSettingsRow | null
 ): Promise<IncomingPreviewsResult> {
-  if (!settings?.enabled) return { items: [], error: null };
+  if (!settings?.enabled) {
+    return { items: [], error: null, hint: 'disabled' };
+  }
 
   let items: IncomingPreview[] = [];
   let error: string | null = null;
@@ -172,6 +175,8 @@ export async function loadIncomingPreviews(
       ...item,
     }));
     error = listed.error;
+  } else {
+    return { items: [], error: null, hint: 'misconfigured' };
   }
 
   if (
@@ -191,7 +196,7 @@ export async function loadIncomingPreviews(
     }));
   }
 
-  return { items, error };
+  return { items, error, hint: null };
 }
 
 export async function acceptAndPromoteIncoming(projectId: string, formData: FormData) {
