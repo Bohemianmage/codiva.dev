@@ -44,7 +44,7 @@ export async function invitePortalUserCore(opts: {
     )
     .in('id', projectIds);
 
-  if (projectsError) await throwDb(projectsError);
+  if (projectsError) throw await throwDb(projectsError);
   if (!projects?.length || projects.length !== projectIds.length) {
     throw new Error('Uno o más proyectos no existen');
   }
@@ -82,7 +82,7 @@ export async function invitePortalUserCore(opts: {
       password: tempPassword,
       email_confirm: true,
     });
-    if (error || !created.user) await throwDb(error);
+    if (error || !created?.user) throw await throwDb(error);
     userId = created.user.id;
     isNewUser = true;
   }
@@ -98,7 +98,7 @@ export async function invitePortalUserCore(opts: {
       },
       { onConflict: 'project_id,user_id' }
     );
-    if (memberError) await throwDb(memberError);
+    if (memberError) throw await throwDb(memberError);
 
     if (!project.client_visible) {
       await admin.from('projects').update({ client_visible: true }).eq('id', project.id);

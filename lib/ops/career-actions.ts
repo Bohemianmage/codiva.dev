@@ -106,7 +106,7 @@ export async function createJobPosting(formData: FormData) {
     .select('id, slug')
     .single();
 
-  if (error || !data) await throwDb(error);
+  if (error || !data) throw await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -156,7 +156,7 @@ export async function updateJobPosting(postingId: string, formData: FormData) {
     })
     .eq('id', postingId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -191,7 +191,7 @@ export async function deleteDraftJobPosting(postingId: string) {
   if ((count ?? 0) > 0) throw new Error('No se puede eliminar: ya hay postulaciones');
 
   const { error } = await supabase.from('ops_job_postings').delete().eq('id', postingId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -237,7 +237,7 @@ export async function updateJobApplicationStatus(applicationId: string, formData
     .update({ status })
     .eq('id', applicationId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   const jobTitle = applicationRoleLabel({
     postingTitle: posting?.title,
@@ -358,7 +358,7 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
     .select('id')
     .single();
 
-  if (offerError || !offer) await throwDb(offerError);
+  if (offerError || !offer) throw await throwDb(offerError);
 
   await supabase
     .from('ops_job_applications')

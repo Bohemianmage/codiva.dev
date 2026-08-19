@@ -108,7 +108,7 @@ export async function createLead(formData: FormData) {
     .select('id')
     .single();
 
-  if (error) await throwDb(error);
+  if (error || !lead) throw await throwDb(error);
 
   await logActivity({
     entityType: 'lead',
@@ -164,7 +164,7 @@ export async function convertInboxToLead(messageId: string) {
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !lead) throw await throwDb(error);
 
   await supabase
     .from('inbox_messages')
@@ -188,7 +188,7 @@ export async function convertInboxToLead(messageId: string) {
 export async function updateLeadStatus(leadId: string, status: string) {
   const { supabase, user } = await assertCapability('leads');
   const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   await logActivity({
     entityType: 'lead',
     entityId: leadId,
@@ -222,7 +222,7 @@ export async function updateLeadDetails(leadId: string, formData: FormData) {
   };
 
   const { error } = await supabase.from('leads').update(payload).eq('id', leadId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'lead',
@@ -269,7 +269,7 @@ export async function createLeadQuote(leadId: string, formData: FormData) {
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !quote) throw await throwDb(error);
   revalidatePath(`/leads/${leadId}`);
   const t = await getT();
   const { redirectWithToast } = await import('@/lib/ops/toast');
@@ -285,7 +285,7 @@ export async function sendLeadQuote(quoteId: string, leadId: string) {
     .update({ status: 'sent', sent_at: new Date().toISOString() })
     .eq('id', quoteId)
     .eq('lead_id', leadId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   const { data: lead } = await admin.from('leads').select('*').eq('id', leadId).single();
   if (!lead) throw new Error('Lead no encontrado');
@@ -321,7 +321,7 @@ export async function sendLeadQuote(quoteId: string, leadId: string) {
 export async function updateInboxStatus(messageId: string, status: string) {
   const { supabase } = await assertCapability('inbox');
   const { error } = await supabase.from('inbox_messages').update({ status }).eq('id', messageId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath('/inbox');
   revalidatePath('/dashboard');
 }
@@ -333,7 +333,7 @@ export async function updateInboxLane(messageId: string, lane: string) {
     .from('inbox_messages')
     .update({ lane, lane_reason: 'manual' })
     .eq('id', messageId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   await logActivity({
     entityType: 'inbox',
     entityId: messageId,
@@ -356,7 +356,7 @@ export async function deleteInboxMessage(messageId: string) {
   if (fetchError || !message) throw new Error('Mensaje no encontrado');
 
   const { error } = await supabase.from('inbox_messages').delete().eq('id', messageId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'inbox',
@@ -373,7 +373,7 @@ export async function deleteInboxMessage(messageId: string) {
 export async function updateTicketStatus(ticketId: string, status: string) {
   const { supabase, user } = await assertCapability('tickets');
   const { error } = await supabase.from('tickets').update({ status }).eq('id', ticketId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   await logActivity({
     entityType: 'ticket',
     entityId: ticketId,
@@ -400,7 +400,7 @@ export async function updateTicketAssignment(ticketId: string, formData: FormDat
     .from('tickets')
     .update({ status, assigned_to: assignedTo })
     .eq('id', ticketId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'ticket',
@@ -436,7 +436,7 @@ export async function convertLeadToProject(leadId: string) {
     })
     .select('id')
     .single();
-  if (orgError) await throwDb(orgError);
+  if (orgError || !org) throw await throwDb(orgError);
 
   const slug = generateProjectSlug(lead.company || lead.name);
   const { data: project, error: projectError } = await admin
@@ -452,7 +452,7 @@ export async function convertLeadToProject(leadId: string) {
     })
     .select('id, slug')
     .single();
-  if (projectError) await throwDb(projectError);
+  if (projectError || !project) throw await throwDb(projectError);
 
   await admin
     .from('leads')
@@ -511,7 +511,7 @@ export async function createProject(formData: FormData) {
     .select('id')
     .single();
 
-  if (error) await throwDb(error);
+  if (error || !project) throw await throwDb(error);
 
   await admin.from('project_staff').upsert({
     project_id: project.id,
@@ -551,7 +551,7 @@ export async function updateProject(projectId: string, formData: FormData) {
   };
 
   const { error } = await supabase.from('projects').update(payload).eq('id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project',
@@ -586,7 +586,7 @@ export async function createMilestone(projectId: string, formData: FormData) {
     visible_to_client: formData.get('visibleToClient') !== 'off',
     sort_order: (last?.sort_order ?? -1) + 1,
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'milestone',
@@ -614,7 +614,7 @@ export async function updateMilestone(milestoneId: string, projectId: string, fo
   };
 
   const { error } = await supabase.from('milestones').update(payload).eq('id', milestoneId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'milestone',
@@ -635,7 +635,7 @@ export async function addMilestoneUpdate(milestoneId: string, projectId: string,
     body,
     created_by: user.id,
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -675,7 +675,7 @@ export async function createQuote(projectId: string, formData: FormData) {
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !quote) throw await throwDb(error);
   revalidatePath(`/projects/${projectId}`);
   const t = await getT();
   const { redirectWithToast } = await import('@/lib/ops/toast');
@@ -714,7 +714,7 @@ export async function updateQuote(quoteId: string, formData: FormData) {
       valid_until: parsed.validUntil,
     })
     .eq('id', quoteId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   if (existing.project_id) revalidatePath(`/projects/${existing.project_id}`);
   if (existing.lead_id) revalidatePath(`/leads/${existing.lead_id}`);
@@ -732,7 +732,7 @@ export async function sendQuote(quoteId: string, projectId: string) {
     .from('quotes')
     .update({ status: 'sent', sent_at: new Date().toISOString() })
     .eq('id', quoteId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await supabase.from('projects').update({ status: 'quoting' }).eq('id', projectId);
 
@@ -918,7 +918,7 @@ export async function removePortalUserProject(userId: string, projectId: string)
     .delete()
     .eq('user_id', userId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath('/users');
   revalidatePath(`/users/${userId}`);
@@ -959,7 +959,7 @@ async function provisionStaffUser(input: {
       email_confirm: true,
       user_metadata: fullName ? { full_name: fullName } : undefined,
     });
-    if (error || !created.user) await throwDb(error);
+    if (error || !created?.user) throw await throwDb(error);
     userId = created.user.id;
     isNew = true;
   }
@@ -974,7 +974,7 @@ async function provisionStaffUser(input: {
     },
     { onConflict: 'id' }
   );
-  if (profileError) await throwDb(profileError);
+  if (profileError) throw await throwDb(profileError);
 
   const roleLabel = STAFF_ROLE_LABELS[role] ?? role;
   const loginUrl = opsLoginUrl();
@@ -1042,7 +1042,7 @@ export async function convertPersonnelOfferToStaff(offerId: string, formData: Fo
       status: offer.status === 'draft' || offer.status === 'sent' ? 'accepted' : offer.status,
     })
     .eq('id', offerId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'personnel_offer',
@@ -1091,7 +1091,7 @@ export async function uploadStaffContract(offerId: string, formData: FormData) {
   });
   if (error) {
     await deleteOpsFile(uploaded.path).catch(() => undefined);
-    await throwDb(error);
+    throw await throwDb(error);
   }
 
   await logActivity({
@@ -1147,7 +1147,7 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
       active,
     })
     .eq('id', staffId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath('/team');
   revalidatePath('/settings');
@@ -1234,7 +1234,7 @@ export async function createDeliverable(projectId: string, formData: FormData) {
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !deliverable) throw await throwDb(error);
 
   const {
     data: { user },
@@ -1283,7 +1283,7 @@ export async function createArchitectureCanvas(projectId: string, formData: Form
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !deliverable) throw await throwDb(error);
 
   const {
     data: { user },
@@ -1340,7 +1340,7 @@ export async function updateArchitectureCanvas(projectId: string, deliverableId:
     })
     .eq('id', deliverableId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   const {
     data: { user },
@@ -1368,7 +1368,7 @@ export async function hydrateArchitectureFromPacks(projectId: string): Promise<n
     .from('deliverables')
     .select('id, kind, url, body_html')
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   let adopted = 0;
   for (const row of rows ?? []) {
@@ -1381,7 +1381,7 @@ export async function hydrateArchitectureFromPacks(projectId: string): Promise<n
       .update({ body_html: html })
       .eq('id', row.id)
       .eq('project_id', projectId);
-    if (updateError) await throwDb(updateError);
+    if (updateError) throw await throwDb(updateError);
     adopted += 1;
   }
 
@@ -1424,7 +1424,7 @@ export async function markDocumentSigned(documentId: string, projectId: string, 
     .update({ signed })
     .eq('id', documentId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath(`/projects/${projectId}`);
 }
 
@@ -1439,7 +1439,7 @@ export async function setDeliverableVisibility(
     .update({ visible_to_client: visibleToClient })
     .eq('id', deliverableId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/p', 'layout');
 }
@@ -1455,7 +1455,7 @@ export async function setQuoteVisibility(
     .update({ visible_to_client: visibleToClient })
     .eq('id', quoteId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/p', 'layout');
 }
@@ -1493,7 +1493,7 @@ export async function acceptPortalLegalDocuments(slug: string, formData: FormDat
     .eq('user_id', access.user.id)
     .select('id, project_id');
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   if (!members?.length) throw new Error('Membresía no encontrada');
 
   const audit = await getRequestAudit();
@@ -1549,7 +1549,7 @@ export async function createDocumentRequest(projectId: string, formData: FormDat
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !data) throw await throwDb(error);
 
   await logActivity({
     entityType: 'document_request',
@@ -1610,7 +1610,7 @@ export async function updateDocumentRequestStatus(
     .update(patch)
     .eq('id', requestId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'document_request',
@@ -1767,7 +1767,7 @@ export async function clientFulfillDocumentRequest(
     })
     .eq('id', req.id)
     .eq('status', 'open');
-  if (updateError) await throwDb(updateError);
+  if (updateError) throw await throwDb(updateError);
 
   await logActivity({
     entityType: 'document_request',
@@ -1843,7 +1843,7 @@ export async function clientAcceptQuote(quoteId: string, projectId: string) {
     .eq('id', quoteId)
     .eq('project_id', projectId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   const admin = createAdminClient();
   await admin.from('projects').update({ status: 'active' }).eq('id', projectId);
@@ -1864,7 +1864,7 @@ export async function clientRejectQuote(quoteId: string, projectId: string) {
     .eq('id', quoteId)
     .eq('project_id', projectId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
   revalidatePath(`/p`);
 }
 
@@ -1889,7 +1889,7 @@ export async function publishLegalVersionAndNotify(formData: FormData) {
     },
     { onConflict: 'kind,version_code' }
   );
-  if (versionError) await throwDb(versionError);
+  if (versionError) throw await throwDb(versionError);
 
   if (!sendEmails) {
     revalidatePath('/settings');
@@ -2011,7 +2011,7 @@ export async function createProjectCharge(projectId: string, formData: FormData)
     visible_to_client: formData.get('visibleToClient') === 'on',
     staff_notes: String(formData.get('staffNotes') || ''),
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_charge',
@@ -2059,7 +2059,7 @@ export async function updateProjectCharge(
     })
     .eq('id', chargeId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_charge',
@@ -2082,7 +2082,7 @@ export async function deleteProjectCharge(chargeId: string, projectId: string) {
     .delete()
     .eq('id', chargeId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_charge',
@@ -2111,7 +2111,7 @@ export async function updateProjectSiteUrls(projectId: string, formData: FormDat
       updated_at: new Date().toISOString(),
     })
     .eq('id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project',
@@ -2161,7 +2161,7 @@ export async function createSiteAccess(projectId: string, formData: FormData) {
     })
     .select('id')
     .single();
-  if (error) await throwDb(error);
+  if (error || !created) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_site_access',
@@ -2205,7 +2205,7 @@ export async function updateSiteAccess(accessId: string, projectId: string, form
     .update(payload)
     .eq('id', accessId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_site_access',
@@ -2233,7 +2233,7 @@ export async function deleteSiteAccess(accessId: string, projectId: string) {
     .delete()
     .eq('id', accessId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'project_site_access',
@@ -2309,7 +2309,7 @@ export async function createPersonnelOffer(formData: FormData) {
     .select('id')
     .single();
 
-  if (error || !data) await throwDb(error);
+  if (error || !data) throw await throwDb(error);
 
   revalidatePath('/team');
   revalidatePath(`/team/ofertas/${data.id}`);
@@ -2369,7 +2369,7 @@ export async function updatePersonnelOffer(offerId: string, formData: FormData) 
     })
     .eq('id', offerId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath('/team');
   revalidatePath(`/team/ofertas/${offerId}`);
@@ -2387,7 +2387,7 @@ export async function updatePersonnelOfferStatus(offerId: string, formData: Form
     .update({ status })
     .eq('id', offerId);
 
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath('/team');
   revalidatePath(`/team/ofertas/${offerId}`);
@@ -2412,7 +2412,7 @@ export async function assignProjectStaff(projectId: string, formData: FormData) 
     staff_id: staffId,
     role_on_project: roleOnProject,
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/projects');
@@ -2433,7 +2433,7 @@ export async function removeProjectStaff(projectId: string, staffId: string) {
     .delete()
     .eq('project_id', projectId)
     .eq('staff_id', staffId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/projects');
@@ -2456,7 +2456,7 @@ export async function createProjectSprint(projectId: string, formData: FormData)
     status: String(formData.get('status') || 'planned'),
     created_by: access.user.id,
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
 }
@@ -2476,7 +2476,7 @@ export async function updateProjectSprint(sprintId: string, projectId: string, f
     })
     .eq('id', sprintId)
     .eq('project_id', projectId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
 }
@@ -2498,7 +2498,7 @@ export async function createSprintItem(sprintId: string, projectId: string, form
     assignee_id: assigneeId,
     sort_order: Number(formData.get('sortOrder') || 0) || 0,
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
 }
@@ -2537,7 +2537,7 @@ export async function updateSprintItem(itemId: string, projectId: string, formDa
   }
 
   const { error } = await access.supabase.from('sprint_items').update(payload).eq('id', itemId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/workload');
@@ -2558,7 +2558,7 @@ export async function updateOrganization(orgId: string, formData: FormData) {
       logo_url: String(formData.get('logoUrl') || '').trim() || null,
     })
     .eq('id', orgId);
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   await logActivity({
     entityType: 'organization',
@@ -2587,7 +2587,7 @@ export async function createOrganization(formData: FormData) {
     })
     .select('id')
     .single();
-  if (error || !data) await throwDb(error);
+  if (error || !data) throw await throwDb(error);
 
   await logActivity({
     entityType: 'organization',
@@ -2624,7 +2624,7 @@ export async function createTimeEntry(projectId: string, formData: FormData) {
     worked_on: workedOn,
     notes: String(formData.get('notes') || '').trim(),
   });
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/workload');
@@ -2640,7 +2640,7 @@ export async function deleteTimeEntry(entryId: string, projectId: string) {
   }
 
   const { error } = await query;
-  if (error) await throwDb(error);
+  if (error) throw await throwDb(error);
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/workload');
