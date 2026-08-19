@@ -291,6 +291,13 @@ export async function listOpenPulls(input: {
   );
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    if (res.status === 404) {
+      return {
+        items: [],
+        error:
+          'GitHub no ve el repo (404). En GITHUB_RELEASES_TOKEN: acceso a este repo + Pull requests Read/Write y Contents Write.',
+      };
+    }
     return {
       items: [],
       error: `GitHub PRs falló (${res.status}): ${body.slice(0, 300) || res.statusText}`,
