@@ -1529,6 +1529,7 @@
       "incomingEmpty": "Sin previews de Vercel listos. El CI en main no despliega preview: usa otra rama.",
       "incomingDisabled": "Pipeline apagado.",
       "incomingMisconfigured": "Falta owner/repo, project ID o token.",
+      "previewLoginHint": "Este preview pide login de Vercel. En el proyecto Vercel del cliente: Settings → Deployment Protection → Protection Bypass for Automation.",
       "errPull": "Indica un pull request válido.",
       "errDecision": "Decisión inválida.",
       "errPreviewUrl": "Falta la URL de preview.",

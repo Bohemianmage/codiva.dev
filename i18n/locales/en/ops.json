@@ -1529,6 +1529,7 @@
       "incomingEmpty": "No Vercel previews ready. CI on main does not deploy preview — use another branch.",
       "incomingDisabled": "Pipeline off.",
       "incomingMisconfigured": "Missing owner/repo, project ID, or token.",
+      "previewLoginHint": "This preview asks for a Vercel login. On the client Vercel project: Settings → Deployment Protection → Protection Bypass for Automation.",
       "errPull": "Provide a valid pull request.",
       "errDecision": "Invalid decision.",
       "errPreviewUrl": "Preview URL is missing.",

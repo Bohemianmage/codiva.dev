@@ -2,7 +2,9 @@ import CopyableUrl from '@/components/ops/CopyableUrl';
 import StatusBadge from '@/components/ops/StatusBadge';
 import ToastForm from '@/components/ops/ToastForm';
 import { getT } from '@/i18n/locale';
+import { usageUrlLabel } from '@/lib/ops/host';
 import { requireStaff } from '@/lib/ops/auth';
+import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
 import {
   acceptAndPromoteIncoming,
   approveReleaseRequest,
@@ -309,6 +311,11 @@ export default async function OpsProjectReleases({
             {t('ops.releases.incomingMisconfigured')}
           </p>
         ) : null}
+        {settings?.vercel_project_id && !incoming.previewBypass ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {t('ops.releases.previewLoginHint')}
+          </p>
+        ) : null}
         {!incoming.items.length && !incoming.pulls.length && !incoming.error && !incoming.hint ? (
           <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.releases.incomingEmpty')}
@@ -352,11 +359,11 @@ export default async function OpsProjectReleases({
                           .join(' · ')}
                         {item.createdAt ? ` · ${new Date(item.createdAt).toLocaleString()}` : ''}
                       </p>
-                      <CopyableUrl href={item.previewUrl} />
+                      <CopyableUrl href={item.openUrl} label={usageUrlLabel(item.previewUrl)} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <a
-                        href={item.previewUrl}
+                        href={item.openUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
@@ -445,7 +452,10 @@ export default async function OpsProjectReleases({
                   {r.commit_sha ? (
                     <p className="text-xs text-zinc-500">{r.commit_sha.slice(0, 7)}</p>
                   ) : null}
-                  <CopyableUrl href={r.preview_url} />
+                  <CopyableUrl
+                    href={withVercelPreviewBypass(r.preview_url, incoming.previewAccessSecret)}
+                    label={usageUrlLabel(r.preview_url)}
+                  />
                   {r.error_message ? (
                     <p className="text-xs text-red-700 whitespace-pre-wrap">{r.error_message}</p>
                   ) : null}

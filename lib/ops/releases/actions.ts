@@ -21,7 +21,9 @@ import {
   type CiStatus,
   type GitHubPull,
 } from '@/lib/ops/releases/github';
+import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
 import {
+  getVercelAutomationBypassSecret,
   listVercelPreviews,
   promoteVercelDeployment,
   resolveVercelDeploymentId,
@@ -75,6 +77,7 @@ export type ReleaseRequestRow = {
 export type IncomingPreview = {
   source: 'vercel' | 'github';
   previewUrl: string;
+  openUrl: string;
   deploymentId: string | null;
   inspectUrl: string | null;
   sha: string | null;
@@ -91,6 +94,8 @@ export type IncomingPreviewsResult = {
   pulls: GitHubPull[];
   error: string | null;
   hint: string | null;
+  previewBypass: boolean;
+  previewAccessSecret: string | null;
 };
 
 function revalidateReleasePaths(projectId: string, slug?: string | null) {
@@ -159,7 +164,7 @@ export async function loadIncomingPreviews(
   settings: ReleaseSettingsRow | null
 ): Promise<IncomingPreviewsResult> {
   if (!settings?.enabled) {
-    return { items: [], pulls: [], error: null, hint: 'disabled' };
+    return { items: [], pulls: [], error: null, hint: 'disabled', previewBypass: false, previewAccessSecret: null };
   }
 
   let items: IncomingPreview[] = [];
@@ -183,6 +188,7 @@ export async function loadIncomingPreviews(
     items = listed.items.map((item) => ({
       ...item,
       source: 'vercel' as const,
+      openUrl: item.previewUrl,
       ci: null,
       pull: matchPullToPreview(pulls, item),
     }));
@@ -196,12 +202,13 @@ export async function loadIncomingPreviews(
       ...item,
       source: 'github' as const,
       deploymentId: null,
+      openUrl: item.previewUrl,
       ci: null,
       pull: matchPullToPreview(pulls, item),
     }));
     error = listed.error || error;
   } else if (!pulls.length) {
-    return { items: [], pulls: [], error: null, hint: 'misconfigured' };
+    return { items: [], pulls: [], error: null, hint: 'misconfigured', previewBypass: false, previewAccessSecret: null };
   }
 
   if (
@@ -227,7 +234,18 @@ export async function loadIncomingPreviews(
   const attached = new Set(items.flatMap((item) => (item.pull ? [item.pull.number] : [])));
   pulls = pulls.filter((p) => !attached.has(p.number));
 
-  return { items, pulls, error, hint: null };
+  const bypass = settings.vercel_project_id
+    ? await getVercelAutomationBypassSecret({
+        projectId: settings.vercel_project_id,
+        teamId: settings.vercel_team_id,
+      })
+    : null;
+  items = items.map((item) => ({
+    ...item,
+    openUrl: withVercelPreviewBypass(item.previewUrl, bypass),
+  }));
+
+  return { items, pulls, error, hint: null, previewBypass: Boolean(bypass), previewAccessSecret: bypass };
 }
 
 export async function decideGithubPull(projectId: string, formData: FormData) {

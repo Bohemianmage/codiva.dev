@@ -63,6 +63,8 @@ No auto-deploy a **Production** en `main`. Producción solo desde Codiva.
 
 NIRC Vercel: `prj_GGlesi8OSxDAxabWGHH53coejcRC` · team slug `codiva-dev` · root `apps/web`.
 
+Para abrir el preview **sin login de Vercel**, activa **Protection Bypass for Automation** en ese proyecto. Codiva lee `VERCEL_AUTOMATION_BYPASS_SECRET` y arma `?x-vercel-protection-bypass=…&x-vercel-set-bypass-cookie=true` en Ops (Abrir / copiar). La protección sigue activa para quien no tenga ese enlace.
+
 ### 5. Probar
 
 1. Push a una rama ≠ `main` (o un PR).
