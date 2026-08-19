@@ -49,6 +49,7 @@ function asDownload(body: string | Uint8Array, filename: string, pdf: boolean) {
       'Content-Type': pdf ? 'application/pdf' : 'text/html; charset=utf-8',
       'Content-Disposition': `${pdf ? 'attachment' : 'inline'}; filename="${filename}"`,
       'Cache-Control': 'no-store',
+      'X-Frame-Options': 'SAMEORIGIN',
     },
   });
 }
