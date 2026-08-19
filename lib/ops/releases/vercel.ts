@@ -1,5 +1,6 @@
 /**
- * Vercel REST: list preview deployments and promote to production.
+ * Vercel REST: list preview deployments and publish to production.
+ * Previews rebuild with Production env; existing production deploys alias-switch.
  * Token: VERCEL_RELEASES_TOKEN (preferred) or VERCEL_TOKEN — server-only.
  */
 
@@ -14,9 +15,27 @@ export type VercelPreview = {
   createdAt: string;
 };
 
+export type VercelPromoteMode = 'alias' | 'rebuild';
+
 export type VercelPromoteResult =
-  | { ok: true; inspectUrl: string | null }
+  | { ok: true; inspectUrl: string | null; deploymentId: string; mode: VercelPromoteMode }
   | { ok: false; error: string; missingToken?: boolean };
+
+export function isVercelProductionTarget(target: string | null | undefined): boolean {
+  return target === 'production';
+}
+
+export function formatVercelApiError(status: number, body: string, label: string): string {
+  const raw = body.trim();
+  try {
+    const parsed = JSON.parse(raw) as { error?: { message?: string; code?: string } };
+    const message = parsed.error?.message?.trim();
+    if (message) return `${label} (${status}): ${message}`;
+  } catch {
+    /* plain text */
+  }
+  return `${label} (${status}): ${raw.slice(0, 400) || 'sin detalle'}`;
+}
 
 function vercelToken(): string | null {
   const t =
@@ -28,10 +47,11 @@ export function vercelTokenConfigured(): boolean {
   return Boolean(vercelToken());
 }
 
-function vercelHeaders(token: string): HeadersInit {
+function vercelHeaders(token: string, json = false): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
   };
 }
 
@@ -197,6 +217,106 @@ export async function resolveVercelDeploymentId(input: {
   return data.uid || data.id || null;
 }
 
+type VercelDeploymentDetail = {
+  uid?: string;
+  id?: string;
+  name?: string | null;
+  target?: string | null;
+  inspectorUrl?: string | null;
+};
+
+async function getVercelDeployment(
+  token: string,
+  deploymentId: string,
+  teamId?: string | null
+): Promise<VercelDeploymentDetail | null> {
+  const qs = teamQueryPrefix(teamId);
+  const res = await fetch(
+    `https://api.vercel.com/v13/deployments/${encodeURIComponent(deploymentId)}${qs}`,
+    { headers: vercelHeaders(token), cache: 'no-store' }
+  );
+  if (!res.ok) return null;
+  return (await res.json()) as VercelDeploymentDetail;
+}
+
+function inspectUrlFor(deploymentId: string, inspectorUrl?: string | null): string {
+  const custom = inspectorUrl?.trim();
+  return custom || `https://vercel.com/deployments/${deploymentId}`;
+}
+
+async function aliasPromoteProduction(input: {
+  token: string;
+  projectId: string;
+  deploymentId: string;
+  teamId?: string | null;
+}): Promise<VercelPromoteResult> {
+  const projectId = encodeURIComponent(input.projectId);
+  const deploymentId = encodeURIComponent(input.deploymentId);
+  const qs = teamQueryPrefix(input.teamId);
+  const res = await fetch(
+    `https://api.vercel.com/v10/projects/${projectId}/promote/${deploymentId}${qs}`,
+    {
+      method: 'POST',
+      headers: vercelHeaders(input.token, true),
+      body: JSON.stringify({}),
+    }
+  );
+
+  if (res.status === 201 || res.status === 202 || res.ok) {
+    return {
+      ok: true,
+      mode: 'alias',
+      deploymentId: input.deploymentId,
+      inspectUrl: inspectUrlFor(input.deploymentId),
+    };
+  }
+
+  const body = await res.text().catch(() => '');
+  return { ok: false, error: formatVercelApiError(res.status, body, 'Vercel alias promote') };
+}
+
+async function rebuildPreviewAsProduction(input: {
+  token: string;
+  projectId: string;
+  deploymentId: string;
+  projectName?: string | null;
+  teamId?: string | null;
+}): Promise<VercelPromoteResult> {
+  const qs = teamQueryPrefix(input.teamId);
+  const sep = qs.includes('?') ? '&' : '?';
+  const res = await fetch(`https://api.vercel.com/v13/deployments${qs}${sep}forceNew=1`, {
+    method: 'POST',
+    headers: vercelHeaders(input.token, true),
+    body: JSON.stringify({
+      name: input.projectName?.trim() || 'promote',
+      project: input.projectId,
+      deploymentId: input.deploymentId,
+      target: 'production',
+      meta: { action: 'promote' },
+    }),
+  });
+
+  const body = await res.text().catch(() => '');
+  if (!res.ok) {
+    return { ok: false, error: formatVercelApiError(res.status, body, 'Vercel production rebuild') };
+  }
+
+  let data: { uid?: string; id?: string; inspectorUrl?: string | null } = {};
+  try {
+    data = body ? (JSON.parse(body) as typeof data) : {};
+  } catch {
+    data = {};
+  }
+  const newId = data.uid || data.id || input.deploymentId;
+  return {
+    ok: true,
+    mode: 'rebuild',
+    deploymentId: newId,
+    inspectUrl: inspectUrlFor(newId, data.inspectorUrl),
+  };
+}
+
+/** Preview → new Production build. Existing Production deploy → alias switch (no rebuild). */
 export async function promoteVercelDeployment(input: {
   projectId: string;
   deploymentId: string;
@@ -211,26 +331,19 @@ export async function promoteVercelDeployment(input: {
     };
   }
 
-  const projectId = encodeURIComponent(input.projectId.trim());
-  const deploymentId = encodeURIComponent(input.deploymentId.trim());
-  const qs = teamQueryPrefix(input.teamId);
-  const url = `https://api.vercel.com/v10/projects/${projectId}/promote/${deploymentId}${qs}`;
+  const projectId = input.projectId.trim();
+  const deploymentId = input.deploymentId.trim();
+  const existing = await getVercelDeployment(token, deploymentId, input.teamId);
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: vercelHeaders(token),
-  });
-
-  if (res.status === 201 || res.status === 202 || res.ok) {
-    return {
-      ok: true,
-      inspectUrl: `https://vercel.com/deployments/${input.deploymentId.trim()}`,
-    };
+  if (isVercelProductionTarget(existing?.target)) {
+    return aliasPromoteProduction({ token, projectId, deploymentId, teamId: input.teamId });
   }
 
-  const body = await res.text().catch(() => '');
-  return {
-    ok: false,
-    error: `Vercel promote falló (${res.status}): ${body.slice(0, 400) || res.statusText}`,
-  };
+  return rebuildPreviewAsProduction({
+    token,
+    projectId,
+    deploymentId,
+    projectName: existing?.name,
+    teamId: input.teamId,
+  });
 }

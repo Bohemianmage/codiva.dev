@@ -1538,10 +1538,11 @@
       "errRequest": "That release request was not found.",
       "errNotDispatchable": "That request cannot be dispatched right now.",
       "errGithub": "GitHub could not complete the action.",
+      "errVercel": "Vercel could not publish to production.",
       "untitledCommit": "No message",
       "promoteNow": "To production",
       "promoteConfirmTitle": "Publish to production?",
-      "promoteConfirm": "This preview becomes production (no rebuild).",
+      "promoteConfirm": "Vercel rebuilds this commit with Production env vars and publishes it.",
       "promoteConfirmCiFailed": "CI failed. Publish anyway?",
       "promoteConfirmCiPending": "CI still running. Publish now?",
       "ci": {
@@ -1551,7 +1552,7 @@
         "error": "CI error",
         "unknown": "CI —"
       },
-      "promoted": "In production",
+      "promoted": "Publish started",
       "manualUrl": "Manual URL",
       "productionOptional": "Production URL (optional)",
       "requestNotes": "Notes",
@@ -1567,7 +1568,7 @@
       "cancelled": "Cancelled",
       "markManual": "Mark manually",
       "manualOk": "Marked",
-      "viewWorkflow": "View on GitHub",
+      "viewWorkflow": "View deployment",
       "status": {
         "pending": "Pending",
         "approved": "Approved",
