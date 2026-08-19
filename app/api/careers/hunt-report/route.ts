@@ -17,7 +17,7 @@ import { recordHuntEvent } from '@/lib/careers/hunt/events';
 import { huntEvidenceExists, HUNT_MAX_EVIDENCE_FILES, isHuntEvidencePath } from '@/lib/careers/hunt/evidence';
 import { urlLooksLikeFeed } from '@/lib/careers/hunt/trail';
 import { loadAttemptByToken } from '@/lib/careers/assessments/server';
-import { opsBaseUrl } from '@/lib/ops/host';
+import { opsBaseUrl, careerHostName } from '@/lib/ops/host';
 import { CAREER_DISCIPLINE_LABELS } from '@/lib/ops/career-disciplines';
 
 export const runtime = 'nodejs';
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         attemptId,
         eventType: 'page_view',
         path: '/api/careers/feed',
-        host: 'career.codiva.dev',
+        host: careerHostName(),
         ip: audit.ip,
       });
     }

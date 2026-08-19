@@ -32,9 +32,9 @@ export default function QuoteModal({ showForm, onShowForm, onClose }) {
   }, [onClose]);
 
   const validationSchema = Yup.object({
-    name: Yup.string().required(t('common.validation.required')),
+    name: Yup.string().trim().required(t('common.validation.required')),
     projectType: Yup.string().required(t('common.validation.required')),
-    message: Yup.string().min(10, t('common.validation.tooShort')),
+    message: Yup.string().trim().min(10, t('common.validation.tooShort')),
   });
 
   return (
@@ -94,7 +94,9 @@ export default function QuoteModal({ showForm, onShowForm, onClose }) {
             initialValues={{ name: '', projectType: '', message: '' }}
             validationSchema={validationSchema}
             onSubmit={(values) => {
-              const { name, projectType, message } = values;
+              const name = String(values.name || '').trim();
+              const projectType = values.projectType;
+              const message = String(values.message || '').trim();
               const text = t('quote.whatsappMessage', {
                 nameLabel: t('common.fields.name'),
                 name,
@@ -113,6 +115,7 @@ export default function QuoteModal({ showForm, onShowForm, onClose }) {
                 <div>
                   <label htmlFor="name" className="mb-1 block font-medium">
                     {t('common.fields.name')}
+                    <span className="text-codiva-primary" aria-hidden="true"> *</span>
                   </label>
                   <Field
                     name="name"
@@ -124,6 +127,7 @@ export default function QuoteModal({ showForm, onShowForm, onClose }) {
                 <div>
                   <label htmlFor="projectType" className="mb-1 block font-medium">
                     {t('common.fields.projectType')}
+                    <span className="text-codiva-primary" aria-hidden="true"> *</span>
                   </label>
                   <Field
                     as="select"

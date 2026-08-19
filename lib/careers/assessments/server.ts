@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { throwDb } from '@/lib/ops/throw-db';
 import { hashCareerIp, safeCareerStr } from '@/lib/ops/careers';
 import { catalogForApplication } from '@/lib/careers/assessments/engine';
 import type { AssessmentAnswers, AssessmentOptionOrders } from '@/lib/careers/assessments/types';
@@ -38,7 +39,7 @@ export async function loadAttemptByToken(token: string) {
     )
     .eq('public_token', token)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
   return (data as AssessmentAttemptRow | null) ?? null;
 }
 
@@ -109,7 +110,7 @@ export async function loadPublishedPostingForAssessment(
     .select('id, slug, title, status, assessment_key')
     .eq('id', jobPostingId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
   if (!data?.id || data.status !== 'published') return null;
   const catalog = catalogForApplication(data.assessment_key, data.slug, discipline);
   if (!catalog) return null;

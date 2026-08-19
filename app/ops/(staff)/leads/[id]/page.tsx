@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
@@ -238,11 +239,9 @@ export default async function LeadDetailPage({
               <p className="text-sm font-medium">{formatCurrency(q.total_amount, q.currency)}</p>
               {q.sent_at && <p className="mt-1 text-xs text-zinc-500">{t('ops.leadDetail.sentOn', { date: formatDate(q.sent_at) })}</p>}
               {publicLinks[q.id] && (
-                <p className="mt-2 text-sm">
-                  <a href={publicLinks[q.id]} target="_blank" rel="noreferrer" className="text-codiva-primary hover:underline">
-                    {publicLinks[q.id]}
-                  </a>
-                </p>
+                <div className="mt-2">
+                  <CopyableUrl href={publicLinks[q.id]} />
+                </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link

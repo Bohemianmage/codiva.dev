@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import SecretReveal from '@/components/ops/SecretReveal';
 import PortalReleasesPanel from '@/components/ops/PortalReleasesPanel';
 import { requirePortalMemberWithAcceptances } from '@/lib/ops/auth';
@@ -77,27 +78,13 @@ export default async function PortalSitioPage({
                 {previewUrl && (
                   <li className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-zinc-500">{t('portal.site.preview')}</span>
-                    <a
-                      href={previewUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="break-all font-medium text-codiva-primary hover:underline"
-                    >
-                      {previewUrl}
-                    </a>
+                    <CopyableUrl href={previewUrl} />
                   </li>
                 )}
                 {productionUrl && (
                   <li className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-zinc-500">{t('portal.site.production')}</span>
-                    <a
-                      href={productionUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="break-all font-medium text-codiva-primary hover:underline"
-                    >
-                      {productionUrl}
-                    </a>
+                    <CopyableUrl href={productionUrl} />
                   </li>
                 )}
               </ul>
@@ -119,17 +106,10 @@ export default async function PortalSitioPage({
                       <p className="mt-1 font-semibold text-zinc-900">{item.label}</p>
                     </div>
                     {item.url && (
-                      <p className="text-sm">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
                         <span className="text-zinc-500">{t('portal.site.url')}</span>
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="break-all text-codiva-primary hover:underline"
-                        >
-                          {item.url}
-                        </a>
-                      </p>
+                        <CopyableUrl href={item.url} />
+                      </div>
                     )}
                     {item.username && (
                       <p className="text-sm">

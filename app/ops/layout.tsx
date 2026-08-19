@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function OpsRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <OpsI18n>
-      <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 antialiased">
+      <div className="min-h-screen bg-codiva-background font-sans text-zinc-900 antialiased">
         {children}
         <OpsToaster />
       </div>

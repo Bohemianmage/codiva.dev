@@ -15,7 +15,7 @@ export async function generateMetadata() {
 export default async function PartnerRequestPage() {
   const t = await getT();
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-10">
+    <div className="min-h-screen bg-codiva-background px-4 py-10">
       <div className="mx-auto max-w-2xl">
         <div className="mb-4 flex justify-end">
           <LanguageSwitcher />

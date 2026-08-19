@@ -32,12 +32,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import CodivaBrandText from '@/components/CodivaBrandText';
 import OpsStaffCapabilityFields from '@/components/ops/OpsStaffCapabilityFields';
-
-function tabClass(active: boolean) {
-  return active
-    ? 'border-b-2 border-codiva-primary px-1 pb-2 text-sm font-semibold text-codiva-primary'
-    : 'border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-zinc-500 hover:text-zinc-800';
-}
+import { TabLink, Tabs } from '@/components/ui/Tabs';
 
 export default async function TeamPage({
   searchParams,
@@ -181,31 +176,31 @@ export default async function TeamPage({
         description={canManageTeam ? t('ops.team.description') : t('ops.team.descriptionPm')}
       />
 
-      <div className="mb-8 flex gap-6 border-b border-zinc-200">
+      <Tabs>
         {canManageTeam ? (
           <>
-            <Link href="/team?tab=miembros" className={tabClass(tab === 'miembros')}>
+            <TabLink href="/team?tab=miembros" active={tab === 'miembros'}>
               {t('ops.team.tabMembers')}
-            </Link>
-            <Link href="/team?tab=ofertas" className={tabClass(tab === 'ofertas')}>
+            </TabLink>
+            <TabLink href="/team?tab=ofertas" active={tab === 'ofertas'}>
               {t('ops.team.tabOffers')}
               {(offers ?? []).length > 0 ? (
                 <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
                   {(offers ?? []).length}
                 </span>
               ) : null}
-            </Link>
+            </TabLink>
           </>
         ) : null}
-        <Link href="/team?tab=bolsa" className={tabClass(tab === 'bolsa')}>
+        <TabLink href="/team?tab=bolsa" active={tab === 'bolsa'}>
           {t('ops.team.tabJobs')}
           {(visibleApplications ?? []).filter((row) => row.status === 'new').length > 0 ? (
             <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
               {(visibleApplications ?? []).filter((row) => row.status === 'new').length}
             </span>
           ) : null}
-        </Link>
-      </div>
+        </TabLink>
+      </Tabs>
 
       {tab === 'miembros' && canManageTeam ? (
         <div className="max-w-3xl space-y-8">

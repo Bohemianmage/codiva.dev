@@ -51,18 +51,27 @@ export default function Footer({ variant = 'marketing' }) {
         </span>
 
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-          <Link
+          <a
             href={careerBaseUrl()}
             className="text-zinc-300 hover:text-white font-medium transition-colors"
           >
             {t('footer.careers')}
-          </Link>
-          <Link
-            href={isCareer ? '/hallazgos' : ticketBaseUrl()}
-            className="text-zinc-300 hover:text-white font-medium transition-colors"
-          >
-            {isCareer ? t('footer.huntLink') : t('footer.ticketLink')}
-          </Link>
+          </a>
+          {isCareer ? (
+            <Link
+              href="/hallazgos"
+              className="text-zinc-300 hover:text-white font-medium transition-colors"
+            >
+              {t('footer.huntLink')}
+            </Link>
+          ) : (
+            <a
+              href={ticketBaseUrl()}
+              className="text-zinc-300 hover:text-white font-medium transition-colors"
+            >
+              {t('footer.ticketLink')}
+            </a>
+          )}
           {isCareer ? (
             <Link
               href="/mapa"

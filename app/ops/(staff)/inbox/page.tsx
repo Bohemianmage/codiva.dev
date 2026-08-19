@@ -2,6 +2,10 @@ import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge from '@/components/ops/StatusBadge';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
+import { TabLink, Tabs } from '@/components/ui/Tabs';
 import { listVisibleProjectIds, requireCapability } from '@/lib/ops/auth';
 import { updateInboxStatus, updateInboxLane, convertInboxToLead, deleteInboxMessage } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
@@ -31,12 +35,6 @@ function laneTone(lane: InboxLane): 'info' | 'warning' | 'danger' | 'success' | 
 
 function filterHref(kind: InboundFilter) {
   return kind === 'all' ? '/inbox' : `/inbox?kind=${kind}`;
-}
-
-function tabClass(active: boolean) {
-  return active
-    ? 'rounded-full bg-codiva-primary px-3 py-1 text-xs font-semibold text-white'
-    : 'rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50';
 }
 
 export default async function InboxPage({
@@ -83,13 +81,13 @@ export default async function InboxPage({
   return (
     <div>
       <OpsPageHeader title={t('ops.pages.inbox')} description={t('ops.pages.inboxDesc')} />
-      <div className="mb-6 flex flex-wrap gap-2">
+      <Tabs variant="pills">
         {availableFilters.map((kind) => (
-          <Link key={kind} href={filterHref(kind)} className={tabClass(activeFilter === kind)}>
+          <TabLink key={kind} href={filterHref(kind)} active={activeFilter === kind} variant="pills">
             {filterLabel[kind]}
-          </Link>
+          </TabLink>
         ))}
-      </div>
+      </Tabs>
       <div className="space-y-4">
         {items.map((item) => {
           const contact = item.contact;
@@ -120,7 +118,7 @@ export default async function InboxPage({
             }
 
             return (
-              <article key={item.key} className="rounded-xl border border-zinc-200 bg-white p-5">
+              <Card key={item.key} as="article">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -143,7 +141,7 @@ export default async function InboxPage({
                     <select
                       name="status"
                       defaultValue={contact.status}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none transition focus:border-codiva-primary focus:ring-2 focus:ring-codiva-primary/20"
                     >
                       {Object.entries(INBOX_STATUS_LABELS).map(([k, v]) => (
                         <option key={k} value={k}>
@@ -151,15 +149,15 @@ export default async function InboxPage({
                         </option>
                       ))}
                     </select>
-                    <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                    <Button type="submit" variant="secondary" size="xs">
                       {t('ops.inbox.save')}
-                    </button>
+                    </Button>
                   </ToastForm>
                   <ToastForm success={t('ops.inbox.laneSaved')} action={onLane} className="flex items-end gap-2">
                     <select
                       name="lane"
                       defaultValue={contact.lane}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm"
+                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm outline-none transition focus:border-codiva-primary focus:ring-2 focus:ring-codiva-primary/20"
                     >
                       {INBOX_LANES.map((lane) => (
                         <option key={lane} value={lane}>
@@ -167,25 +165,19 @@ export default async function InboxPage({
                         </option>
                       ))}
                     </select>
-                    <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50">
+                    <Button type="submit" variant="secondary" size="xs">
                       {t('ops.inbox.save')}
-                    </button>
+                    </Button>
                   </ToastForm>
                   {contact.lead_id ? (
-                    <Link
-                      href={`/leads/${contact.lead_id}`}
-                      className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
-                    >
+                    <Button as={Link} href={`/leads/${contact.lead_id}`} variant="secondary" size="xs">
                       {t('ops.inbox.viewLead')}
-                    </Link>
+                    </Button>
                   ) : contact.lane === 'real' ? (
                     <ToastForm success={t('ops.inbox.converted')} action={onConvertToLead}>
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-semibold text-white"
-                      >
+                      <Button type="submit" size="xs">
                         {t('ops.inbox.convertLead')}
-                      </button>
+                      </Button>
                     </ToastForm>
                   ) : null}
                   <ToastForm
@@ -195,20 +187,17 @@ export default async function InboxPage({
                     confirmMessage={t('ops.inbox.deleteConfirm')}
                     action={onDelete}
                   >
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
-                    >
+                    <Button type="submit" variant="danger" size="xs">
                       {t('ops.inbox.delete')}
-                    </button>
+                    </Button>
                   </ToastForm>
                 </div>
-              </article>
+              </Card>
             );
           }
 
           return (
-            <article key={item.key} className="rounded-xl border border-zinc-200 bg-white p-5">
+            <Card key={item.key} as="article">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -222,17 +211,14 @@ export default async function InboxPage({
                     <p className="mt-2 text-sm text-zinc-700">{item.snippet}</p>
                   ) : null}
                 </div>
-                <Link
-                  href={item.href}
-                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
-                >
+                <Button as={Link} href={item.href} variant="secondary" size="xs">
                   {t('ops.inbox.open')}
-                </Link>
+                </Button>
               </div>
-            </article>
+            </Card>
           );
         })}
-        {!items.length && <p className="text-sm text-zinc-500">{t('ops.inbox.empty')}</p>}
+        {!items.length && <EmptyState>{t('ops.inbox.empty')}</EmptyState>}
       </div>
     </div>
   );

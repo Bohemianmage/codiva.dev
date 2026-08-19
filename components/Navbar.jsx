@@ -133,7 +133,7 @@ export default function Navbar({ variant = 'marketing' }) {
               />
             </button>
 
-            <div className="hidden items-center justify-between gap-6 md:flex">
+            <div className="hidden items-center justify-between gap-6 lg:flex">
               <div className="flex gap-12">
                 {navItems.map(({ labelKey, id }) => (
                   <button
@@ -152,7 +152,7 @@ export default function Navbar({ variant = 'marketing' }) {
               </div>
             </div>
 
-            <div className="flex h-7 items-center gap-3 md:hidden">
+            <div className="flex h-7 items-center gap-3 lg:hidden">
               <LanguageSwitcher />
               <MenuToggle
                 open={menuOpen}
@@ -166,7 +166,7 @@ export default function Navbar({ variant = 'marketing' }) {
         {menuOpen ? (
           <div
             id="mobile-menu"
-            className="glass-panel-solid pointer-events-auto absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 h-fit rounded-2xl p-2 md:hidden"
+            className="glass-panel-solid pointer-events-auto absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 h-fit rounded-2xl p-2 lg:hidden"
           >
             <div className="flex flex-col">
               {navItems.map(({ labelKey, id }) => (

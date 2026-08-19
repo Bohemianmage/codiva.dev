@@ -24,14 +24,26 @@
       "send": "Send Message",
       "submit": "Send",
       "seeMore": "See more",
-      "hide": "Hide details"
+      "hide": "Hide details",
+      "close": "Close"
+    },
+    "toast": {
+      "success": "Success",
+      "error": "Error",
+      "loading": "In progress",
+      "info": "Notice"
     },
     "status": {
       "loading": "Sending message...",
       "success": "Message sent successfully!",
       "error": "Something went wrong. Please try again later.",
+      "invalidFields": "Check the name, email, or message and try again.",
       "rateLimited": "Too many submissions. Wait a moment and try again.",
-      "actionFailed": "Could not complete the action."
+      "actionFailed": "Could not complete the action.",
+      "alreadyExists": "That record already exists.",
+      "inUse": "Can't complete this: related data is in use.",
+      "forbidden": "You don't have permission for this action.",
+      "fileRejected": "This file can't be uploaded. Try a different one."
     }
   },
   "hero": {
@@ -276,6 +288,7 @@
   "validation": {
     "required": "Required",
     "invalidEmail": "Invalid email",
+    "invalidPhone": "Enter a phone number (digits, with country code if needed)",
     "invalidUrl": "Invalid URL"
   },
   "status": {

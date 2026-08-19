@@ -1,4 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { throwDb } from '@/lib/ops/throw-db';
+import { opsBaseUrl } from '@/lib/ops/host';
 
 function randomToken(): string {
   const bytes = new Uint8Array(24);
@@ -25,7 +27,7 @@ export async function ensureQuoteAccessToken(quoteId: string): Promise<string> {
     quote_id: quoteId,
     token,
   });
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
   return token;
 }
 
@@ -123,6 +125,5 @@ export async function getPublicQuoteByToken(token: string): Promise<PublicQuoteP
 }
 
 export function publicQuoteUrl(token: string): string {
-  const base = process.env.NEXT_PUBLIC_OPS_URL ?? 'https://ops.codiva.dev';
-  return `${base}/q/${token}`;
+  return `${opsBaseUrl()}/q/${token}`;
 }

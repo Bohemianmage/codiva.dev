@@ -34,6 +34,9 @@ export async function POST(request) {
     if (!safeName || !emailKey || !safeMessage) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailKey)) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    }
     const emailRl = consumeRateLimit(
       `public_inbox_email:${emailKey}`,
       PUBLIC_RL_FORM_EMAIL.windowMs,

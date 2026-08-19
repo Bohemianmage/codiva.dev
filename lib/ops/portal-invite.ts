@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { throwDb, throwPublic } from '@/lib/ops/throw-db';
 import { sendClientEmail } from '@/lib/ops/email';
 import {
   templatePortalInviteExistingUser,
@@ -43,7 +44,7 @@ export async function invitePortalUserCore(opts: {
     )
     .in('id', projectIds);
 
-  if (projectsError) throw new Error(projectsError.message);
+  if (projectsError) await throwDb(projectsError);
   if (!projects?.length || projects.length !== projectIds.length) {
     throw new Error('Uno o más proyectos no existen');
   }
@@ -81,7 +82,7 @@ export async function invitePortalUserCore(opts: {
       password: tempPassword,
       email_confirm: true,
     });
-    if (error || !created.user) throw new Error(error?.message ?? 'No se pudo crear usuario');
+    if (error || !created.user) await throwDb(error);
     userId = created.user.id;
     isNewUser = true;
   }
@@ -97,7 +98,7 @@ export async function invitePortalUserCore(opts: {
       },
       { onConflict: 'project_id,user_id' }
     );
-    if (memberError) throw new Error(memberError.message);
+    if (memberError) await throwDb(memberError);
 
     if (!project.client_visible) {
       await admin.from('projects').update({ client_visible: true }).eq('id', project.id);
@@ -115,7 +116,8 @@ export async function invitePortalUserCore(opts: {
       html,
     });
     if (!mail.ok && !mail.skipped) {
-      throw new Error(mail.error || 'No se pudo enviar el correo de invitación');
+      console.error('[ops invite mail]', mail.error);
+      await throwPublic('auth.sendFailed');
     }
   }
 

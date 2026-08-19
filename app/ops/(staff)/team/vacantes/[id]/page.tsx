@@ -1,4 +1,5 @@
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
+import CopyableUrl from '@/components/ops/CopyableUrl';
 import ToastForm from '@/components/ops/ToastForm';
 import { requireAdminStaff } from '@/lib/ops/auth';
 import { updateJobPosting } from '@/lib/ops/career-actions';
@@ -7,6 +8,7 @@ import {
   careerOpsLabels,
   publicCareerUrl,
 } from '@/lib/ops/careers';
+import { careerBaseUrl, usageUrlLabel } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -39,7 +41,7 @@ export default async function VacanteEditPage({
     <div className="max-w-2xl">
       <OpsPageHeader
         title={posting.title}
-        description={t('ops.careers.editHint')}
+        description={t('ops.careers.editHint', { host: usageUrlLabel(careerBaseUrl()) })}
       />
       <p className="mb-6 text-sm">
         <Link href="/team?tab=bolsa" className="text-codiva-primary hover:underline">
@@ -48,14 +50,7 @@ export default async function VacanteEditPage({
         {posting.status === 'published' ? (
           <>
             {' · '}
-            <a
-              href={publicCareerUrl(posting.slug)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-codiva-primary hover:underline"
-            >
-              {t('ops.careers.viewPublic')}
-            </a>
+            <CopyableUrl href={publicCareerUrl(posting.slug)} />
           </>
         ) : null}
       </p>

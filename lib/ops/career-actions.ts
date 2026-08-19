@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { requireAdminStaff, requireCareersReview } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { can } from '@/lib/ops/permissions';
+import { throwDb } from '@/lib/ops/throw-db';
 import { isTesterPipelineItem, applicationRoleLabel } from '@/lib/ops/career-disciplines';
 import {
   isCareerDiscipline,
@@ -105,7 +106,7 @@ export async function createJobPosting(formData: FormData) {
     .select('id, slug')
     .single();
 
-  if (error || !data) throw new Error(error?.message ?? 'No se pudo crear la vacante');
+  if (error || !data) await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -155,7 +156,7 @@ export async function updateJobPosting(postingId: string, formData: FormData) {
     })
     .eq('id', postingId);
 
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -190,7 +191,7 @@ export async function deleteDraftJobPosting(postingId: string) {
   if ((count ?? 0) > 0) throw new Error('No se puede eliminar: ya hay postulaciones');
 
   const { error } = await supabase.from('ops_job_postings').delete().eq('id', postingId);
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
 
   await logActivity({
     entityType: 'job_posting',
@@ -236,7 +237,7 @@ export async function updateJobApplicationStatus(applicationId: string, formData
     .update({ status })
     .eq('id', applicationId);
 
-  if (error) throw new Error(error.message);
+  if (error) await throwDb(error);
 
   const jobTitle = applicationRoleLabel({
     postingTitle: posting?.title,
@@ -357,7 +358,7 @@ export async function createPersonnelOfferFromApplication(applicationId: string)
     .select('id')
     .single();
 
-  if (offerError || !offer) throw new Error(offerError?.message ?? 'No se pudo crear la carta oferta');
+  if (offerError || !offer) await throwDb(offerError);
 
   await supabase
     .from('ops_job_applications')

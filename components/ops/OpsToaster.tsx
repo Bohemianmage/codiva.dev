@@ -1,21 +1,13 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Toaster } from 'react-hot-toast';
 import OpsFlashToast from '@/components/ops/OpsFlashToast';
+import CodivaToaster from '@/components/ui/CodivaToaster';
 
 export default function OpsToaster() {
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          className: 'text-sm',
-          success: { className: 'text-sm' },
-          error: { className: 'text-sm' },
-        }}
-      />
+      <CodivaToaster />
       <Suspense fallback={null}>
         <OpsFlashToast />
       </Suspense>

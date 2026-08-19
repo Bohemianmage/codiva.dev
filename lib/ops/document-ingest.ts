@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { throwDb, throwPublic } from '@/lib/ops/throw-db';
 import { scanUploadedBytes } from '@/lib/ops/malware-scan';
 import { deleteOpsFile, retainUntilFromDays, uploadOpsFile } from '@/lib/ops/storage';
 import type { RequestAudit } from '@/lib/ops/request-audit';
@@ -37,7 +38,8 @@ export async function ingestProjectDocument(opts: {
 
   if (scan.status === 'infected') {
     await deleteOpsFile(uploaded.path);
-    throw new Error(`Archivo rechazado: posible malware (${scan.provider ?? 'scan'}). ${scan.detail}`);
+    console.error('[ops scan]', scan);
+    await throwPublic('common.status.fileRejected');
   }
 
   const { data: doc, error } = await admin
@@ -67,7 +69,7 @@ export async function ingestProjectDocument(opts: {
 
   if (error) {
     await deleteOpsFile(uploaded.path).catch(() => undefined);
-    throw new Error(error.message);
+    await throwDb(error);
   }
 
   return {
@@ -107,7 +109,8 @@ export async function ingestOrgDocument(opts: {
   const scan = await scanUploadedBytes(uploaded.buffer, uploaded.sha256, opts.file.name);
   if (scan.status === 'infected') {
     await deleteOpsFile(uploaded.path);
-    throw new Error(`Archivo rechazado: posible malware (${scan.provider ?? 'scan'}). ${scan.detail}`);
+    console.error('[ops scan]', scan);
+    await throwPublic('common.status.fileRejected');
   }
 
   const { data: doc, error } = await admin
@@ -137,7 +140,7 @@ export async function ingestOrgDocument(opts: {
 
   if (error) {
     await deleteOpsFile(uploaded.path).catch(() => undefined);
-    throw new Error(error.message);
+    await throwDb(error);
   }
 
   return {

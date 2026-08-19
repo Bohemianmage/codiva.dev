@@ -1,16 +1,18 @@
 'use client';
 
-import { useId, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useId, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Bell, CheckCircle2, MailCheck, MessageSquare, Paperclip, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Field from '@/components/ui/Field';
 import Heading from '@/components/Heading';
 import Input, { Textarea } from '@/components/ui/Input';
 import { injectTranslationBundle } from '@/i18n/injectBundle';
 import enTicket from '@/i18n/locales/en/ticket.json';
 import esTicket from '@/i18n/locales/es/ticket.json';
 import { TICKET_MAX_BYTES, TICKET_MAX_FILES } from '@/lib/ops/ticket-constants';
+import { formatBytes } from '@/lib/format-bytes';
 
 injectTranslationBundle('ticket', esTicket, enTicket);
 
@@ -55,12 +57,6 @@ const PRIORITY_TONE: Record<
 
 function fileKey(file: File) {
   return `${file.name}-${file.size}-${file.lastModified}`;
-}
-
-function formatBytes(size: number) {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default function TicketRequestForm({
@@ -206,7 +202,7 @@ export default function TicketRequestForm({
         <section className="space-y-4">
           <SectionLabel>{t('ticket.sections.contact')}</SectionLabel>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
+            <TicketField
               label={t('common.fields.name')}
               name="name"
               autoComplete="name"
@@ -216,7 +212,7 @@ export default function TicketRequestForm({
               onBlur={() => setTouched((p) => ({ ...p, name: true }))}
               onChange={(v) => setField('name', v)}
             />
-            <Field
+            <TicketField
               label={t('common.fields.email')}
               name="email"
               type="email"
@@ -228,7 +224,7 @@ export default function TicketRequestForm({
               onChange={(v) => setField('email', v)}
             />
             {!isPortal && (
-              <Field
+              <TicketField
                 label={t('fields.company')}
                 name="company"
                 autoComplete="organization"
@@ -244,7 +240,7 @@ export default function TicketRequestForm({
 
         <section className="space-y-4">
           <SectionLabel>{t('ticket.sections.incident')}</SectionLabel>
-          <Field
+          <TicketField
             label={t('ticket.fields.issueTitle')}
             name="issueTitle"
             value={values.issueTitle}
@@ -288,7 +284,7 @@ export default function TicketRequestForm({
                 })}
               </div>
             </div>
-            <Field
+            <TicketField
               label={t('ticket.fields.incidentTime')}
               optional={t('ticket.fields.incidentTimeOptional')}
               name="incidentTime"
@@ -299,21 +295,21 @@ export default function TicketRequestForm({
           </div>
 
           <div>
-            <label htmlFor="issueDescription" className="mb-1.5 block text-sm font-medium text-zinc-800">
-              {t('ticket.fields.issueDescription')}
-            </label>
-            <Textarea
-              id="issueDescription"
-              name="issueDescription"
-              rows={6}
-              placeholder={t('ticket.hints.textarea')}
-              value={values.issueDescription}
-              onBlur={() => setTouched((p) => ({ ...p, issueDescription: true }))}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setField('issueDescription', e.target.value)}
-            />
-            {touched.issueDescription && errors.issueDescription && (
-              <p className="mt-1 text-xs text-red-600">{errors.issueDescription}</p>
-            )}
+            <Field
+              label={t('ticket.fields.issueDescription')}
+              htmlFor="issueDescription"
+              error={touched.issueDescription ? errors.issueDescription : undefined}
+            >
+              <Textarea
+                id="issueDescription"
+                name="issueDescription"
+                rows={6}
+                placeholder={t('ticket.hints.textarea')}
+                value={values.issueDescription}
+                onBlur={() => setTouched((p) => ({ ...p, issueDescription: true }))}
+                onChange={(e) => setField('issueDescription', e.target.value)}
+              />
+            </Field>
           </div>
         </section>
 
@@ -482,7 +478,7 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-function Field({
+function TicketField({
   label,
   optional,
   name,
@@ -508,11 +504,17 @@ function Field({
   onBlur?: () => void;
 }) {
   return (
-    <div className={className}>
-      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-zinc-800">
-        {label}
-        {optional && <span className="ml-1.5 font-normal text-zinc-400">({optional})</span>}
-      </label>
+    <Field
+      htmlFor={name}
+      className={className}
+      error={error}
+      label={
+        <>
+          {label}
+          {optional ? <span className="ml-1.5 font-normal text-zinc-400">({optional})</span> : null}
+        </>
+      }
+    >
       <Input
         id={name}
         name={name}
@@ -522,9 +524,8 @@ function Field({
         readOnly={readOnly}
         className={readOnly ? 'bg-zinc-50' : ''}
         onBlur={onBlur}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
+    </Field>
   );
 }

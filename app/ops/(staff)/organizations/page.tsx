@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import OpsPageHeader from '@/components/ops/OpsPageHeader';
 import ToastForm from '@/components/ops/ToastForm';
+import Button from '@/components/ui/Button';
+import { SectionTitle } from '@/components/ui/Card';
+import { DataTable, EmptyRow, THead, Td, Th, Tr } from '@/components/ui/DataTable';
+import Input from '@/components/ui/Input';
 import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/lib/ops/auth';
 import { createOrganization } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
@@ -37,61 +41,56 @@ export default async function OrganizationsPage() {
 
   return (
     <div>
-      <OpsPageHeader
-        title={t('ops.pages.organizations')}
-        description={t('ops.pages.organizationsDesc')}
-      />
+      <OpsPageHeader title={t('ops.pages.organizations')} description={t('ops.pages.organizationsDesc')} />
 
       <ToastForm
         success={t('ops.orgs.created')}
         action={onCreate}
         className="mb-8 max-w-2xl space-y-3 rounded-xl border border-zinc-200 bg-white p-5"
       >
-        <h2 className="font-semibold">{t('ops.orgs.newTitle')}</h2>
+        <SectionTitle>{t('ops.orgs.newTitle')}</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input name="name" required placeholder={t('ops.orgs.name')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
-          <input name="contactEmail" type="email" placeholder={t('ops.orgs.contactEmail')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-          <input name="contactPhone" placeholder={t('ops.orgs.phone')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm" />
-          <input name="logoUrl" placeholder={t('ops.orgs.logoUrl')} className="rounded-lg border border-zinc-300 px-3 py-2 text-sm sm:col-span-2" />
+          <Input name="name" required placeholder={t('ops.orgs.name')} size="sm" className="sm:col-span-2" />
+          <Input name="contactEmail" type="email" placeholder={t('ops.orgs.contactEmail')} size="sm" />
+          <Input name="contactPhone" placeholder={t('ops.orgs.phone')} size="sm" />
+          <Input name="logoUrl" placeholder={t('ops.orgs.logoUrl')} size="sm" className="sm:col-span-2" />
         </div>
-        <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm text-white">
+        <Button type="submit" size="sm">
           {t('ops.orgs.create')}
-        </button>
+        </Button>
       </ToastForm>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-zinc-600">
-            <tr>
-              <th className="px-4 py-3 font-medium">{t('ops.orgs.colOrg')}</th>
-              <th className="px-4 py-3 font-medium">{t('ops.orgs.colContact')}</th>
-              <th className="px-4 py-3 font-medium">{t('ops.orgs.colProjects')}</th>
-              <th className="px-4 py-3 font-medium">{t('ops.orgs.colCreated')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(orgs ?? []).map((org) => {
-              const projectCount = Array.isArray(org.projects) ? org.projects.length : 0;
-              return (
-                <tr key={org.id} className="border-t border-zinc-100 hover:bg-zinc-50">
-                  <td className="px-4 py-3">
-                    <Link href={`/organizations/${org.id}`} className="font-medium hover:text-codiva-primary">
-                      {org.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-600">
-                    <div>{org.contact_email || EMPTY_LABEL}</div>
-                    <div className="text-xs text-zinc-400">{org.contact_phone || ''}</div>
-                  </td>
-                  <td className="px-4 py-3">{projectCount}</td>
-                  <td className="px-4 py-3 text-zinc-500">{formatDate(org.created_at)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {!orgs?.length && <p className="p-6 text-sm text-zinc-500">{t('ops.orgs.empty')}</p>}
-      </div>
+      <DataTable>
+        <THead>
+          <tr>
+            <Th>{t('ops.orgs.colOrg')}</Th>
+            <Th>{t('ops.orgs.colContact')}</Th>
+            <Th>{t('ops.orgs.colProjects')}</Th>
+            <Th>{t('ops.orgs.colCreated')}</Th>
+          </tr>
+        </THead>
+        <tbody>
+          {(orgs ?? []).map((org) => {
+            const projectCount = Array.isArray(org.projects) ? org.projects.length : 0;
+            return (
+              <Tr key={org.id}>
+                <Td>
+                  <Link href={`/organizations/${org.id}`} className="font-medium hover:text-codiva-primary">
+                    {org.name}
+                  </Link>
+                </Td>
+                <Td className="text-zinc-600">
+                  <div>{org.contact_email || EMPTY_LABEL}</div>
+                  <div className="text-xs text-zinc-400">{org.contact_phone || ''}</div>
+                </Td>
+                <Td>{projectCount}</Td>
+                <Td className="text-zinc-500">{formatDate(org.created_at)}</Td>
+              </Tr>
+            );
+          })}
+          {!orgs?.length && <EmptyRow colSpan={4}>{t('ops.orgs.empty')}</EmptyRow>}
+        </tbody>
+      </DataTable>
     </div>
   );
 }

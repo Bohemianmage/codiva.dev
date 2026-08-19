@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createAdminClient, isSupabaseConfigured } from '@/lib/supabase/admin';
-import { jobEmploymentLabel, localizedJobPostingCopy, postingAsksDiscipline } from '@/lib/ops/careers';
+import { jobEmploymentLabel, localizedJobPostingCopy, postingAsksDiscipline, publicCareerListUrl } from '@/lib/ops/careers';
 import { catalogForPosting } from '@/lib/careers/assessments/engine';
 import { careerAppHref } from '@/lib/ops/host';
 import { getT } from '@/i18n/locale';
@@ -14,6 +14,7 @@ export async function generateMetadata() {
   return {
     title: t('career.doc_title_list'),
     description: t('career.meta_description_list'),
+    alternates: { canonical: publicCareerListUrl() },
   };
 }
 

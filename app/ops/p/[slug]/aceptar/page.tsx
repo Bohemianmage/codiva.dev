@@ -34,7 +34,7 @@ export default async function PortalAcceptLegalPage({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-10">
+    <div className="min-h-screen bg-codiva-background px-4 py-10">
       <div className="mx-auto max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex items-start justify-between gap-3">
           <CodivaWordmarkMark size="sm" />

@@ -316,6 +316,17 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
     }
 
+    if (pathname === '/ops' || pathname === '/ops/') {
+      return withSessionCookies(
+        sessionResponse,
+        absoluteRedirect(request, opsBaseUrl(), '/dashboard')
+      );
+    }
+    if (pathname.startsWith('/ops/')) {
+      const rest = pathname.slice('/ops'.length) || '/';
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), rest));
+    }
+
     if (!pathname.startsWith('/ops')) {
       const url = request.nextUrl.clone();
       if (pathname === '/') {
@@ -340,18 +351,40 @@ export async function middleware(request: NextRequest) {
   }
 
   // --- MARKETING ---
-  if (pathname.startsWith('/ops')) {
+  if (pathname === '/ops' || pathname === '/ops/' || pathname.startsWith('/ops/')) {
+    const rest =
+      pathname === '/ops' || pathname === '/ops/' ? '/dashboard' : pathname.slice('/ops'.length);
     return withSessionCookies(
       sessionResponse,
-      absoluteRedirect(request, marketingBaseUrl(), '/')
+      absoluteRedirect(request, opsBaseUrl(), rest || '/dashboard')
     );
   }
 
-  if (pathname.startsWith('/p/') || pathname === '/cuenta' || pathname.startsWith('/cuenta/')) {
+  if (
+    pathname.startsWith('/p/') ||
+    pathname === '/cuenta' ||
+    pathname.startsWith('/cuenta/') ||
+    pathname === '/proyectos' ||
+    pathname.startsWith('/proyectos/') ||
+    pathname === '/login' ||
+    pathname.startsWith('/login/')
+  ) {
     return withSessionCookies(
       sessionResponse,
       absoluteRedirect(request, portalBaseUrl(), pathname)
     );
+  }
+
+  if (
+    pathname.startsWith('/q/') ||
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/') ||
+    pathname === '/projects' ||
+    pathname.startsWith('/projects/') ||
+    pathname === '/partner' ||
+    pathname.startsWith('/partner/')
+  ) {
+    return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
   }
 
   if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {

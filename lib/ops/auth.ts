@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { chargeAmountNumber } from '@/lib/ops/charges';
 import { getAcceptanceStatus, type MemberAcceptanceFields } from '@/lib/ops/legal/acceptances';
@@ -9,6 +10,7 @@ import {
   type PermissionSubject,
   type StaffRole,
 } from '@/lib/ops/permissions';
+import { safeNextPath } from '@/lib/ops/safe-path';
 
 const PROJECT_SELECT =
   'id, name, slug, status, client_visible, organization_id, progress_percent, description, target_delivery_date, portal_show_quote, portal_show_costs, site_preview_url, site_production_url';
@@ -18,6 +20,12 @@ const MEMBER_SELECT =
 
 export type StaffAccess = Awaited<ReturnType<typeof requireStaff>>;
 
+function loginUrlWithReturn(loginPath: string, incomingPath: string | null): string {
+  const next = safeNextPath(incomingPath, '');
+  if (!next) return loginPath;
+  return `${loginPath}?next=${encodeURIComponent(next)}`;
+}
+
 export async function requireStaff() {
   const supabase = await createClient();
   const {
@@ -25,7 +33,7 @@ export async function requireStaff() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect(loginUrlWithReturn('/login', (await headers()).get('x-codiva-path')));
   }
 
   const { data: staff } = await supabase
@@ -170,7 +178,7 @@ export async function requirePortalAccess(slug: string) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/p/${slug}/login`);
+    redirect(loginUrlWithReturn(`/p/${slug}/login`, (await headers()).get('x-codiva-path')));
   }
 
   const staff = await getActiveStaff(supabase, user.id);
@@ -292,7 +300,7 @@ export async function requirePortalUser() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect(loginUrlWithReturn('/login', (await headers()).get('x-codiva-path')));
   }
 
   return { user, supabase };

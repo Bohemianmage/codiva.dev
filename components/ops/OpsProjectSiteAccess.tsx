@@ -54,9 +54,11 @@ export default async function OpsProjectSiteAccess({
             <span className="font-medium text-zinc-700">{t('ops.siteAccess.previewUrl')}</span>
             <input
               name="sitePreviewUrl"
-              type="url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
               defaultValue={sitePreviewUrl ?? ''}
-              placeholder="https://proyecto.vercel.app"
+              placeholder="proyecto.vercel.app"
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
           </label>
@@ -64,9 +66,11 @@ export default async function OpsProjectSiteAccess({
             <span className="font-medium text-zinc-700">{t('ops.siteAccess.productionUrl')}</span>
             <input
               name="siteProductionUrl"
-              type="url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
               defaultValue={siteProductionUrl ?? ''}
-              placeholder="https://dominio-cliente.com"
+              placeholder="dominio-cliente.com"
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
           </label>
@@ -99,7 +103,9 @@ export default async function OpsProjectSiteAccess({
         </select>
         <input
           name="url"
-          type="url"
+          type="text"
+          inputMode="url"
+          autoComplete="url"
           placeholder={t('ops.siteAccess.urlOptional')}
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
         />
@@ -166,7 +172,9 @@ export default async function OpsProjectSiteAccess({
               </select>
               <input
                 name="url"
-                type="url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
                 defaultValue={item.url ?? ''}
                 placeholder={t('ops.siteAccess.url')}
                 className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
