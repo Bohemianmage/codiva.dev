@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { redirect } from 'next/navigation';
+import { getT } from '@/i18n/locale';
 import { requireAdminStaff, requireCareersReview } from '@/lib/ops/auth';
 import { logActivity } from '@/lib/ops/activity';
 import { can } from '@/lib/ops/permissions';
@@ -12,10 +13,14 @@ import {
   isCareerDiscipline,
   isJobApplicationStatus,
   isJobEmploymentType,
+  isJobInterviewKind,
+  isJobInterviewOutcome,
+  isJobInterviewRoundStatus,
   isJobPostingStatus,
   normalizeJobSlug,
   uniqueJobSlugCandidate,
   CAREER_DISCIPLINE_LABELS,
+  DEFAULT_INTERVIEW_ROUND_KINDS,
 } from '@/lib/ops/careers';
 import { notifyCandidateApplicationStatus } from '@/lib/careers/notify-application-status';
 import {
@@ -27,6 +32,97 @@ function revalidateCareerPaths(slug?: string) {
   revalidatePath('/team');
   revalidatePath('/empleos');
   if (slug) revalidatePath(`/empleos/${slug}`);
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f-]{36}$/i.test(value);
+}
+
+function postingFromApplication(application: {
+  ops_job_postings?:
+    | { slug?: string | null; title?: string | null }
+    | { slug?: string | null; title?: string | null }[]
+    | null;
+}) {
+  return Array.isArray(application.ops_job_postings)
+    ? application.ops_job_postings[0]
+    : application.ops_job_postings;
+}
+
+async function requireApplicationForReview(
+  supabase: Awaited<ReturnType<typeof requireCareersReview>>['supabase'],
+  staff: Awaited<ReturnType<typeof requireCareersReview>>['staff'],
+  applicationId: string
+) {
+  if (!isUuid(applicationId)) throw new Error('Postulación inválida');
+
+  const { data: application } = await supabase
+    .from('ops_job_applications')
+    .select('id, status, discipline, ops_job_postings(slug)')
+    .eq('id', applicationId)
+    .maybeSingle();
+
+  if (!application) throw new Error('Postulación no encontrada');
+
+  const posting = postingFromApplication(application);
+  if (
+    !can(staff, 'team') &&
+    !isTesterPipelineItem({
+      postingSlug: posting?.slug,
+      discipline: application.discipline,
+    })
+  ) {
+    throw new Error('No tienes permiso para esta postulación');
+  }
+
+  return application;
+}
+
+async function seedDefaultInterviewRounds(
+  supabase: Awaited<ReturnType<typeof requireCareersReview>>['supabase'],
+  applicationId: string,
+  actorId: string
+) {
+  const { count } = await supabase
+    .from('ops_job_interview_rounds')
+    .select('id', { count: 'exact', head: true })
+    .eq('application_id', applicationId);
+
+  if ((count ?? 0) > 0) return false;
+
+  const t = await getT();
+  const { error } = await supabase.from('ops_job_interview_rounds').insert(
+    DEFAULT_INTERVIEW_ROUND_KINDS.map((kind, index) => ({
+      application_id: applicationId,
+      sort_order: index,
+      kind,
+      title: t(`ops.careers.interviewKind.${kind}`),
+      status: 'planned',
+      created_by: actorId,
+    }))
+  );
+  if (error) throw await throwDb(error);
+  return true;
+}
+
+async function maybePromoteToInterview(
+  supabase: Awaited<ReturnType<typeof requireCareersReview>>['supabase'],
+  application: { id: string; status: string },
+  actorId: string
+) {
+  if (application.status !== 'new' && application.status !== 'reviewed') return;
+  const { error } = await supabase
+    .from('ops_job_applications')
+    .update({ status: 'interview' })
+    .eq('id', application.id);
+  if (error) throw await throwDb(error);
+  await logActivity({
+    entityType: 'job_application',
+    entityId: application.id,
+    action: 'status_updated',
+    metadata: { status: 'interview', notified: false, fromInterviewRound: true },
+    actorId,
+  });
 }
 
 async function pickUniqueSlug(
@@ -209,6 +305,8 @@ export async function updateJobApplicationStatus(applicationId: string, formData
   const status = String(formData.get('status') || '').trim();
   if (!isJobApplicationStatus(status)) throw new Error('Estado inválido');
 
+  await requireApplicationForReview(supabase, staff, applicationId);
+
   const { data: application } = await supabase
     .from('ops_job_applications')
     .select('id, email, full_name, status, discipline, ops_job_postings(title, slug)')
@@ -217,20 +315,7 @@ export async function updateJobApplicationStatus(applicationId: string, formData
 
   if (!application) throw new Error('Postulación no encontrada');
 
-  const posting = Array.isArray(application.ops_job_postings)
-    ? application.ops_job_postings[0]
-    : application.ops_job_postings;
-
-  if (!can(staff, 'team')) {
-    if (
-      !isTesterPipelineItem({
-        postingSlug: posting?.slug,
-        discipline: application.discipline,
-      })
-    ) {
-      throw new Error('No tienes permiso para esta postulación');
-    }
-  }
+  const posting = postingFromApplication(application);
 
   const { error } = await supabase
     .from('ops_job_applications')
@@ -270,9 +355,149 @@ export async function updateJobApplicationStatus(applicationId: string, formData
     actorId: user.id,
   });
 
+  if (status === 'interview' && application.status !== 'interview') {
+    await seedDefaultInterviewRounds(supabase, applicationId, user.id);
+  }
+
   revalidatePath('/team');
   revalidatePath('/inbox');
   revalidatePath('/dashboard');
+}
+
+export async function addJobInterviewRound(applicationId: string, formData: FormData) {
+  const { user, supabase, staff } = await requireCareersReview();
+  const application = await requireApplicationForReview(supabase, staff, applicationId);
+
+  const kind = String(formData.get('kind') || '').trim();
+  if (!isJobInterviewKind(kind)) throw new Error('Tipo de entrevista inválido');
+  const t = await getT();
+  const title =
+    String(formData.get('title') || '').trim().slice(0, 120) || t(`ops.careers.interviewKind.${kind}`);
+  const interviewerRaw = String(formData.get('interviewer_id') || '').trim();
+  const interviewerId = isUuid(interviewerRaw) ? interviewerRaw : null;
+
+  const { data: last } = await supabase
+    .from('ops_job_interview_rounds')
+    .select('sort_order')
+    .eq('application_id', applicationId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: round, error } = await supabase
+    .from('ops_job_interview_rounds')
+    .insert({
+      application_id: applicationId,
+      sort_order: (last?.sort_order ?? -1) + 1,
+      kind,
+      title,
+      status: 'planned',
+      interviewer_id: interviewerId,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (error || !round) throw await throwDb(error);
+
+  await maybePromoteToInterview(supabase, application, user.id);
+  await logActivity({
+    entityType: 'job_application',
+    entityId: applicationId,
+    action: 'interview_round_added',
+    metadata: { roundId: round.id, kind },
+    actorId: user.id,
+  });
+
+  revalidatePath('/team');
+}
+
+export async function updateJobInterviewRound(roundId: string, formData: FormData) {
+  const { user, supabase, staff } = await requireCareersReview();
+  if (!isUuid(roundId)) throw new Error('Fase inválida');
+
+  const { data: round } = await supabase
+    .from('ops_job_interview_rounds')
+    .select('id, application_id, status, conducted_at')
+    .eq('id', roundId)
+    .maybeSingle();
+  if (!round) throw new Error('Fase no encontrada');
+  await requireApplicationForReview(supabase, staff, round.application_id);
+
+  const title = String(formData.get('title') || '').trim().slice(0, 120);
+  if (title.length < 1) throw new Error('Título requerido');
+  const kind = String(formData.get('kind') || '').trim();
+  if (!isJobInterviewKind(kind)) throw new Error('Tipo de entrevista inválido');
+  const status = String(formData.get('status') || '').trim();
+  if (!isJobInterviewRoundStatus(status)) throw new Error('Estado de fase inválido');
+  const outcomeRaw = String(formData.get('outcome') || '').trim();
+  const outcome = outcomeRaw && isJobInterviewOutcome(outcomeRaw) ? outcomeRaw : null;
+  const interviewerRaw = String(formData.get('interviewer_id') || '').trim();
+  const interviewerId = isUuid(interviewerRaw) ? interviewerRaw : null;
+
+  const conductedAt =
+    status === 'done' && !round.conducted_at ? new Date().toISOString() : round.conducted_at;
+
+  const { error } = await supabase
+    .from('ops_job_interview_rounds')
+    .update({
+      title,
+      kind,
+      status,
+      outcome,
+      interviewer_id: interviewerId,
+      conducted_at: conductedAt,
+    })
+    .eq('id', roundId);
+
+  if (error) throw await throwDb(error);
+
+  await logActivity({
+    entityType: 'job_application',
+    entityId: round.application_id,
+    action: 'interview_round_updated',
+    metadata: { roundId, status, outcome },
+    actorId: user.id,
+  });
+
+  revalidatePath('/team');
+}
+
+export async function addJobInterviewComment(roundId: string, formData: FormData) {
+  const { user, supabase, staff } = await requireCareersReview();
+  if (!isUuid(roundId)) throw new Error('Fase inválida');
+
+  const { data: round } = await supabase
+    .from('ops_job_interview_rounds')
+    .select('id, application_id, interviewer_id')
+    .eq('id', roundId)
+    .maybeSingle();
+  if (!round) throw new Error('Fase no encontrada');
+  await requireApplicationForReview(supabase, staff, round.application_id);
+
+  const canComment =
+    can(staff, 'team') || !round.interviewer_id || round.interviewer_id === user.id;
+  if (!canComment) throw new Error('Solo quien entrevistó puede comentar esta fase');
+
+  const body = String(formData.get('body') || '').trim().slice(0, 4000);
+  if (body.length < 1) throw new Error('Escribe un comentario');
+
+  const { error } = await supabase.from('ops_job_interview_comments').insert({
+    round_id: roundId,
+    author_id: user.id,
+    body,
+  });
+  if (error) throw await throwDb(error);
+
+  await logActivity({
+    entityType: 'job_application',
+    entityId: round.application_id,
+    action: 'interview_commented',
+    metadata: { roundId },
+    actorId: user.id,
+  });
+
+  revalidatePath('/team');
 }
 
 export async function createPersonnelOfferFromApplication(applicationId: string) {

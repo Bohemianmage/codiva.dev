@@ -812,6 +812,38 @@
       "offerCreated": "Offer letter created",
       "statusUpdated": "Status updated",
       "notifyCandidate": "Notify by email",
+      "interviewsTitle": "Interviews",
+      "interviewProgress": "Interview · {{done}}/{{total}}",
+      "interviewTagHint": "Interview rounds done / active on this application.",
+      "interviewsEmpty": "No rounds yet. Moving to Interview seeds screen, technical, and fit; you can also add one here.",
+      "interviewKind": {
+        "screening": "Screen",
+        "technical": "Technical",
+        "culture": "Fit",
+        "final": "Final",
+        "other": "Other"
+      },
+      "interviewRoundStatus": {
+        "planned": "Planned",
+        "done": "Done",
+        "skipped": "Skipped"
+      },
+      "interviewOutcome": {
+        "advance": "Advance",
+        "hold": "Hold",
+        "reject": "Do not continue"
+      },
+      "interviewOutcomeNone": "No outcome",
+      "interviewUnassigned": "No interviewer",
+      "interviewUnknownAuthor": "Staff",
+      "interviewTitlePlaceholder": "Title (optional)",
+      "interviewAddRound": "Add round",
+      "interviewRoundAdded": "Round added",
+      "interviewRoundSaved": "Round saved",
+      "interviewCommentPlaceholder": "What you covered, signals, next step…",
+      "interviewCommentSubmit": "Save comment",
+      "interviewCommentSaved": "Comment saved",
+      "interviewCommentLocked": "Only the interviewer (or team admins) can comment on this round.",
       "findingsTitle": "Findings",
       "findingsHint": "Second part of the test. Only a craft seed counts. A finding without a seed is reviewed on the card and does not add.",
       "findingsEmpty": "No findings yet.",
