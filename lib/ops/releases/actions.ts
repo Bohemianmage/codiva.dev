@@ -221,12 +221,9 @@ export async function loadIncomingPreviews(
     }));
   }
 
-  // Pending work = open PRs. Closing/rejecting a PR drops its preview from Ops
-  // even if the Vercel deployment is still READY.
-  if (settings.github_owner && settings.github_repo) {
-    items = items.filter((item) => item.pull);
-  }
-
+  // Incoming = Vercel (or GitHub) preview deploys ready for QA. Open PRs are
+  // attached when they match; they are not required. A closed smoke PR must
+  // not hide a READY preview from Ops.
   const attached = new Set(items.flatMap((item) => (item.pull ? [item.pull.number] : [])));
   pulls = pulls.filter((p) => !attached.has(p.number));
 

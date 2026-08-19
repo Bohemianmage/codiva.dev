@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(`career_hunt_evidence:${ip}`, RL.windowMs, RL.max);
+  const rl = await careerRateLimitConsume(`career_hunt_evidence:${ip}`, RL.windowMs, RL.max);
   if (!rl.ok) {
     return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 });
   }

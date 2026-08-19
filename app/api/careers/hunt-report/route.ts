@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(`career_hunt:${ip}`, RL.windowMs, RL.max);
+  const rl = await careerRateLimitConsume(`career_hunt:${ip}`, RL.windowMs, RL.max);
   if (!rl.ok) {
     return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 });
   }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_or_invalid_fields' }, { status: 400 });
   }
 
-  const emailRl = careerRateLimitConsume(`career_hunt_email:${email}`, RL_EMAIL.windowMs, RL_EMAIL.max);
+  const emailRl = await careerRateLimitConsume(`career_hunt_email:${email}`, RL_EMAIL.windowMs, RL_EMAIL.max);
   if (!emailRl.ok) {
     return NextResponse.json({ ok: false, error: 'rate_limited_email' }, { status: 429 });
   }

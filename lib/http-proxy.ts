@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-function proxyHeaders(request) {
-  const headers = { 'Content-Type': 'application/json' };
+function proxyHeaders(request: Request) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
   const ua = request.headers.get('user-agent');
@@ -11,10 +11,10 @@ function proxyHeaders(request) {
   return headers;
 }
 
-/** @deprecated Use POST /api/inbox */
-export async function POST(request) {
+/** Reenvía un POST JSON a otra ruta del mismo origin (aliases deprecados). */
+export async function proxyJsonPost(request: Request, pathname: string) {
   const body = await request.json();
-  const url = new URL('/api/inbox', request.url);
+  const url = new URL(pathname, request.url);
   const res = await fetch(url, {
     method: 'POST',
     headers: proxyHeaders(request),

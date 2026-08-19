@@ -10,6 +10,9 @@
 - Bitácora de descarga (`file_access_log` + IP/UA) y `activity_log`
 - Export compliance JSON por proyecto
 - Escaneo antimalware opcional (ver abajo)
+- Cabeceras HTTP en `next.config.ts`: CSP (`frame-ancestors 'none'`), HSTS, nosniff, Referrer-Policy, Permissions-Policy
+- Rate limit de formularios públicos: memoria en local; Runtime Cache de Vercel en producción (compartido por región)
+- Errores a Sentry si `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` están definidos (mismo DSN público). Sin clave, solo `console.error`
 
 ## Cron de retención
 
@@ -37,3 +40,14 @@ Recordatorio de CV: `GET /api/ops/cron/cv-nudge` cada hora (minuto 45, mismo `CR
 Sin clave configurada, `scan_status = skipped` y el upload se acepta (hash igual se guarda). Si el scan marca **infected**, el archivo se borra y se rechaza el upload.
 
 Prioridad práctica Codiva: **AttachmentScanner** cuando el volumen de inbound lo justifique.
+
+## Observabilidad
+
+En Vercel (Production + Preview):
+
+```env
+SENTRY_DSN=https://...@....ingest.sentry.io/...
+NEXT_PUBLIC_SENTRY_DSN=https://...@....ingest.sentry.io/...
+```
+
+El DSN de Sentry es público por diseño (va al bundle). Sin esas vars el build y el runtime siguen; no se envía nada a Sentry.

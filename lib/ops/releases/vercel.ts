@@ -111,7 +111,7 @@ export async function listVercelPreviews(input: {
   const projectId = input.projectId.trim();
   if (!projectId) return { items: [], error: null };
 
-  const url = `https://api.vercel.com/v6/deployments?projectId=${encodeURIComponent(projectId)}&state=READY&limit=20${teamQuery(input.teamId)}`;
+  const url = `https://api.vercel.com/v6/deployments?projectId=${encodeURIComponent(projectId)}&state=READY&limit=40${teamQuery(input.teamId)}`;
   const res = await fetch(url, { headers: vercelHeaders(token), cache: 'no-store' });
   if (!res.ok) {
     const body = await res.text().catch(() => '');

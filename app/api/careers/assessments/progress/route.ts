@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   const audit = requestAuditFromHeaders(request.headers);
   const ip = audit.ip || 'unknown';
-  const rl = careerRateLimitConsume(
+  const rl = await careerRateLimitConsume(
     `career_assessment_progress:${ip}`,
     CAREER_RL_ASSESSMENT.windowMs,
     CAREER_RL_ASSESSMENT.max

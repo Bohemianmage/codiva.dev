@@ -4,6 +4,7 @@ import { templateStaffAlert } from '@/lib/ops/email-templates';
 import { logActivity } from '@/lib/ops/activity';
 import { opsBaseUrl } from '@/lib/ops/host';
 import { NextResponse } from 'next/server';
+import { reportError } from '@/lib/report-error';
 import {
   PUBLIC_RL_FORM,
   PUBLIC_RL_FORM_EMAIL,
@@ -12,19 +13,19 @@ import {
   rateLimitJsonResponse,
 } from '@/lib/rate-limit';
 
-export async function POST(request) {
+export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ error: 'Servicio no configurado' }, { status: 503 });
   }
 
-  const ipRl = consumeIpRateLimit(request, 'public_leads', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
+  const ipRl = await consumeIpRateLimit(request, 'public_leads', PUBLIC_RL_FORM.windowMs, PUBLIC_RL_FORM.max);
   if (!ipRl.ok) return rateLimitJsonResponse(ipRl.retryAfterMs);
 
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const emailKey = String(body.email || '').trim().toLowerCase();
     if (emailKey) {
-      const emailRl = consumeRateLimit(
+      const emailRl = await consumeRateLimit(
         `public_leads_email:${emailKey}`,
         PUBLIC_RL_FORM_EMAIL.windowMs,
         PUBLIC_RL_FORM_EMAIL.max
@@ -50,7 +51,7 @@ export async function POST(request) {
         has_domain: body.hasDomain || null,
         has_hosting: body.hasHosting || null,
         delivery_date: body.deliveryDate || null,
-        budget: body.budget ? parseFloat(body.budget) : null,
+        budget: body.budget ? parseFloat(String(body.budget)) : null,
         reference_site: body.referenceSite || null,
       })
       .select('id')
@@ -67,8 +68,8 @@ export async function POST(request) {
 
     await Promise.allSettled([
       sendLeadConfirmationEmail({
-        to: body.email,
-        name: body.name || 'Cliente',
+        to: String(body.email || ''),
+        name: String(body.name || 'Cliente'),
         locale: body.locale === 'en' ? 'en' : 'es',
       }),
       notifyStaffSafe({
@@ -81,16 +82,16 @@ export async function POST(request) {
             `Email: ${body.email}`,
             body.phone ? `Tel: ${body.phone}` : null,
             body.need ? `Necesidad: ${body.need}` : null,
-          ].filter(Boolean),
+          ].filter(Boolean) as string[],
           { ctaLabel: 'Ver lead', ctaHref: `${opsBaseUrl()}/leads/${lead.id}` }
         ),
-        replyTo: body.email || undefined,
+        replyTo: body.email ? String(body.email) : undefined,
       }),
     ]);
 
     return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
   } catch (err) {
-    console.error('POST /api/leads:', err);
+    reportError(err);
     return NextResponse.json({ error: 'Error al registrar solicitud' }, { status: 500 });
   }
 }
