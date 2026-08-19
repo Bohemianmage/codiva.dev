@@ -8,7 +8,7 @@ import { splitHuntReports } from '@/lib/careers/hunt/review';
 import { huntConsiderationLabel, scoreHuntReports } from '@/lib/careers/hunt/score';
 import { summarizeHuntTrail, buildHuntTrailSteps } from '@/lib/careers/hunt/trail';
 import HuntTrailMap from '@/components/ops/HuntTrailMap';
-import { HuntFindingsBlock } from '@/components/ops/OpsCareersPanel';
+import { HuntFindingsBlock, type OpsHuntReportRow } from '@/components/ops/OpsCareersPanel';
 import OpsReportLightbox from '@/components/ops/OpsReportLightbox';
 import { careerDisciplineLabels, disciplineFromCatalogKey, isTesterPipelineItem } from '@/lib/ops/career-disciplines';
 import {
@@ -139,23 +139,9 @@ export default async function AssessmentAttemptPage({
     ? reviewRowsForAttempt(catalog, questionIds, answers, scored.byQuestion)
     : [];
   const discipline = disciplineFromCatalogKey(attempt.catalog_key);
-  const huntById = new Map<
-    string,
-    {
-      id: string;
-      title: string;
-      page_url: string;
-      description: string | null;
-      expected: string | null;
-      matched_seed_id: string | null;
-      discipline: string | null;
-      review_status?: string | null;
-      evidence_paths?: string[] | null;
-      created_at: string;
-    }
-  >();
+  const huntById = new Map<string, OpsHuntReportRow>();
   for (const row of [...(huntByAttempt ?? []), ...(huntByEmail ?? [])]) {
-    huntById.set(row.id, row);
+    huntById.set(row.id, row as OpsHuntReportRow);
   }
   const huntReports = [...huntById.values()].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
