@@ -802,6 +802,8 @@
       "viewCv": "Ver CV",
       "viewCvHint": "Abre el CV aquí mismo. Desde el popup puedes descargarlo.",
       "downloadCv": "Descargar CV",
+      "cvLoading": "Cargando CV…",
+      "cvLoadError": "No se pudo mostrar el CV aquí. Descárgalo con el botón de arriba.",
       "cvEmbedTitle": "CV de {{name}}",
       "viewTest": "Ver prueba",
       "viewOffer": "Ver carta oferta",

@@ -802,6 +802,8 @@
       "viewCv": "View CV",
       "viewCvHint": "Opens the CV here. You can download it from the popup.",
       "downloadCv": "Download CV",
+      "cvLoading": "Loading CV…",
+      "cvLoadError": "The CV could not be shown here. Download it with the button above.",
       "cvEmbedTitle": "{{name}}’s CV",
       "viewTest": "View test",
       "viewOffer": "View offer letter",

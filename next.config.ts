@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import { securityHeaders } from './lib/security-headers';
+import { nextSecurityHeaderSources } from './lib/security-headers';
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@sparticuz/chromium-min', 'puppeteer-core'],
@@ -15,10 +15,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        source: '/:path*',
-        headers: securityHeaders(),
-      },
+      ...nextSecurityHeaderSources(),
       {
         source: '/logos/:path*',
         headers: [

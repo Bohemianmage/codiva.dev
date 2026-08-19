@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@/components/ui/Button';
 import HintTooltip from '@/components/ui/HintTooltip';
@@ -16,9 +16,42 @@ export default function CareerCvLightbox({
   const { t } = useTranslation();
   const titleId = useId();
   const [open, setOpen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const title = t('ops.careers.cvEmbedTitle', { name });
   const closeLabel = t('ops.careers.evidenceClose');
+  const cvHref = `/api/ops/careers/cv?id=${applicationId}`;
+
+  useEffect(() => {
+    if (!open) return;
+    const ac = new AbortController();
+    let objectUrl: string | null = null;
+    setBlobUrl(null);
+    setLoadError(false);
+
+    (async () => {
+      try {
+        const res = await fetch(cvHref, { credentials: 'same-origin', signal: ac.signal });
+        if (!res.ok) throw new Error('cv');
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (ac.signal.aborted) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        setBlobUrl(objectUrl);
+      } catch {
+        if (ac.signal.aborted) return;
+        setLoadError(true);
+      }
+    })();
+
+    return () => {
+      ac.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [open, cvHref]);
 
   return (
     <>
@@ -49,7 +82,7 @@ export default function CareerCvLightbox({
             titleId={titleId}
             actions={
               <>
-                <Button as="a" href={`/api/ops/careers/cv?id=${applicationId}&download=1`} size="xs">
+                <Button as="a" href={`${cvHref}&download=1`} size="xs">
                   {t('ops.careers.downloadCv')}
                 </Button>
                 <Button type="button" variant="secondary" size="xs" onClick={close}>
@@ -60,7 +93,13 @@ export default function CareerCvLightbox({
           />
         }
       >
-        <iframe title={title} src={`/api/ops/careers/cv?id=${applicationId}`} className="min-h-0 w-full flex-1 bg-zinc-100" />
+        {blobUrl ? (
+          <iframe title={title} src={blobUrl} className="min-h-0 w-full flex-1 bg-zinc-100" />
+        ) : (
+          <p className="m-auto px-6 text-center text-sm text-zinc-600">
+            {loadError ? t('ops.careers.cvLoadError') : t('ops.careers.cvLoading')}
+          </p>
+        )}
       </Modal>
     </>
   );
