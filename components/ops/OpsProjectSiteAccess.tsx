@@ -38,10 +38,6 @@ export default async function OpsProjectSiteAccess({
       <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">
         <div>
           <h3 className="font-semibold">{t('ops.siteAccess.title')}</h3>
-          <p className="mt-1 text-sm text-zinc-600">
-            {t('ops.siteAccess.hintPrefix')} <strong>{t('ops.siteAccess.hintStrong')}</strong>
-            {t('ops.siteAccess.hintSuffix')}
-          </p>
         </div>
         <ToastForm success={t('ops.siteAccess.urlsSaved')}
           action={async (fd) => {

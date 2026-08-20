@@ -55,8 +55,7 @@ export default async function PortalProposalPage({
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="mb-1 text-lg font-semibold">{t('portal.proposal.title')}</h2>
-        <p className="mb-5 text-sm text-zinc-600">{t('portal.proposal.hint')}</p>
+        <h2 className="mb-5 text-lg font-semibold">{t('portal.proposal.title')}</h2>
         <PortalCanvasViewer
           items={visibleCanvases.map((item) => ({
             ...item,

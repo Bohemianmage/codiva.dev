@@ -38,10 +38,10 @@ export default function OpsArchitectureEditor({
 
   const sourceLabel =
     values.source === 'ops'
-      ? t('ops.archEditor.sourceOps')
+      ? t('ops.architecture.sourceOps')
       : values.source === 'pack'
-        ? t('ops.archEditor.sourcePack')
-        : t('ops.archEditor.sourceStarter');
+        ? t('ops.architecture.sourcePack')
+        : t('ops.architecture.sourceDraft');
 
   return (
     <ToastForm success={t('ops.archEditor.saved')} action={action} className="space-y-4">

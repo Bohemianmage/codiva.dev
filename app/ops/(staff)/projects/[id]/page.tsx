@@ -376,9 +376,6 @@ export default async function ProjectDetailPage({
               />
               {t('ops.project.showCosts')}
             </label>
-            <p className="text-xs text-zinc-500">
-              {t('ops.project.visibilityHint')}
-            </p>
           </div>
           <button type="submit" className="rounded-lg bg-codiva-primary px-4 py-2 text-sm font-semibold text-white">
             {t('ops.project.saveChanges')}
@@ -473,11 +470,6 @@ export default async function ProjectDetailPage({
 
       {tab === 'cotizaciones' && can(staff, 'quotes') && (
         <div className="space-y-6">
-          <p className="text-sm text-zinc-600">
-            {t('ops.project.quotesHintPrefix')}{' '}
-            <strong>{t('ops.project.quotesHintStrong')}</strong>{' '}
-            {t('ops.project.quotesHintSuffix')}
-          </p>
           <OpsQuoteForm
             title={t('ops.project.newQuote')}
             defaultTitle={t('ops.project.proposalTitle', { name: project.name })}

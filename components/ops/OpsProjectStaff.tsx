@@ -34,8 +34,7 @@ export default async function OpsProjectStaff({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="mb-1 font-semibold">{t('ops.projectStaff.title')}</h2>
-      <p className="mb-4 text-sm text-zinc-500">{t('ops.projectStaff.hint')}</p>
+      <h2 className="mb-4 font-semibold">{t('ops.projectStaff.title')}</h2>
       <ul className="mb-4 space-y-2">
         {projectStaff.map((row) => (
           <li

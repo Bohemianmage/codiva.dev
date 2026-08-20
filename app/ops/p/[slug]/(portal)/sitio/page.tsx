@@ -61,7 +61,6 @@ export default async function PortalSitioPage({
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-zinc-900">{t('portal.site.title')}</h2>
-        <p className="mt-2 max-w-2xl text-sm text-zinc-600">{t('portal.site.hint')}</p>
       </div>
 
       {empty ? (

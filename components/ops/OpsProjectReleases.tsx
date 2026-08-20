@@ -4,7 +4,7 @@ import ToastForm from '@/components/ops/ToastForm';
 import { getT } from '@/i18n/locale';
 import { usageUrlLabel } from '@/lib/ops/host';
 import { requireStaff } from '@/lib/ops/auth';
-import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
+import { releaseHistoryHref, withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
 import {
   acceptAndPromoteIncoming,
   approveReleaseRequest,
@@ -341,7 +341,6 @@ export default async function OpsProjectReleases({
             </div>
           ) : null}
         </div>
-        <p className="text-xs text-zinc-500">{t('ops.releases.incomingHint')}</p>
         {incoming.error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {incoming.error}
@@ -518,6 +517,10 @@ export default async function OpsProjectReleases({
           <ul className="space-y-3">
             {requests.map((r) => {
               const statusKey = STATUS_KEYS[r.status] ?? 'pending';
+              const history = releaseHistoryHref(r);
+              const historyHref = history.live
+                ? history.href
+                : withVercelPreviewBypass(history.href, incoming.previewAccessSecret);
               return (
                 <li key={r.id} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 space-y-2 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -533,10 +536,14 @@ export default async function OpsProjectReleases({
                   {r.commit_sha ? (
                     <p className="text-xs text-zinc-500">{r.commit_sha.slice(0, 7)}</p>
                   ) : null}
-                  <CopyableUrl
-                    href={withVercelPreviewBypass(r.preview_url, incoming.previewAccessSecret)}
-                    label={usageUrlLabel(r.preview_url)}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-zinc-500">
+                      {history.live
+                        ? t('ops.releases.historyProduction')
+                        : t('ops.releases.historyPreview')}
+                    </span>
+                    <CopyableUrl href={historyHref} label={usageUrlLabel(history.href)} />
+                  </div>
                   {r.error_message ? (
                     <p className="text-xs text-red-700 whitespace-pre-wrap">{r.error_message}</p>
                   ) : null}

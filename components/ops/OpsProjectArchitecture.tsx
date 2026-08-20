@@ -40,10 +40,6 @@ export default async function OpsProjectArchitecture({
     <div className="space-y-6">
       <div className="rounded-xl border border-zinc-200 bg-white p-5">
         <h3 className="font-semibold">{t('ops.architecture.title')}</h3>
-        <p className="mt-1 text-sm text-zinc-600">
-          {t('ops.architecture.hintPrefix')} <strong>{t('ops.architecture.hintStrong')}</strong>{' '}
-          {t('ops.architecture.hintSuffix')}
-        </p>
         <Link
           href={staffPortalPreviewPath(slug, '/propuesta')}
           className="mt-3 inline-block text-sm font-medium text-codiva-primary hover:underline"

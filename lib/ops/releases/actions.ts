@@ -506,7 +506,7 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
   }
 
   type DispatchResult =
-    | { ok: true; runUrl: string | null; deploymentId?: string }
+    | { ok: true; runUrl: string | null; deploymentId?: string; url?: string | null }
     | { ok: false; error: string; missingToken?: boolean; source: 'vercel' | 'github' | 'config' };
 
   let result: DispatchResult;
@@ -520,7 +520,12 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
       teamId: vercelTeamId,
     });
     result = promoted.ok
-      ? { ok: true, runUrl: promoted.inspectUrl, deploymentId: promoted.deploymentId }
+      ? {
+          ok: true,
+          runUrl: promoted.inspectUrl,
+          deploymentId: promoted.deploymentId,
+          url: promoted.url,
+        }
       : { ok: false, error: promoted.error, missingToken: promoted.missingToken, source: 'vercel' };
   } else if (settings.github_owner && settings.github_repo) {
     const dispatched = await dispatchPromoteWorkflow({
@@ -570,12 +575,17 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     );
   }
 
+  const buildUrl = result.url?.trim() || null;
+  const stableProductionUrl =
+    typeof req.production_url === 'string' ? req.production_url.trim() : '';
+
   await supabase
     .from('project_release_requests')
     .update({
       status: 'succeeded',
       github_run_url: result.runUrl,
       vercel_deployment_id: result.deploymentId ?? deploymentId,
+      production_url: buildUrl || stableProductionUrl || null,
       error_message: null,
       updated_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
@@ -595,13 +605,11 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
     });
   }
 
-  const productionUrl =
-    typeof req.production_url === 'string' ? req.production_url.trim() : '';
-  if (productionUrl) {
+  if (stableProductionUrl) {
     await supabase
       .from('projects')
       .update({
-        site_production_url: productionUrl,
+        site_production_url: stableProductionUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', projectId);

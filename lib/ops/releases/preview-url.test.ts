@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { withVercelPreviewBypass } from './preview-url';
+import { releaseHistoryHref, withVercelPreviewBypass } from './preview-url';
+
+describe('releaseHistoryHref', () => {
+  it('uses the production build URL after a successful promote', () => {
+    expect(
+      releaseHistoryHref({
+        status: 'succeeded',
+        production_url: 'https://nirc-prod.vercel.app',
+        preview_url: 'https://nirc-git-preview-ops-release-codiva-dev.vercel.app',
+      })
+    ).toEqual({ href: 'https://nirc-prod.vercel.app', live: true });
+  });
+
+  it('falls back to preview when production is missing', () => {
+    expect(
+      releaseHistoryHref({
+        status: 'succeeded',
+        production_url: null,
+        preview_url: 'https://nirc-preview.vercel.app',
+      })
+    ).toEqual({ href: 'https://nirc-preview.vercel.app', live: false });
+  });
+});
 
 describe('withVercelPreviewBypass', () => {
   it('leaves the URL unchanged without a secret', () => {

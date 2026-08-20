@@ -28,7 +28,13 @@ export type VercelPreview = {
 export type VercelPromoteMode = 'alias' | 'rebuild';
 
 export type VercelPromoteResult =
-  | { ok: true; inspectUrl: string | null; deploymentId: string; mode: VercelPromoteMode }
+  | {
+      ok: true;
+      inspectUrl: string | null;
+      deploymentId: string;
+      mode: VercelPromoteMode;
+      url: string | null;
+    }
   | { ok: false; error: string; missingToken?: boolean };
 
 export function isVercelProductionTarget(target: string | null | undefined): boolean {
@@ -311,9 +317,16 @@ type VercelDeploymentDetail = {
   uid?: string;
   id?: string;
   name?: string | null;
+  url?: string | null;
   target?: string | null;
   inspectorUrl?: string | null;
 };
+
+export function deploymentPublicUrl(url?: string | null): string | null {
+  const host = url?.trim();
+  if (!host) return null;
+  return asHttps(host);
+}
 
 async function getVercelDeployment(
   token: string,
@@ -353,11 +366,13 @@ async function aliasPromoteProduction(input: {
   );
 
   if (res.status === 201 || res.status === 202 || res.ok) {
+    const detail = await getVercelDeployment(input.token, input.deploymentId, input.teamId);
     return {
       ok: true,
       mode: 'alias',
       deploymentId: input.deploymentId,
-      inspectUrl: inspectUrlFor(input.deploymentId),
+      inspectUrl: inspectUrlFor(input.deploymentId, detail?.inspectorUrl),
+      url: deploymentPublicUrl(detail?.url),
     };
   }
 
@@ -391,18 +406,22 @@ async function rebuildPreviewAsProduction(input: {
     return { ok: false, error: formatVercelApiError(res.status, body, 'Vercel production rebuild') };
   }
 
-  let data: { uid?: string; id?: string; inspectorUrl?: string | null } = {};
+  let data: { uid?: string; id?: string; url?: string | null; inspectorUrl?: string | null } = {};
   try {
     data = body ? (JSON.parse(body) as typeof data) : {};
   } catch {
     data = {};
   }
   const newId = data.uid || data.id || input.deploymentId;
+  const url =
+    deploymentPublicUrl(data.url) ||
+    deploymentPublicUrl((await getVercelDeployment(input.token, newId, input.teamId))?.url);
   return {
     ok: true,
     mode: 'rebuild',
     deploymentId: newId,
     inspectUrl: inspectUrlFor(newId, data.inspectorUrl),
+    url,
   };
 }
 
@@ -426,7 +445,16 @@ export async function promoteVercelDeployment(input: {
   const existing = await getVercelDeployment(token, deploymentId, input.teamId);
 
   if (isVercelProductionTarget(existing?.target)) {
-    return aliasPromoteProduction({ token, projectId, deploymentId, teamId: input.teamId });
+    const aliased = await aliasPromoteProduction({
+      token,
+      projectId,
+      deploymentId,
+      teamId: input.teamId,
+    });
+    if (aliased.ok && !aliased.url) {
+      return { ...aliased, url: deploymentPublicUrl(existing?.url) };
+    }
+    return aliased;
   }
 
   return rebuildPreviewAsProduction({

@@ -65,6 +65,7 @@ describe('promoteVercelDeployment', () => {
         });
         return jsonResponse(200, {
           uid: 'dpl_prod',
+          url: 'nirc-prod-codiva-dev.vercel.app',
           inspectorUrl: 'https://vercel.com/codiva/nirc/dpl_prod',
         });
       }
@@ -83,6 +84,7 @@ describe('promoteVercelDeployment', () => {
       mode: 'rebuild',
       deploymentId: 'dpl_prod',
       inspectUrl: 'https://vercel.com/codiva/nirc/dpl_prod',
+      url: 'https://nirc-prod-codiva-dev.vercel.app',
     });
     expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('/v10/projects/'))).toBe(
       false
@@ -93,7 +95,12 @@ describe('promoteVercelDeployment', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes('/v13/deployments/dpl_live') && !init?.method) {
-        return jsonResponse(200, { uid: 'dpl_live', name: 'nirc', target: 'production' });
+        return jsonResponse(200, {
+          uid: 'dpl_live',
+          name: 'nirc',
+          url: 'nirc-codiva-dev.vercel.app',
+          target: 'production',
+        });
       }
       if (url.includes('/v10/projects/prj_nirc/promote/dpl_live') && init?.method === 'POST') {
         expect(init.body).toBe('{}');
@@ -110,7 +117,10 @@ describe('promoteVercelDeployment', () => {
     });
 
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.mode).toBe('alias');
+    if (result.ok) {
+      expect(result.mode).toBe('alias');
+      expect(result.url).toBe('https://nirc-codiva-dev.vercel.app');
+    }
   });
 });
 

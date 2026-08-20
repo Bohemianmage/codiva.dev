@@ -46,7 +46,6 @@ export default async function PortalTimelinePage({
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">{t('portal.timeline.title')}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t('portal.timeline.hint')}</p>
       </div>
 
       {items.length > 0 ? (

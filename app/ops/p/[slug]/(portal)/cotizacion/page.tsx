@@ -77,7 +77,6 @@ export default async function PortalQuotePage({
         ) : null}
         .
       </p>
-      <p className="text-sm text-zinc-500">{t('portal.quote.hint')}</p>
 
       {list.length > 1 && (
         <div className="flex flex-wrap gap-2">

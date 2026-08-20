@@ -1,6 +1,8 @@
 import CopyableUrl from '@/components/ops/CopyableUrl';
 import StatusBadge from '@/components/ops/StatusBadge';
 import { getT } from '@/i18n/locale';
+import { usageUrlLabel } from '@/lib/ops/host';
+import { releaseHistoryHref } from '@/lib/ops/releases/preview-url';
 import type { ReleaseRequestRow, ReleaseSettingsRow } from '@/lib/ops/releases/actions';
 
 const STATUS_KEYS: Record<string, string> = {
@@ -40,6 +42,7 @@ export default async function PortalReleasesPanel({
         <ul className="space-y-3">
           {requests.map((r) => {
             const statusKey = STATUS_KEYS[r.status] ?? 'pending';
+            const history = releaseHistoryHref(r);
             return (
               <li key={r.id} className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -51,8 +54,13 @@ export default async function PortalReleasesPanel({
                 {r.commit_message ? (
                   <p className="mt-2 font-medium text-zinc-900">{r.commit_message}</p>
                 ) : null}
-                <div className="mt-1">
-                  <CopyableUrl href={r.preview_url} />
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-zinc-500">
+                    {history.live
+                      ? t('portal.releases.production')
+                      : t('portal.releases.preview')}
+                  </span>
+                  <CopyableUrl href={history.href} label={usageUrlLabel(history.href)} />
                 </div>
               </li>
             );
