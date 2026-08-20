@@ -325,6 +325,26 @@ export async function listOpenPulls(input: {
   };
 }
 
+export async function getGitRefSha(input: {
+  owner: string;
+  repo: string;
+  ref: string;
+}): Promise<string | null> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const ref = input.ref.trim().replace(/^refs\/heads\//, '');
+  if (!owner || !repo || !ref) return null;
+  const res = await githubJson(`/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(ref)}`);
+  if (!res.ok) return null;
+  try {
+    const parsed = JSON.parse(res.body) as { object?: { sha?: string } };
+    const sha = parsed.object?.sha?.trim() ?? '';
+    return sha.length >= 7 ? sha : null;
+  } catch {
+    return null;
+  }
+}
+
 async function githubJson(
   path: string,
   init?: RequestInit

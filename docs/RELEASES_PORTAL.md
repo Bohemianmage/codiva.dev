@@ -2,8 +2,8 @@
 
 ## Flujo
 
-1. Código en rama **`preview/*`** (o PR), nunca promover desde un deploy dirty de `main`.
-2. GitHub Actions: lint/typecheck/test; si la rama ≠ `main`, job `preview` en Vercel + alias `*-git-*`.
+1. Código llega a **`main`** (o vive en `preview/*` / PR). No promover deploys dirty ni de `main` directo.
+2. GitHub Actions: lint/typecheck/test. En `main` verde, CI adelanta `preview/ops-release`; en esa rama (y otras ≠ `main`) el job `preview` publica Vercel + alias `*-git-*`.
 3. Codiva Ops → Proyecto → **Releases** lista previews READY (sin dirty, un ítem por SHA, sin ya promovidos).
 4. Ops prueba la URL (bypass de protección si aplica).
 5. Admin/PM: **Aceptar y mandar a producción** (rebuild con env Production). El preview de origen se borra de Vercel/Incoming.
@@ -19,8 +19,8 @@
 
 ## Convención de ramas
 
-- `main` — integración; CI **no** despliega preview.
-- `preview/ops-release` — staging de QA que Ops prepara desde Codiva.
+- `main` — integración; CI **no** publica Incoming. Si el job está verde, adelanta `preview/ops-release`.
+- `preview/ops-release` — staging de QA (auto desde `main`, o **Preparar release** en Ops).
 - Otras `preview/*` o PRs — trabajo en curso.
 
 No desplegar working trees sucios a Vercel (deploys con `gitDirty` / actor `cursor-cli` se ocultan y se pueden limpiar).
@@ -49,7 +49,7 @@ No desplegar working trees sucios a Vercel (deploys con `gitDirty` / actor `curs
 
 ### 3. Repo del cliente (ej. NIRC)
 
-- `.github/workflows/ci.yml` — CI; preview solo si ≠ `main`
+- `.github/workflows/ci.yml` — CI; preview si ≠ `main`; en `main` verde sincroniza `preview/ops-release`
 - `.github/workflows/promote-production.yml` — respaldo promote
 - Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 

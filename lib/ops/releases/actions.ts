@@ -12,6 +12,7 @@ import {
   attachCiStatuses,
   closePullRequest,
   dispatchPromoteWorkflow,
+  getGitRefSha,
   listGitHubPreviews,
   listOpenPulls,
   matchPullToPreview,
@@ -23,7 +24,7 @@ import {
   type CiStatus,
   type GitHubPull,
 } from '@/lib/ops/releases/github';
-import { filterPromotedPreviews } from '@/lib/ops/releases/preview-filter';
+import { filterPromotedPreviews, incomingEmptyHint } from '@/lib/ops/releases/preview-filter';
 import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -274,7 +275,29 @@ export async function loadIncomingPreviews(
     openUrl: withVercelPreviewBypass(item.previewUrl, bypass),
   }));
 
-  return { items, pulls, error, hint: null, previewAccessSecret: bypass };
+  let hint: string | null = null;
+  if (
+    !items.length &&
+    settings.github_owner &&
+    settings.github_repo &&
+    releasesTokenConfigured()
+  ) {
+    const [mainSha, previewSha] = await Promise.all([
+      getGitRefSha({
+        owner: settings.github_owner,
+        repo: settings.github_repo,
+        ref: settings.promote_ref || 'main',
+      }),
+      getGitRefSha({
+        owner: settings.github_owner,
+        repo: settings.github_repo,
+        ref: OPS_RELEASE_BRANCH,
+      }),
+    ]);
+    hint = incomingEmptyHint({ mainSha, previewSha });
+  }
+
+  return { items, pulls, error, hint, previewAccessSecret: bypass };
 }
 
 export async function decideGithubPull(projectId: string, formData: FormData) {

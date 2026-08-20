@@ -20,6 +20,24 @@ export function isDirtyVercelMeta(meta?: Record<string, string | undefined> | nu
   return false;
 }
 
+/** Integration branches are not Incoming; QA uses preview/* (e.g. preview/ops-release). */
+export function isIntegrationGitRef(ref?: string | null): boolean {
+  const value = (ref ?? '').trim().replace(/^refs\/heads\//, '').toLowerCase();
+  return value === 'main' || value === 'master';
+}
+
+/** When Incoming is empty, explain main vs preview/ops-release. */
+export function incomingEmptyHint(input: {
+  mainSha: string | null;
+  previewSha: string | null;
+}): 'preview_behind' | 'preview_waiting' | null {
+  const main = input.mainSha?.trim().toLowerCase() ?? '';
+  if (main.length < 7) return null;
+  const preview = input.previewSha?.trim().toLowerCase() ?? '';
+  if (!preview || (!main.startsWith(preview) && !preview.startsWith(main))) return 'preview_behind';
+  return 'preview_waiting';
+}
+
 export function previewHasGitAlias(previewUrl: string, aliases: string[] = []): boolean {
   const hosts = [previewUrl, ...aliases]
     .map((u) => u.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '')

@@ -3,14 +3,15 @@
 #
 # Repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 # In Vercel: disable Git auto-deploys (vercel.json git.deploymentEnabled=false).
+#
+# main never deploys Incoming. A green CI on main fast-forwards preview/ops-release,
+# which then runs the preview job.
 
 name: Preview
 
 on:
   pull_request:
   push:
-    branches-ignore:
-      - main
 
 jobs:
   ci:
@@ -27,6 +28,7 @@ jobs:
 
   preview:
     needs: ci
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,3 +45,31 @@ jobs:
             --meta githubCommitRef="$BRANCH" \
             --meta githubCommitAuthorName="$GITHUB_ACTOR")
           echo "Preview: $url"
+
+  sync-ops-preview:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Fast-forward preview/ops-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="preview/ops-release"
+          SHA="${GITHUB_SHA}"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${BRANCH}" >/tmp/ref.json 2>/dev/null; then
+            current=$(jq -r .object.sha /tmp/ref.json)
+            if [ "$current" = "$SHA" ]; then
+              echo "Already at $SHA"
+              exit 0
+            fi
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/${BRANCH}" \
+              -f sha="$SHA" -F force=true
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/heads/${BRANCH}" -f sha="$SHA"
+          fi

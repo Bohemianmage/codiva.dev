@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   dedupePreviewsBySha,
   filterPromotedPreviews,
+  incomingEmptyHint,
   isDirtyVercelMeta,
+  isIntegrationGitRef,
   previewHasGitAlias,
   selectStalePreviewIds,
 } from './preview-filter';
@@ -12,6 +14,23 @@ describe('isDirtyVercelMeta', () => {
     expect(isDirtyVercelMeta({ gitDirty: '1' })).toBe(true);
     expect(isDirtyVercelMeta({ actor: 'cursor-cli' })).toBe(true);
     expect(isDirtyVercelMeta({ githubCommitSha: 'abc' })).toBe(false);
+  });
+});
+
+describe('isIntegrationGitRef', () => {
+  it('treats main/master as integration', () => {
+    expect(isIntegrationGitRef('main')).toBe(true);
+    expect(isIntegrationGitRef('refs/heads/master')).toBe(true);
+    expect(isIntegrationGitRef('preview/ops-release')).toBe(false);
+  });
+});
+
+describe('incomingEmptyHint', () => {
+  it('reports behind vs waiting on CI', () => {
+    expect(incomingEmptyHint({ mainSha: 'aaaaaaaa', previewSha: 'bbbbbbbb' })).toBe('preview_behind');
+    expect(incomingEmptyHint({ mainSha: 'aaaaaaaa', previewSha: null })).toBe('preview_behind');
+    expect(incomingEmptyHint({ mainSha: 'aaaaaaaa', previewSha: 'aaaaaaaa' })).toBe('preview_waiting');
+    expect(incomingEmptyHint({ mainSha: null, previewSha: null })).toBe(null);
   });
 });
 

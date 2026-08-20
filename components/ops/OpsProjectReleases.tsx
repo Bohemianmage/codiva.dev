@@ -357,6 +357,16 @@ export default async function OpsProjectReleases({
             {t('ops.releases.incomingMisconfigured')}
           </p>
         ) : null}
+        {incoming.hint === 'preview_behind' ? (
+          <p className="rounded-xl border border-dashed border-amber-200 bg-amber-50 px-4 py-8 text-center text-sm text-amber-900">
+            {t('ops.releases.incomingBehind')}
+          </p>
+        ) : null}
+        {incoming.hint === 'preview_waiting' ? (
+          <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+            {t('ops.releases.incomingWaiting')}
+          </p>
+        ) : null}
         {!incoming.items.length && !incoming.pulls.length && !incoming.error && !incoming.hint ? (
           <p className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
             {t('ops.releases.incomingEmpty')}

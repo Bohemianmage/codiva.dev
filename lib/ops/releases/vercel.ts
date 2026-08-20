@@ -7,6 +7,7 @@
 import {
   dedupePreviewsBySha,
   isDirtyVercelMeta,
+  isIntegrationGitRef,
   previewHasGitAlias,
   selectStalePreviewIds,
 } from '@/lib/ops/releases/preview-filter';
@@ -183,6 +184,7 @@ export async function listVercelPreviews(input: {
     if (d.target === 'production') continue;
     if (!d.uid || !d.url) continue;
     if (isDirtyVercelMeta(d.meta)) continue;
+    if (isIntegrationGitRef(d.meta?.githubCommitRef ?? d.meta?.githubCommitRef)) continue;
     candidates.push(d);
     if (candidates.length >= 20) break;
   }
