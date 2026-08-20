@@ -41,6 +41,7 @@ export async function GET(request: Request, context: RouteContext) {
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'no-referrer',
+        'X-Frame-Options': 'SAMEORIGIN',
       },
     });
   }

@@ -1,4 +1,14 @@
-<!DOCTYPE html>
+-- NIRC: avance de construcción dentro del canvas de Arquitectura (un solo espacio).
+-- Quita el entregable suelto de propuesta.
+
+DELETE FROM public.deliverables
+WHERE id = '92000001-0001-4000-8000-000000000004'
+  AND project_id = 'b0000001-0001-4000-8000-00000000000b';
+
+UPDATE public.deliverables
+SET
+  description = 'Arquitectura certificada + estado de construcción (19 ago 2026) en el mismo canvas. Infra cloud y plan de dominio.',
+  body_html = $arch$<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -735,3 +745,6 @@ flowchart TD
   </script>
 </body>
 </html>
+$arch$
+WHERE id = '92000001-0001-4000-8000-000000000001'
+  AND project_id = 'b0000001-0001-4000-8000-00000000000b';
