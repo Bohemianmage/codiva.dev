@@ -54,7 +54,7 @@ export default async function QuoteEditorPage({
         name: data.name,
         organizations: Array.isArray(org) ? org[0] ?? null : org,
       };
-      backHref = `/projects/${quote.project_id}?tab=cotizaciones`;
+      backHref = `/projects/${projectSlug}?tab=cotizaciones`;
       backLabel = t('ops.quotePage.backProject');
     }
   }

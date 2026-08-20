@@ -21,7 +21,7 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen bg-codiva-background">
       {isStaffPreview && (
-        <StaffPortalPreviewBanner projectName={project.name} projectId={project.id} />
+        <StaffPortalPreviewBanner projectName={project.name} slug={slug} />
       )}
       <PortalNav
         slug={slug}

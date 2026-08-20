@@ -4,6 +4,7 @@ import StatusBadge, { ticketTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 type StaffLoad = {
   id: string;
@@ -14,6 +15,7 @@ type StaffLoad = {
     title: string;
     status: string;
     projectId: string;
+    projectSlug: string;
     projectName: string;
     sprintName: string;
   }[];
@@ -40,7 +42,7 @@ export default async function WorkloadPage() {
       supabase
         .from('sprint_items')
         .select(
-          'id, title, status, assignee_id, project_sprints!inner(id, name, project_id, projects(id, name))'
+          'id, title, status, assignee_id, project_sprints!inner(id, name, project_id, projects(id, name, slug))'
         )
         .not('assignee_id', 'is', null)
         .neq('status', 'done'),
@@ -73,7 +75,7 @@ export default async function WorkloadPage() {
         const sprint = i.project_sprints as {
           name?: string;
           project_id?: string;
-          projects?: { name?: string } | { name?: string }[] | null;
+          projects?: { name?: string; slug?: string } | { name?: string; slug?: string }[] | null;
         } | null;
         const project = Array.isArray(sprint?.projects) ? sprint?.projects[0] : sprint?.projects;
         return {
@@ -81,6 +83,7 @@ export default async function WorkloadPage() {
           title: i.title,
           status: i.status,
           projectId: sprint?.project_id || '',
+          projectSlug: project?.slug || sprint?.project_id || '',
           projectName: project?.name || EMPTY_LABEL,
           sprintName: sprint?.name || 'Sprint',
         };
@@ -132,7 +135,7 @@ export default async function WorkloadPage() {
                     <li key={item.id} className="flex items-start justify-between gap-2 text-sm">
                       <div>
                         <Link
-                          href={`/projects/${item.projectId}?tab=sprints`}
+                          href={opsProjectPath(item.projectSlug, '?tab=sprints')}
                           className="font-medium hover:text-codiva-primary"
                         >
                           {item.title}

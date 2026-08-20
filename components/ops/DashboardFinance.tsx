@@ -3,6 +3,7 @@ import StatusBadge, { chargeTone, projectTone } from '@/components/ops/StatusBad
 import type { FinanceFilters, FinanceSummary } from '@/lib/ops/finance';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 export default async function DashboardFinance({
   summary,
@@ -218,7 +219,7 @@ export default async function DashboardFinance({
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
-                            href={`/projects/${project.projectId}?tab=pagos`}
+                            href={opsProjectPath(project.projectSlug, '?tab=pagos')}
                             className="font-medium hover:text-codiva-primary"
                           >
                             {project.projectName}

@@ -3,10 +3,10 @@ import { getT } from '@/i18n/locale';
 
 export default async function StaffPortalPreviewBanner({
   projectName,
-  projectId,
+  slug,
 }: {
   projectName: string;
-  projectId: string;
+  slug: string;
 }) {
   const t = await getT();
   return (
@@ -17,7 +17,7 @@ export default async function StaffPortalPreviewBanner({
           {' · '}
           {t('ops.preview.body')} <span className="font-medium">{projectName}</span>. {t('ops.preview.noLegal')}
         </p>
-        <Link href={`/projects/${projectId}`} className="font-medium underline underline-offset-2 hover:no-underline">
+        <Link href={`/projects/${slug}`} className="font-medium underline underline-offset-2 hover:no-underline">
           {t('ops.preview.back')}
         </Link>
       </div>

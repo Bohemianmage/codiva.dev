@@ -7,6 +7,7 @@ import { listVisibleProjectIds, projectIdInFilter, requireCapability } from '@/l
 import { updateOrganization } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 export default async function OrganizationDetailPage({
   params,
@@ -86,7 +87,7 @@ export default async function OrganizationDetailPage({
           {(projects ?? []).map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm">
               <div>
-                <Link href={`/projects/${p.id}`} className="font-medium hover:text-codiva-primary">
+                <Link href={opsProjectPath(p.slug)} className="font-medium hover:text-codiva-primary">
                   {p.name}
                 </Link>
                 <p className="text-xs text-zinc-400">

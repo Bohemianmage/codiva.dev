@@ -13,6 +13,7 @@ export type FinanceChargeRow = {
     | {
         id: string;
         name: string;
+        slug?: string | null;
         status: string;
         organization_id: string | null;
         organizations: { id: string; name: string } | { id: string; name: string }[] | null;
@@ -20,6 +21,7 @@ export type FinanceChargeRow = {
     | {
         id: string;
         name: string;
+        slug?: string | null;
         status: string;
         organization_id: string | null;
         organizations: { id: string; name: string } | { id: string; name: string }[] | null;
@@ -39,6 +41,7 @@ export type FinanceQuoteRow = {
 export type FinanceProjectRow = {
   id: string;
   name: string;
+  slug?: string | null;
   status: string;
   organization_id: string | null;
   organizations: { id: string; name: string } | { id: string; name: string }[] | null;
@@ -64,6 +67,7 @@ export type FinanceOrgBucket = {
 
 export type FinanceProjectBucket = {
   projectId: string;
+  projectSlug: string;
   projectName: string;
   projectStatus: string;
   outstanding: number;
@@ -146,6 +150,7 @@ export function buildFinanceSummary(
 
   type AccProject = {
     projectId: string;
+    projectSlug: string;
     projectName: string;
     projectStatus: string;
     orgId: string;
@@ -162,6 +167,7 @@ export function buildFinanceSummary(
   function ensureProject(project: {
     id: string;
     name: string;
+    slug?: string | null;
     status: string;
     organizations: FinanceProjectRow['organizations'];
   }) {
@@ -170,6 +176,7 @@ export function buildFinanceSummary(
     const org = asOne(project.organizations);
     bucket = {
       projectId: project.id,
+      projectSlug: project.slug || project.id,
       projectName: project.name,
       projectStatus: project.status,
       orgId: org?.id ?? 'sin-org',
@@ -268,6 +275,7 @@ export function buildFinanceSummary(
     org.quoteTotal += projectQuote;
     org.projects.push({
       projectId: p.projectId,
+      projectSlug: p.projectSlug,
       projectName: p.projectName,
       projectStatus: p.projectStatus,
       outstanding: p.outstanding,

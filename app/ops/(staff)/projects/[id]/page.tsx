@@ -36,6 +36,7 @@ import { can } from '@/lib/ops/permissions';
 import { labelsFor, isClientBorneChargeKind } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { projectPortalUrl, staffPortalPreviewPath } from '@/lib/ops/host';
+import { opsProjectPath, resolveOpsProject } from '@/lib/ops/project-path';
 import OpsQuoteForm from '@/components/ops/OpsQuoteForm';
 import OpsProjectArchitecture from '@/components/ops/OpsProjectArchitecture';
 import { isCanvasKind } from '@/lib/ops/architecture';
@@ -54,11 +55,19 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { id } = await params;
-  const { tab = 'resumen' } = await searchParams;
+  const { id: idOrSlug } = await params;
+  const search = await searchParams;
+  const tab = search.tab ?? 'resumen';
   const access = await requireStaff();
-  await assertProjectAccess(access, id);
   const { supabase, user, staff } = access;
+  const resolved = await resolveOpsProject(supabase, idOrSlug);
+  if (!resolved) redirect('/projects');
+  if (idOrSlug !== resolved.slug) {
+    redirect(opsProjectPath(resolved.slug, search.tab ? `?tab=${encodeURIComponent(search.tab)}` : ''));
+  }
+  await assertProjectAccess(access, resolved.id);
+  const id = resolved.id;
+  const projectSlug = resolved.slug;
   const t = await getT();
   const {
     PROJECT_STATUS_LABELS,
@@ -291,7 +300,7 @@ export default async function ProjectDetailPage({
         {tabs.map((tabItem) => (
           <Link
             key={tabItem.key}
-            href={`/projects/${id}?tab=${tabItem.key}`}
+            href={opsProjectPath(projectSlug, `?tab=${tabItem.key}`)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               tab === tabItem.key ? 'bg-codiva-primary text-white' : 'text-zinc-600 hover:bg-zinc-100'
             }`}
@@ -1023,7 +1032,7 @@ export default async function ProjectDetailPage({
         <div className="space-y-6">
           <p className="text-sm text-zinc-600">
             {t('ops.project.deliverablesHintPrefix')}{' '}
-            <Link href={`/projects/${id}?tab=arquitectura`} className="text-codiva-primary hover:underline">
+            <Link href={opsProjectPath(projectSlug, '?tab=arquitectura')} className="text-codiva-primary hover:underline">
               {t('ops.project.tabArquitectura')}
             </Link>
             .

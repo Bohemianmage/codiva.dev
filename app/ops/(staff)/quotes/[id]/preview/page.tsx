@@ -33,7 +33,7 @@ export default async function QuotePreviewPage({
   } else if (quote.project_id) {
     const { data } = await supabase
       .from('projects')
-      .select('name, organizations(name, contact_email)')
+      .select('name, slug, organizations(name, contact_email)')
       .eq('id', quote.project_id)
       .single();
     if (data) {
@@ -42,8 +42,10 @@ export default async function QuotePreviewPage({
         name: data.name,
         organizations: Array.isArray(org) ? org[0] ?? null : org,
       };
+      backHref = `/projects/${data.slug}?tab=cotizaciones`;
+    } else {
+      backHref = `/projects/${quote.project_id}?tab=cotizaciones`;
     }
-    backHref = `/projects/${quote.project_id}?tab=cotizaciones`;
     backLabel = t('ops.quotePage.backProject');
   }
 

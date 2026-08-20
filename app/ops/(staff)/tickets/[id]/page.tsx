@@ -7,6 +7,7 @@ import { assertProjectAccess, requireCapability } from '@/lib/ops/auth';
 import { updateTicketAssignment } from '@/lib/ops/actions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,7 +17,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const { EMPTY_LABEL, TICKET_STATUS_LABELS, TICKET_PRIORITY_LABELS, formatDate } = labelsFor(t.locale);
 
   const [{ data: ticket }, { data: staff }] = await Promise.all([
-    supabase.from('tickets').select('*, ticket_attachments(*)').eq('id', id).single(),
+    supabase.from('tickets').select('*, ticket_attachments(*), projects(slug)').eq('id', id).single(),
     supabase.from('staff_profiles').select('id, full_name').eq('active', true).order('full_name'),
   ]);
 
@@ -24,6 +25,9 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   if (ticket.project_id) {
     await assertProjectAccess(access, ticket.project_id);
   }
+  const ticketProject = Array.isArray(ticket.projects) ? ticket.projects[0] : ticket.projects;
+  const ticketProjectSlug =
+    (ticketProject as { slug?: string } | null)?.slug ?? ticket.project_id;
 
   const assigneeName =
     staff?.find((s) => s.id === ticket.assigned_to)?.full_name || null;
@@ -105,7 +109,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
       {ticket.project_id && (
         <p className="mt-4 text-sm">
-          <Link href={`/projects/${ticket.project_id}`} className="text-codiva-primary hover:underline">
+          <Link href={opsProjectPath(ticketProjectSlug)} className="text-codiva-primary hover:underline">
             {t('ops.ticketsPage.viewProject')}
           </Link>
         </p>

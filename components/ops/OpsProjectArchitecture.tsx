@@ -7,6 +7,7 @@ import {
 } from '@/lib/ops/actions';
 import { isCanvasKind, portalCanvasPath } from '@/lib/ops/architecture';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
+import { opsProjectPath } from '@/lib/ops/project-path';
 import { requireStaff } from '@/lib/ops/auth';
 import { getT } from '@/i18n/locale';
 
@@ -118,7 +119,7 @@ export default async function OpsProjectArchitecture({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link
-                    href={`/projects/${projectId}/arquitectura/${item.id}`}
+                    href={opsProjectPath(slug, `/arquitectura/${item.id}`)}
                     className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
                   >
                     {t('ops.architecture.editInOps')}

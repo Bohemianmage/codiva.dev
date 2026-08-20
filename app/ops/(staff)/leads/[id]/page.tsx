@@ -6,6 +6,7 @@ import ToastForm from '@/components/ops/ToastForm';
 import StatusBadge, { leadTone } from '@/components/ops/StatusBadge';
 import { requireCapability } from '@/lib/ops/auth';
 import { can } from '@/lib/ops/permissions';
+import { opsProjectPath } from '@/lib/ops/project-path';
 import {
   updateLeadStatus,
   updateLeadDetails,
@@ -36,6 +37,16 @@ export default async function LeadDetailPage({
 
   const { data: lead } = await supabase.from('leads').select('*').eq('id', id).single();
   if (!lead) redirect('/leads');
+
+  let convertedSlug: string | null = null;
+  if (lead.converted_project_id) {
+    const { data: converted } = await supabase
+      .from('projects')
+      .select('slug')
+      .eq('id', lead.converted_project_id)
+      .maybeSingle();
+    convertedSlug = converted?.slug ?? null;
+  }
 
   const { data: staffList } = await supabase
     .from('staff_profiles')
@@ -90,7 +101,7 @@ export default async function LeadDetailPage({
     'use server';
     const result = await convertLeadToProject(id);
     const { redirectWithToast } = await import('@/lib/ops/toast');
-    redirectWithToast(`/projects/${result.projectId}`, convertedMsg);
+    redirectWithToast(opsProjectPath(result.slug), convertedMsg);
   }
 
   const displayTitle =
@@ -110,7 +121,7 @@ export default async function LeadDetailPage({
             </ToastForm>
           ) : lead.converted_project_id ? (
             <Link
-              href={`/projects/${lead.converted_project_id}`}
+              href={opsProjectPath(convertedSlug ?? lead.converted_project_id)}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium"
             >
               {t('ops.leadDetail.viewProject')}

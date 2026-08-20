@@ -27,6 +27,7 @@ import {
   isTesterPipelineItem,
 } from '@/lib/ops/career-disciplines';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 import { createAdminClient } from '@/lib/supabase/admin';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -107,7 +108,7 @@ export default async function TeamPage({
       .order('created_at', { ascending: false })
       .limit(80),
     canManageTeam
-      ? supabase.from('projects').select('id, name, organizations(name)').order('name')
+      ? supabase.from('projects').select('id, name, slug, organizations(name)').order('name')
       : Promise.resolve(empty),
     canManageTeam
       ? supabase.from('project_staff').select('project_id, staff_id, role_on_project')
@@ -183,6 +184,7 @@ export default async function TeamPage({
       return [p.id, orgName ? `${p.name} · ${orgName}` : p.name] as const;
     })
   );
+  const projectSlug = new Map((allProjects ?? []).map((p) => [p.id, p.slug] as const));
 
   async function onInvite(formData: FormData) {
     'use server';
@@ -360,7 +362,7 @@ export default async function TeamPage({
                             >
                               <span>
                                 <Link
-                                  href={`/projects/${a.project_id}`}
+                                  href={opsProjectPath(projectSlug.get(a.project_id) ?? a.project_id)}
                                   className="text-codiva-primary hover:underline"
                                 >
                                   {projectLabel.get(a.project_id) ?? a.project_id.slice(0, 8)}

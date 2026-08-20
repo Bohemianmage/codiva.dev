@@ -13,6 +13,7 @@ import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 export default async function ProjectsPage() {
   const access = await requireStaff();
@@ -41,9 +42,9 @@ export default async function ProjectsPage() {
 
   async function onCreate(formData: FormData) {
     'use server';
-    const id = await createProject(formData);
+    const project = await createProject(formData);
     const { redirectWithToast } = await import('@/lib/ops/toast');
-    redirectWithToast(`/projects/${id}`, createdMsg);
+    redirectWithToast(opsProjectPath(project.slug), createdMsg);
   }
 
   return (
@@ -91,7 +92,7 @@ export default async function ProjectsPage() {
           {(projects ?? []).map((p) => (
             <Tr key={p.id}>
               <Td>
-                <Link href={`/projects/${p.id}`} className="font-medium hover:text-codiva-primary">
+                <Link href={opsProjectPath(p.slug)} className="font-medium hover:text-codiva-primary">
                   {p.name}
                 </Link>
                 <div className="text-xs text-zinc-500">

@@ -11,6 +11,7 @@ import { can } from '@/lib/ops/permissions';
 import { labelsFor } from '@/lib/ops/labels';
 import { loadInboundItems, type InboundKind } from '@/lib/ops/inbound';
 import { getT } from '@/i18n/locale';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0] || undefined;
@@ -69,7 +70,7 @@ export default async function DashboardPage({
 
   let financeProjectsQuery = supabase
     .from('projects')
-    .select('id, name, status, organization_id, organizations(id, name)')
+    .select('id, name, slug, status, organization_id, organizations(id, name)')
     .order('name', { ascending: true });
 
   const projectFilter = projectIdInFilter(visibleIds);
@@ -117,7 +118,7 @@ export default async function DashboardPage({
       ? supabase
           .from('project_charges')
           .select(
-            'id, kind, title, amount, currency, status, due_date, project_id, projects(id, name, status, organization_id, organizations(id, name))'
+            'id, kind, title, amount, currency, status, due_date, project_id, projects(id, name, slug, status, organization_id, organizations(id, name))'
           )
           .order('due_date', { ascending: true })
       : Promise.resolve({ data: [] as never[] }),
@@ -131,7 +132,7 @@ export default async function DashboardPage({
     supabase
       .from('sprint_items')
       .select(
-        'id, title, status, sprint_id, project_sprints!inner(id, name, project_id, status, projects(id, name))'
+        'id, title, status, sprint_id, project_sprints!inner(id, name, project_id, status, projects(id, name, slug))'
       )
       .eq('assignee_id', user.id)
       .neq('status', 'done')
@@ -170,14 +171,14 @@ export default async function DashboardPage({
                 const sprint = item.project_sprints as {
                   name?: string;
                   project_id?: string;
-                  projects?: { name?: string } | { name?: string }[] | null;
+                  projects?: { name?: string; slug?: string } | { name?: string; slug?: string }[] | null;
                 } | null;
                 const project = Array.isArray(sprint?.projects) ? sprint?.projects[0] : sprint?.projects;
                 return (
                   <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
                     <div>
                       <Link
-                        href={`/projects/${sprint?.project_id}?tab=sprints`}
+                        href={opsProjectPath(project?.slug || sprint?.project_id || '', '?tab=sprints')}
                         className="font-medium hover:text-codiva-primary"
                       >
                         {item.title}
@@ -285,7 +286,7 @@ export default async function DashboardPage({
             {(projects ?? []).map((p) => (
               <li key={p.id} className="text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <Link href={`/projects/${p.id}`} className="font-medium hover:text-codiva-primary">
+                  <Link href={opsProjectPath(p.slug)} className="font-medium hover:text-codiva-primary">
                     {p.name}
                   </Link>
                   <StatusBadge label={PROJECT_STATUS_LABELS[p.status]} tone={projectTone(p.status)} />
@@ -293,7 +294,7 @@ export default async function DashboardPage({
                 <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
                   <span>{t('ops.dashboard.progressPct', { pct: p.progress_percent })}</span>
                   <span>{t('ops.dashboard.delivery', { date: formatDate(p.target_delivery_date) })}</span>
-                  <Link href={`/projects/${p.id}?tab=sprints`} className="font-medium text-codiva-primary hover:underline">
+                  <Link href={opsProjectPath(p.slug, '?tab=sprints')} className="font-medium text-codiva-primary hover:underline">
                     {t('ops.dashboard.sprints')}
                   </Link>
                   <PortalClientUrl slug={p.slug} />

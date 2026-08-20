@@ -24,7 +24,8 @@ import {
   templateStaffInviteExistingUser,
 } from '@/lib/ops/email-templates';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
-import { opsBaseUrl, opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib/ops/host';
+import { opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib/ops/host';
+import { opsProjectPathById, opsProjectUrl } from '@/lib/ops/project-path';
 import { deleteOpsFile, uploadOpsFile } from '@/lib/ops/storage';
 import { scanUploadedBytes } from '@/lib/ops/malware-scan';
 import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
@@ -508,7 +509,7 @@ export async function createProject(formData: FormData) {
       description: String(formData.get('description') || ''),
       target_delivery_date: String(formData.get('targetDeliveryDate') || '') || null,
     })
-    .select('id')
+    .select('id, slug')
     .single();
 
   if (error || !project) throw await throwDb(error);
@@ -527,7 +528,7 @@ export async function createProject(formData: FormData) {
   });
 
   revalidatePath('/projects');
-  return project.id;
+  return { id: project.id, slug: project.slug };
 }
 
 export async function updateProject(projectId: string, formData: FormData) {
@@ -1300,7 +1301,10 @@ export async function createArchitectureCanvas(projectId: string, formData: Form
   revalidatePath('/p', 'layout');
   const t = await getT();
   const { redirectWithToast } = await import('@/lib/ops/toast');
-  redirectWithToast(`/projects/${projectId}/arquitectura/${deliverable.id}`, t('ops.architecture.created'));
+  redirectWithToast(
+    await opsProjectPathById(supabase, projectId, `/arquitectura/${deliverable.id}`),
+    t('ops.architecture.created')
+  );
 }
 
 export async function updateArchitectureCanvas(projectId: string, deliverableId: string, formData: FormData) {
@@ -1402,14 +1406,14 @@ export async function hydrateArchitectureFromPacks(projectId: string): Promise<n
 }
 
 export async function adoptArchitecturePacks(projectId: string) {
-  await assertCapability('deliverables');
+  const access = await assertCapability('deliverables');
   const adopted = await hydrateArchitectureFromPacks(projectId);
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/p', 'layout');
   const { redirectWithToast } = await import('@/lib/ops/toast');
   const t = await getT();
   redirectWithToast(
-    `/projects/${projectId}?tab=arquitectura`,
+    await opsProjectPathById(access.supabase, projectId, '?tab=arquitectura'),
     adopted > 0
       ? t('ops.architecture.packsAdopted', { count: adopted })
       : t('ops.architecture.packsNone')
@@ -1801,7 +1805,7 @@ export async function clientFulfillDocumentRequest(
             : `Respuesta: texto/accesos`,
         `Notas: ${notes || '-'}`,
       ],
-      { ctaLabel: 'Ver documentos', ctaHref: `${opsBaseUrl()}/projects/${projectId}?tab=documentos` }
+      { ctaLabel: 'Ver documentos', ctaHref: opsProjectUrl(slug, '?tab=documentos') }
     ),
   }).catch(() => {});
 

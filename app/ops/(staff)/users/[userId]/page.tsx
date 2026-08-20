@@ -12,6 +12,7 @@ import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { labelsFor } from '@/lib/ops/labels';
 import { getT } from '@/i18n/locale';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { opsProjectPath } from '@/lib/ops/project-path';
 
 export default async function PortalUserDetailPage({
   params,
@@ -104,7 +105,7 @@ export default async function PortalUserDetailPage({
                 >
                   <div>
                     <Link
-                      href={`/projects/${m.project_id}`}
+                      href={opsProjectPath(project?.slug ?? m.project_id)}
                       className="font-medium text-codiva-primary hover:underline"
                     >
                       {project?.name ?? m.project_id.slice(0, 8)}

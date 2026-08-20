@@ -7,6 +7,7 @@ import { updateArchitectureCanvas, hydrateArchitectureFromPacks } from '@/lib/op
 import { can } from '@/lib/ops/permissions';
 import { resolveArchitectureHtml } from '@/lib/ops/architecture';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
+import { opsProjectPath, resolveOpsProject } from '@/lib/ops/project-path';
 import { getT } from '@/i18n/locale';
 
 export default async function ArchitectureEditorPage({
@@ -14,13 +15,19 @@ export default async function ArchitectureEditorPage({
 }: {
   params: Promise<{ id: string; deliverableId: string }>;
 }) {
-  const { id, deliverableId } = await params;
+  const { id: idOrSlug, deliverableId } = await params;
   const access = await requireStaff();
-  await assertProjectAccess(access, id);
   const { supabase, staff } = access;
+  const resolved = await resolveOpsProject(supabase, idOrSlug);
+  if (!resolved) notFound();
+  if (idOrSlug !== resolved.slug) {
+    redirect(opsProjectPath(resolved.slug, `/arquitectura/${deliverableId}`));
+  }
+  await assertProjectAccess(access, resolved.id);
+  const id = resolved.id;
 
   if (!can(staff, 'deliverables')) {
-    redirect(`/projects/${id}?tab=arquitectura`);
+    redirect(opsProjectPath(resolved.slug, '?tab=arquitectura'));
   }
 
   await hydrateArchitectureFromPacks(id);
@@ -48,7 +55,7 @@ export default async function ArchitectureEditorPage({
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/projects/${id}?tab=arquitectura`}
+              href={opsProjectPath(project.slug, '?tab=arquitectura')}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
               {t('ops.architecture.back')}
