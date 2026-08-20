@@ -396,3 +396,99 @@ export async function mergePullRequest(input: {
   }
   return { ok: true };
 }
+
+/** Default branch Codiva uses to stage a QA preview from main HEAD. */
+export const OPS_RELEASE_BRANCH = 'preview/ops-release';
+
+/**
+ * Point preview/ops-release (or custom) at the tip of fromRef (default main).
+ * Push triggers the client's CI preview job (non-main).
+ */
+export async function upsertOpsReleaseBranch(input: {
+  owner: string;
+  repo: string;
+  fromRef?: string;
+  branch?: string;
+}): Promise<
+  | { ok: true; sha: string; branch: string; created: boolean; url: string }
+  | { ok: false; error: string; missingToken?: boolean }
+> {
+  const token = githubToken();
+  if (!token) {
+    return {
+      ok: false,
+      missingToken: true,
+      error: 'Falta GITHUB_RELEASES_TOKEN (o GITHUB_TOKEN) en el entorno de Codiva.',
+    };
+  }
+
+  const owner = input.owner.trim();
+  const repo = input.repo.trim();
+  const fromRef = (input.fromRef?.trim() || 'main').replace(/^refs\/heads\//, '');
+  const branch = (input.branch?.trim() || OPS_RELEASE_BRANCH).replace(/^refs\/heads\//, '');
+  const ownerEnc = encodeURIComponent(owner);
+  const repoEnc = encodeURIComponent(repo);
+
+  const tip = await githubJson(`/repos/${ownerEnc}/${repoEnc}/git/ref/heads/${encodeURIComponent(fromRef)}`);
+  if (!tip.ok) {
+    return {
+      ok: false,
+      error: `No se pudo leer ${fromRef} (${tip.status}): ${tip.body.slice(0, 300)}`,
+    };
+  }
+
+  let sha = '';
+  try {
+    const parsed = JSON.parse(tip.body) as { object?: { sha?: string } };
+    sha = parsed.object?.sha?.trim() ?? '';
+  } catch {
+    sha = '';
+  }
+  if (!sha) return { ok: false, error: `Respuesta inválida al leer ${fromRef}.` };
+
+  const existing = await githubJson(
+    `/repos/${ownerEnc}/${repoEnc}/git/ref/heads/${encodeURIComponent(branch)}`
+  );
+
+  if (existing.ok) {
+    const updated = await githubJson(
+      `/repos/${ownerEnc}/${repoEnc}/git/refs/heads/${encodeURIComponent(branch)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ sha, force: true }),
+      }
+    );
+    if (!updated.ok) {
+      return {
+        ok: false,
+        error: `No se pudo actualizar ${branch} (${updated.status}): ${updated.body.slice(0, 300)}`,
+      };
+    }
+    return {
+      ok: true,
+      sha,
+      branch,
+      created: false,
+      url: `https://github.com/${owner}/${repo}/tree/${branch}`,
+    };
+  }
+
+  const created = await githubJson(`/repos/${ownerEnc}/${repoEnc}/git/refs`, {
+    method: 'POST',
+    body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }),
+  });
+  if (!created.ok) {
+    return {
+      ok: false,
+      error: `No se pudo crear ${branch} (${created.status}): ${created.body.slice(0, 300)}`,
+    };
+  }
+
+  return {
+    ok: true,
+    sha,
+    branch,
+    created: true,
+    url: `https://github.com/${owner}/${repo}/tree/${branch}`,
+  };
+}

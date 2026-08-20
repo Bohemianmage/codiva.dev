@@ -9,10 +9,13 @@ import {
   acceptAndPromoteIncoming,
   approveReleaseRequest,
   cancelReleaseRequest,
+  cleanupIncomingPreviews,
   decideGithubPull,
+  discardIncomingPreview,
   dispatchReleasePromote,
   loadIncomingPreviews,
   markReleaseSucceededManually,
+  prepareOpsRelease,
   upsertReleaseSettings,
   releasesTokenConfigured,
   vercelTokenConfigured,
@@ -295,7 +298,50 @@ export default async function OpsProjectReleases({
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-4">
-        <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.incomingTitle')}</h3>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h3 className="text-lg font-semibold text-zinc-900">{t('ops.releases.incomingTitle')}</h3>
+          {canManage && settings?.enabled ? (
+            <div className="flex flex-wrap gap-2">
+              <ToastForm
+                success={t('ops.releases.prepareOk')}
+                confirmTitle={t('ops.releases.prepareConfirmTitle')}
+                confirmMessage={t('ops.releases.prepareConfirm')}
+                confirmLabel={t('ops.releases.prepare')}
+                confirmTone="primary"
+                action={async () => {
+                  'use server';
+                  await prepareOpsRelease(projectId);
+                }}
+              >
+                <button
+                  type="submit"
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                >
+                  {t('ops.releases.prepare')}
+                </button>
+              </ToastForm>
+              <ToastForm
+                success={t('ops.releases.cleanupOk')}
+                confirmTitle={t('ops.releases.cleanupConfirmTitle')}
+                confirmMessage={t('ops.releases.cleanupConfirm')}
+                confirmLabel={t('ops.releases.cleanup')}
+                confirmTone="danger"
+                action={async () => {
+                  'use server';
+                  await cleanupIncomingPreviews(projectId);
+                }}
+              >
+                <button
+                  type="submit"
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                >
+                  {t('ops.releases.cleanup')}
+                </button>
+              </ToastForm>
+            </div>
+          ) : null}
+        </div>
+        <p className="text-xs text-zinc-500">{t('ops.releases.incomingHint')}</p>
         {incoming.error ? (
           <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {incoming.error}
@@ -344,12 +390,21 @@ export default async function OpsProjectReleases({
                         ) : (
                           <StatusBadge label={t(`ops.releases.ci.${ciState}`)} tone={ciTone(ciState)} />
                         )}
+                        {item.branch ? (
+                          <StatusBadge label={item.branch} tone="neutral" />
+                        ) : null}
+                        {item.hasGitAlias ? (
+                          <StatusBadge label={t('ops.releases.badgeGitAlias')} tone="info" />
+                        ) : null}
+                        {item.dirty ? (
+                          <StatusBadge label={t('ops.releases.badgeDirty')} tone="warning" />
+                        ) : null}
                         {item.pull ? (
                           <StatusBadge label={`PR #${item.pull.number}`} tone="info" />
                         ) : null}
                       </div>
                       <p className="text-xs text-zinc-500">
-                        {[item.author, item.sha ? item.sha.slice(0, 7) : null, item.branch]
+                        {[item.author, item.sha ? item.sha.slice(0, 7) : null]
                           .filter(Boolean)
                           .join(' · ')}
                         {item.createdAt ? ` · ${new Date(item.createdAt).toLocaleString()}` : ''}
@@ -367,6 +422,27 @@ export default async function OpsProjectReleases({
                       </a>
                       {canManage && item.pull ? (
                         <PullDecisions projectId={projectId} pull={item.pull} labels={pullLabels} />
+                      ) : null}
+                      {canManage && item.deploymentId ? (
+                        <ToastForm
+                          success={t('ops.releases.discarded')}
+                          confirmTitle={t('ops.releases.discardConfirmTitle')}
+                          confirmMessage={t('ops.releases.discardConfirm')}
+                          confirmLabel={t('ops.releases.discard')}
+                          confirmTone="danger"
+                          action={async (fd) => {
+                            'use server';
+                            await discardIncomingPreview(projectId, fd);
+                          }}
+                        >
+                          <input type="hidden" name="deploymentId" value={item.deploymentId} />
+                          <button
+                            type="submit"
+                            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-50"
+                          >
+                            {t('ops.releases.discard')}
+                          </button>
+                        </ToastForm>
                       ) : null}
                       {canManage ? (
                         <ToastForm

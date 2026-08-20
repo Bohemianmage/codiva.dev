@@ -4,6 +4,13 @@
  * Token: VERCEL_RELEASES_TOKEN (preferred) or VERCEL_TOKEN — server-only.
  */
 
+import {
+  dedupePreviewsBySha,
+  isDirtyVercelMeta,
+  previewHasGitAlias,
+  selectStalePreviewIds,
+} from '@/lib/ops/releases/preview-filter';
+
 export type VercelPreview = {
   deploymentId: string;
   previewUrl: string;
@@ -13,6 +20,8 @@ export type VercelPreview = {
   author: string | null;
   branch: string | null;
   createdAt: string;
+  dirty: boolean;
+  hasGitAlias: boolean;
 };
 
 export type VercelPromoteMode = 'alias' | 'rebuild';
@@ -173,30 +182,109 @@ export async function listVercelPreviews(input: {
   for (const d of data.deployments ?? []) {
     if (d.target === 'production') continue;
     if (!d.uid || !d.url) continue;
+    if (isDirtyVercelMeta(d.meta)) continue;
     candidates.push(d);
-    if (candidates.length >= 8) break;
+    if (candidates.length >= 20) break;
   }
 
-  const items: VercelPreview[] = await Promise.all(
+  const mapped: VercelPreview[] = await Promise.all(
     candidates.map(async (d) => {
       const meta = d.meta ?? {};
       const createdMs = d.createdAt ?? d.created ?? Date.now();
       const deploymentHost = hostOnly(d.url!);
       const aliases = await listDeploymentAliases(token, d.uid!, input.teamId);
+      const previewUrl = asHttps(pickPreviewHost(deploymentHost, aliases));
       return {
         deploymentId: d.uid!,
-        previewUrl: asHttps(pickPreviewHost(deploymentHost, aliases)),
+        previewUrl,
         inspectUrl: d.inspectorUrl ?? null,
         sha: meta.githubCommitSha ?? null,
         message: meta.githubCommitMessage ?? null,
         author: meta.githubCommitAuthorName ?? null,
         branch: meta.githubCommitRef ?? null,
         createdAt: new Date(createdMs).toISOString(),
+        dirty: false,
+        hasGitAlias: previewHasGitAlias(previewUrl, aliases),
       };
     })
   );
 
+  const items = dedupePreviewsBySha(mapped).slice(0, 8);
   return { items, error: null };
+}
+
+/** List preview deploys including dirty ones (for cleanup). */
+export async function listVercelPreviewsForCleanup(input: {
+  projectId: string;
+  teamId?: string | null;
+}): Promise<{ items: VercelPreview[]; error: string | null }> {
+  const token = vercelToken();
+  if (!token) {
+    return {
+      items: [],
+      error: 'Falta VERCEL_RELEASES_TOKEN (o VERCEL_TOKEN) en el entorno de Codiva.',
+    };
+  }
+
+  const projectId = input.projectId.trim();
+  if (!projectId) return { items: [], error: null };
+
+  const url = `https://api.vercel.com/v6/deployments?projectId=${encodeURIComponent(projectId)}&state=READY&limit=40${teamQuery(input.teamId)}`;
+  const res = await fetch(url, { headers: vercelHeaders(token), cache: 'no-store' });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    return {
+      items: [],
+      error: `Vercel list deployments falló (${res.status}): ${body.slice(0, 300) || res.statusText}`,
+    };
+  }
+
+  const data = (await res.json()) as { deployments?: VercelDeployment[] };
+  const items: VercelPreview[] = [];
+  for (const d of data.deployments ?? []) {
+    if (d.target === 'production' || !d.uid || !d.url) continue;
+    const meta = d.meta ?? {};
+    const createdMs = d.createdAt ?? d.created ?? Date.now();
+    const deploymentHost = hostOnly(d.url);
+    const previewUrl = asHttps(deploymentHost);
+    items.push({
+      deploymentId: d.uid,
+      previewUrl,
+      inspectUrl: d.inspectorUrl ?? null,
+      sha: meta.githubCommitSha ?? null,
+      message: meta.githubCommitMessage ?? null,
+      author: meta.githubCommitAuthorName ?? null,
+      branch: meta.githubCommitRef ?? null,
+      createdAt: new Date(createdMs).toISOString(),
+      dirty: isDirtyVercelMeta(meta),
+      hasGitAlias: previewHasGitAlias(previewUrl),
+    });
+  }
+  return { items, error: null };
+}
+
+/** Delete dirty previews and ones older than 7 days (keeps newest git-alias per SHA). */
+export async function cleanupStaleVercelPreviews(input: {
+  projectId: string;
+  teamId?: string | null;
+}): Promise<{ deleted: number; error: string | null }> {
+  const listed = await listVercelPreviewsForCleanup(input);
+  if (listed.error) return { deleted: 0, error: listed.error };
+
+  const staleIds = new Set(selectStalePreviewIds(listed.items));
+  for (const item of listed.items) {
+    if (item.dirty) staleIds.add(item.deploymentId);
+  }
+
+  let deleted = 0;
+  for (const deploymentId of staleIds) {
+    const result = await deleteVercelDeployment({
+      deploymentId,
+      teamId: input.teamId,
+    });
+    if (result.ok) deleted += 1;
+  }
+  return { deleted, error: null };
 }
 
 export async function resolveVercelDeploymentId(input: {

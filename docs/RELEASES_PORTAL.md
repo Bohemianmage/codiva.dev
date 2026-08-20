@@ -1,29 +1,41 @@
 # Releases: GitHub CI → preview Vercel → QA Codiva → producción
 
-## Flujo (ya está en Codiva)
+## Flujo
 
-1. Push / PR en una rama **distinta de `main`** en el repo del cliente.
-2. GitHub Actions corre tests.
-3. Si pasa, preview en Vercel (el auto-deploy Git de Vercel está apagado).
-4. En paralelo, Codiva lista ese deploy READY en **Ops → Proyecto → Releases** (no hace falta un PR abierto).
-5. Ops prueba la URL. El badge muestra el CI.
-6. Admin / PM: **Aceptar y mandar a producción** (mismo artefacto, sin rebuild).
+1. Código en rama **`preview/*`** (o PR), nunca promover desde un deploy dirty de `main`.
+2. GitHub Actions: lint/typecheck/test; si la rama ≠ `main`, job `preview` en Vercel + alias `*-git-*`.
+3. Codiva Ops → Proyecto → **Releases** lista previews READY (sin dirty, un ítem por SHA, sin ya promovidos).
+4. Ops prueba la URL (bypass de protección si aplica).
+5. Admin/PM: **Aceptar y mandar a producción** (rebuild con env Production). El preview de origen se borra de Vercel/Incoming.
+6. El cliente en Portal → Tu sitio solo ve historial.
 
-El cliente en **Portal → Tu sitio** solo ve historial.
+### Atajos en Ops
+
+| Acción | Qué hace |
+|--------|----------|
+| **Preparar release** | Apunta `preview/ops-release` al tip de `main` → CI genera preview limpio |
+| **Limpiar basura** | Borra dirty (`cursor-cli` / `gitDirty`) y previews >7 días |
+| **Descartar** | Borra un preview concreto en Vercel |
+
+## Convención de ramas
+
+- `main` — integración; CI **no** despliega preview.
+- `preview/ops-release` — staging de QA que Ops prepara desde Codiva.
+- Otras `preview/*` o PRs — trabajo en curso.
+
+No desplegar working trees sucios a Vercel (deploys con `gitDirty` / actor `cursor-cli` se ocultan y se pueden limpiar).
 
 ## Lo que Codiva ya hace
 
-- Panel Ops (solo admin/PM) y historial de solo lectura en el portal.
-- Lista previews READY desde Vercel (o GitHub), con commit y estado de CI. Un PR abierto se asocia si coincide; no es un requisito para ver el preview.
-- Promote por API de Vercel, o workflow de GitHub como respaldo.
-- Migraciones de tablas `project_release_settings` y `project_release_requests`.
+- Panel Ops (admin/PM) + historial de solo lectura en el portal.
+- Lista previews READY desde Vercel (filtros dirty/dedupe/promovidos) o GitHub.
+- Promote por API de Vercel (borra el preview de origen) o workflow GitHub de respaldo.
+- Tablas `project_release_settings` / `project_release_requests`.
 - Plantillas: `docs/workflows/preview.yml` y `docs/workflows/promote-production.yml`.
 
-## Lo que debes hacer tú
+## Setup
 
 ### 1. SQL en Supabase (editor)
-
-La primera migración ya es **idempotente**. Vuelve a correr, en este orden:
 
 1. `supabase/migrations/20260818230000_project_release_pipeline.sql`
 2. `supabase/migrations/20260819093000_release_vercel_previews.sql`
@@ -31,43 +43,27 @@ La primera migración ya es **idempotente**. Vuelve a correr, en este orden:
 
 ### 2. Secretos en Vercel del proyecto **Codiva**
 
-`GITHUB_RELEASES_TOKEN` ya está (Production + Preview).
+`GITHUB_RELEASES_TOKEN` (Production + Preview): **Actions Write**, **Deployments Read**, **Contents Read/Write** (para Preparar release), **Checks Read**, **Pull requests Read/Write**.
 
-Si el listado de CI/previews falla, el PAT necesita: **Actions Write**, **Deployments Read**, **Contents Read**, **Checks Read**.
+**`VERCEL_RELEASES_TOKEN`:** [https://vercel.com/account/tokens](https://vercel.com/account/tokens) → Create → scope team **Codiva** → `vercel env add VERCEL_RELEASES_TOKEN production preview development` en **codiva-dev** → redeploy.
 
-**`VERCEL_RELEASES_TOKEN`:** el CLI de Vercel no puede crear tokens (403). Tú:
+### 3. Repo del cliente (ej. NIRC)
 
-1. [https://vercel.com/account/tokens](https://vercel.com/account/tokens) → Create
-2. Nombre `codiva-releases`, scope team **Codiva**
-3. `vercel env add VERCEL_RELEASES_TOKEN production preview development` en el proyecto **codiva-dev**
-4. Redeploy Codiva
+- `.github/workflows/ci.yml` — CI; preview solo si ≠ `main`
+- `.github/workflows/promote-production.yml` — respaldo promote
+- Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 
-### 3. Repo NIRC (ya preparado en el working copy)
+### 4. Vercel del sitio cliente
 
-Archivos:
+Sin auto-deploy a **Production** en `main`. Producción solo desde Codiva.
 
-- `.github/workflows/ci.yml` — CI y, si no es `main`, preview en Vercel
-- `.github/workflows/promote-production.yml` — respaldo de promote
+NIRC: `prj_GGlesi8OSxDAxabWGHH53coejcRC` · team `codiva-dev` · root `apps/web`.
 
-Commit + push. Luego secrets de Actions en `Codiva-dev/nirc`:
-
-| Secret | Valor |
-|--------|--------|
-| `VERCEL_TOKEN` | El mismo token de Vercel (o uno nuevo) |
-| `VERCEL_ORG_ID` | `codiva-dev` |
-| `VERCEL_PROJECT_ID` | `prj_GGlesi8OSxDAxabWGHH53coejcRC` |
-
-### 4. Vercel del sitio NIRC
-
-No auto-deploy a **Production** en `main`. Producción solo desde Codiva.
-
-NIRC Vercel: `prj_GGlesi8OSxDAxabWGHH53coejcRC` · team slug `codiva-dev` · root `apps/web`.
-
-Para abrir el preview **sin login de Vercel**, activa **Protection Bypass for Automation** en ese proyecto. Codiva lee `VERCEL_AUTOMATION_BYPASS_SECRET` y arma `?x-vercel-protection-bypass=…&x-vercel-set-bypass-cookie=true` en Ops (Abrir / copiar). La protección sigue activa para quien no tenga ese enlace.
+**Protection Bypass for Automation** en el proyecto cliente → Codiva arma el enlace con `?x-vercel-protection-bypass=…` en Ops.
 
 ### 5. Probar
 
-1. Push a una rama ≠ `main` (o un PR).
-2. CI verde → job `preview` en Vercel.
-3. En Codiva Ops → Releases, el preview aparece aunque el PR ya se haya cerrado.
-4. Abrir URL, probar, **Aceptar y mandar a producción**.
+1. En Ops: **Preparar release** (o push a `preview/*`).
+2. CI verde → preview con alias git.
+3. Abrir, QA, **A producción**.
+4. Incoming ya no muestra ese preview.

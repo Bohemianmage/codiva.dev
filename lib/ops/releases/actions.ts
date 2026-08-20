@@ -16,14 +16,18 @@ import {
   listOpenPulls,
   matchPullToPreview,
   mergePullRequest,
+  OPS_RELEASE_BRANCH,
   releasesTokenConfigured,
   reviewPullRequest,
+  upsertOpsReleaseBranch,
   type CiStatus,
   type GitHubPull,
 } from '@/lib/ops/releases/github';
+import { filterPromotedPreviews } from '@/lib/ops/releases/preview-filter';
 import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
 import { createClient } from '@/lib/supabase/server';
 import {
+  cleanupStaleVercelPreviews,
   deleteVercelDeployment,
   getVercelAutomationBypassSecret,
   listVercelPreviews,
@@ -31,16 +35,6 @@ import {
   resolveVercelDeploymentId,
   vercelTokenConfigured,
 } from '@/lib/ops/releases/vercel';
-
-function normalizeReleaseSha(sha: string | null | undefined): string | null {
-  const value = sha?.trim().toLowerCase() ?? '';
-  return value.length >= 7 ? value : null;
-}
-
-function previewUrlHost(url: string | null | undefined): string | null {
-  const host = url?.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '';
-  return host || null;
-}
 
 /** Promote pipeline: admin or PM only (not client, not default for dev). */
 async function assertReleaseOps(projectId: string): Promise<StaffAccess> {
@@ -97,6 +91,8 @@ export type IncomingPreview = {
   author: string | null;
   branch: string | null;
   createdAt: string;
+  dirty: boolean;
+  hasGitAlias: boolean;
   ci: CiStatus | null;
   pull: GitHubPull | null;
 };
@@ -215,6 +211,8 @@ export async function loadIncomingPreviews(
       source: 'github' as const,
       deploymentId: null,
       openUrl: item.previewUrl,
+      dirty: false,
+      hasGitAlias: /-git-/.test(item.previewUrl),
       ci: null,
       pull: matchPullToPreview(pulls, item),
     }));
@@ -256,27 +254,13 @@ export async function loadIncomingPreviews(
       .eq('status', 'succeeded')
       .order('created_at', { ascending: false })
       .limit(40);
-    const promotedShas = new Set(
-      (promoted ?? [])
-        .map((row) => normalizeReleaseSha(row.commit_sha as string | null))
-        .filter((sha): sha is string => Boolean(sha))
+    items = filterPromotedPreviews(
+      items,
+      (promoted ?? []).map((row) => ({
+        sha: row.commit_sha as string | null,
+        previewUrl: row.preview_url as string | null,
+      }))
     );
-    const promotedHosts = new Set(
-      (promoted ?? [])
-        .map((row) => previewUrlHost(row.preview_url as string | null))
-        .filter((host): host is string => Boolean(host))
-    );
-    if (promotedShas.size || promotedHosts.size) {
-      items = items.filter((item) => {
-        const sha = normalizeReleaseSha(item.sha);
-        if (sha && [...promotedShas].some((promotedSha) => sha.startsWith(promotedSha) || promotedSha.startsWith(sha))) {
-          return false;
-        }
-        const host = previewUrlHost(item.previewUrl);
-        if (host && promotedHosts.has(host)) return false;
-        return true;
-      });
-    }
   }
 
   const bypass = settings.vercel_project_id
@@ -637,4 +621,111 @@ export async function markReleaseSucceededManually(requestId: string, projectId:
   revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
 }
 
-export { releasesTokenConfigured, vercelTokenConfigured };
+/** Remove a preview deploy from Vercel so it leaves Incoming. */
+export async function discardIncomingPreview(projectId: string, formData: FormData) {
+  const { supabase, user } = await assertReleaseOps(projectId);
+  const deploymentId = String(formData.get('deploymentId') || '').trim();
+  if (!deploymentId) await throwPublic('ops.releases.errDeploymentId');
+
+  const { data: settings } = await supabase
+    .from('project_release_settings')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle();
+
+  if (!settings?.enabled) await throwPublic('ops.releases.incomingDisabled');
+  if (!vercelTokenConfigured()) await throwPublic('ops.releases.errVercel');
+
+  const deleted = await deleteVercelDeployment({
+    deploymentId,
+    teamId: settings.vercel_team_id,
+  });
+  if (!deleted.ok) throw await throwExternal(deleted.error, 'ops.releases.errVercel');
+
+  await logActivity({
+    entityType: 'project',
+    entityId: projectId,
+    action: 'release_preview_discarded',
+    actorId: user.id,
+    metadata: { deployment_id: deploymentId },
+  });
+
+  revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
+}
+
+/**
+ * Point preview/ops-release at main HEAD so CI builds a clean QA preview for Ops.
+ */
+export async function prepareOpsRelease(projectId: string) {
+  const { supabase, user } = await assertReleaseOps(projectId);
+
+  const { data: settings } = await supabase
+    .from('project_release_settings')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle();
+
+  if (!settings?.enabled) await throwPublic('ops.releases.incomingDisabled');
+  const owner = settings.github_owner?.trim();
+  const repo = settings.github_repo?.trim();
+  if (!owner || !repo) await throwPublic('ops.releases.incomingMisconfigured');
+  if (!releasesTokenConfigured()) await throwPublic('ops.releases.errGithub');
+
+  const result = await upsertOpsReleaseBranch({
+    owner,
+    repo,
+    fromRef: settings.promote_ref || 'main',
+    branch: OPS_RELEASE_BRANCH,
+  });
+  if (!result.ok) {
+    throw await throwExternal(result.error, 'ops.releases.errGithub');
+  }
+
+  await logActivity({
+    entityType: 'project',
+    entityId: projectId,
+    action: 'release_prepare',
+    actorId: user.id,
+    metadata: {
+      branch: result.branch,
+      sha: result.sha,
+      created: result.created,
+      url: result.url,
+    },
+  });
+
+  revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
+}
+
+/** Delete dirty / old Vercel previews (keeps newest git-alias per SHA). */
+export async function cleanupIncomingPreviews(projectId: string) {
+  const { supabase, user } = await assertReleaseOps(projectId);
+
+  const { data: settings } = await supabase
+    .from('project_release_settings')
+    .select('*')
+    .eq('project_id', projectId)
+    .maybeSingle();
+
+  if (!settings?.enabled) await throwPublic('ops.releases.incomingDisabled');
+  if (!settings.vercel_project_id) await throwPublic('ops.releases.incomingMisconfigured');
+  if (!vercelTokenConfigured()) await throwPublic('ops.releases.errVercel');
+
+  const result = await cleanupStaleVercelPreviews({
+    projectId: settings.vercel_project_id,
+    teamId: settings.vercel_team_id,
+  });
+  if (result.error) throw await throwExternal(result.error, 'ops.releases.errVercel');
+
+  await logActivity({
+    entityType: 'project',
+    entityId: projectId,
+    action: 'release_previews_cleaned',
+    actorId: user.id,
+    metadata: { deleted: result.deleted },
+  });
+
+  revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
+}
+
+export { releasesTokenConfigured, vercelTokenConfigured, OPS_RELEASE_BRANCH };
