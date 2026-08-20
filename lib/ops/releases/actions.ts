@@ -22,13 +22,25 @@ import {
   type GitHubPull,
 } from '@/lib/ops/releases/github';
 import { withVercelPreviewBypass } from '@/lib/ops/releases/preview-url';
+import { createClient } from '@/lib/supabase/server';
 import {
+  deleteVercelDeployment,
   getVercelAutomationBypassSecret,
   listVercelPreviews,
   promoteVercelDeployment,
   resolveVercelDeploymentId,
   vercelTokenConfigured,
 } from '@/lib/ops/releases/vercel';
+
+function normalizeReleaseSha(sha: string | null | undefined): string | null {
+  const value = sha?.trim().toLowerCase() ?? '';
+  return value.length >= 7 ? value : null;
+}
+
+function previewUrlHost(url: string | null | undefined): string | null {
+  const host = url?.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '';
+  return host || null;
+}
 
 /** Promote pipeline: admin or PM only (not client, not default for dev). */
 async function assertReleaseOps(projectId: string): Promise<StaffAccess> {
@@ -234,6 +246,39 @@ export async function loadIncomingPreviews(
   // not hide a READY preview from Ops.
   const attached = new Set(items.flatMap((item) => (item.pull ? [item.pull.number] : [])));
   pulls = pulls.filter((p) => !attached.has(p.number));
+
+  // Hide previews already accepted into production (sha / preview host).
+  if (items.length && settings.project_id) {
+    const supabase = await createClient();
+    const { data: promoted } = await supabase
+      .from('project_release_requests')
+      .select('commit_sha, preview_url')
+      .eq('project_id', settings.project_id)
+      .eq('status', 'succeeded')
+      .order('created_at', { ascending: false })
+      .limit(40);
+    const promotedShas = new Set(
+      (promoted ?? [])
+        .map((row) => normalizeReleaseSha(row.commit_sha as string | null))
+        .filter((sha): sha is string => Boolean(sha))
+    );
+    const promotedHosts = new Set(
+      (promoted ?? [])
+        .map((row) => previewUrlHost(row.preview_url as string | null))
+        .filter((host): host is string => Boolean(host))
+    );
+    if (promotedShas.size || promotedHosts.size) {
+      items = items.filter((item) => {
+        const sha = normalizeReleaseSha(item.sha);
+        if (sha && [...promotedShas].some((promotedSha) => sha.startsWith(promotedSha) || promotedSha.startsWith(sha))) {
+          return false;
+        }
+        const host = previewUrlHost(item.previewUrl);
+        if (host && promotedHosts.has(host)) return false;
+        return true;
+      });
+    }
+  }
 
   const bypass = settings.vercel_project_id
     ? await getVercelAutomationBypassSecret({
@@ -460,6 +505,8 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
 
   let result: DispatchResult;
 
+  const previewDeploymentId = deploymentId;
+
   if (vercelProjectId && deploymentId && vercelTokenConfigured()) {
     const promoted = await promoteVercelDeployment({
       projectId: vercelProjectId,
@@ -528,6 +575,19 @@ export async function dispatchReleasePromote(requestId: string, projectId: strin
       completed_at: new Date().toISOString(),
     })
     .eq('id', requestId);
+
+  // Preview → production rebuild leaves the old preview READY; remove it from Incoming.
+  if (
+    previewDeploymentId &&
+    result.deploymentId &&
+    previewDeploymentId !== result.deploymentId &&
+    vercelTokenConfigured()
+  ) {
+    await deleteVercelDeployment({
+      deploymentId: previewDeploymentId,
+      teamId: vercelTeamId,
+    });
+  }
 
   const productionUrl =
     typeof req.production_url === 'string' ? req.production_url.trim() : '';

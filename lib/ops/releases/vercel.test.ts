@@ -3,6 +3,7 @@ import {
   formatVercelApiError,
   isVercelProductionTarget,
   promoteVercelDeployment,
+  deleteVercelDeployment,
 } from './vercel';
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -110,5 +111,45 @@ describe('promoteVercelDeployment', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.mode).toBe('alias');
+  });
+});
+
+describe('deleteVercelDeployment', () => {
+  const prevToken = process.env.VERCEL_RELEASES_TOKEN;
+
+  beforeEach(() => {
+    process.env.VERCEL_RELEASES_TOKEN = 'tok';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (prevToken === undefined) delete process.env.VERCEL_RELEASES_TOKEN;
+    else process.env.VERCEL_RELEASES_TOKEN = prevToken;
+  });
+
+  it('deletes a preview deployment', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      expect(init?.method).toBe('DELETE');
+      expect(url).toContain('/v13/deployments/dpl_preview');
+      expect(url).toContain('teamId=team_abc');
+      return jsonResponse(200, { uid: 'dpl_preview', state: 'DELETED' });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      deleteVercelDeployment({ deploymentId: 'dpl_preview', teamId: 'team_abc' })
+    ).resolves.toEqual({ ok: true });
+  });
+
+  it('treats 404 as already gone', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('gone', { status: 404 }))
+    );
+
+    await expect(deleteVercelDeployment({ deploymentId: 'dpl_gone' })).resolves.toEqual({
+      ok: true,
+    });
   });
 });

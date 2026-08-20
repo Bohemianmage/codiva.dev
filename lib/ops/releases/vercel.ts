@@ -347,3 +347,36 @@ export async function promoteVercelDeployment(input: {
     teamId: input.teamId,
   });
 }
+
+/** Drop a preview after it was rebuilt into production (best-effort). */
+export async function deleteVercelDeployment(input: {
+  deploymentId: string;
+  teamId?: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string; missingToken?: boolean }> {
+  const token = vercelToken();
+  if (!token) {
+    return {
+      ok: false,
+      missingToken: true,
+      error: 'Falta VERCEL_RELEASES_TOKEN (o VERCEL_TOKEN) en el entorno de Codiva.',
+    };
+  }
+
+  const deploymentId = input.deploymentId.trim();
+  if (!deploymentId) return { ok: false, error: 'Falta deployment id para borrar el preview.' };
+
+  const qs = teamQueryPrefix(input.teamId);
+  const res = await fetch(
+    `https://api.vercel.com/v13/deployments/${encodeURIComponent(deploymentId)}${qs}`,
+    {
+      method: 'DELETE',
+      headers: vercelHeaders(token),
+      cache: 'no-store',
+    }
+  );
+
+  if (res.ok || res.status === 404) return { ok: true };
+
+  const body = await res.text().catch(() => '');
+  return { ok: false, error: formatVercelApiError(res.status, body, 'Vercel delete deployment') };
+}
