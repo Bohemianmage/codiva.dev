@@ -72,16 +72,23 @@ describe('dedupePreviewsBySha', () => {
 });
 
 describe('filterPromotedPreviews', () => {
-  it('hides matching sha and host', () => {
+  it('hides matching sha and opaque host, not reused git aliases', () => {
     const kept = filterPromotedPreviews(
       [
         { sha: 'aaaaaaaa', previewUrl: 'https://nirc-a.vercel.app' },
-        { sha: 'bbbbbbbb', previewUrl: 'https://nirc-git-x.vercel.app' },
+        { sha: 'bbbbbbbb', previewUrl: 'https://nirc-git-preview-ops-release-codiva-dev.vercel.app' },
+        { sha: 'cccccccc', previewUrl: 'https://nirc-opaque.vercel.app' },
       ],
-      [{ sha: 'aaaaaaaa', previewUrl: 'https://old.vercel.app' }]
+      [
+        { sha: 'aaaaaaaa', previewUrl: 'https://old.vercel.app' },
+        {
+          sha: 'dddddddd',
+          previewUrl: 'https://nirc-git-preview-ops-release-codiva-dev.vercel.app',
+        },
+        { sha: 'eeeeeeee', previewUrl: 'https://nirc-opaque.vercel.app' },
+      ]
     );
-    expect(kept).toHaveLength(1);
-    expect(kept[0]?.sha).toBe('bbbbbbbb');
+    expect(kept.map((i) => i.sha)).toEqual(['bbbbbbbb']);
   });
 });
 

@@ -87,6 +87,15 @@ export function dedupePreviewsBySha<T extends PreviewFilterable>(items: T[]): T[
   );
 }
 
+function previewHost(url: string | null | undefined): string {
+  return url?.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '';
+}
+
+/** Branch aliases like nirc-git-preview-ops-release-* are reused; do not treat them as spent. */
+export function isReusablePreviewHost(host: string): boolean {
+  return /-git-/.test(host);
+}
+
 export function filterPromotedPreviews<T extends { sha: string | null; previewUrl: string }>(
   items: T[],
   promoted: { sha: string | null; previewUrl: string | null }[]
@@ -96,14 +105,14 @@ export function filterPromotedPreviews<T extends { sha: string | null; previewUr
     .filter((sha): sha is string => Boolean(sha));
   const promotedHosts = new Set(
     promoted
-      .map((row) => row.previewUrl?.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '')
-      .filter(Boolean)
+      .map((row) => previewHost(row.previewUrl))
+      .filter((host) => host && !isReusablePreviewHost(host))
   );
 
   return items.filter((item) => {
     const sha = normalizePreviewSha(item.sha);
     if (sha && promotedShas.some((p) => shasOverlap(sha, p))) return false;
-    const host = item.previewUrl.trim().replace(/^https?:\/\//, '').split('/')[0]?.toLowerCase() ?? '';
+    const host = previewHost(item.previewUrl);
     if (host && promotedHosts.has(host)) return false;
     return true;
   });
