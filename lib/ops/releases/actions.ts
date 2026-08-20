@@ -728,4 +728,4 @@ export async function cleanupIncomingPreviews(projectId: string) {
   revalidateReleasePaths(projectId, await projectSlug(supabase, projectId));
 }
 
-export { releasesTokenConfigured, vercelTokenConfigured, OPS_RELEASE_BRANCH };
+export { releasesTokenConfigured, vercelTokenConfigured };
