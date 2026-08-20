@@ -1,4 +1,5 @@
 import { opsBaseUrl } from '@/lib/ops/host';
+import type { createClient } from '@/lib/supabase/server';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,15 +22,7 @@ export function opsProjectUrl(slug: string, suffix = ''): string {
   return `${opsBaseUrl()}${opsProjectPath(slug, suffix)}`;
 }
 
-type ProjectsClient = {
-  from: (table: 'projects') => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        maybeSingle: () => Promise<{ data: { id?: string; slug?: string | null } | null }>;
-      };
-    };
-  };
-};
+type ProjectsClient = Awaited<ReturnType<typeof createClient>>;
 
 export async function resolveOpsProject(
   supabase: ProjectsClient,
