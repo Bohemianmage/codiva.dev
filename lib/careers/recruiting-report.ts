@@ -55,6 +55,23 @@ export type RecruitingFinding = {
   reviewDiscarded: boolean;
 };
 
+export type RecruitingInterviewComment = {
+  body: string;
+  author: string | null;
+  createdAt: string;
+};
+
+export type RecruitingInterviewRound = {
+  title: string;
+  kindLabel: string;
+  status: string;
+  statusLabel: string;
+  outcomeLabel: string | null;
+  interviewer: string | null;
+  conductedAt: string | null;
+  comments: RecruitingInterviewComment[];
+};
+
 function toRecruitingFinding(
   row: {
     title: string;
@@ -106,6 +123,7 @@ export type RecruitingDossier = {
   applied: boolean;
   applicationStatusLabel: string | null;
   interviewLabel: string | null;
+  interviews: RecruitingInterviewRound[];
   appliedAt: string | null;
   consideration: HuntConsideration;
   considerationLabel: string;
@@ -138,6 +156,7 @@ export type RecruitingPipelineRow = {
   applied: boolean;
   applicationStatusLabel: string | null;
   interviewLabel: string | null;
+  interviews: RecruitingInterviewRound[];
   completedAt: string | null;
   startedAt: string | null;
   appliedAt: string | null;
@@ -204,6 +223,130 @@ function interviewProgressLabel(rounds: { status: string }[]): string | null {
   const total = open.length || rounds.length;
   const done = rounds.filter((row) => row.status === 'done').length;
   return `Entrevista · ${done}/${total}`;
+}
+
+const INTERVIEW_KIND_LABELS: Record<string, string> = {
+  screening: 'Filtro',
+  technical: 'Técnica',
+  culture: 'Fit',
+  final: 'Final',
+  other: 'Otra',
+};
+
+const INTERVIEW_STATUS_LABELS: Record<string, string> = {
+  planned: 'Pendiente',
+  done: 'Realizada',
+  skipped: 'Omitida',
+};
+
+const INTERVIEW_OUTCOME_LABELS: Record<string, string> = {
+  advance: 'Avanzar',
+  hold: 'En espera',
+  reject: 'No continuar',
+};
+
+type InterviewRoundInput = {
+  id: string;
+  kind: string;
+  title: string;
+  status: string;
+  outcome: string | null;
+  interviewer_id: string | null;
+  conducted_at: string | null;
+  sort_order?: number | null;
+};
+
+type InterviewCommentInput = {
+  round_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+};
+
+function toRecruitingInterviews(
+  rounds: InterviewRoundInput[],
+  comments: InterviewCommentInput[],
+  names: Map<string, string>
+): RecruitingInterviewRound[] {
+  const commentsByRound = new Map<string, RecruitingInterviewComment[]>();
+  for (const row of comments) {
+    const list = commentsByRound.get(row.round_id) ?? [];
+    list.push({
+      body: String(row.body || '').slice(0, 2000),
+      author: names.get(row.author_id) || null,
+      createdAt: row.created_at,
+    });
+    commentsByRound.set(row.round_id, list);
+  }
+  return [...rounds]
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((round) => ({
+      title: round.title,
+      kindLabel: INTERVIEW_KIND_LABELS[round.kind] || round.kind,
+      status: round.status,
+      statusLabel: INTERVIEW_STATUS_LABELS[round.status] || round.status,
+      outcomeLabel: round.outcome ? INTERVIEW_OUTCOME_LABELS[round.outcome] || round.outcome : null,
+      interviewer: round.interviewer_id ? names.get(round.interviewer_id) || null : null,
+      conductedAt: round.conducted_at,
+      comments: commentsByRound.get(round.id) ?? [],
+    }));
+}
+
+function interviewHasProgress(rounds: RecruitingInterviewRound[]): boolean {
+  return rounds.some(
+    (round) => round.status !== 'planned' || round.comments.length > 0 || Boolean(round.outcomeLabel)
+  );
+}
+
+async function loadInterviewPack(
+  admin: ReturnType<typeof createAdminClient>,
+  applicationIds: string[]
+): Promise<{
+  roundsByApplication: Map<string, InterviewRoundInput[]>;
+  interviewsByApplication: Map<string, RecruitingInterviewRound[]>;
+}> {
+  const roundsByApplication = new Map<string, InterviewRoundInput[]>();
+  const interviewsByApplication = new Map<string, RecruitingInterviewRound[]>();
+  if (!applicationIds.length) return { roundsByApplication, interviewsByApplication };
+
+  const { data: rounds } = await admin
+    .from('ops_job_interview_rounds')
+    .select('id, application_id, sort_order, kind, title, status, outcome, interviewer_id, conducted_at')
+    .in('application_id', applicationIds)
+    .order('sort_order', { ascending: true });
+  for (const round of rounds ?? []) {
+    const list = roundsByApplication.get(round.application_id) ?? [];
+    list.push(round);
+    roundsByApplication.set(round.application_id, list);
+  }
+
+  const roundIds = (rounds ?? []).map((row) => row.id);
+  const { data: comments } = roundIds.length
+    ? await admin
+        .from('ops_job_interview_comments')
+        .select('round_id, author_id, body, created_at')
+        .in('round_id', roundIds)
+        .order('created_at', { ascending: true })
+    : { data: [] as InterviewCommentInput[] };
+
+  const staffIds = [
+    ...new Set(
+      [
+        ...(rounds ?? []).map((row) => row.interviewer_id),
+        ...(comments ?? []).map((row) => row.author_id),
+      ].filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const { data: staff } = staffIds.length
+    ? await admin.from('staff_profiles').select('id, full_name').in('id', staffIds)
+    : { data: [] as { id: string; full_name: string }[] };
+  const names = new Map((staff ?? []).map((row) => [row.id, row.full_name]));
+
+  const commentsByRound = comments ?? [];
+  for (const [applicationId, list] of roundsByApplication) {
+    interviewsByApplication.set(applicationId, toRecruitingInterviews(list, commentsByRound, names));
+  }
+  return { roundsByApplication, interviewsByApplication };
 }
 
 function pageKindLabel(kind: HuntPageKind, extras?: { slug?: string; path?: string }): string {
@@ -365,12 +508,12 @@ export async function loadRecruitingDossier(attemptId: string): Promise<Recruiti
   ]);
 
   let interviewLabel: string | null = null;
+  let interviews: RecruitingInterviewRound[] = [];
   if (application?.id) {
-    const { data: rounds } = await admin
-      .from('ops_job_interview_rounds')
-      .select('status')
-      .eq('application_id', application.id);
-    interviewLabel = interviewProgressLabel(rounds ?? []);
+    const pack = await loadInterviewPack(admin, [application.id]);
+    const rounds = pack.roundsByApplication.get(application.id) ?? [];
+    interviews = pack.interviewsByApplication.get(application.id) ?? [];
+    interviewLabel = interviewProgressLabel(rounds);
   }
 
   const byId = new Map<string, NonNullable<typeof huntByAttempt>[number]>();
@@ -427,6 +570,7 @@ export async function loadRecruitingDossier(attemptId: string): Promise<Recruiti
     applied: Boolean(application?.id),
     applicationStatusLabel: application ? jobApplicationStatusLabel(application.status, 'es') : null,
     interviewLabel,
+    interviews,
     appliedAt: application?.created_at ?? null,
     consideration: score.consideration,
     considerationLabel: huntConsiderationLabel(score.consideration, 'es'),
@@ -504,7 +648,6 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
     { data: linkedAttempts },
     { data: offersByEmail },
     { data: offersByCareer },
-    { data: interviewRounds },
   ] = await Promise.all([
     postingIds.length
       ? admin.from('ops_job_postings').select('id, title').in('id', postingIds)
@@ -551,10 +694,9 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
           .in('career_email', emailVariants)
           .limit(200)
       : Promise.resolve({ data: [] as { email: string | null; career_email: string | null; status: string }[] }),
-    applicationIds.length
-      ? admin.from('ops_job_interview_rounds').select('application_id, status').in('application_id', applicationIds)
-      : Promise.resolve({ data: [] as { application_id: string; status: string }[] }),
   ]);
+
+  const { roundsByApplication, interviewsByApplication } = await loadInterviewPack(admin, applicationIds);
 
   type AttemptRow = NonNullable<typeof attempts>[number] & {
     completed_at?: string | null;
@@ -579,12 +721,6 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
     const list = eventsByAttempt.get(event.assessment_attempt_id) ?? [];
     list.push(event);
     eventsByAttempt.set(event.assessment_attempt_id, list);
-  }
-  const roundsByApplication = new Map<string, { status: string }[]>();
-  for (const round of interviewRounds ?? []) {
-    const list = roundsByApplication.get(round.application_id) ?? [];
-    list.push(round);
-    roundsByApplication.set(round.application_id, list);
   }
 
   const appliedEmails = new Set((applicationsRaw ?? []).map((row) => careerEmailKey(row.email)));
@@ -641,6 +777,7 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
       applied: false,
       applicationStatusLabel: null,
       interviewLabel: null,
+      interviews: [],
       completedAt: row.completed_at ?? null,
       startedAt: row.started_at,
       appliedAt: null,
@@ -678,6 +815,7 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
       applied: false,
       applicationStatusLabel: null,
       interviewLabel: null,
+      interviews: [],
       completedAt: row.completed_at,
       startedAt: row.started_at,
       appliedAt: null,
@@ -722,6 +860,7 @@ export async function loadRecruitingPipeline(jobPostingId?: string): Promise<Rec
       applied: true,
       applicationStatusLabel: jobApplicationStatusLabel(row.status, 'es'),
       interviewLabel: interviewProgressLabel(roundsByApplication.get(row.id) ?? []),
+      interviews: interviewsByApplication.get(row.id) ?? [],
       completedAt: attempt?.completed_at ?? null,
       startedAt: attempt?.started_at ?? null,
       appliedAt: row.created_at,
@@ -779,6 +918,49 @@ function applicationCopy(d: RecruitingDossier): string {
   return parts.join(' · ');
 }
 
+function interviewRoundArticles(rounds: RecruitingInterviewRound[]): string {
+  return rounds
+    .map((round) => {
+      const meta = [
+        round.kindLabel,
+        round.statusLabel,
+        round.outcomeLabel,
+        round.interviewer,
+        round.conductedAt ? formatWhen(round.conductedAt) : null,
+      ].filter(Boolean);
+      const comments = round.comments
+        .map((comment) => {
+          const who = [comment.author, formatWhen(comment.createdAt)].filter(Boolean).join(' · ');
+          return `<p style="margin:8px 0 0;font-size:14px;line-height:1.55;white-space:pre-wrap;">${escapeHtml(comment.body)}</p>
+            ${who ? `<p style="margin:4px 0 0;font-size:12px;color:${BRAND.muted};">${escapeHtml(who)}</p>` : ''}`;
+        })
+        .join('');
+      return `<article style="margin:0 0 16px;padding:14px 16px;border:1px solid ${BRAND.border};border-radius:12px;">
+            <p style="margin:0 0 6px;font-weight:600;">${escapeHtml(round.title)}</p>
+            <p style="margin:0;font-size:12px;color:${BRAND.muted};">${escapeHtml(meta.join(' · '))}</p>
+            ${comments}
+          </article>`;
+    })
+    .join('');
+}
+
+function interviewSection(rounds: RecruitingInterviewRound[]): string {
+  if (!interviewHasProgress(rounds)) return '';
+  return `<h2>Entrevistas</h2>
+      ${interviewRoundArticles(rounds)}`;
+}
+
+function pipelineInterviewNotes(rows: RecruitingPipelineRow[]): string {
+  const withProgress = rows.filter((row) => interviewHasProgress(row.interviews));
+  if (!withProgress.length) return '';
+  return withProgress
+    .map(
+      (row) => `<p style="margin:20px 0 8px;font-weight:600;">${escapeHtml(row.fullName)}</p>
+      ${interviewRoundArticles(row.interviews)}`
+    )
+    .join('');
+}
+
 function findingArticles(rows: RecruitingFinding[], empty: string): string {
   if (!rows.length) return empty ? `<p style="color:${BRAND.muted};">${escapeHtml(empty)}</p>` : '';
   return rows
@@ -832,6 +1014,7 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
         <tr><th>Fechas</th><td>Inicio ${escapeHtml(formatWhen(d.startedAt))}${d.completedAt ? ` · cierre ${escapeHtml(formatWhen(d.completedAt))}` : ''}</td></tr>
         <tr><th>Cacería</th><td>${escapeHtml(huntBits.join(' · '))}</td></tr>
       </table>
+      ${interviewSection(d.interviews)}
       <h2>Cómo cazó</h2>
       <p>${escapeHtml(trailCopy(d.trail))}</p>
       ${d.trailRoute ? `<p class="note">Ruta: ${escapeHtml(d.trailRoute)}</p>` : ''}
@@ -910,6 +1093,7 @@ function pipelineSection(stage: RecruitingStage, rows: RecruitingPipelineRow[], 
   return `
       <h2>${escapeHtml(recruitingStageLabel(stage))} · ${rows.length}</h2>
       ${pipelineTable(rows, withStatus)}
+      ${pipelineInterviewNotes(rows)}
     `;
 }
 
