@@ -106,7 +106,6 @@ export type IncomingPreviewsResult = {
   pulls: GitHubPull[];
   error: string | null;
   hint: string | null;
-  previewBypass: boolean;
   previewAccessSecret: string | null;
 };
 
@@ -177,7 +176,7 @@ export async function loadIncomingPreviews(
   settings: ReleaseSettingsRow | null
 ): Promise<IncomingPreviewsResult> {
   if (!settings?.enabled) {
-    return { items: [], pulls: [], error: null, hint: 'disabled', previewBypass: false, previewAccessSecret: null };
+    return { items: [], pulls: [], error: null, hint: 'disabled', previewAccessSecret: null };
   }
 
   let items: IncomingPreview[] = [];
@@ -221,7 +220,7 @@ export async function loadIncomingPreviews(
     }));
     error = listed.error || error;
   } else if (!pulls.length) {
-    return { items: [], pulls: [], error: null, hint: 'misconfigured', previewBypass: false, previewAccessSecret: null };
+    return { items: [], pulls: [], error: null, hint: 'misconfigured', previewAccessSecret: null };
   }
 
   if (
@@ -291,7 +290,7 @@ export async function loadIncomingPreviews(
     openUrl: withVercelPreviewBypass(item.previewUrl, bypass),
   }));
 
-  return { items, pulls, error, hint: null, previewBypass: Boolean(bypass), previewAccessSecret: bypass };
+  return { items, pulls, error, hint: null, previewAccessSecret: bypass };
 }
 
 export async function decideGithubPull(projectId: string, formData: FormData) {
