@@ -75,17 +75,17 @@
 </head>
 <body>
   <h1>NIRC — Avance de construcción</h1>
-  <p class="meta">Informe para NIRC · 19 de agosto de 2026 · Codiva</p>
+  <p class="meta">Informe para NIRC · 19 de agosto de 2026 · Codiva · Incluye plan frontend</p>
 
   <div class="cover">
-    <p><strong>En una frase.</strong> La arquitectura del producto está cerrada y el software ya tiene las cuatro aplicaciones previstas (backoffice, kiosk de sitio, app de la persona y bolsa pública), con operación interna en ambiente de construcción. Falta pulir la experiencia de mesa (cámara, QR en pantalla, PWA) y certificar IMSS, firma y pagos con los proveedores reales.</p>
+    <p><strong>En una frase.</strong> La arquitectura está cerrada y el software ya opera en demo guiada con <strong>tres superficies</strong>: backoffice (staff), kiosk de sitio y bolsa pública. Los empleados del pool <strong>no tienen app personal</strong>: el staff confirma ofertas; el código de entrada llega por email/SMS y se respalda en Asistencia. Siguiente foco de UI: monitor de jornada, cámara QR en tableta, timeline de cumplimiento y consola de jobs. IMSS, firma y pagos siguen en simulación hasta sandbox (IDSE PRO pendiente del proveedor).</p>
   </div>
 
   <h2>Qué ya pueden ver en una demo guiada</h2>
   <table>
     <thead>
       <tr>
-        <th>Aplicación</th>
+        <th>Superficie</th>
         <th>Para quién</th>
         <th>Qué hay hoy</th>
       </tr>
@@ -94,22 +94,55 @@
       <tr>
         <td>Backoffice</td>
         <td>RH, reclutamiento, ops, finanzas</td>
-        <td>Clientes, vacantes, postulaciones, pool y ranking, expedientes e INE, eventos y geocerca, convocatorias FCFS, asistencia, cumplimiento (contratos / IMSS en simulación), pagos y auditoría. Cada perfil ve solo lo de su rol.</td>
+        <td>Clientes (RP), vacantes, postulaciones, pool y ranking, expedientes e INE, eventos y geocerca, convocatorias FCFS (aceptación por staff), asistencia (QR emitidos), cumplimiento y pagos en simulación, privacy y auditoría. Cada perfil ve solo lo de su rol.</td>
       </tr>
       <tr>
         <td>Kiosk (tableta en sitio)</td>
         <td>Admin de sitio</td>
-        <td>Check-in con GPS de la tableta, código manual y flujo hacia la firma en la misma pantalla. El lector de cámara llega en el siguiente bloque de UI.</td>
-      </tr>
-      <tr>
-        <td>App personal</td>
-        <td>Persona del pool</td>
-        <td>Aceptar o rechazar ofertas, cargar INE, ver el estado de la jornada y un código de entrada. El código en imagen (para que la tableta lo lea) es el siguiente paso.</td>
+        <td>Check-in con GPS de la tableta, código manual y flujo hacia la firma en la misma pantalla. El lector de cámara es el siguiente bloque de UI.</td>
       </tr>
       <tr>
         <td>Bolsa pública</td>
         <td>Candidatos nuevos</td>
-        <td>Vacantes publicadas y postulación. Postular no da de alta en el IMSS.</td>
+        <td>Vacantes publicadas y postulación. Postular no da de alta en el IMSS ni crea cuenta de empleado.</td>
+      </tr>
+      <tr>
+        <td>App personal</td>
+        <td>—</td>
+        <td><strong>No aplica en Fase 1.</strong> Pantalla informativa solamente. Ofertas y QR los gestiona el staff / notificaciones.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Plan frontend (integrado al build)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Prioridad</th>
+        <th>Entrega visible</th>
+        <th>Sprint</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>P0</td>
+        <td>Monitor de asistencia (jornada + checkout staff + reenvío de QR) y cámara en kiosk</td>
+        <td>B3 · Entrada</td>
+      </tr>
+      <tr>
+        <td>P1</td>
+        <td>Navegación del backoffice por carriles; timeline de cumplimiento; consola de jobs</td>
+        <td>B1–B4</td>
+      </tr>
+      <tr>
+        <td>P2</td>
+        <td>Misma marca visual en kiosk y bolsa</td>
+        <td>B2</td>
+      </tr>
+      <tr>
+        <td>P3</td>
+        <td>Alta Stripe Connect en pantalla (cuando salga de simulación)</td>
+        <td>B4</td>
       </tr>
     </tbody>
   </table>
@@ -117,10 +150,10 @@
   <h2>Reglas de negocio que el software ya respeta</h2>
   <ul>
     <li>No hay estado <em>Trabajando</em> sin firma de adhesión y alta IMSS aceptada.</li>
-    <li>La adhesión se firma en la tableta de sitio (un firmante: el trabajador), no en el teléfono personal.</li>
+    <li>La adhesión se firma en la tableta de sitio (un firmante: el trabajador), no en un teléfono personal de empleado.</li>
     <li>El check-in usa la geocerca del sitio (radio por defecto 150 m). Fuera de radio no hay entrada.</li>
     <li>Al salir se dispara en paralelo la baja IMSS y la dispersión de pago (política de abandono aún por confirmar con ustedes).</li>
-    <li>El cupo de una convocatoria no se sobrevende; el primero en aceptar se queda con el lugar.</li>
+    <li>El cupo de una convocatoria no se sobrevende; el primero en aceptar se queda con el lugar (aceptación vía staff en Fase 1).</li>
   </ul>
 
   <h2>Qué sigue (sin reabrir el diseño)</h2>
@@ -134,11 +167,11 @@
     <tbody>
       <tr>
         <td>Mesa de entrada</td>
-        <td>La tableta lee el QR con cámara; la persona muestra un código en pantalla; check-out en kiosk.</td>
+        <td>La tableta lee el QR con cámara; el personal recibe el código por email/SMS; check-out en kiosk; monitor de jornada en backoffice.</td>
       </tr>
       <tr>
-        <td>Clientes / IMSS</td>
-        <td>Registros patronales y vigencia de certificado en backoffice (bloquea altas si el certificado venció).</td>
+        <td>Experiencia staff</td>
+        <td>Menú del backoffice agrupado por proceso; timeline de cumplimiento; consola de trabajos en cola.</td>
       </tr>
       <tr>
         <td>Proveedores</td>
@@ -152,7 +185,7 @@
   </table>
 
   <div class="note">
-    Este informe no sustituye la arquitectura ya entregada ni es un certificado de integración IMSS/firma/pagos. Es el estado de <strong>construcción</strong> al 19 de agosto de 2026.
+    Este informe no sustituye la arquitectura ya entregada ni es un certificado de integración IMSS/firma/pagos. Es el estado de <strong>construcción</strong> y el <strong>plan de interfaz</strong> al 19 de agosto de 2026.
   </div>
 
   <footer>
