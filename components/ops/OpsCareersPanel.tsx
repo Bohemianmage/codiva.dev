@@ -33,9 +33,10 @@ import {
   updateHuntReportReview,
   updateJobApplicationStatus,
 } from '@/lib/ops/career-actions';
-import { huntRequiredForCatalog, huntSeedById } from '@/lib/careers/hunt/seeds';
+import { huntSeedById } from '@/lib/careers/hunt/seeds';
 import { matchedSeedCountsForDiscipline } from '@/lib/careers/hunt/match';
 import { splitHuntReports } from '@/lib/careers/hunt/review';
+import { careerEmailKey as emailKey, isCandidateReadyForCv } from '@/lib/careers/recruiting-stage';
 import {
   huntConsiderationLabel,
   huntDifficultyLabel,
@@ -151,10 +152,6 @@ function attemptStatusLabel(
   if (status === 'expired') return t('ops.careers.attemptExpired');
   if (status === 'started') return t('ops.careers.attemptStarted');
   return status;
-}
-
-function emailKey(value: string) {
-  return value.trim().toLowerCase();
 }
 
 function considerationRank(value: HuntConsideration) {
@@ -449,17 +446,6 @@ export function HuntFindingsBlock({
       ))}
     </div>
   );
-}
-
-function candidateReadyForCv(
-  row: OpsJobAttemptRow,
-  hunt: ReturnType<typeof huntForCandidate>,
-  applied: Set<string>
-) {
-  if (applied.has(emailKey(row.email))) return false;
-  if (!row.passed) return false;
-  if (huntRequiredForCatalog(row.catalog_key) && hunt.craftHits < 1) return false;
-  return true;
 }
 
 type BolsaHref = (next: {
@@ -835,7 +821,17 @@ export default async function OpsCareersPanel({
         row.email,
         disciplineFromCatalogKey(row.catalog_key)
       );
-      if (!candidateReadyForCv(row, hunt, leftActiveQueueEmails)) return false;
+      if (
+        !isCandidateReadyForCv({
+          email: row.email,
+          passed: row.passed,
+          catalogKey: row.catalog_key,
+          craftHits: hunt.craftHits,
+          leftActiveQueueEmails,
+        })
+      ) {
+        return false;
+      }
       if (signalFilter && hunt.score.consideration !== signalFilter) return false;
       return true;
     })
