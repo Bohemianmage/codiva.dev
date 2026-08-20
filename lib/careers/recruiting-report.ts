@@ -34,7 +34,6 @@ import {
   careerEmailKey,
   classifyRecruitingStage,
   isCandidateReadyForCv,
-  recruitingStageHint,
   recruitingStageLabel,
   settledOfferEmailsFrom,
   type RecruitingStage,
@@ -822,7 +821,6 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
     heading: d.fullName,
     kicker: 'Reporte de evaluación · Confidencial',
     body: `
-      <p class="lede">Paquete para reclutamiento externo. Resume fase, criterio, cacería y recorrido. No incluye el banco de preguntas ni las semillas internas.</p>
       <table class="meta" role="presentation">
         <tr><th>Correo</th><td>${escapeHtml(d.email)}</td></tr>
         <tr><th>Vacante</th><td>${escapeHtml(d.vacancy)}</td></tr>
@@ -838,14 +836,12 @@ export function renderRecruitingDossierHtml(d: RecruitingDossier): string {
       <p>${escapeHtml(trailCopy(d.trail))}</p>
       ${d.trailRoute ? `<p class="note">Ruta: ${escapeHtml(d.trailRoute)}</p>` : ''}
       <h2>Competencias (criterio)</h2>
-      <p class="note">Solo el resultado por competencia. El texto de las preguntas no se comparte.</p>
       ${
         competencies
           ? `<table class="grid"><thead><tr><th>Competencia</th><th>Resultado</th></tr></thead><tbody>${competencies}</tbody></table>`
           : `<p style="color:${BRAND.muted};">Sin catálogo para reconstruir competencias.</p>`
       }
       <h2>Hallazgos reportados</h2>
-      <p class="note">En las palabras del candidato. Solo cuenta un hallazgo alineado al oficio. Lo descartado en revisión queda visible y no suma.</p>
       ${findingArticles(d.findings, 'Todavía no reportó hallazgos.')}
     `,
   });
@@ -913,7 +909,6 @@ function pipelineSection(stage: RecruitingStage, rows: RecruitingPipelineRow[], 
   if (!rows.length) return '';
   return `
       <h2>${escapeHtml(recruitingStageLabel(stage))} · ${rows.length}</h2>
-      <p class="note">${escapeHtml(recruitingStageHint(stage))}</p>
       ${pipelineTable(rows, withStatus)}
     `;
 }
@@ -942,9 +937,9 @@ export function renderRecruitingPipelineHtml(input: RecruitingPipelinePack): str
     heading: 'Pipeline de evaluación',
     kicker: 'Reporte de reclutamiento · Confidencial',
     body: `
-      <p class="lede">Vista para agencia externa. ${escapeHtml(input.vacancy)}. ${
+      <p class="lede">${escapeHtml(input.vacancy)}. ${
         counts.length ? escapeHtml(counts.join(' · ')) : `${total} persona(s)`
-      }. Agrupado por fase de la bolsa. Sin banco de preguntas ni semillas internas.</p>
+      }.</p>
       ${sections || `<p style="color:${BRAND.muted};">Todavía no hay intentos ni postulaciones.</p>`}
     `,
   });

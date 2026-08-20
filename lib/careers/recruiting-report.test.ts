@@ -163,5 +163,7 @@ describe('renderRecruitingPipelineHtml', () => {
     expect(html).toContain('Revisada');
     expect(html).toContain('Entrevista · 0/3');
     expect(html).not.toContain('En prueba');
+    expect(html).not.toContain('Aquí se decide');
+    expect(html).not.toContain('Falta el CV');
   });
 });

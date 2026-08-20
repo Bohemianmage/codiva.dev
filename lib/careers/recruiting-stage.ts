@@ -57,14 +57,6 @@ export function recruitingStageLabel(stage: RecruitingStage): string {
   return 'Contratados';
 }
 
-export function recruitingStageHint(stage: RecruitingStage): string {
-  if (stage === 'ready') return 'Aprobaron y ya hay hallazgo de oficio. Falta el CV.';
-  if (stage === 'applied') return 'Ya enviaron CV. Aquí se decide.';
-  if (stage === 'test') return 'Siguen en la prueba: en curso, sin aprobar o sin hallazgo.';
-  if (stage === 'discarded') return 'Fuera de la cola activa. Ya fueron descartados.';
-  return 'Ya salieron de la cola activa con oferta o contratación.';
-}
-
 export function settledOfferEmailsFrom(
   offers: { email?: string | null; career_email?: string | null; status: string }[]
 ): Set<string> {

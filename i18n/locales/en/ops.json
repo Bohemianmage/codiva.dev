@@ -789,7 +789,7 @@
       "reportHtml": "HTML report",
       "reportPdf": "PDF report",
       "pipelineHtml": "HTML pipeline",
-      "pipelinePdf": "PDF pipeline",
+      "pipelinePdf": "Download file",
       "appsTitle": "Applications",
       "appsHint": "Each card groups that person’s CV, craft, test, and findings.",
       "appsEmpty": "No applications yet.",
