@@ -425,5 +425,5 @@ COMMIT;
 
 -- Staff (descomenta y ajusta UUID tras crear usuario en Supabase Auth):
 -- INSERT INTO staff_profiles (id, full_name, role, active)
--- VALUES ('91cfbf47-3da6-4dd7-b916-9b1460e5e1b7', 'Jean', 'admin', true)
+-- VALUES ('91cfbf47-3da6-4dd7-b916-9b1460e5e1b7', 'Jean Claude Martell', 'admin', true)
 -- ON CONFLICT (id) DO NOTHING;
