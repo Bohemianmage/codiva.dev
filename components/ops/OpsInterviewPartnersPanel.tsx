@@ -157,7 +157,9 @@ export default function OpsInterviewPartnersPanel({
                     </button>
                   </ToastForm>
                   {member.active ? (
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-amber-800">{t('ops.team.assignJobWarning')}</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
                       <ToastForm
                         success={t('ops.team.assignmentSaved')}
                         action={assignInterviewScope}
@@ -194,6 +196,7 @@ export default function OpsInterviewPartnersPanel({
                           {t('ops.team.assignCandidate')}
                         </button>
                       </ToastForm>
+                      </div>
                     </div>
                   ) : null}
                   {(assignmentsByMember.get(member.id) ?? []).length ? (
@@ -202,9 +205,13 @@ export default function OpsInterviewPartnersPanel({
                         <li key={row.id} className="flex items-center justify-between gap-2">
                           <span>
                             {row.job_posting_id
-                              ? jobLabel.get(row.job_posting_id) || row.job_posting_id
+                              ? t('ops.team.assignJobScope', {
+                                  job: jobLabel.get(row.job_posting_id) || row.job_posting_id,
+                                })
                               : row.application_id
-                                ? appLabel.get(row.application_id) || row.application_id
+                                ? t('ops.team.assignCandidateScope', {
+                                    name: appLabel.get(row.application_id) || row.application_id,
+                                  })
                                 : t('ops.careers.interviewsTitle')}
                           </span>
                           <ToastForm

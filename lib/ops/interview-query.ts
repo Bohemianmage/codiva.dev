@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isClosedApplicationStatus } from '@/lib/ops/careers';
 import { interviewFollowUp, visibleApplicationIds } from '@/lib/ops/interview-partner';
 import type { InterviewPartnerMember } from '@/lib/ops/auth';
 
@@ -46,7 +47,9 @@ export async function listInterviewQueue(opts: {
   const visible = new Set(
     visibleApplicationIds(assignments ?? [], applications ?? [], rounds ?? [])
   );
-  const scoped = (applications ?? []).filter((row) => visible.has(row.id));
+  const scoped = (applications ?? []).filter(
+    (row) => visible.has(row.id) && !isClosedApplicationStatus(row.status)
+  );
   const roundIds = (rounds ?? []).filter((row) => visible.has(row.application_id)).map((row) => row.id);
   const { data: reports } = roundIds.length
     ? await admin.from('ops_interview_reports').select('round_id').in('round_id', roundIds)
