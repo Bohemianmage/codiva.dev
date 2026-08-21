@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
-  LayoutDashboard,
   Inbox,
   Users,
   FolderKanban,
@@ -25,10 +24,9 @@ import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
 const NAV: {
   href: string;
   labelKey: string;
-  icon: typeof LayoutDashboard;
+  icon: typeof Inbox;
   capability?: Capability | Capability[] | null;
 }[] = [
-  { href: '/dashboard', labelKey: 'ops.nav.dashboard', icon: LayoutDashboard },
   { href: '/leads', labelKey: 'ops.nav.leads', icon: Users, capability: 'leads' },
   { href: '/inbox', labelKey: 'ops.nav.inbox', icon: Inbox, capability: 'inbox' },
   { href: '/projects', labelKey: 'ops.nav.projects', icon: FolderKanban },
