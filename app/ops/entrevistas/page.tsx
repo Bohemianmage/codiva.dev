@@ -17,7 +17,7 @@ function followUpTone(value: string) {
 
 export default async function InterviewsQueuePage() {
   const access = await requireInterviewsAccess();
-  if (access.member && !getAcceptanceStatus(access.member).complete) {
+  if (!access.isStaffPreview && access.member && !getAcceptanceStatus(access.member).complete) {
     redirect(await interviewsHref('/aceptar'));
   }
   const t = await getT();

@@ -35,7 +35,7 @@ export default async function InterviewsApplicationPage({
   const { applicationId } = await params;
   if (!isInterviewUuid(applicationId)) notFound();
   const access = await requireInterviewsAccess();
-  if (access.member && !getAcceptanceStatus(access.member).complete) {
+  if (!access.isStaffPreview && access.member && !getAcceptanceStatus(access.member).complete) {
     redirect(await interviewsHref('/aceptar'));
   }
 
