@@ -191,15 +191,27 @@ export default function PortalDocumentRequests({
                       <input type="hidden" name="requestId" value={req.id} />
 
                       {req.input_mode === 'file' && (
-                        <BrandedFileInput
-                          required
-                          accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
-                          hint={
-                            req.expected_type === 'nda'
-                              ? t('portal.docs.ndaHint')
-                              : t('portal.docs.fileHint')
-                          }
-                        />
+                        <>
+                          <BrandedFileInput
+                            accept=".pdf,.png,.jpg,.jpeg,.webp,.zip,.doc,.docx,.xls,.xlsx,.csv,.fig,.ai,.svg"
+                            hint={
+                              req.expected_type === 'nda'
+                                ? t('portal.docs.ndaHint')
+                                : t('portal.docs.fileHint')
+                            }
+                          />
+                          <p className="text-center text-xs font-medium uppercase tracking-wide text-zinc-400">
+                            {t('portal.docs.orUrl')}
+                          </p>
+                          <input
+                            name="responseText"
+                            type="text"
+                            inputMode="url"
+                            autoComplete="url"
+                            placeholder={t('portal.docs.urlFallbackPlaceholder')}
+                            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                          />
+                        </>
                       )}
 
                       {req.input_mode === 'text' && (

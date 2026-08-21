@@ -14,7 +14,8 @@ export const DOCUMENT_REQUEST_PRESETS: DocumentRequestPreset[] = [
     code: 'nda_signed',
     title: 'NDA firmado',
     description: 'Devolver el NDA mutuo firmado por el representante legal de la organización.',
-    instructions: 'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF.',
+    instructions:
+      'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF. Si la carga falla, pega un enlace (Drive, Dropbox, SharePoint) al PDF firmado.',
     expectedType: 'nda',
     inputMode: 'file',
     required: true,

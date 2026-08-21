@@ -266,8 +266,10 @@
       "draft": "Draft",
       "sent": "Response sent",
       "sending": "Sending…",
-      "ndaHint": "PDF signed by the legal representative",
+      "ndaHint": "PDF signed by the legal representative. If the upload fails, paste a link below.",
       "fileHint": "PDF, image, Office, or ZIP",
+      "orUrl": "or paste a link where it is hosted",
+      "urlFallbackPlaceholder": "https://drive.google.com/… or Dropbox, SharePoint…",
       "textPlaceholder": "Enter the requested information here",
       "urlPlaceholder": "https://…",
       "githubUrlPlaceholder": "https://github.com/org/repo",
@@ -530,7 +532,7 @@
         "cancelled": "Cancelled"
       },
       "documentRequestInput": {
-        "file": "File",
+        "file": "File or URL",
         "text": "Text",
         "credentials": "Credentials",
         "url": "URL"
@@ -1464,7 +1466,7 @@
       "noRequests": "No requests. Create the first one to unlock the client inbox.",
       "docUploaded": "Document uploaded",
       "uploadDoc": "Upload document (Codiva → client)",
-      "uploadDocHint": "Quotes live in the Quotes tab, not as a PDF here.",
+      "uploadDocHint": "Quotes live in the Quotes tab, not as a PDF here. An NDA marked Signed is stored at organization level and closes the client request.",
       "title": "Title",
       "notesClient": "Note visible to the client (optional)",
       "fileHint": "PDF, image, Office, or ZIP",

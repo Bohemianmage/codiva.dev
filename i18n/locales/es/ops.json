@@ -266,8 +266,10 @@
       "draft": "Borrador",
       "sent": "Respuesta enviada",
       "sending": "Enviando…",
-      "ndaHint": "PDF firmado por el representante legal",
+      "ndaHint": "PDF firmado por el representante legal. Si falla la carga, pega un enlace abajo.",
       "fileHint": "PDF, imagen, Office o ZIP",
+      "orUrl": "o pega un enlace donde esté alojado",
+      "urlFallbackPlaceholder": "https://drive.google.com/… o Dropbox, SharePoint…",
       "textPlaceholder": "Escribe aquí la información solicitada",
       "urlPlaceholder": "https://…",
       "githubUrlPlaceholder": "https://github.com/org/repo",
@@ -530,7 +532,7 @@
         "cancelled": "Cancelado"
       },
       "documentRequestInput": {
-        "file": "Archivo",
+        "file": "Archivo o URL",
         "text": "Texto",
         "credentials": "Accesos",
         "url": "URL"
@@ -1464,7 +1466,7 @@
       "noRequests": "Sin solicitudes. Crea la primera para desbloquear la bandeja del cliente.",
       "docUploaded": "Documento subido",
       "uploadDoc": "Subir documento (Codiva → cliente)",
-      "uploadDocHint": "Cotizaciones viven en la pestaña Cotizaciones, no como PDF aquí.",
+      "uploadDocHint": "Cotizaciones viven en la pestaña Cotizaciones, no como PDF aquí. Un NDA con «Firmado» queda a nivel organización y cierra la solicitud del cliente.",
       "title": "Título",
       "notesClient": "Nota visible para el cliente (opcional)",
       "fileHint": "PDF, imagen, Office o ZIP",

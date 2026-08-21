@@ -10,7 +10,7 @@ import { logActivity } from '@/lib/ops/activity';
 import { DEFAULT_PROJECT_STATE } from '@/lib/ops/labels';
 import { generateProjectSlug } from '@/lib/ops/slug';
 import { documentRequestPresetByCode } from '@/lib/ops/document-request-presets';
-import { normalizeRequestedUrl, optionalHttpUrl } from '@/lib/ops/requested-url';
+import { isHttpUrl, normalizeRequestedUrl, optionalHttpUrl, resolveFileOrUrlInput } from '@/lib/ops/requested-url';
 import { sendClientEmail, notifyStaff } from '@/lib/ops/email';
 import { getT } from '@/i18n/locale';
 import { throwDb } from '@/lib/ops/throw-db';
@@ -28,7 +28,12 @@ import { opsLoginUrl, portalLoginUrl, projectPortalUrl } from '@/lib/ops/host';
 import { opsProjectPathById, opsProjectUrl } from '@/lib/ops/project-path';
 import { deleteOpsFile, uploadOpsFile } from '@/lib/ops/storage';
 import { scanUploadedBytes } from '@/lib/ops/malware-scan';
-import { ingestProjectDocument, ingestOrgDocument, disposeExpiredDocuments } from '@/lib/ops/document-ingest';
+import {
+  ingestProjectDocument,
+  ingestOrgDocument,
+  markOrganizationMutualNdaSigned,
+  disposeExpiredDocuments,
+} from '@/lib/ops/document-ingest';
 import { getRequestAudit } from '@/lib/ops/request-audit';
 import { parseLineItemsJson, parsePhasesJson } from '@/lib/ops/quote-document';
 import { isInboxLane } from '@/lib/ops/inbox-lane';
@@ -1157,27 +1162,58 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
 export async function uploadDocument(projectId: string, formData: FormData) {
   const access = await assertCapability('documents');
   await assertProjectAccessOrThrow(access, projectId);
-  const { user } = access;
+  const { user, supabase } = access;
   const file = formData.get('file') as File | null;
   if (!file?.size) throw new Error('Archivo requerido');
 
   const title = String(formData.get('title') || file.name);
   const type = String(formData.get('type') || 'other');
+  const signed = formData.get('signed') === 'on';
+  const visibleToClient = formData.get('visibleToClient') === 'on';
+  const notes = String(formData.get('notes') || '');
   const audit = await getRequestAudit();
 
-  const { doc, sha256, path, scan } = await ingestProjectDocument({
-    projectId,
-    file,
-    type,
-    title,
-    notes: String(formData.get('notes') || ''),
-    signed: formData.get('signed') === 'on',
-    visibleToClient: formData.get('visibleToClient') === 'on',
-    source: 'staff',
-    uploadedBy: user.id,
-    folder: 'documents',
-    audit,
-  });
+  const { data: project } = await supabase
+    .from('projects')
+    .select('organization_id')
+    .eq('id', projectId)
+    .maybeSingle();
+  const organizationId = project?.organization_id ?? null;
+  const isSignedNda = type === 'nda' && signed && Boolean(organizationId);
+
+  const { doc, sha256, path, scan } = isSignedNda
+    ? await ingestOrgDocument({
+        organizationId: organizationId!,
+        projectId,
+        file,
+        type,
+        title,
+        notes,
+        signed: true,
+        visibleToClient,
+        source: 'staff',
+        uploadedBy: user.id,
+        folder: 'nda',
+        audit,
+      })
+    : await ingestProjectDocument({
+        projectId,
+        file,
+        type,
+        title,
+        notes,
+        signed,
+        visibleToClient,
+        source: 'staff',
+        uploadedBy: user.id,
+        folder: 'documents',
+        audit,
+      });
+
+  if (isSignedNda && organizationId) {
+    await markOrganizationMutualNdaSigned({ organizationId, documentId: doc.id });
+    revalidatePath('/p', 'layout');
+  }
 
   await logActivity({
     entityType: 'document',
@@ -1665,18 +1701,20 @@ export async function clientFulfillDocumentRequest(
   let responseText: string | null = null;
 
   if (req.input_mode === 'file') {
-    const file = formData.get('file') as File | null;
-    if (!file?.size) throw new Error('Archivo requerido');
-    if (file.size > 10 * 1024 * 1024) throw new Error('Máximo 10 MB');
-
+    const resolved = resolveFileOrUrlInput(
+      formData.get('file') as File | null,
+      String(formData.get('responseText') || '')
+    );
     const isSignedNda = req.expected_type === 'nda';
     const organizationId = project.organization_id;
 
-    if (isSignedNda && organizationId) {
+    if (resolved.kind === 'url') {
+      responseText = resolved.url;
+    } else if (isSignedNda && organizationId) {
       const { doc, sha256: hash, path: storedPath, scan } = await ingestOrgDocument({
         organizationId,
         projectId,
-        file,
+        file: resolved.file,
         type: req.expected_type,
         title: req.title,
         notes,
@@ -1692,37 +1730,11 @@ export async function clientFulfillDocumentRequest(
       sha256 = hash;
       path = storedPath;
       scanStatus = scan.status;
-
-      await admin
-        .from('organizations')
-        .update({
-          mutual_nda_document_id: doc.id,
-          mutual_nda_signed_at: new Date().toISOString(),
-        })
-        .eq('id', organizationId);
-
-      const { data: siblingProjects } = await admin
-        .from('projects')
-        .select('id')
-        .eq('organization_id', organizationId);
-      const siblingIds = (siblingProjects ?? []).map((p) => p.id);
-      if (siblingIds.length) {
-        await admin
-          .from('document_requests')
-          .update({
-            status: 'fulfilled',
-            fulfilled_document_id: documentId,
-            fulfilled_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .in('project_id', siblingIds)
-          .eq('expected_type', 'nda')
-          .eq('status', 'open');
-      }
+      await markOrganizationMutualNdaSigned({ organizationId, documentId: doc.id });
     } else {
       const { doc, sha256: hash, path: storedPath, scan } = await ingestProjectDocument({
         projectId,
-        file,
+        file: resolved.file,
         type: req.expected_type,
         title: req.title,
         notes,
@@ -1800,7 +1812,7 @@ export async function clientFulfillDocumentRequest(
         `Modo: ${req.input_mode}`,
         sha256
           ? `SHA-256: ${sha256.slice(0, 16)}…`
-          : req.input_mode === 'url' && responseText
+          : isHttpUrl(responseText)
             ? `URL: ${responseText}`
             : `Respuesta: texto/accesos`,
         `Notas: ${notes || '-'}`,

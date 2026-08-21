@@ -1,5 +1,7 @@
 const HTTP_URL_RE = /^https?:\/\/[^\s]+$/i;
 
+export const MAX_DOCUMENT_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 export function normalizeRequestedUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) throw new Error('URL requerida');
@@ -28,4 +30,22 @@ export function optionalHttpUrl(raw: string | null | undefined): string | null {
   const trimmed = (raw ?? '').trim();
   if (!trimmed) return null;
   return normalizeRequestedUrl(trimmed);
+}
+
+export type FileOrUrlInput =
+  | { kind: 'file'; file: File }
+  | { kind: 'url'; url: string };
+
+/** Archivo tiene prioridad; si no hay, se exige una URL http(s). */
+export function resolveFileOrUrlInput(
+  file: File | null | undefined,
+  urlRaw: string
+): FileOrUrlInput {
+  if (file && file.size > 0) {
+    if (file.size > MAX_DOCUMENT_UPLOAD_BYTES) throw new Error('Máximo 10 MB');
+    return { kind: 'file', file };
+  }
+  const trimmed = urlRaw.trim();
+  if (trimmed) return { kind: 'url', url: normalizeRequestedUrl(trimmed) };
+  throw new Error('Sube un archivo o pega una URL donde esté alojado el documento');
 }

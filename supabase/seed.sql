@@ -214,7 +214,7 @@ INSERT INTO document_requests (
     'nda_signed',
     'NDA firmado',
     'Devolver el NDA mutuo firmado por el representante legal de la organización.',
-    'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF.',
+    'Descarga el borrador aquí, hazlo firmar por el representante legal y súbelo en PDF. Si la carga falla, pega un enlace (Drive, Dropbox, SharePoint) al PDF firmado.',
     'nda', 'file', 'open', true, 10, true
   ),
   (
@@ -241,7 +241,7 @@ INSERT INTO document_requests (
     'formats',
     'Formatos y plantillas',
     'Plantillas, formatos y archivos de trabajo que deba reflejar el sistema.',
-    'Excel/CSV/PDF de catálogos, adhesión, reportes u otros formatos vigentes.',
+    'Excel/CSV/PDF de catálogos, adhesión, reportes u otros formatos vigentes. Si el archivo es grande o no carga, pega un enlace (Drive, Dropbox, SharePoint) donde esté alojado.',
     'other', 'file', 'open', true, 40, true
   ),
   (

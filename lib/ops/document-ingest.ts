@@ -152,6 +152,44 @@ export async function ingestOrgDocument(opts: {
   };
 }
 
+/** Marca el NDA mutuo a nivel org y cierra solicitudes NDA abiertas de todos los proyectos. */
+export async function markOrganizationMutualNdaSigned(opts: {
+  organizationId: string;
+  documentId: string;
+}) {
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+
+  const { error: orgError } = await admin
+    .from('organizations')
+    .update({
+      mutual_nda_document_id: opts.documentId,
+      mutual_nda_signed_at: now,
+    })
+    .eq('id', opts.organizationId);
+  if (orgError) throw await throwDb(orgError);
+
+  const { data: siblingProjects } = await admin
+    .from('projects')
+    .select('id')
+    .eq('organization_id', opts.organizationId);
+  const siblingIds = (siblingProjects ?? []).map((p) => p.id);
+  if (!siblingIds.length) return;
+
+  const { error: reqError } = await admin
+    .from('document_requests')
+    .update({
+      status: 'fulfilled',
+      fulfilled_document_id: opts.documentId,
+      fulfilled_at: now,
+      updated_at: now,
+    })
+    .in('project_id', siblingIds)
+    .eq('expected_type', 'nda')
+    .eq('status', 'open');
+  if (reqError) throw await throwDb(reqError);
+}
+
 export async function disposeExpiredDocuments(limit = 100): Promise<{ disposed: number }> {
   const admin = createAdminClient();
   const today = new Date().toISOString().slice(0, 10);
