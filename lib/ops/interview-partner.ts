@@ -23,6 +23,11 @@ export function isInterviewUuid(value: string): boolean {
   return UUID_RE.test(value);
 }
 
+export function parseInterviewViewAsCookie(value: string | undefined): string | null {
+  const trimmed = String(value || '').trim();
+  return isInterviewUuid(trimmed) ? trimmed : null;
+}
+
 export function isInterviewPartnerRole(value: string): value is InterviewPartnerRole {
   return (INTERVIEW_PARTNER_ROLES as readonly string[]).includes(value);
 }

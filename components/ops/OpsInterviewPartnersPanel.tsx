@@ -4,6 +4,7 @@ import {
   inviteInterviewPartner,
   removeInterviewAssignment,
   setInterviewPartnerMemberActive,
+  startInterviewPartnerViewAs,
 } from '@/lib/ops/interview-actions';
 import type { Translator } from '@/i18n/locale';
 
@@ -134,6 +135,14 @@ export default function OpsInterviewPartnersPanel({
                     {' · '}
                     {member.active ? t('ops.team.active') : t('ops.team.inactive')}
                   </p>
+                  {member.active ? (
+                    <ToastForm action={startInterviewPartnerViewAs} className="mt-2">
+                      <input type="hidden" name="member_id" value={member.id} />
+                      <button type="submit" className="text-sm font-medium text-codiva-primary hover:underline">
+                        {t('ops.team.viewAsInterviewer')}
+                      </button>
+                    </ToastForm>
+                  ) : null}
                   <ToastForm
                     success={member.active ? t('ops.team.memberRevoked') : t('ops.team.memberActivated')}
                     action={async (fd) => {

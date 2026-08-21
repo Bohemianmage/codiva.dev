@@ -52,6 +52,9 @@
     "queueEmpty": "You do not have assigned candidates yet.",
     "back": "← Queue",
     "previewBanner": "Staff preview of the interview portal.",
+    "previewAsBanner": "Viewing as {{name}} ({{org}}). Read-only; their access is unchanged.",
+    "previewStop": "Stop viewing as this person",
+    "previewWriteDisabled": "Interviewer actions (read-only)",
     "previewBack": "Back to Team",
     "followUpPending": "Pending",
     "followUpReport": "Needs report",
@@ -107,7 +110,8 @@
       "version": "Version {{version}}",
       "read": "Read document",
       "openFull": "Open full page",
-      "staffPreview": "Staff preview: no personal acceptance is recorded here."
+      "staffPreview": "Staff preview: no personal acceptance is recorded here.",
+      "staffPreviewAs": "Acceptances for {{name}}. Nothing is recorded under your name."
     },
     "powered": "Project powered by Codiva",
     "nav": {
@@ -778,6 +782,7 @@
       "assignJob": "Assign opening",
       "assignCandidate": "Assign candidate",
       "assignmentSaved": "Assignment saved",
+      "viewAsInterviewer": "View as this user",
       "assignmentRemoved": "Assignment removed",
       "memberRevoked": "Access revoked",
       "memberActivated": "Access restored",

@@ -18,7 +18,7 @@ export async function listInterviewQueue(opts: {
 }): Promise<InterviewQueueRow[]> {
   const admin = createAdminClient();
 
-  if (opts.isStaffPreview) {
+  if (!opts.member && opts.isStaffPreview) {
     const { data: applications } = await admin
       .from('ops_job_applications')
       .select('id, full_name, email, phone, status, ops_job_postings(title)')

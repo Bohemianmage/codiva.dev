@@ -4,6 +4,7 @@ import StatusBadge from '@/components/ops/StatusBadge';
 import { requireInterviewsAccess } from '@/lib/ops/auth';
 import { getAcceptanceStatus } from '@/lib/ops/legal/acceptances';
 import { listInterviewQueue } from '@/lib/ops/interview-query';
+import { interviewsHref } from '@/lib/ops/interview-view-as';
 import { getT } from '@/i18n/locale';
 import { jobApplicationStatusLabel } from '@/lib/ops/careers';
 import { redirect } from 'next/navigation';
@@ -16,17 +17,22 @@ function followUpTone(value: string) {
 
 export default async function InterviewsQueuePage() {
   const access = await requireInterviewsAccess();
-  if (!access.isStaffPreview && access.member && !getAcceptanceStatus(access.member).complete) {
-    redirect('/aceptar');
+  if (access.member && !getAcceptanceStatus(access.member).complete) {
+    redirect(await interviewsHref('/aceptar'));
   }
   const t = await getT();
   const rows = await listInterviewQueue({
     isStaffPreview: access.isStaffPreview,
     member: access.member,
   });
+  const homeHref = await interviewsHref('/');
 
   return (
-    <InterviewsChrome isStaffPreview={access.isStaffPreview} orgName={access.partner?.name}>
+    <InterviewsChrome
+      isStaffPreview={access.isStaffPreview}
+      orgName={access.partner?.name}
+      viewAsName={access.isStaffPreview ? access.member?.full_name : null}
+    >
       <h1 className="text-xl font-bold text-zinc-900">{t('interviews.queue')}</h1>
       {rows.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-600">{t('interviews.queueEmpty')}</p>
@@ -35,7 +41,7 @@ export default async function InterviewsQueuePage() {
           {rows.map((row) => (
             <li key={row.id}>
               <Link
-                href={`/${row.id}`}
+                href={homeHref === '/' ? `/${row.id}` : `${homeHref}/${row.id}`}
                 className="block rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-codiva-primary/40"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">

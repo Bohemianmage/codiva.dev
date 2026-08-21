@@ -1,8 +1,15 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { requireAdminStaff, requireCareersReview, requireInterviewPartner, requireInterviewPartnerWithAcceptances } from '@/lib/ops/auth';
+import {
+  INTERVIEW_VIEW_AS_COOKIE,
+  INTERVIEW_VIEW_AS_MAX_AGE,
+  loadInterviewMemberById,
+} from '@/lib/ops/interview-view-as';
 import { LEGAL_DOCS_VERSION } from '@/lib/ops/legal/version';
 import { logActivity } from '@/lib/ops/activity';
 import { throwDb } from '@/lib/ops/throw-db';
@@ -27,6 +34,33 @@ import { getT } from '@/i18n/locale';
 function revalidateInterviewPaths() {
   revalidatePath('/team');
   revalidatePath('/entrevistas');
+}
+
+export async function startInterviewPartnerViewAs(formData: FormData) {
+  await requireCareersReview();
+  const memberId = String(formData.get('member_id') || '').trim();
+  const loaded = await loadInterviewMemberById(memberId);
+  if (!loaded) throw new Error('Entrevistador no encontrado');
+  const jar = await cookies();
+  jar.set(INTERVIEW_VIEW_AS_COOKIE, loaded.member.id, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: INTERVIEW_VIEW_AS_MAX_AGE,
+  });
+  redirect('/entrevistas');
+}
+
+export async function stopInterviewPartnerViewAs() {
+  await requireCareersReview();
+  const jar = await cookies();
+  jar.set(INTERVIEW_VIEW_AS_COOKIE, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+  redirect('/team?tab=entrevistadores');
 }
 
 export async function inviteInterviewPartner(formData: FormData) {

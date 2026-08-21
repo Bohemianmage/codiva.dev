@@ -16,10 +16,12 @@ export default async function PortalAcceptedLegal({
   email,
   membership,
   isStaffPreview = false,
+  viewAsName,
 }: {
   email?: string | null;
   membership: MemberAcceptanceFields | null;
   isStaffPreview?: boolean;
+  viewAsName?: string | null;
 }) {
   const t = await getT();
   const locale = await getLocale();
@@ -38,7 +40,13 @@ export default async function PortalAcceptedLegal({
             {t('portal.account.email')}: <span className="font-medium text-zinc-800">{email}</span>
           </p>
         ) : null}
-        {isStaffPreview ? <p className="text-sm text-amber-800">{t('portal.account.staffPreview')}</p> : null}
+        {isStaffPreview ? (
+          <p className="text-sm text-amber-800">
+            {viewAsName
+              ? t('portal.account.staffPreviewAs', { name: viewAsName })
+              : t('portal.account.staffPreview')}
+          </p>
+        ) : null}
       </header>
 
       <ul className="grid gap-3 sm:grid-cols-3">

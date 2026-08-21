@@ -25,6 +25,7 @@ import {
 } from '@/lib/ops/interview-actions';
 import { interviewFollowUp, visibleApplicationIds } from '@/lib/ops/interview-partner';
 import { isInterviewUuid } from '@/lib/ops/interview-partner';
+import { interviewsHref } from '@/lib/ops/interview-view-as';
 
 export default async function InterviewsApplicationPage({
   params,
@@ -34,8 +35,8 @@ export default async function InterviewsApplicationPage({
   const { applicationId } = await params;
   if (!isInterviewUuid(applicationId)) notFound();
   const access = await requireInterviewsAccess();
-  if (!access.isStaffPreview) {
-    if (!getAcceptanceStatus(access.member).complete) redirect('/aceptar');
+  if (access.member && !getAcceptanceStatus(access.member).complete) {
+    redirect(await interviewsHref('/aceptar'));
   }
 
   const admin = createAdminClient();
@@ -60,7 +61,7 @@ export default async function InterviewsApplicationPage({
       : Promise.resolve({ data: [] as never[] }),
   ]);
 
-  if (!access.isStaffPreview) {
+  if (access.member) {
     const allowed = visibleApplicationIds(
       assignments ?? [],
       [{ id: application.id, job_posting_id: application.job_posting_id }],
@@ -100,11 +101,17 @@ export default async function InterviewsApplicationPage({
     ? application.ops_job_postings[0]
     : application.ops_job_postings;
   const canWrite = !access.isStaffPreview;
+  const showPartnerActions = Boolean(access.member);
+  const homeHref = await interviewsHref('/');
 
   return (
-    <InterviewsChrome isStaffPreview={access.isStaffPreview} orgName={access.partner?.name}>
+    <InterviewsChrome
+      isStaffPreview={access.isStaffPreview}
+      orgName={access.partner?.name}
+      viewAsName={access.isStaffPreview ? access.member?.full_name : null}
+    >
       <p className="text-sm">
-        <Link href="/" className="text-codiva-primary hover:underline">
+        <Link href={homeHref} className="text-codiva-primary hover:underline">
           {t('interviews.back')}
         </Link>
       </p>
@@ -176,15 +183,16 @@ export default async function InterviewsApplicationPage({
                   ))}
                 </ul>
               ) : null}
-              {canWrite ? (
-                <>
+              {showPartnerActions ? (
+                <fieldset disabled={!canWrite} className="mt-3 space-y-3 disabled:opacity-60">
+                  <legend className="sr-only">{t('interviews.previewWriteDisabled')}</legend>
                   <ToastForm
                     success={t('interviews.roundSaved')}
                     action={async (fd) => {
                       'use server';
                       await partnerUpdateInterviewRound(round.id, fd);
                     }}
-                    className="mt-3 grid gap-2 sm:grid-cols-2"
+                    className="grid gap-2 sm:grid-cols-2"
                   >
                     <select
                       name="status"
@@ -254,7 +262,7 @@ export default async function InterviewsApplicationPage({
                       {t('interviews.reportSubmit')}
                     </button>
                   </ToastForm>
-                </>
+                </fieldset>
               ) : null}
             </li>
           );

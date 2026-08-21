@@ -2,18 +2,27 @@ import Link from 'next/link';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PortalProjectsSignOut from '@/components/ops/PortalProjectsSignOut';
 import CodivaWordmarkMark from '@/components/CodivaWordmarkMark';
+import ToastForm from '@/components/ops/ToastForm';
 import { getT } from '@/i18n/locale';
+import { stopInterviewPartnerViewAs } from '@/lib/ops/interview-actions';
+import { interviewsHref } from '@/lib/ops/interview-view-as';
 
 export default async function InterviewsChrome({
   children,
   isStaffPreview,
   orgName,
+  viewAsName,
 }: {
   children: React.ReactNode;
   isStaffPreview?: boolean;
   orgName?: string | null;
+  viewAsName?: string | null;
 }) {
   const t = await getT();
+  const homeHref = await interviewsHref('/');
+  const accountHref = await interviewsHref('/cuenta');
+  const viewingAs = Boolean(isStaffPreview && viewAsName);
+
   return (
     <div className="min-h-screen bg-codiva-background">
       {isStaffPreview ? (
@@ -22,11 +31,22 @@ export default async function InterviewsChrome({
             <p>
               <span className="font-semibold">{t('ops.preview.staff')}</span>
               {' · '}
-              {t('interviews.previewBanner')}
+              {viewingAs
+                ? t('interviews.previewAsBanner', { name: viewAsName, org: orgName || t('interviews.eyebrow') })
+                : t('interviews.previewBanner')}
             </p>
-            <Link href="/team?tab=entrevistadores" className="font-medium underline underline-offset-2">
-              {t('interviews.previewBack')}
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              {viewingAs ? (
+                <ToastForm action={stopInterviewPartnerViewAs}>
+                  <button type="submit" className="font-medium underline underline-offset-2">
+                    {t('interviews.previewStop')}
+                  </button>
+                </ToastForm>
+              ) : null}
+              <Link href="/team?tab=entrevistadores" className="font-medium underline underline-offset-2">
+                {t('interviews.previewBack')}
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}
@@ -37,10 +57,10 @@ export default async function InterviewsChrome({
             <p className="text-xs font-medium text-zinc-500">{orgName || t('interviews.eyebrow')}</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+            <Link href={homeHref} className="text-sm text-zinc-500 hover:text-zinc-800">
               {t('interviews.title')}
             </Link>
-            <Link href="/cuenta" className="text-sm text-zinc-500 hover:text-zinc-800">
+            <Link href={accountHref} className="text-sm text-zinc-500 hover:text-zinc-800">
               {t('interviews.account')}
             </Link>
             <LanguageSwitcher />

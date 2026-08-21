@@ -148,6 +148,23 @@ export function interviewsApplicationUrl(applicationId: string): string {
   return `${interviewsBaseUrl()}/${applicationId}`;
 }
 
+/**
+ * Path interno del portal de entrevistas según el host.
+ * En interviews.* las URLs públicas no llevan /entrevistas (rewrite en middleware).
+ * En ops la vista previa staff sí: /entrevistas, /entrevistas/{id}, ...
+ */
+export function interviewsAppHref(host: string | null, path = '/'): string {
+  const trimmed = (path || '/').trim();
+  const rest =
+    trimmed === '/' || trimmed === ''
+      ? ''
+      : trimmed.startsWith('/')
+        ? trimmed
+        : `/${trimmed}`;
+  if (isInterviewsHost(host)) return rest || '/';
+  return `/entrevistas${rest}`;
+}
+
 /** Login del cliente (host portal, multi-proyecto). */
 export function portalLoginUrl(path = ''): string {
   const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';

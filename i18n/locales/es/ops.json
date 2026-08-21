@@ -52,6 +52,9 @@
     "queueEmpty": "Todavía no tienes candidatos asignados.",
     "back": "← Cola",
     "previewBanner": "Vista previa staff del portal de entrevistas.",
+    "previewAsBanner": "Viendo como {{name}} ({{org}}). Solo lectura; su acceso no cambia.",
+    "previewStop": "Dejar de ver como esta persona",
+    "previewWriteDisabled": "Acciones del entrevistador (solo lectura)",
     "previewBack": "Volver a Equipo",
     "followUpPending": "Pendiente",
     "followUpReport": "Por reporte",
@@ -107,7 +110,8 @@
       "version": "Versión {{version}}",
       "read": "Leer documento",
       "openFull": "Abrir en página completa",
-      "staffPreview": "Vista previa de staff: aquí no se registra una aceptación personal."
+      "staffPreview": "Vista previa de staff: aquí no se registra una aceptación personal.",
+      "staffPreviewAs": "Aceptaciones de {{name}}. No se registra nada a tu nombre."
     },
     "powered": "Proyecto impulsado por Codiva",
     "nav": {
@@ -778,6 +782,7 @@
       "assignJob": "Asignar vacante",
       "assignCandidate": "Asignar candidato",
       "assignmentSaved": "Asignación guardada",
+      "viewAsInterviewer": "Ver como este usuario",
       "assignmentRemoved": "Asignación quitada",
       "memberRevoked": "Acceso revocado",
       "memberActivated": "Acceso reactivado",

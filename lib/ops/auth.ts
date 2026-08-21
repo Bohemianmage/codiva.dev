@@ -11,6 +11,7 @@ import {
   type StaffRole,
 } from '@/lib/ops/permissions';
 import { isOpsHost } from '@/lib/ops/host';
+import { loadInterviewMemberById, readInterviewViewAsMemberId } from '@/lib/ops/interview-view-as';
 import { safeNextPath } from '@/lib/ops/safe-path';
 
 const PROJECT_SELECT =
@@ -471,12 +472,14 @@ export async function requireInterviewsAccess() {
     if (!staff || !canAny(staff, ['team', 'careers_review'])) {
       redirect('/dashboard?error=forbidden');
     }
+    const viewAsId = await readInterviewViewAsMemberId();
+    const viewed = viewAsId ? await loadInterviewMemberById(viewAsId) : null;
     return {
       user,
       supabase,
       staff,
-      member: null as InterviewPartnerMember | null,
-      partner: null as InterviewPartnerOrg | null,
+      member: viewed?.member ?? (null as InterviewPartnerMember | null),
+      partner: viewed?.partner ?? (null as InterviewPartnerOrg | null),
       isStaffPreview: true as const,
     };
   }

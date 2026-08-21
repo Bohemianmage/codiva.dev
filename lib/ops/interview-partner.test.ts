@@ -4,6 +4,7 @@ import {
   encodeInterviewAssignee,
   interviewFollowUp,
   parseInterviewAssignee,
+  parseInterviewViewAsCookie,
   partnerMaySetApplicationStatus,
   visibleApplicationIds,
 } from './interview-partner';
@@ -50,6 +51,14 @@ describe('partner privileges', () => {
     expect(partnerMaySetApplicationStatus('hired')).toBe(false);
     expect(partnerMaySetApplicationStatus('rejected')).toBe(false);
     expect(partnerMaySetApplicationStatus('interview')).toBe(false);
+  });
+});
+
+describe('parseInterviewViewAsCookie', () => {
+  it('accepts a member uuid and rejects junk', () => {
+    expect(parseInterviewViewAsCookie(app.id)).toBe(app.id);
+    expect(parseInterviewViewAsCookie('')).toBeNull();
+    expect(parseInterviewViewAsCookie('staff:abc')).toBeNull();
   });
 });
 

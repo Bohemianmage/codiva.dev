@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   careerAppHref,
   getHostname,
+  interviewsAppHref,
   isCareerHost,
   isInterviewsHost,
   isOpsHost,
@@ -65,6 +66,15 @@ describe('host surfaces', () => {
     expect(careerAppHref('career.codiva.dev', '/nirc-qa')).toBe('/nirc-qa');
     expect(careerAppHref('codiva.dev', '/nirc-qa')).toBe('/empleos/nirc-qa');
     expect(careerAppHref('career.codiva.dev', '/')).toBe('/');
+  });
+
+  it('interview href omits /entrevistas on the interviews host', () => {
+    const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    expect(interviewsAppHref('interviews.codiva.dev', '/')).toBe('/');
+    expect(interviewsAppHref('interviews.codiva.dev', `/${id}`)).toBe(`/${id}`);
+    expect(interviewsAppHref('ops.codiva.dev', '/')).toBe('/entrevistas');
+    expect(interviewsAppHref('ops.codiva.dev', `/${id}`)).toBe(`/entrevistas/${id}`);
+    expect(interviewsAppHref('ops.codiva.dev', '/cuenta')).toBe('/entrevistas/cuenta');
   });
 
   it('usage labels drop the protocol', () => {
