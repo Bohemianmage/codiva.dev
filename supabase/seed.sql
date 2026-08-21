@@ -261,6 +261,15 @@ INSERT INTO document_requests (
     'Credenciales o invitaciones a ambientes de prueba para integraciones.',
     'Puedes describir el acceso aquí o adjuntar un documento en una solicitud aparte si lo prefieres.',
     'other', 'text', 'open', false, 60, true
+  ),
+  (
+    '94000001-0001-4000-8000-000000000008',
+    'b0000001-0001-4000-8000-00000000000b',
+    'constancia_situacion_fiscal',
+    'Constancia de Situación Fiscal',
+    'Constancia vigente emitida por el SAT (RFC, régimen y domicilio fiscal).',
+    'PDF descargado del portal del SAT. Debe coincidir con los datos de facturación.',
+    'other', 'file', 'open', true, 48, true
   )
 ON CONFLICT (id) DO NOTHING;
 

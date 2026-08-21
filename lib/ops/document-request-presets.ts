@@ -31,6 +31,16 @@ export const DOCUMENT_REQUEST_PRESETS: DocumentRequestPreset[] = [
     required: true,
     sortOrder: 20,
   },
+  {
+    code: 'constancia_situacion_fiscal',
+    title: 'Constancia de Situación Fiscal',
+    description: 'Constancia vigente emitida por el SAT (RFC, régimen y domicilio fiscal).',
+    instructions: 'PDF descargado del portal del SAT. Debe coincidir con los datos de facturación.',
+    expectedType: 'other',
+    inputMode: 'file',
+    required: true,
+    sortOrder: 48,
+  },
 ];
 
 export function documentRequestPresetByCode(code: string) {
