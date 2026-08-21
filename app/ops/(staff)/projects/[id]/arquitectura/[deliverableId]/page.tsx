@@ -5,7 +5,7 @@ import OpsArchitectureEditor from '@/components/ops/OpsArchitectureEditor';
 import { assertProjectAccess, requireStaff } from '@/lib/ops/auth';
 import { updateArchitectureCanvas, hydrateArchitectureFromPacks } from '@/lib/ops/actions';
 import { can } from '@/lib/ops/permissions';
-import { resolveArchitectureHtml } from '@/lib/ops/architecture';
+import { resolveArchitectureHtml, portalCanvasPdfPath } from '@/lib/ops/architecture';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
 import { opsProjectPath, resolveOpsProject } from '@/lib/ops/project-path';
 import { getT } from '@/i18n/locale';
@@ -65,6 +65,12 @@ export default async function ArchitectureEditorPage({
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
             >
               {t('ops.architecture.viewProposal')}
+            </Link>
+            <Link
+              href={portalCanvasPdfPath(project.slug, deliverable.id)}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            >
+              {t('ops.architecture.downloadPdf')}
             </Link>
           </div>
         }

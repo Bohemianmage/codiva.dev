@@ -286,7 +286,7 @@
     },
     "proposal": {
       "title": "Proposal",
-      "hint": "Proposal materials and project identity. You can open fullscreen or download the PDF when available.",
+      "hint": "Proposal materials and project identity. You can open fullscreen or download the canvas as PDF.",
       "quote": "Quote",
       "validUntil": "Valid until {{date}}",
       "viewFull": "View full quote",
@@ -1478,6 +1478,7 @@
       "opsOnly": "Ops only",
       "editInOps": "Edit in Ops",
       "openCanvas": "Open canvas",
+      "downloadPdf": "Download PDF",
       "visibilityUpdated": "Visibility updated",
       "hide": "Hide",
       "show": "Show",

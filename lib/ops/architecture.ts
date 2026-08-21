@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { opsBaseUrl } from '@/lib/ops/host';
+import { slugify } from '@/lib/ops/slug';
 
 export const CANVAS_KINDS = ['architecture', 'mvp', 'proposal'] as const;
 export type CanvasKind = (typeof CANVAS_KINDS)[number];
@@ -15,6 +16,23 @@ export function isCanvasKind(kind: string | null | undefined): kind is CanvasKin
 
 export function portalCanvasPath(slug: string, deliverableId: string): string {
   return `/p/${slug}/canvas/${deliverableId}`;
+}
+
+export function portalCanvasPdfPath(slug: string, deliverableId: string): string {
+  return `${portalCanvasPath(slug, deliverableId)}/pdf`;
+}
+
+/** PDF generated from the live canvas HTML (`/p/:slug/canvas/:id/pdf`). */
+export function portalCanvasPdfHref(canvasSrc: string | null | undefined): string | null {
+  if (!canvasSrc) return null;
+  const pathOnly = canvasSrc.split('?')[0].split('#')[0].replace(/\/$/, '');
+  if (/\/p\/[^/]+\/canvas\/[^/]+$/.test(pathOnly)) return `${pathOnly}/pdf`;
+  return null;
+}
+
+export function architecturePdfFilename(title: string): string {
+  const base = slugify(title) || 'arquitectura';
+  return `${base}.pdf`;
 }
 
 export function isClientPackUrl(url: string | null | undefined): url is string {

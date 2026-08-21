@@ -286,7 +286,7 @@
     },
     "proposal": {
       "title": "Propuesta",
-      "hint": "Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o descargar el PDF cuando exista.",
+      "hint": "Materiales de propuesta e identidad del proyecto. Puedes abrir en pantalla completa o descargar el canvas en PDF.",
       "quote": "Cotización",
       "validUntil": "Válida hasta {{date}}",
       "viewFull": "Ver cotización completa",
@@ -1478,6 +1478,7 @@
       "opsOnly": "solo Ops",
       "editInOps": "Editar en Ops",
       "openCanvas": "Abrir canvas",
+      "downloadPdf": "Descargar PDF",
       "visibilityUpdated": "Visibilidad actualizada",
       "hide": "Ocultar",
       "show": "Mostrar",

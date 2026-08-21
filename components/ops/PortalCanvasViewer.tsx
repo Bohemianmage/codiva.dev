@@ -39,6 +39,13 @@ function isPdf(src: string): boolean {
   return /\.pdf(\?|#|$)/i.test(src);
 }
 
+function canvasPdfSrc(src: string | null): string | null {
+  if (!src) return null;
+  const pathOnly = src.split('?')[0].split('#')[0].replace(/\/$/, '');
+  if (/\/p\/[^/]+\/canvas\/[^/]+$/.test(pathOnly)) return `${pathOnly}/pdf`;
+  return null;
+}
+
 function isEmbeddable(src: string): boolean {
   return isHtml(src) || isPdf(src) || src.includes('/client-packs/');
 }
@@ -76,14 +83,14 @@ function buildTabs(items: PortalCanvasItem[], kindLabel: Record<string, string>)
 
     if (htmlItems.length) {
       const primary = htmlItems[0];
-      const pdfSrc = pdfItems[0] ? resolveSrc(pdfItems[0]) : null;
+      const canvasSrc = resolveSrc(primary);
       tabs.push({
         id: primary.id,
         kind,
         title: primary.title.replace(/\s*\(PDF\)\s*/i, '').trim() || primary.title,
         description: primary.description,
-        canvasSrc: resolveSrc(primary),
-        pdfSrc,
+        canvasSrc,
+        pdfSrc: canvasPdfSrc(canvasSrc) ?? (pdfItems[0] ? resolveSrc(pdfItems[0]) : null),
         label: `${kindName}: Canvas`,
       });
       // PDFs sueltos del mismo kind ya van como descarga del canvas
@@ -114,13 +121,14 @@ function buildTabs(items: PortalCanvasItem[], kindLabel: Record<string, string>)
 
     // Si solo hay PDFs adicionales sin HTML (ya cubierto) o múltiples HTML
     for (const extra of htmlItems.slice(1)) {
+      const canvasSrc = resolveSrc(extra);
       tabs.push({
         id: extra.id,
         kind,
         title: extra.title,
         description: extra.description,
-        canvasSrc: resolveSrc(extra),
-        pdfSrc: null,
+        canvasSrc,
+        pdfSrc: canvasPdfSrc(canvasSrc),
         label: `${kindName}: ${extra.title}`,
       });
     }
@@ -191,8 +199,7 @@ export default function PortalCanvasViewer({ items }: { items: PortalCanvasItem[
               {active.pdfSrc && (
                 <a
                   href={active.pdfSrc}
-                  target="_blank"
-                  rel="noreferrer"
+                  download
                   className="shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 >
                   {t('portal.proposal.downloadPdf')}

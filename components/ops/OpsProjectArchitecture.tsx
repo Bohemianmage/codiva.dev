@@ -5,7 +5,7 @@ import {
   setDeliverableVisibility,
   hydrateArchitectureFromPacks,
 } from '@/lib/ops/actions';
-import { isCanvasKind, portalCanvasPath } from '@/lib/ops/architecture';
+import { isCanvasKind, portalCanvasPath, portalCanvasPdfPath } from '@/lib/ops/architecture';
 import { staffPortalPreviewPath } from '@/lib/ops/host';
 import { opsProjectPath } from '@/lib/ops/project-path';
 import { requireStaff } from '@/lib/ops/auth';
@@ -126,6 +126,12 @@ export default async function OpsProjectArchitecture({
                     className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                   >
                     {t('ops.architecture.openCanvas')}
+                  </Link>
+                  <Link
+                    href={portalCanvasPdfPath(slug, item.id)}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+                  >
+                    {t('ops.architecture.downloadPdf')}
                   </Link>
                   {canEdit && (
                     <ToastForm

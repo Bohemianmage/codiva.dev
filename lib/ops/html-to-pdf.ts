@@ -72,6 +72,23 @@ export async function htmlToPdf(html: string): Promise<Buffer> {
     await page.evaluate(async () => {
       if (document.fonts?.ready) await document.fonts.ready;
     });
+    await page
+      .waitForFunction(
+        () => {
+          const blocks = document.querySelectorAll('.mermaid');
+          if (!blocks.length) return true;
+          return Array.from(blocks).every(
+            (el) =>
+              Boolean(el.querySelector('svg')) || el.getAttribute('data-processed') === 'true'
+          );
+        },
+        { timeout: 20_000 }
+      )
+      .catch(() => undefined);
+    await page.addStyleTag({
+      content:
+        '@media print { .mermaid, pre.mermaid { break-inside: avoid; page-break-inside: avoid; } svg { max-width: 100% !important; height: auto !important; } }',
+    });
     await new Promise((r) => setTimeout(r, 400));
     await page.emulateMediaType('print');
     const pdf = await page.pdf({
