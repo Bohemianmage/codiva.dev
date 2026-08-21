@@ -422,7 +422,7 @@ export const OPS_RELEASE_BRANCH = 'preview/ops-release';
 
 /**
  * Point preview/ops-release (or custom) at the tip of fromRef (default main).
- * Push triggers the client's CI preview job (non-main).
+ * Callers should dispatch CI afterwards: a same-SHA update has no push event.
  */
 export async function upsertOpsReleaseBranch(input: {
   owner: string;
@@ -510,5 +510,34 @@ export async function upsertOpsReleaseBranch(input: {
     branch,
     created: true,
     url: `https://github.com/${owner}/${repo}/tree/${branch}`,
+  };
+}
+
+/** Kick CI on a ref. Needed when the branch SHA did not change (no push event). */
+export async function dispatchCiWorkflow(input: {
+  owner: string;
+  repo: string;
+  ref: string;
+  workflow?: string;
+}): Promise<{ ok: true } | { ok: false; error: string; missing?: boolean }> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  const workflow = encodeURIComponent(input.workflow?.trim() || 'ci.yml');
+  const ref = input.ref.trim().replace(/^refs\/heads\//, '');
+  if (!owner || !repo || !ref) {
+    return { ok: false, error: 'Falta owner, repo o ref para disparar CI.' };
+  }
+
+  const res = await githubJson(`/repos/${owner}/${repo}/actions/workflows/${workflow}/dispatches`, {
+    method: 'POST',
+    body: JSON.stringify({ ref }),
+  });
+  if (res.status === 204 || res.ok) return { ok: true };
+  if (res.status === 404) {
+    return { ok: false, missing: true, error: `No existe el workflow ${input.workflow || 'ci.yml'}.` };
+  }
+  return {
+    ok: false,
+    error: `GitHub workflow dispatch falló (${res.status}): ${res.body.slice(0, 300)}`,
   };
 }

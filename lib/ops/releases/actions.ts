@@ -11,6 +11,7 @@ import { logActivity } from '@/lib/ops/activity';
 import {
   attachCiStatuses,
   closePullRequest,
+  dispatchCiWorkflow,
   dispatchPromoteWorkflow,
   getGitRefSha,
   listGitHubPreviews,
@@ -710,6 +711,15 @@ export async function prepareOpsRelease(projectId: string) {
   });
   if (!result.ok) {
     throw await throwExternal(result.error, 'ops.releases.errGithub');
+  }
+
+  const dispatched = await dispatchCiWorkflow({
+    owner,
+    repo,
+    ref: OPS_RELEASE_BRANCH,
+  });
+  if (!dispatched.ok && !dispatched.missing) {
+    throw await throwExternal(dispatched.error, 'ops.releases.errGithub');
   }
 
   await logActivity({

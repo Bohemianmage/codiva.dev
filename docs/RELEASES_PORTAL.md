@@ -3,7 +3,7 @@
 ## Flujo
 
 1. Código llega a **`main`** (o vive en `preview/*` / PR). No promover deploys dirty ni de `main` directo.
-2. GitHub Actions: lint/typecheck/test. En `main` verde, CI adelanta `preview/ops-release`; en esa rama (y otras ≠ `main`) el job `preview` publica Vercel + alias `*-git-*`.
+2. GitHub Actions: lint/typecheck/test. En `main` verde, CI adelanta `preview/ops-release` y dispara el mismo workflow ahí (`GITHUB_TOKEN` no dispara CI al mover la ref). En esa rama (y otras ≠ `main`) el job `preview` publica Vercel + alias `*-git-*`.
 3. Codiva Ops → Proyecto → **Releases** lista previews READY (sin dirty, un ítem por SHA, sin ya promovidos).
 4. Ops prueba la URL (bypass de protección si aplica).
 5. Admin/PM: **Aceptar y mandar a producción** (rebuild con env Production). El preview de origen se borra de Vercel/Incoming.
@@ -19,7 +19,7 @@
 
 ## Convención de ramas
 
-- `main` — integración; CI **no** publica Incoming. Si el job está verde, adelanta `preview/ops-release`.
+- `main` — integración; CI **no** publica Incoming. Si el job está verde, adelanta `preview/ops-release` y hace `workflow_dispatch` (el push con `GITHUB_TOKEN` no crea un run).
 - `preview/ops-release` — staging de QA (auto desde `main`, o **Preparar release** en Ops).
 - Otras `preview/*` o PRs — trabajo en curso.
 

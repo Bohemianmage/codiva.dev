@@ -4,14 +4,15 @@
 # Repo secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 # In Vercel: disable Git auto-deploys (vercel.json git.deploymentEnabled=false).
 #
-# main never deploys Incoming. A green CI on main fast-forwards preview/ops-release,
-# which then runs the preview job.
+# main never deploys Incoming. A green CI on main fast-forwards preview/ops-release.
+# GITHUB_TOKEN ref updates do not trigger workflows, so sync then workflow_dispatch.
 
 name: Preview
 
 on:
   pull_request:
   push:
+  workflow_dispatch:
 
 jobs:
   ci:
@@ -53,6 +54,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Fast-forward preview/ops-release
         env:
@@ -65,11 +67,15 @@ jobs:
             current=$(jq -r .object.sha /tmp/ref.json)
             if [ "$current" = "$SHA" ]; then
               echo "Already at $SHA"
-              exit 0
+            else
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/${BRANCH}" \
+                -f sha="$SHA" -F force=true
             fi
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/${BRANCH}" \
-              -f sha="$SHA" -F force=true
           else
             gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
               -f ref="refs/heads/${BRANCH}" -f sha="$SHA"
           fi
+          WORKFLOW_FILE="${GITHUB_WORKFLOW_REF##*/}"
+          WORKFLOW_FILE="${WORKFLOW_FILE%@*}"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_FILE}/dispatches" \
+            -f ref="$BRANCH"
