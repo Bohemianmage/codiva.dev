@@ -73,7 +73,14 @@ export default function OpsSidebar({
     <aside className="flex h-full w-full min-w-0 flex-col lg:w-64 lg:min-w-64">
       <div className="flex items-start justify-between gap-2 border-b border-zinc-200 px-5 py-5">
         <div className="min-w-0">
-          <CodivaWordmarkMark size="sm" />
+          <Link
+            href="/dashboard"
+            onClick={onNavigate}
+            className="inline-flex rounded-md outline-offset-2 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-codiva-primary"
+            aria-label={t('ops.layout.home')}
+          >
+            <CodivaWordmarkMark size="sm" />
+          </Link>
           <p className="mt-1 truncate text-sm text-zinc-600">{staffName}</p>
         </div>
         {onHide ? (

@@ -343,6 +343,7 @@
       "copied": "Copied"
     },
     "layout": {
+      "home": "Ops home",
       "hideSidebar": "Hide sidebar",
       "showSidebar": "Show sidebar",
       "openNavigation": "Open navigation menu",
