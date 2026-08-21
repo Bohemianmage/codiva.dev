@@ -114,13 +114,14 @@ describe('renderRecruitingDossierHtml', () => {
             outcomeLabel: 'Avanzar',
             interviewer: 'María Ops',
             conductedAt: '2026-08-19T16:00:00.000Z',
-            comments: [
+              comments: [
               {
                 body: 'Clara con el oficio. Sigue a técnica.',
                 author: 'María Ops',
                 createdAt: '2026-08-19T16:30:00.000Z',
               },
             ],
+            reports: [{ filename: 'filtro-agencia.pdf', notes: 'Recomendamos avanzar' }],
           },
           {
             title: 'Técnica',
@@ -131,6 +132,7 @@ describe('renderRecruitingDossierHtml', () => {
             interviewer: null,
             conductedAt: null,
             comments: [],
+            reports: [],
           },
         ],
       })
@@ -140,6 +142,7 @@ describe('renderRecruitingDossierHtml', () => {
     expect(html).toContain('Realizada');
     expect(html).toContain('Avanzar');
     expect(html).toContain('Clara con el oficio. Sigue a técnica.');
+    expect(html).toContain('filtro-agencia.pdf');
     expect(html).toContain('Técnica');
     expect(html).toContain('Pendiente');
   });
@@ -157,6 +160,7 @@ describe('renderRecruitingDossierHtml', () => {
             interviewer: null,
             conductedAt: null,
             comments: [],
+            reports: [],
           },
         ],
       })
@@ -278,6 +282,7 @@ describe('renderRecruitingPipelineHtml', () => {
                   createdAt: '2026-08-19T16:30:00.000Z',
                 },
               ],
+              reports: [],
             },
           ],
           completedAt: '2026-08-18T17:15:00.000Z',

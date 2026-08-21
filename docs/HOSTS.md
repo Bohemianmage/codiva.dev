@@ -6,7 +6,7 @@
 | `ticket.codiva.dev` | Formulario de tickets (`/`) | Clientes / reportes |
 | `career.codiva.dev` | Bolsa de trabajo (`/` listado, `/{slug}` vacante) | Candidatos |
 | `ops.codiva.dev` | Staff Ops + vista previa `/p/*` + cotizaciones `/q/*` + partners | Equipo Codiva |
-| `portal.codiva.dev` | Portal cliente `/login`, `/proyectos`, `/p/{slug}` | Clientes invitados |
+| `interviews.codiva.dev` | Entrevistas de terceros (`/login`, `/`, `/{applicationId}`) | Entrevistadores invitados |
 
 `codiva.dev/empleos` redirige a `career.codiva.dev`.
 `codiva.dev/ticket` redirige a `ticket.codiva.dev`.
@@ -24,13 +24,14 @@ Crear registro para el portal y la bolsa (mismo proyecto Vercel que codiva.dev):
 - `portal.codiva.dev` → CNAME a Vercel (`cname.vercel-dns.com` o el que indique el dashboard)
 - `career.codiva.dev` → CNAME a Vercel
 - `ticket.codiva.dev` → CNAME a Vercel
+- `interviews.codiva.dev` → CNAME a Vercel
 
 `ops.codiva.dev` ya debería existir.
 
 ### 2. Vercel
 En el proyecto de Codiva:
 
-1. **Settings → Domains** → Add `portal.codiva.dev`, `career.codiva.dev` y `ticket.codiva.dev`
+1. **Settings → Domains** → Add `portal.codiva.dev`, `career.codiva.dev`, `ticket.codiva.dev` y `interviews.codiva.dev`
 2. Esperar SSL / verificación
 3. **Environment variables** (Production + Preview si aplica):
 
@@ -44,6 +45,8 @@ NEXT_PUBLIC_CAREER_URL=https://career.codiva.dev
 CAREER_HOST=career.codiva.dev
 NEXT_PUBLIC_TICKET_URL=https://ticket.codiva.dev
 TICKET_HOST=ticket.codiva.dev
+NEXT_PUBLIC_INTERVIEWS_URL=https://interviews.codiva.dev
+INTERVIEWS_HOST=interviews.codiva.dev
 ```
 
 4. Redeploy tras guardar env.
@@ -55,6 +58,8 @@ Redirect URLs (agregar):
 
 - `https://portal.codiva.dev/**`
 - `https://portal.codiva.dev/auth/callback`
+- `https://interviews.codiva.dev/**`
+- `https://interviews.codiva.dev/auth/callback`
 - Mantener `https://ops.codiva.dev/**` y `https://ops.codiva.dev/auth/callback`
 
 Site URL puede seguir siendo `https://ops.codiva.dev` o `https://codiva.dev`.
@@ -69,6 +74,7 @@ En `C:\Windows\System32\drivers\etc\hosts` (o equivalente):
 127.0.0.1 portal.localhost
 127.0.0.1 career.localhost
 127.0.0.1 ticket.localhost
+127.0.0.1 interviews.localhost
 ```
 
 Vars locales:
@@ -82,6 +88,8 @@ NEXT_PUBLIC_CAREER_URL=http://career.localhost:3000
 CAREER_HOST=career.localhost
 NEXT_PUBLIC_TICKET_URL=http://ticket.localhost:3000
 TICKET_HOST=ticket.localhost
+NEXT_PUBLIC_INTERVIEWS_URL=http://interviews.localhost:3000
+INTERVIEWS_HOST=interviews.localhost
 ```
 
 ### 5. Smoke test
@@ -92,6 +100,7 @@ TICKET_HOST=ticket.localhost
 5. Recovery password desde portal login (`/login/forgot-password`)
 6. Bolsa: `career.codiva.dev` lista vacantes; `codiva.dev/empleos` redirige ahí; postular con un PDF de prueba
 7. Tickets: `ticket.codiva.dev` muestra el formulario; `codiva.dev/ticket` redirige ahí
+8. Entrevistas: `interviews.codiva.dev/login`; staff preview en `ops.codiva.dev/entrevistas`
 
 ### 6. No olvidar
 - Cron retención sigue en el mismo deploy (`/api/ops/cron/...`); no requiere subdominio nuevo

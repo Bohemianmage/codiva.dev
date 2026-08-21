@@ -5,11 +5,13 @@ import {
   isPortalHost,
   isCareerHost,
   isTicketHost,
+  isInterviewsHost,
   opsBaseUrl,
   portalBaseUrl,
   marketingBaseUrl,
   careerBaseUrl,
   ticketBaseUrl,
+  interviewsBaseUrl,
 } from '@/lib/ops/host';
 import {
   DEFAULT_LOCALE,
@@ -81,9 +83,14 @@ const CAREER_RESERVED = new Set([
   'workload',
   'q',
   'p',
+  'entrevistas',
+  'interviews',
+  'aceptar',
   'robots.txt',
   'sitemap.xml',
 ]);
+
+const INTERVIEW_APP_ID = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i;
 
 function isLocalApex(host: string | null) {
   const hostname = (host ?? '').split(':')[0].toLowerCase();
@@ -96,6 +103,10 @@ function careerFirstSegment(pathname: string) {
 
 function isPublicTicketPath(pathname: string) {
   return pathname === '/ticket' || pathname.startsWith('/ticket/');
+}
+
+function isEntrevistasPublicPath(pathname: string) {
+  return pathname === '/entrevistas' || pathname.startsWith('/entrevistas/');
 }
 
 export async function middleware(request: NextRequest) {
@@ -117,6 +128,7 @@ export async function middleware(request: NextRequest) {
   const onPortal = isPortalHost(host);
   const onCareer = isCareerHost(host);
   const onTicket = isTicketHost(host);
+  const onInterviews = isInterviewsHost(host);
 
   // --- TICKET (formulario público) ---
   if (onTicket) {
@@ -158,9 +170,83 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
     }
 
+    if (isEntrevistasPublicPath(pathname)) {
+      const rest =
+        pathname === '/entrevistas' || pathname === '/entrevistas/' ? '/' : pathname.slice('/entrevistas'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, interviewsBaseUrl(), rest || '/'));
+    }
+
     if (pathname === '/' || pathname === '') {
       const url = request.nextUrl.clone();
       url.pathname = '/ticket';
+      return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+    }
+
+    const missing = request.nextUrl.clone();
+    missing.pathname = '/ops/__missing';
+    return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
+  }
+
+  // --- INTERVIEWS (terceros de entrevistas) ---
+  if (onInterviews) {
+    if (pathname.startsWith('/legal') || pathname.startsWith('/auth/')) {
+      if (pathname.startsWith('/auth/')) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/ops${pathname}`;
+        return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
+      }
+      return sessionResponse;
+    }
+
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/projects') ||
+      pathname.startsWith('/leads') ||
+      pathname.startsWith('/partner') ||
+      pathname.startsWith('/q/') ||
+      pathname.startsWith('/ops')
+    ) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, opsBaseUrl(), pathname));
+    }
+
+    if (pathname.startsWith('/p/') || pathname === '/proyectos' || pathname.startsWith('/proyectos/')) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, portalBaseUrl(), pathname));
+    }
+
+    if (pathname === '/empleos' || pathname.startsWith('/empleos/')) {
+      const rest =
+        pathname === '/empleos' || pathname === '/empleos/' ? '/' : pathname.slice('/empleos'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, careerBaseUrl(), rest));
+    }
+
+    if (isPublicTicketPath(pathname)) {
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
+    }
+
+    if (isEntrevistasPublicPath(pathname)) {
+      const rest =
+        pathname === '/entrevistas' || pathname === '/entrevistas/' ? '/' : pathname.slice('/entrevistas'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, interviewsBaseUrl(), rest || '/'));
+    }
+
+    const interviewsRewrite =
+      pathname === '/' || pathname === ''
+        ? '/ops/entrevistas'
+        : pathname === '/login' ||
+            pathname.startsWith('/login/') ||
+            pathname === '/cuenta' ||
+            pathname.startsWith('/cuenta/') ||
+            pathname === '/aceptar' ||
+            pathname.startsWith('/aceptar/') ||
+            pathname === '/reset-password' ||
+            pathname.startsWith('/reset-password/') ||
+            INTERVIEW_APP_ID.test(pathname)
+          ? `/ops/entrevistas${pathname === '/' ? '' : pathname}`
+          : null;
+
+    if (interviewsRewrite) {
+      const url = request.nextUrl.clone();
+      url.pathname = interviewsRewrite;
       return withSessionCookies(sessionResponse, NextResponse.rewrite(url));
     }
 
@@ -184,6 +270,12 @@ export async function middleware(request: NextRequest) {
 
     if (isPublicTicketPath(pathname)) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
+    }
+
+    if (isEntrevistasPublicPath(pathname)) {
+      const rest =
+        pathname === '/entrevistas' || pathname === '/entrevistas/' ? '/' : pathname.slice('/entrevistas'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, interviewsBaseUrl(), rest || '/'));
     }
 
     if (
@@ -295,6 +387,12 @@ export async function middleware(request: NextRequest) {
       return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
     }
 
+    if (isEntrevistasPublicPath(pathname)) {
+      const rest =
+        pathname === '/entrevistas' || pathname === '/entrevistas/' ? '/' : pathname.slice('/entrevistas'.length);
+      return withSessionCookies(sessionResponse, absoluteRedirect(request, interviewsBaseUrl(), rest || '/'));
+    }
+
     const missing = request.nextUrl.clone();
     missing.pathname = '/ops/__missing';
     return withSessionCookies(sessionResponse, NextResponse.rewrite(missing));
@@ -397,6 +495,13 @@ export async function middleware(request: NextRequest) {
   if (isPublicTicketPath(pathname)) {
     if (isLocalApex(host)) return sessionResponse;
     return withSessionCookies(sessionResponse, absoluteRedirect(request, ticketBaseUrl(), '/'));
+  }
+
+  if (isEntrevistasPublicPath(pathname)) {
+    if (isLocalApex(host)) return sessionResponse;
+    const rest =
+      pathname === '/entrevistas' || pathname === '/entrevistas/' ? '/' : pathname.slice('/entrevistas'.length);
+    return withSessionCookies(sessionResponse, absoluteRedirect(request, interviewsBaseUrl(), rest || '/'));
   }
 
   return sessionResponse;

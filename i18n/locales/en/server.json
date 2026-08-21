@@ -155,6 +155,27 @@
       "signoff": "Take care,",
       "team": "The Codiva.dev team",
       "cta": "Write to us"
+    },
+    "interviewInviteNew": {
+      "preview": "Interview access at Codiva · {{org}}",
+      "title": "Interview access",
+      "body": "Your access to run interview rounds for {{brand}} with {{org}} is ready.",
+      "email": "Email:",
+      "tempPassword": "Temporary password:",
+      "changeHint": "Change your password after you sign in.",
+      "cta": "Open interviews"
+    },
+    "interviewInviteExisting": {
+      "preview": "Interview access at Codiva · {{org}}",
+      "title": "Interview access",
+      "body": "You were granted access to run interview rounds for {{brand}} with {{org}}. Use your usual email and password.",
+      "cta": "Open interviews"
+    },
+    "interviewAssigned": {
+      "preview": "You have a pending round: {{candidate}}",
+      "title": "Pending interview round",
+      "body": "You were assigned a round for {{candidate}} ({{job}}). Open it to see status, follow up, and upload the report.",
+      "cta": "View candidate"
     }
   },
   "quoteDoc": {

@@ -369,6 +369,85 @@ export function templateStaffInviteExistingUser(
   });
 }
 
+export function templateInterviewInviteNewUser(
+  fullName: string,
+  email: string,
+  tempPassword: string,
+  loginUrl: string,
+  orgName: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  const hello = fullName ? greeting(fullName, locale) : '';
+  return emailLayout({
+    locale,
+    preview: tSync(locale, 'email.interviewInviteNew.preview', { org: orgName }),
+    title: tSync(locale, 'email.interviewInviteNew.title'),
+    bodyHtml: `
+      ${hello}
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.interviewInviteNew.body', {
+        brand: BRAND_NAME,
+        org: orgName,
+      })}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0;width:100%;background:${BRAND.background};border-radius:8px;">
+        <tr>
+          <td style="padding:16px;font-family:${FONT_BODY};font-size:14px;line-height:1.6;">
+            <p style="margin:0 0 8px;"><strong>${tSync(locale, 'email.interviewInviteNew.email')}</strong> ${escapeHtml(email)}</p>
+            <p style="margin:0;"><strong>${tSync(locale, 'email.interviewInviteNew.tempPassword')}</strong> <code style="background:#fff;padding:2px 6px;border-radius:4px;">${escapeHtml(tempPassword)}</code></p>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0;color:${BRAND.muted};font-size:14px;">${tSync(locale, 'email.interviewInviteNew.changeHint')}</p>
+    `,
+    cta: { label: tSync(locale, 'email.interviewInviteNew.cta'), href: loginUrl },
+  });
+}
+
+export function templateInterviewInviteExistingUser(
+  fullName: string,
+  loginUrl: string,
+  orgName: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  const hello = fullName ? greeting(fullName, locale) : '';
+  return emailLayout({
+    locale,
+    preview: tSync(locale, 'email.interviewInviteExisting.preview', { org: orgName }),
+    title: tSync(locale, 'email.interviewInviteExisting.title'),
+    bodyHtml: `
+      ${hello}
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.interviewInviteExisting.body', {
+        brand: BRAND_NAME,
+        org: orgName,
+      })}</p>
+    `,
+    cta: { label: tSync(locale, 'email.interviewInviteExisting.cta'), href: loginUrl },
+  });
+}
+
+export function templateInterviewAssigned(opts: {
+  recipientName: string;
+  candidateName: string;
+  jobTitle: string;
+  href: string;
+  locale?: Locale;
+}): string {
+  const locale = opts.locale ?? DEFAULT_LOCALE;
+  const hello = opts.recipientName ? greeting(opts.recipientName, locale) : '';
+  return emailLayout({
+    locale,
+    preview: tSync(locale, 'email.interviewAssigned.preview', { candidate: opts.candidateName }),
+    title: tSync(locale, 'email.interviewAssigned.title'),
+    bodyHtml: `
+      ${hello}
+      <p style="margin:0 0 12px;">${tSync(locale, 'email.interviewAssigned.body', {
+        candidate: opts.candidateName,
+        job: opts.jobTitle,
+      })}</p>
+    `,
+    cta: { label: tSync(locale, 'email.interviewAssigned.cta'), href: opts.href },
+  });
+}
+
 export function templateQuoteSent(
   projectName: string,
   portalUrl: string,

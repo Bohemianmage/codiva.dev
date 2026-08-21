@@ -3,6 +3,7 @@ import {
   careerAppHref,
   getHostname,
   isCareerHost,
+  isInterviewsHost,
   isOpsHost,
   isPortalHost,
   isTicketHost,
@@ -15,10 +16,12 @@ const ENV_KEYS = [
   'PORTAL_HOST',
   'CAREER_HOST',
   'TICKET_HOST',
+  'INTERVIEWS_HOST',
   'NEXT_PUBLIC_OPS_URL',
   'NEXT_PUBLIC_PORTAL_URL',
   'NEXT_PUBLIC_CAREER_URL',
   'NEXT_PUBLIC_TICKET_URL',
+  'NEXT_PUBLIC_INTERVIEWS_URL',
   'NEXT_PUBLIC_APP_URL',
 ] as const;
 
@@ -45,6 +48,7 @@ describe('host surfaces', () => {
     expect(resolveSurface('portal.codiva.dev')).toBe('portal');
     expect(resolveSurface('career.codiva.dev')).toBe('career');
     expect(resolveSurface('ticket.codiva.dev')).toBe('ticket');
+    expect(resolveSurface('interviews.codiva.dev')).toBe('interviews');
     expect(resolveSurface('codiva.dev')).toBe('marketing');
     expect(resolveSurface('www.codiva.dev')).toBe('marketing');
   });
@@ -54,6 +58,7 @@ describe('host surfaces', () => {
     expect(isPortalHost('portal.localhost')).toBe(true);
     expect(isCareerHost('career.localhost')).toBe(true);
     expect(isTicketHost('ticket.localhost')).toBe(true);
+    expect(isInterviewsHost('interviews.localhost:3000')).toBe(true);
   });
 
   it('career href omits /empleos on the career host', () => {

@@ -4,6 +4,7 @@ import {
   addJobInterviewRound,
   updateJobInterviewRound,
 } from '@/lib/ops/career-actions';
+import { encodeInterviewAssignee } from '@/lib/ops/interview-partner';
 import {
   JOB_INTERVIEW_KINDS,
   JOB_INTERVIEW_OUTCOMES,
@@ -15,6 +16,12 @@ import {
 import type { Translator } from '@/i18n/locale';
 
 export type OpsInterviewStaff = { id: string; full_name: string };
+export type OpsInterviewPartnerOption = { id: string; user_id: string; full_name: string; partner_name: string };
+export type OpsInterviewReportRow = {
+  id: string;
+  round_id: string;
+  original_filename: string | null;
+};
 
 export type OpsInterviewCommentRow = {
   id: string;
@@ -33,13 +40,72 @@ export type OpsInterviewRoundRow = {
   status: string;
   outcome: string | null;
   interviewer_id: string | null;
+  partner_member_id?: string | null;
   conducted_at: string | null;
   created_at: string;
 };
 
-function staffName(staff: OpsInterviewStaff[], id: string | null) {
-  if (!id) return null;
-  return staff.find((row) => row.id === id)?.full_name ?? null;
+function assigneeLabel(
+  staff: OpsInterviewStaff[],
+  partners: OpsInterviewPartnerOption[],
+  round: { interviewer_id: string | null; partner_member_id?: string | null }
+) {
+  if (round.partner_member_id) {
+    const partner = partners.find((row) => row.id === round.partner_member_id);
+    return partner ? `${partner.full_name} · ${partner.partner_name}` : null;
+  }
+  if (!round.interviewer_id) return null;
+  return staff.find((row) => row.id === round.interviewer_id)?.full_name ?? null;
+}
+
+function AssigneeSelect({
+  name,
+  defaultValue,
+  staff,
+  partners,
+  t,
+}: {
+  name: string;
+  defaultValue: string;
+  staff: OpsInterviewStaff[];
+  partners: OpsInterviewPartnerOption[];
+  t: Translator;
+}) {
+  return (
+    <select name={name} defaultValue={defaultValue} className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm">
+      <option value="">{t('ops.careers.interviewUnassigned')}</option>
+      {staff.length ? (
+        <optgroup label={t('ops.careers.interviewStaffGroup')}>
+          {staff.map((row) => (
+            <option key={row.id} value={encodeInterviewAssignee({ kind: 'staff', id: row.id })}>
+              {row.full_name}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+      {partners.length ? (
+        <optgroup label={t('ops.careers.interviewPartnerGroup')}>
+          {partners.map((row) => (
+            <option key={row.id} value={encodeInterviewAssignee({ kind: 'partner', id: row.id })}>
+              {row.full_name} · {row.partner_name}
+            </option>
+          ))}
+        </optgroup>
+      ) : null}
+    </select>
+  );
+}
+
+function commentAuthorName(
+  staff: OpsInterviewStaff[],
+  partners: OpsInterviewPartnerOption[],
+  authorId: string
+) {
+  return (
+    staff.find((row) => row.id === authorId)?.full_name ||
+    partners.find((row) => row.user_id === authorId)?.full_name ||
+    null
+  );
 }
 
 function kindLabel(kind: string, t: Translator) {
@@ -62,6 +128,8 @@ export default function OpsApplicationInterviews({
   rounds,
   comments,
   staff,
+  partners = [],
+  reports = [],
   currentUserId,
   canTeam,
   t,
@@ -71,6 +139,8 @@ export default function OpsApplicationInterviews({
   rounds: OpsInterviewRoundRow[];
   comments: OpsInterviewCommentRow[];
   staff: OpsInterviewStaff[];
+  partners?: OpsInterviewPartnerOption[];
+  reports?: OpsInterviewReportRow[];
   currentUserId: string;
   canTeam: boolean;
   t: Translator;
@@ -99,10 +169,14 @@ export default function OpsApplicationInterviews({
           <ul className="space-y-3">
             {rounds.map((round) => {
               const roundComments = commentsByRound.get(round.id) ?? [];
-              const interviewer = staffName(staff, round.interviewer_id);
+              const interviewer = assigneeLabel(staff, partners, round);
               const canComment =
-                canTeam || !round.interviewer_id || round.interviewer_id === currentUserId;
+                canTeam ||
+                !round.interviewer_id ||
+                round.interviewer_id === currentUserId ||
+                Boolean(round.partner_member_id);
               const outcome = outcomeLabel(round.outcome, t);
+              const roundReports = reports.filter((row) => row.round_id === round.id);
               return (
                 <li key={round.id} className="rounded-lg border border-zinc-200 bg-white p-3">
                   <p className="text-sm font-medium text-zinc-800">{round.title}</p>
@@ -120,7 +194,8 @@ export default function OpsApplicationInterviews({
                         <li key={comment.id} className="rounded-md bg-zinc-50 px-2.5 py-2 text-sm text-zinc-700">
                           <p className="whitespace-pre-line">{comment.body}</p>
                           <p className="mt-1 text-xs text-zinc-400">
-                            {staffName(staff, comment.author_id) || t('ops.careers.interviewUnknownAuthor')}
+                            {commentAuthorName(staff, partners, comment.author_id) ||
+                              t('ops.careers.interviewUnknownAuthor')}
                             {' · '}
                             {formatDate(comment.created_at)}
                           </p>
@@ -128,6 +203,24 @@ export default function OpsApplicationInterviews({
                       ))}
                     </ul>
                   ) : null}
+                  {roundReports.length ? (
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {roundReports.map((report) => (
+                        <li key={report.id}>
+                          <a
+                            href={`/api/entrevistas/report?id=${report.id}`}
+                            className="text-codiva-primary hover:underline"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {report.original_filename || t('ops.careers.interviewReportOpen')}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-xs text-zinc-400">{t('ops.careers.interviewReportEmpty')}</p>
+                  )}
                   <ToastForm
                     success={t('ops.careers.interviewRoundSaved')}
                     action={async (fd) => {
@@ -181,18 +274,19 @@ export default function OpsApplicationInterviews({
                         </option>
                       ))}
                     </select>
-                    <select
-                      name="interviewer_id"
-                      defaultValue={round.interviewer_id ?? ''}
-                      className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-                    >
-                      <option value="">{t('ops.careers.interviewUnassigned')}</option>
-                      {staff.map((row) => (
-                        <option key={row.id} value={row.id}>
-                          {row.full_name}
-                        </option>
-                      ))}
-                    </select>
+                    <AssigneeSelect
+                      name="assignee"
+                      defaultValue={encodeInterviewAssignee(
+                        round.partner_member_id
+                          ? { kind: 'partner', id: round.partner_member_id }
+                          : round.interviewer_id
+                            ? { kind: 'staff', id: round.interviewer_id }
+                            : { kind: 'none' }
+                      )}
+                      staff={staff}
+                      partners={partners}
+                      t={t}
+                    />
                     <button
                       type="submit"
                       className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50 sm:col-span-2"
@@ -254,18 +348,13 @@ export default function OpsApplicationInterviews({
               </option>
             ))}
           </select>
-          <select
-            name="interviewer_id"
-            defaultValue={currentUserId}
-            className="rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-          >
-            <option value="">{t('ops.careers.interviewUnassigned')}</option>
-            {staff.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.full_name}
-              </option>
-            ))}
-          </select>
+          <AssigneeSelect
+            name="assignee"
+            defaultValue={encodeInterviewAssignee({ kind: 'staff', id: currentUserId })}
+            staff={staff}
+            partners={partners}
+            t={t}
+          />
           <input
             name="title"
             maxLength={120}

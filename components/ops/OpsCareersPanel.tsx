@@ -23,6 +23,8 @@ import {
 } from '@/lib/ops/careers';
 import OpsApplicationInterviews, {
   type OpsInterviewCommentRow,
+  type OpsInterviewPartnerOption,
+  type OpsInterviewReportRow,
   type OpsInterviewRoundRow,
   type OpsInterviewStaff,
 } from '@/components/ops/OpsApplicationInterviews';
@@ -472,6 +474,8 @@ function ApplicationCard({
   interviewRounds,
   interviewComments,
   interviewStaff,
+  interviewPartners,
+  interviewReports,
   currentUserId,
   canTeam,
 }: {
@@ -491,6 +495,8 @@ function ApplicationCard({
   interviewRounds: OpsInterviewRoundRow[];
   interviewComments: OpsInterviewCommentRow[];
   interviewStaff: OpsInterviewStaff[];
+  interviewPartners: OpsInterviewPartnerOption[];
+  interviewReports: OpsInterviewReportRow[];
   currentUserId: string;
   canTeam: boolean;
 }) {
@@ -656,6 +662,8 @@ function ApplicationCard({
         rounds={interviewRounds}
         comments={interviewComments}
         staff={interviewStaff}
+        partners={interviewPartners}
+        reports={interviewReports}
         currentUserId={currentUserId}
         canTeam={canTeam}
         t={t}
@@ -687,6 +695,8 @@ export default async function OpsCareersPanel({
   interviewRounds = [],
   interviewComments = [],
   interviewStaff = [],
+  interviewPartners = [],
+  interviewReports = [],
   currentUserId = '',
 }: {
   postings: OpsJobPostingRow[];
@@ -702,6 +712,8 @@ export default async function OpsCareersPanel({
   interviewRounds?: OpsInterviewRoundRow[];
   interviewComments?: OpsInterviewCommentRow[];
   interviewStaff?: OpsInterviewStaff[];
+  interviewPartners?: OpsInterviewPartnerOption[];
+  interviewReports?: OpsInterviewReportRow[];
   currentUserId?: string;
 }) {
   const t = await getT();
@@ -1195,6 +1207,8 @@ export default async function OpsCareersPanel({
                     interviewRounds={interviewRoundsByApp.get(row.id) ?? []}
                     interviewComments={interviewCommentsByApp.get(row.id) ?? []}
                     interviewStaff={interviewStaff}
+                    interviewPartners={interviewPartners}
+                    interviewReports={interviewReports}
                     currentUserId={currentUserId}
                     canTeam={canManage}
                   />
@@ -1380,6 +1394,8 @@ export default async function OpsCareersPanel({
                         interviewRounds={interviewRoundsByApp.get(row.id) ?? []}
                         interviewComments={interviewCommentsByApp.get(row.id) ?? []}
                         interviewStaff={interviewStaff}
+                        interviewPartners={interviewPartners}
+                        interviewReports={interviewReports}
                         currentUserId={currentUserId}
                         canTeam={canManage}
                       />

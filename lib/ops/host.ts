@@ -18,7 +18,12 @@ const TICKET_HOSTS = new Set([
   'ticket.localhost',
 ]);
 
-export type CodivaSurface = 'marketing' | 'ops' | 'portal' | 'career' | 'ticket';
+const INTERVIEWS_HOSTS = new Set([
+  'interviews.codiva.dev',
+  'interviews.localhost',
+]);
+
+export type CodivaSurface = 'marketing' | 'ops' | 'portal' | 'career' | 'ticket' | 'interviews';
 
 export function getHostname(host: string | null): string {
   return (host ?? '').split(':')[0].toLowerCase();
@@ -56,7 +61,15 @@ export function isTicketHost(host: string | null): boolean {
   return hostname === envHost('TICKET_HOST', 'ticket.codiva.dev');
 }
 
+export function isInterviewsHost(host: string | null): boolean {
+  const hostname = getHostname(host);
+  if (INTERVIEWS_HOSTS.has(hostname)) return true;
+  if (hostname.startsWith('interviews.')) return true;
+  return hostname === envHost('INTERVIEWS_HOST', 'interviews.codiva.dev');
+}
+
 export function resolveSurface(host: string | null): CodivaSurface {
+  if (isInterviewsHost(host)) return 'interviews';
   if (isPortalHost(host)) return 'portal';
   if (isOpsHost(host)) return 'ops';
   if (isCareerHost(host)) return 'career';
@@ -115,6 +128,24 @@ export function careerAppHref(host: string | null, path = '/'): string {
 /** Formulario público de tickets (host ticket). */
 export function ticketBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_TICKET_URL ?? 'https://ticket.codiva.dev').replace(/\/$/, '');
+}
+
+/** Portal de entrevistas para terceros (host interviews). */
+export function interviewsBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_INTERVIEWS_URL ?? 'https://interviews.codiva.dev').replace(/\/$/, '');
+}
+
+export function interviewsLoginUrl(path = ''): string {
+  const suffix = path.startsWith('/') ? path : path ? `/${path}` : '';
+  return `${interviewsBaseUrl()}/login${suffix}`;
+}
+
+export function interviewsHomeUrl(): string {
+  return interviewsBaseUrl();
+}
+
+export function interviewsApplicationUrl(applicationId: string): string {
+  return `${interviewsBaseUrl()}/${applicationId}`;
 }
 
 /** Login del cliente (host portal, multi-proyecto). */

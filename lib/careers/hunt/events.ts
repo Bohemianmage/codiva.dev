@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hashCareerIp } from '@/lib/ops/careers';
-import { isOpsHost, isPortalHost, isTicketHost, marketingBaseUrl } from '@/lib/ops/host';
+import { isOpsHost, isPortalHost, isTicketHost, isInterviewsHost, marketingBaseUrl } from '@/lib/ops/host';
 import {
   huntCookieHostname,
   huntCookieSecure,
@@ -49,7 +49,7 @@ export function sanitizeHuntReferrer(raw: string): string | null {
     const url = value.includes('://') ? new URL(value) : new URL(value, `${marketingBaseUrl()}/`);
     const host = sanitizeHuntHost(url.hostname);
     const path = sanitizeHuntPath(url.pathname);
-    if (!host || isOpsHost(host) || isPortalHost(host) || isTicketHost(host)) return null;
+    if (!host || isOpsHost(host) || isPortalHost(host) || isTicketHost(host) || isInterviewsHost(host)) return null;
     return `${host}${path || '/'}`.slice(0, 200);
   } catch {
     return sanitizeHuntPath(value);
@@ -91,7 +91,7 @@ export async function recordHuntEvent(input: {
     return false;
   }
   const host = sanitizeHuntHost(input.host || '');
-  if (host && (isOpsHost(host) || isPortalHost(host) || isTicketHost(host))) return false;
+  if (host && (isOpsHost(host) || isPortalHost(host) || isTicketHost(host) || isInterviewsHost(host))) return false;
 
   const admin = createAdminClient();
   if (input.eventType === 'page_view') {

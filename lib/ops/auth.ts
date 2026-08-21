@@ -10,6 +10,7 @@ import {
   type PermissionSubject,
   type StaffRole,
 } from '@/lib/ops/permissions';
+import { isOpsHost } from '@/lib/ops/host';
 import { safeNextPath } from '@/lib/ops/safe-path';
 
 const PROJECT_SELECT =
@@ -410,3 +411,109 @@ export async function enrichPortalProjectHubCards(
     };
   });
 }
+
+export type InterviewPartnerMember = MemberAcceptanceFields & {
+  id: string;
+  partner_id: string;
+  user_id: string;
+  full_name: string;
+  role: string;
+  active: boolean;
+};
+
+export type InterviewPartnerOrg = {
+  id: string;
+  name: string;
+  active: boolean;
+};
+
+const INTERVIEW_MEMBER_SELECT =
+  'id, partner_id, user_id, full_name, role, active, terms_accepted_at, terms_version, privacy_accepted_at, privacy_version, nda_accepted_at, nda_version';
+
+export async function loadActiveInterviewMember(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+) {
+  const { data: member } = await supabase
+    .from('ops_recruiting_partner_members')
+    .select(`${INTERVIEW_MEMBER_SELECT}, ops_recruiting_partners!inner(id, name, active)`)
+    .eq('user_id', userId)
+    .eq('active', true)
+    .eq('ops_recruiting_partners.active', true)
+    .maybeSingle();
+
+  if (!member) return null;
+  const raw = member.ops_recruiting_partners as InterviewPartnerOrg | InterviewPartnerOrg[] | null;
+  const partner = Array.isArray(raw) ? raw[0] : raw;
+  if (!partner?.active) return null;
+  const { ops_recruiting_partners: _ignored, ...rest } = member as typeof member & {
+    ops_recruiting_partners: unknown;
+  };
+  return { member: rest as InterviewPartnerMember, partner };
+}
+
+/**
+ * Host interviews: miembro activo. Host ops: staff con careers_review (vista previa).
+ */
+export async function requireInterviewsAccess() {
+  const supabase = await createClient();
+  const host = (await headers()).get('x-codiva-host') || (await headers()).get('host');
+  const incomingPath = (await headers()).get('x-codiva-path');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isOpsHost(host)) {
+    if (!user) {
+      redirect(loginUrlWithReturn('/login', incomingPath));
+    }
+    const staff = await getActiveStaff(supabase, user.id);
+    if (!staff || !canAny(staff, ['team', 'careers_review'])) {
+      redirect('/dashboard?error=forbidden');
+    }
+    return {
+      user,
+      supabase,
+      staff,
+      member: null as InterviewPartnerMember | null,
+      partner: null as InterviewPartnerOrg | null,
+      isStaffPreview: true as const,
+    };
+  }
+
+  if (!user) {
+    redirect(loginUrlWithReturn('/login', incomingPath));
+  }
+
+  const loaded = await loadActiveInterviewMember(supabase, user.id);
+  if (!loaded) {
+    redirect('/login?error=no_access');
+  }
+
+  return {
+    user,
+    supabase,
+    staff: null,
+    member: loaded.member,
+    partner: loaded.partner,
+    isStaffPreview: false as const,
+  };
+}
+
+export async function requireInterviewPartner() {
+  const access = await requireInterviewsAccess();
+  if (access.isStaffPreview || !access.member) {
+    throw new Error('Esta acción es para el portal de entrevistas');
+  }
+  return access;
+}
+
+export async function requireInterviewPartnerWithAcceptances() {
+  const access = await requireInterviewPartner();
+  const status = getAcceptanceStatus(access.member);
+  if (!status.complete) {
+    redirect('/aceptar');
+  }
+  return access;
+}
+

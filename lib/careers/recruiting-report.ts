@@ -70,6 +70,7 @@ export type RecruitingInterviewRound = {
   interviewer: string | null;
   conductedAt: string | null;
   comments: RecruitingInterviewComment[];
+  reports: { filename: string; notes: string | null }[];
 };
 
 function toRecruitingFinding(
@@ -252,8 +253,15 @@ type InterviewRoundInput = {
   status: string;
   outcome: string | null;
   interviewer_id: string | null;
+  partner_member_id?: string | null;
   conducted_at: string | null;
   sort_order?: number | null;
+};
+
+type InterviewReportInput = {
+  round_id: string;
+  original_filename: string | null;
+  notes: string | null;
 };
 
 type InterviewCommentInput = {
@@ -266,7 +274,8 @@ type InterviewCommentInput = {
 function toRecruitingInterviews(
   rounds: InterviewRoundInput[],
   comments: InterviewCommentInput[],
-  names: Map<string, string>
+  names: Map<string, string>,
+  reports: InterviewReportInput[] = []
 ): RecruitingInterviewRound[] {
   const commentsByRound = new Map<string, RecruitingInterviewComment[]>();
   for (const row of comments) {
@@ -278,6 +287,12 @@ function toRecruitingInterviews(
     });
     commentsByRound.set(row.round_id, list);
   }
+  const reportsByRound = new Map<string, InterviewReportInput[]>();
+  for (const row of reports) {
+    const list = reportsByRound.get(row.round_id) ?? [];
+    list.push(row);
+    reportsByRound.set(row.round_id, list);
+  }
   return [...rounds]
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map((round) => ({
@@ -286,15 +301,27 @@ function toRecruitingInterviews(
       status: round.status,
       statusLabel: INTERVIEW_STATUS_LABELS[round.status] || round.status,
       outcomeLabel: round.outcome ? INTERVIEW_OUTCOME_LABELS[round.outcome] || round.outcome : null,
-      interviewer: round.interviewer_id ? names.get(round.interviewer_id) || null : null,
+      interviewer: round.partner_member_id
+        ? names.get(round.partner_member_id) || null
+        : round.interviewer_id
+          ? names.get(round.interviewer_id) || null
+          : null,
       conductedAt: round.conducted_at,
       comments: commentsByRound.get(round.id) ?? [],
+      reports: (reportsByRound.get(round.id) ?? []).map((row) => ({
+        filename: row.original_filename || 'reporte.pdf',
+        notes: row.notes,
+      })),
     }));
 }
 
 function interviewHasProgress(rounds: RecruitingInterviewRound[]): boolean {
   return rounds.some(
-    (round) => round.status !== 'planned' || round.comments.length > 0 || Boolean(round.outcomeLabel)
+    (round) =>
+      round.status !== 'planned' ||
+      round.comments.length > 0 ||
+      Boolean(round.outcomeLabel) ||
+      round.reports.length > 0
   );
 }
 
@@ -311,7 +338,7 @@ async function loadInterviewPack(
 
   const { data: rounds } = await admin
     .from('ops_job_interview_rounds')
-    .select('id, application_id, sort_order, kind, title, status, outcome, interviewer_id, conducted_at')
+    .select('id, application_id, sort_order, kind, title, status, outcome, interviewer_id, partner_member_id, conducted_at')
     .in('application_id', applicationIds)
     .order('sort_order', { ascending: true });
   for (const round of rounds ?? []) {
@@ -328,6 +355,13 @@ async function loadInterviewPack(
         .in('round_id', roundIds)
         .order('created_at', { ascending: true })
     : { data: [] as InterviewCommentInput[] };
+  const { data: reports } = roundIds.length
+    ? await admin
+        .from('ops_interview_reports')
+        .select('round_id, original_filename, notes')
+        .in('round_id', roundIds)
+        .order('created_at', { ascending: true })
+    : { data: [] as InterviewReportInput[] };
 
   const staffIds = [
     ...new Set(
@@ -337,14 +371,21 @@ async function loadInterviewPack(
       ].filter((id): id is string => Boolean(id))
     ),
   ];
+  const partnerIds = [...new Set((rounds ?? []).map((row) => row.partner_member_id).filter((id): id is string => Boolean(id)))];
   const { data: staff } = staffIds.length
     ? await admin.from('staff_profiles').select('id, full_name').in('id', staffIds)
     : { data: [] as { id: string; full_name: string }[] };
-  const names = new Map((staff ?? []).map((row) => [row.id, row.full_name]));
+  const { data: partners } = partnerIds.length
+    ? await admin.from('ops_recruiting_partner_members').select('id, full_name').in('id', partnerIds)
+    : { data: [] as { id: string; full_name: string }[] };
+  const names = new Map([
+    ...(staff ?? []).map((row) => [row.id, row.full_name] as const),
+    ...(partners ?? []).map((row) => [row.id, row.full_name] as const),
+  ]);
 
   const commentsByRound = comments ?? [];
   for (const [applicationId, list] of roundsByApplication) {
-    interviewsByApplication.set(applicationId, toRecruitingInterviews(list, commentsByRound, names));
+    interviewsByApplication.set(applicationId, toRecruitingInterviews(list, commentsByRound, names, reports ?? []));
   }
   return { roundsByApplication, interviewsByApplication };
 }
@@ -935,10 +976,19 @@ function interviewRoundArticles(rounds: RecruitingInterviewRound[]): string {
             ${who ? `<p style="margin:4px 0 0;font-size:12px;color:${BRAND.muted};">${escapeHtml(who)}</p>` : ''}`;
         })
         .join('');
+      const reports = round.reports
+        .map(
+          (report) =>
+            `<p style="margin:8px 0 0;font-size:13px;">Reporte: ${escapeHtml(report.filename)}${
+              report.notes ? ` · ${escapeHtml(report.notes)}` : ''
+            }</p>`
+        )
+        .join('');
       return `<article style="margin:0 0 16px;padding:14px 16px;border:1px solid ${BRAND.border};border-radius:12px;">
             <p style="margin:0 0 6px;font-weight:600;">${escapeHtml(round.title)}</p>
             <p style="margin:0;font-size:12px;color:${BRAND.muted};">${escapeHtml(meta.join(' · '))}</p>
             ${comments}
+            ${reports}
           </article>`;
     })
     .join('');

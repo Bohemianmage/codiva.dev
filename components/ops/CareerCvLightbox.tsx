@@ -9,9 +9,11 @@ import Modal, { ModalHeader } from '@/components/ui/Modal';
 export default function CareerCvLightbox({
   applicationId,
   name,
+  srcBase = '/api/ops/careers/cv',
 }: {
   applicationId: string;
   name: string;
+  srcBase?: string;
 }) {
   const { t } = useTranslation();
   const titleId = useId();
@@ -21,7 +23,7 @@ export default function CareerCvLightbox({
   const close = useCallback(() => setOpen(false), []);
   const title = t('ops.careers.cvEmbedTitle', { name });
   const closeLabel = t('ops.careers.evidenceClose');
-  const cvHref = `/api/ops/careers/cv?id=${applicationId}`;
+  const cvHref = `${srcBase}?id=${applicationId}`;
 
   useEffect(() => {
     if (!open) return;

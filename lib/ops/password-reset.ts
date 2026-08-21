@@ -7,7 +7,7 @@ import {
   templatePasswordRecoveryHtml,
   templatePortalPasswordRecoveryHtml,
 } from '@/lib/ops/email-templates';
-import { opsAuthCallbackUrl, portalAuthCallbackUrl, portalHubAuthCallbackUrl } from '@/lib/ops/auth-urls';
+import { interviewsAuthCallbackUrl, opsAuthCallbackUrl, portalAuthCallbackUrl, portalHubAuthCallbackUrl } from '@/lib/ops/auth-urls';
 import { findUserIdByEmail } from '@/lib/ops/auth-users';
 import { getT } from '@/i18n/locale';
 import { tSync } from '@/i18n/translate';
@@ -265,6 +265,36 @@ export async function requestPortalHubPasswordReset(email: string): Promise<Rese
     portalHubAuthCallbackUrl('/reset-password'),
     { projectName: project.name }
   );
+}
+
+export async function requestInterviewPasswordReset(email: string): Promise<ResetResult> {
+  const t = await getT();
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return { ok: false, message: t('auth.emailRequired') };
+
+  const limited = await enforcePasswordResetRateLimit(normalized);
+  if (limited) return limited;
+
+  const userId = await findUserIdByEmail(normalized);
+  if (!userId) {
+    return { ok: true, message: t('auth.hubIfExists') };
+  }
+
+  const admin = createAdminClient();
+  const { data: member } = await admin
+    .from('ops_recruiting_partner_members')
+    .select('id, active, ops_recruiting_partners!inner(active)')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .maybeSingle();
+
+  const partner = member?.ops_recruiting_partners as { active?: boolean } | { active?: boolean }[] | null;
+  const org = Array.isArray(partner) ? partner[0] : partner;
+  if (!member?.id || org?.active === false) {
+    return { ok: true, message: t('auth.hubIfExists') };
+  }
+
+  return sendRecoveryEmail(normalized, interviewsAuthCallbackUrl('/reset-password'));
 }
 
 export async function updatePassword(newPassword: string): Promise<ResetResult> {

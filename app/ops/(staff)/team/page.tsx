@@ -33,6 +33,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import CodivaBrandText from '@/components/CodivaBrandText';
 import OpsStaffCapabilityFields from '@/components/ops/OpsStaffCapabilityFields';
+import OpsInterviewPartnersPanel from '@/components/ops/OpsInterviewPartnersPanel';
 import { TabLink, Tabs } from '@/components/ui/Tabs';
 
 export default async function TeamPage({
@@ -53,7 +54,9 @@ export default async function TeamPage({
       ? 'ofertas'
       : tabParam === 'bolsa'
         ? 'bolsa'
-        : 'miembros';
+        : tabParam === 'entrevistadores'
+          ? 'entrevistadores'
+          : 'miembros';
   const t = await getT();
   const { EMPTY_LABEL, formatCurrency, formatDate } = labelsFor(t.locale);
   const { OPS_ROLE_LABELS, WORK_MODALITY_LABELS, OFFER_STATUS_LABELS } = offerLabelsFor(t.locale);
@@ -150,7 +153,7 @@ export default async function TeamPage({
       ? supabase
           .from('ops_job_interview_rounds')
           .select(
-            'id, application_id, sort_order, kind, title, status, outcome, interviewer_id, conducted_at, created_at'
+            'id, application_id, sort_order, kind, title, status, outcome, interviewer_id, partner_member_id, conducted_at, created_at'
           )
           .in('application_id', applicationIds)
           .order('sort_order', { ascending: true })
@@ -167,6 +170,46 @@ export default async function TeamPage({
         .in('round_id', roundIds)
         .order('created_at', { ascending: true })
     : { data: [] as never[] };
+
+  const loadPartners = tab === 'entrevistadores' || loadInterviews;
+  const [
+    { data: recruitingPartners },
+    { data: recruitingMembers },
+    { data: interviewAssignments },
+    { data: interviewReports },
+  ] = await Promise.all([
+    loadPartners
+      ? supabase.from('ops_recruiting_partners').select('id, name, active').order('name')
+      : Promise.resolve({ data: [] as never[] }),
+    loadPartners
+      ? supabase
+          .from('ops_recruiting_partner_members')
+          .select('id, partner_id, user_id, full_name, role, active')
+          .order('full_name')
+      : Promise.resolve({ data: [] as never[] }),
+    loadPartners
+      ? supabase.from('ops_interview_assignments').select('id, member_id, round_id, application_id, job_posting_id')
+      : Promise.resolve({ data: [] as never[] }),
+    roundIds.length
+      ? supabase.from('ops_interview_reports').select('id, round_id, original_filename').in('round_id', roundIds)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const partnerEmails = new Map<string, string>();
+  if (tab === 'entrevistadores') {
+    for (const member of recruitingMembers ?? []) {
+      const { data } = await admin.auth.admin.getUserById(member.user_id);
+      if (data.user?.email) partnerEmails.set(member.id, data.user.email);
+    }
+  }
+  const partnerOptions = (recruitingMembers ?? [])
+    .filter((row) => row.active)
+    .map((row) => ({
+      id: row.id,
+      user_id: row.user_id,
+      full_name: row.full_name,
+      partner_name: (recruitingPartners ?? []).find((org) => org.id === row.partner_id)?.name || '',
+    }));
   const assignmentsByStaff = new Map<string, { project_id: string; role_on_project: string }[]>();
   const offerByStaff = new Map<string, string>();
   for (const row of staffAssignments ?? []) {
@@ -218,6 +261,11 @@ export default async function TeamPage({
               ) : null}
             </TabLink>
           </>
+        ) : null}
+        {canManageTeam ? (
+          <TabLink href="/team?tab=entrevistadores" active={tab === 'entrevistadores'}>
+            {t('ops.team.tabInterviewers')}
+          </TabLink>
         ) : null}
         <TabLink href="/team?tab=bolsa" active={tab === 'bolsa'}>
           {t('ops.team.tabJobs')}
@@ -436,6 +484,20 @@ export default async function TeamPage({
             </ul>
           </section>
         </div>
+      ) : tab === 'entrevistadores' && canManageTeam ? (
+        <OpsInterviewPartnersPanel
+          partners={recruitingPartners ?? []}
+          members={(recruitingMembers ?? []).map((row) => ({
+            ...row,
+            email: partnerEmails.get(row.id),
+          }))}
+          assignments={interviewAssignments ?? []}
+          jobs={(visiblePostings ?? []).map((row) => ({ id: row.id, title: row.title }))}
+          applications={(visibleApplications ?? [])
+            .filter((row) => row.status === 'interview')
+            .map((row) => ({ id: row.id, full_name: row.full_name }))}
+          t={t}
+        />
       ) : tab === 'bolsa' ? (
         <OpsCareersPanel
           postings={(visiblePostings ?? []) as OpsJobPostingRow[]}
@@ -451,6 +513,8 @@ export default async function TeamPage({
           interviewRounds={interviewRounds ?? []}
           interviewComments={interviewComments ?? []}
           interviewStaff={interviewStaff ?? []}
+          interviewPartners={partnerOptions}
+          interviewReports={interviewReports ?? []}
           currentUserId={user.id}
         />
       ) : (

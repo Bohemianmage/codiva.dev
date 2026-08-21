@@ -155,6 +155,27 @@
       "signoff": "Un saludo,",
       "team": "El equipo de Codiva.dev",
       "cta": "Escribirnos"
+    },
+    "interviewInviteNew": {
+      "preview": "Acceso a entrevistas Codiva · {{org}}",
+      "title": "Acceso a entrevistas",
+      "body": "Se creó tu acceso para operar fases de entrevista de {{brand}} con {{org}}.",
+      "email": "Email:",
+      "tempPassword": "Contraseña temporal:",
+      "changeHint": "Cambia tu contraseña al ingresar.",
+      "cta": "Entrar a entrevistas"
+    },
+    "interviewInviteExisting": {
+      "preview": "Acceso a entrevistas Codiva · {{org}}",
+      "title": "Acceso a entrevistas",
+      "body": "Se te otorgó acceso para operar fases de entrevista de {{brand}} con {{org}}. Usa tu correo y contraseña habituales.",
+      "cta": "Entrar a entrevistas"
+    },
+    "interviewAssigned": {
+      "preview": "Tienes una fase pendiente: {{candidate}}",
+      "title": "Fase de entrevista pendiente",
+      "body": "Te asignaron una fase para {{candidate}} ({{job}}). Entra para ver el status, hacer seguimiento y cargar el reporte.",
+      "cta": "Ver candidato"
     }
   },
   "quoteDoc": {

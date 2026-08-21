@@ -23,6 +23,7 @@ import {
   DEFAULT_INTERVIEW_ROUND_KINDS,
 } from '@/lib/ops/careers';
 import { notifyCandidateApplicationStatus } from '@/lib/careers/notify-application-status';
+import { syncRoundAssignee } from '@/lib/ops/interview-actions';
 import {
   DEFAULT_RESPONSIBILITIES,
   responsibilitiesForCareerDiscipline,
@@ -373,8 +374,7 @@ export async function addJobInterviewRound(applicationId: string, formData: Form
   const t = await getT();
   const title =
     String(formData.get('title') || '').trim().slice(0, 120) || t(`ops.careers.interviewKind.${kind}`);
-  const interviewerRaw = String(formData.get('interviewer_id') || '').trim();
-  const interviewerId = isUuid(interviewerRaw) ? interviewerRaw : null;
+  const assigneeRaw = String(formData.get('assignee') || formData.get('interviewer_id') || '').trim();
 
   const { data: last } = await supabase
     .from('ops_job_interview_rounds')
@@ -392,7 +392,6 @@ export async function addJobInterviewRound(applicationId: string, formData: Form
       kind,
       title,
       status: 'planned',
-      interviewer_id: interviewerId,
       created_by: user.id,
     })
     .select('id')
@@ -400,6 +399,12 @@ export async function addJobInterviewRound(applicationId: string, formData: Form
 
   if (error || !round) throw await throwDb(error);
 
+  await syncRoundAssignee({
+    roundId: round.id,
+    applicationId: application.id,
+    assigneeRaw,
+    actorId: user.id,
+  });
   await maybePromoteToInterview(supabase, application, user.id);
   await logActivity({
     entityType: 'job_application',
@@ -432,8 +437,7 @@ export async function updateJobInterviewRound(roundId: string, formData: FormDat
   if (!isJobInterviewRoundStatus(status)) throw new Error('Estado de fase inválido');
   const outcomeRaw = String(formData.get('outcome') || '').trim();
   const outcome = outcomeRaw && isJobInterviewOutcome(outcomeRaw) ? outcomeRaw : null;
-  const interviewerRaw = String(formData.get('interviewer_id') || '').trim();
-  const interviewerId = isUuid(interviewerRaw) ? interviewerRaw : null;
+  const assigneeRaw = String(formData.get('assignee') || formData.get('interviewer_id') || '').trim();
 
   const conductedAt =
     status === 'done' && !round.conducted_at ? new Date().toISOString() : round.conducted_at;
@@ -445,12 +449,18 @@ export async function updateJobInterviewRound(roundId: string, formData: FormDat
       kind,
       status,
       outcome,
-      interviewer_id: interviewerId,
       conducted_at: conductedAt,
     })
     .eq('id', roundId);
 
   if (error) throw await throwDb(error);
+
+  await syncRoundAssignee({
+    roundId,
+    applicationId: round.application_id,
+    assigneeRaw,
+    actorId: user.id,
+  });
 
   await logActivity({
     entityType: 'job_application',
