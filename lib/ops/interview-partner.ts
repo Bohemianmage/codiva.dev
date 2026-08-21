@@ -1,6 +1,26 @@
 export const INTERVIEW_REPORT_BUCKET = 'interview-reports';
 export const INTERVIEW_MAX_REPORT_BYTES = 10 * 1024 * 1024;
 
+export const INTERVIEW_REPORT_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+] as const;
+
+export type InterviewReportMime = (typeof INTERVIEW_REPORT_MIME_TYPES)[number];
+
+const INTERVIEW_REPORT_EXT_BY_MIME: Record<InterviewReportMime, string> = {
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+};
+
+const INTERVIEW_REPORT_MIME_BY_EXT: Record<string, InterviewReportMime> = {
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+
 export const INTERVIEW_PARTNER_ROLES = ['coordinator', 'interviewer'] as const;
 export type InterviewPartnerRole = (typeof INTERVIEW_PARTNER_ROLES)[number];
 
@@ -89,12 +109,39 @@ export function interviewFollowUp(input: {
   return 'pending';
 }
 
-export function buildInterviewReportPath(roundId: string, originalFilename: string): string {
-  const safe = String(originalFilename || 'reporte.pdf')
+export function interviewReportExtension(filename: string): string {
+  const match = String(filename || '')
     .trim()
     .toLowerCase()
+    .match(/(\.[a-z0-9]+)$/);
+  return match?.[1] ?? '';
+}
+
+export function resolveInterviewReportMime(opts: {
+  mimeType?: string | null;
+  filename?: string | null;
+}): InterviewReportMime | null {
+  const mime = String(opts.mimeType || '')
+    .trim()
+    .toLowerCase();
+  if ((INTERVIEW_REPORT_MIME_TYPES as readonly string[]).includes(mime)) {
+    return mime as InterviewReportMime;
+  }
+  const ext = interviewReportExtension(opts.filename || '');
+  return INTERVIEW_REPORT_MIME_BY_EXT[ext] ?? null;
+}
+
+export function buildInterviewReportPath(roundId: string, originalFilename: string, mime?: InterviewReportMime): string {
+  const ext =
+    (mime ? INTERVIEW_REPORT_EXT_BY_MIME[mime] : null) ||
+    interviewReportExtension(originalFilename) ||
+    '.pdf';
+  const base = String(originalFilename || `analisis${ext}`)
+    .trim()
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, '')
     .replace(/[^a-z0-9._-]+/g, '_')
-    .slice(0, 120);
-  const name = safe.endsWith('.pdf') ? safe : `${safe || 'reporte'}.pdf`;
+    .slice(0, 100);
+  const name = `${base || 'analisis'}${ext}`;
   return `rounds/${roundId}/${crypto.randomUUID()}_${name}`;
 }

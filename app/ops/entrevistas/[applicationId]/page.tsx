@@ -292,11 +292,20 @@ export default async function InterviewsApplicationPage({
                           'use server';
                           await partnerUploadInterviewReport(round.id, fd);
                         }}
-                        className="space-y-2"
+                        className="space-y-2 rounded-xl border border-codiva-primary/20 bg-codiva-primary/5 p-3"
                       >
-                        <p className="text-sm font-medium">{t('interviews.reportTitle')}</p>
-                        <p className="text-xs text-zinc-500">{t('interviews.reportHint')}</p>
-                        <input type="file" name="file" accept="application/pdf" required className="text-sm" />
+                        <p className="text-sm font-semibold text-zinc-900">{t('interviews.reportTitle')}</p>
+                        <p className="text-xs text-zinc-600">{t('interviews.reportHint')}</p>
+                        <label className="block text-xs font-medium text-zinc-700">
+                          {t('interviews.reportFile')}
+                          <input
+                            type="file"
+                            name="file"
+                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            required
+                            className="mt-1 block w-full text-sm"
+                          />
+                        </label>
                         <textarea
                           name="notes"
                           rows={2}
@@ -304,7 +313,10 @@ export default async function InterviewsApplicationPage({
                           placeholder={t('interviews.reportNotes')}
                           className="w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
                         />
-                        <button type="submit" className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm">
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-codiva-primary px-3 py-1.5 text-sm font-medium text-white"
+                        >
                           {t('interviews.reportSubmit')}
                         </button>
                       </ToastForm>

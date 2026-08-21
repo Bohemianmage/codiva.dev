@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   assignmentMatchesApplication,
+  buildInterviewReportPath,
   encodeInterviewAssignee,
   interviewFollowUp,
   parseInterviewAssignee,
   parseInterviewViewAsCookie,
   partnerMaySetApplicationStatus,
+  resolveInterviewReportMime,
   visibleApplicationIds,
 } from './interview-partner';
 
@@ -68,5 +70,27 @@ describe('interviewFollowUp', () => {
     expect(interviewFollowUp({ status: 'done', reportCount: 0 })).toBe('needs_report');
     expect(interviewFollowUp({ status: 'done', reportCount: 1 })).toBe('closed');
     expect(interviewFollowUp({ status: 'skipped', reportCount: 0 })).toBe('closed');
+  });
+});
+
+describe('interview report files', () => {
+  it('resolves pdf and word mime types from type or extension', () => {
+    expect(resolveInterviewReportMime({ mimeType: 'application/pdf' })).toBe('application/pdf');
+    expect(
+      resolveInterviewReportMime({
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+    ).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(resolveInterviewReportMime({ filename: 'notas.DOCX' })).toBe(
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    expect(resolveInterviewReportMime({ filename: 'legacy.doc' })).toBe('application/msword');
+    expect(resolveInterviewReportMime({ filename: 'foto.png' })).toBeNull();
+  });
+
+  it('keeps the original extension in storage paths', () => {
+    expect(buildInterviewReportPath(app.id, 'Analisis Final.docx')).toMatch(/\.docx$/);
+    expect(buildInterviewReportPath(app.id, 'resumen.pdf')).toMatch(/\.pdf$/);
+    expect(buildInterviewReportPath(app.id, 'viejo.doc')).toMatch(/\.doc$/);
   });
 });

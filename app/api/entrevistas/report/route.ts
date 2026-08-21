@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { loadActiveInterviewMember } from '@/lib/ops/auth';
 import { canAny } from '@/lib/ops/permissions';
-import { INTERVIEW_REPORT_BUCKET, visibleApplicationIds } from '@/lib/ops/interview-partner';
+import { INTERVIEW_REPORT_BUCKET, resolveInterviewReportMime, visibleApplicationIds } from '@/lib/ops/interview-partner';
 import { getActiveStaffForApi } from '@/lib/ops/interview-file-access';
 
 export const runtime = 'nodejs';
@@ -62,13 +62,18 @@ export async function GET(request: Request) {
   const { data: file, error } = await admin.storage.from(INTERVIEW_REPORT_BUCKET).download(report.storage_path);
   if (error || !file) return NextResponse.json({ error: 'No se pudo abrir el reporte' }, { status: 500 });
   const filename =
-    String(report.original_filename || 'reporte.pdf').replace(/[\r\n"]/g, '').slice(0, 180) || 'reporte.pdf';
+    String(report.original_filename || 'analisis.pdf').replace(/[\r\n"]/g, '').slice(0, 180) || 'analisis.pdf';
+  const mime =
+    resolveInterviewReportMime({ mimeType: file.type, filename }) ||
+    resolveInterviewReportMime({ filename: report.storage_path }) ||
+    'application/pdf';
   const bytes = new Uint8Array(await file.arrayBuffer());
+  const inline = mime === 'application/pdf';
   return new NextResponse(bytes, {
     status: 200,
     headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${filename}"`,
+      'Content-Type': mime,
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${filename}"`,
       'Cache-Control': 'private, no-store',
     },
   });

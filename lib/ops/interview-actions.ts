@@ -20,6 +20,7 @@ import {
   buildInterviewReportPath,
   isInterviewUuid,
   parseInterviewAssignee,
+  resolveInterviewReportMime,
 } from '@/lib/ops/interview-partner';
 import {
   isJobInterviewOutcome,
@@ -311,16 +312,17 @@ export async function partnerUploadInterviewReport(roundId: string, formData: Fo
   if (!round) throw new Error('Fase no encontrada');
 
   const file = formData.get('file');
-  if (!(file instanceof File) || file.size < 1) throw new Error('Adjunta un PDF');
-  if (file.type !== 'application/pdf') throw new Error('El reporte debe ser PDF');
+  if (!(file instanceof File) || file.size < 1) throw new Error('Adjunta un análisis (.pdf, .doc o .docx)');
+  const mime = resolveInterviewReportMime({ mimeType: file.type, filename: file.name });
+  if (!mime) throw new Error('El análisis debe ser PDF o Word (.doc / .docx)');
   if (file.size > INTERVIEW_MAX_REPORT_BYTES) throw new Error('El archivo supera 10 MB');
   const notes = String(formData.get('notes') || '').trim().slice(0, 4000) || null;
-  const originalFilename = file.name || 'reporte.pdf';
-  const path = buildInterviewReportPath(roundId, originalFilename);
+  const originalFilename = file.name || `analisis${mime === 'application/pdf' ? '.pdf' : mime === 'application/msword' ? '.doc' : '.docx'}`;
+  const path = buildInterviewReportPath(roundId, originalFilename, mime);
   const buffer = Buffer.from(await file.arrayBuffer());
   const admin = createAdminClient();
   const { error: uploadError } = await admin.storage.from(INTERVIEW_REPORT_BUCKET).upload(path, buffer, {
-    contentType: 'application/pdf',
+    contentType: mime,
     upsert: false,
   });
   if (uploadError) throw await throwDb(uploadError);
